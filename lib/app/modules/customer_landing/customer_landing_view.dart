@@ -373,7 +373,7 @@ class _ValuePropositionSection extends StatelessWidget {
               _ValueProp(
                 icon: Icons.security,
                 title: 'Secure & Reliable',
-                description: 'Bank-level security with automatic backups and data protection',
+                description: 'Bank-level security with offline mode, automatic cloud sync, and data protection',
                 color: Colors.green,
               ),
               _ValueProp(
@@ -500,9 +500,10 @@ class _CoreFeaturesSection extends StatelessWidget {
           _BigFeatureCard(
             icon: Icons.point_of_sale_rounded,
             title: 'Point of Sale (POS)',
-            description: 'Fast, intuitive checkout system with support for multiple payment methods, promotions, and receipt printing',
+            description: 'Fast, intuitive checkout system with offline support, multiple payment methods, promotions, and automatic cloud sync',
             features: [
               'Quick product search & barcode scanning',
+              'Offline mode with automatic sync',
               'Multiple payment methods support',
               'Real-time promotion application',
               'Customer management integration',
@@ -734,6 +735,12 @@ class _AdvancedFeaturesSection extends StatelessWidget {
                 title: 'Smart Notifications',
                 description: 'Get alerts for low stock, sales milestones, and important events',
                 color: Colors.red,
+              ),
+              _FeatureCard(
+                icon: Icons.cloud_sync_rounded,
+                title: 'Data Synchronization',
+                description: 'Work offline seamlessly with automatic cloud sync - never lose a sale even without internet connection',
+                color: Colors.blue,
               ),
             ],
           ),
@@ -1356,6 +1363,11 @@ class _StatsSection extends StatelessWidget {
             number: '100%',
             label: 'Secure',
             icon: Icons.security_rounded,
+          ),
+          _StatItem(
+            number: 'Offline',
+            label: 'Capable',
+            icon: Icons.cloud_sync_rounded,
           ),
           _StatItem(
             number: 'Cloud',

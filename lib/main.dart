@@ -1,3 +1,4 @@
+import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -27,12 +28,14 @@ import 'package:smart_retail/app/data/services/shop_inventory_api_service.dart';
 import 'package:smart_retail/app/data/services/shop_items_api_service.dart';
 import 'package:smart_retail/app/data/services/shop_profile_api_service.dart';
 import 'package:smart_retail/app/services/theme_service.dart';
+import 'package:smart_retail/app/services/offline_bindings.dart';
 import 'package:smart_retail/app/data/services/user_api_service.dart';
 import 'package:smart_retail/app/routes/app_pages.dart';
 import 'package:smart_retail/app/widgets/global_theme_toggle_wrapper.dart';
 
-// For sqflite web support
+// For sqflite web and desktop support
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:sqflite/sqflite.dart';
 
 // Import flutter_dotenv
@@ -72,12 +75,23 @@ Future<void> main() async {
   Get.lazyPut<ShopInventoryApiService>(() => ShopInventoryApiService());
   Get.lazyPut<ShopProfileApiService>(() => ShopProfileApiService());
   Get.lazyPut<ShopItemsApiService>(() => ShopItemsApiService());
-  Get.lazyPut<MerchantPosApiService>(() => MerchantPosApiService()); 
+  Get.lazyPut<MerchantPosApiService>(() => MerchantPosApiService());
 
-  if (kIsWeb) {
+  // Initialize Offline-First Services
+  OfflineBindings().dependencies();
+
+  // Initialize SQLite for different platforms
+  if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
+    // Desktop platforms: Windows, Linux, macOS
+    sqfliteFfiInit();
+    databaseFactory = databaseFactoryFfi;
+    print("SQLite FFI factory initialized for desktop platform.");
+  } else if (kIsWeb) {
+    // Web platform
     databaseFactory = databaseFactoryFfiWeb;
     print("SQLite FFI Web factory initialized for web platform.");
   }
+  // Mobile platforms (Android/iOS) use default sqflite, no initialization needed
 
   runApp(const MyApp());
 }

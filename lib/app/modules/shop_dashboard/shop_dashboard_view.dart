@@ -9,6 +9,7 @@ import 'package:smart_retail/app/widgets/section_header.dart';
 import 'package:smart_retail/app/widgets/app_colors.dart';
 import 'package:smart_retail/app/widgets/responsive_layout.dart';
 import 'package:smart_retail/app/routes/app_pages.dart';
+import 'package:smart_retail/app/widgets/cards/data_sync_card.dart';
 
 class ShopDashboardView extends GetView<ShopDashboardController> {
   const ShopDashboardView({Key? key}) : super(key: key);
@@ -76,6 +77,8 @@ class ShopDashboardView extends GetView<ShopDashboardController> {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  const DataSyncCard(),
+                  const SizedBox(height: 24),
                   _buildPerformanceMetrics(summary),
                   const SizedBox(height: 32),
                   _buildQuickActions(),

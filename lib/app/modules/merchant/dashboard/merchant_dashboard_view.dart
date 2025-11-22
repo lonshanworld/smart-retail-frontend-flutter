@@ -10,6 +10,7 @@ import 'package:smart_retail/app/widgets/modern_card.dart';
 import 'package:smart_retail/app/widgets/section_header.dart';
 import 'package:smart_retail/app/widgets/app_colors.dart';
 import 'package:smart_retail/app/widgets/responsive_layout.dart';
+import 'package:smart_retail/app/widgets/cards/data_sync_card.dart';
 
 class MerchantDashboardView extends GetView<MerchantDashboardController> {
   const MerchantDashboardView({super.key});
@@ -37,6 +38,8 @@ class MerchantDashboardView extends GetView<MerchantDashboardController> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
                 _buildShopSelector(context, controller),
+                const SizedBox(height: 24),
+                const DataSyncCard(),
                 const SizedBox(height: 24),
                 _buildKpiSection(context, controller),
                 const SizedBox(height: 32),
