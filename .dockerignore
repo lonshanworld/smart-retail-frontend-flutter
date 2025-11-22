@@ -1,0 +1,40 @@
+# Build artifacts
+build/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test coverage
+coverage/
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+*.md
+README.md
+
+# Android/iOS specific (not needed for web build)
+android/
+ios/
+linux/
+macos/
+windows/
+test/
+
+# Local config (will be provided via docker-compose)
+.env.local
+.env.production
