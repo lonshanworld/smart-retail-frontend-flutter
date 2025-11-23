@@ -34,7 +34,10 @@ class SaleDetailView extends GetView<SaleDetailController> {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: Text(controller.errorMessage.value, style: const TextStyle(color: Colors.red)),
+          child: Text(
+            controller.errorMessage.value,
+            style: const TextStyle(color: Colors.red),
+          ),
         ),
       );
     }
@@ -65,7 +68,9 @@ class SaleDetailView extends GetView<SaleDetailController> {
         children: [
           Text(
             'Sale Details',
-            style: Get.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+            style: Get.textTheme.headlineMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
@@ -87,11 +92,20 @@ class SaleDetailView extends GetView<SaleDetailController> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildInfoRow(Icons.store, 'Shop ID:', sale.shopId),
-            _buildInfoRow(Icons.person_outline, 'Merchant ID:', sale.merchantId),
+            _buildInfoRow(
+              Icons.person_outline,
+              'Merchant ID:',
+              sale.merchantId,
+            ),
             if (sale.notes != null && sale.notes!.isNotEmpty)
               _buildInfoRow(Icons.notes, 'Notes:', sale.notes!),
             const Divider(height: 24),
-            _buildTotalRow('Subtotal', currencyFormat.format(sale.totalAmount + (sale.discountAmount ?? 0))),
+            _buildTotalRow(
+              'Subtotal',
+              currencyFormat.format(
+                sale.totalAmount + (sale.discountAmount ?? 0),
+              ),
+            ),
             if (sale.discountAmount != null && sale.discountAmount! > 0)
               _buildTotalRow(
                 'Discount',
@@ -104,12 +118,18 @@ class SaleDetailView extends GetView<SaleDetailController> {
               isBold: true,
             ),
             const Divider(height: 24),
-            _buildInfoRow(Icons.payment, 'Payment Type:', sale.paymentType.capitalizeFirst ?? sale.paymentType),
             _buildInfoRow(
-              Icons.credit_card, 
-              'Payment Status:', 
+              Icons.payment,
+              'Payment Type:',
+              sale.paymentType.capitalizeFirst ?? sale.paymentType,
+            ),
+            _buildInfoRow(
+              Icons.credit_card,
+              'Payment Status:',
               sale.paymentStatus.capitalizeFirst ?? sale.paymentStatus,
-              valueColor: sale.paymentStatus == 'succeeded' ? Colors.green : Colors.orange,
+              valueColor: sale.paymentStatus == 'succeeded'
+                  ? Colors.green
+                  : Colors.orange,
             ),
           ],
         ),
@@ -126,9 +146,16 @@ class SaleDetailView extends GetView<SaleDetailController> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Items Sold (${items.length})', style: Get.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+            Text(
+              'Items Sold (${items.length})',
+              style: Get.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             const SizedBox(height: 12),
-            ...items.map((item) => _buildItemTile(item, currencyFormat)).toList(),
+            ...items
+                .map((item) => _buildItemTile(item, currencyFormat))
+                .toList(),
           ],
         ),
       ),
@@ -145,18 +172,31 @@ class SaleDetailView extends GetView<SaleDetailController> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(item.itemName ?? 'N/A', style: const TextStyle(fontWeight: FontWeight.bold)),
-                Text('${item.quantitySold} x ${currencyFormat.format(item.sellingPriceAtSale)}'),
+                Text(
+                  item.itemName ?? 'N/A',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  '${item.quantitySold} x ${currencyFormat.format(item.sellingPriceAtSale)}',
+                ),
               ],
             ),
           ),
-          Text(currencyFormat.format(item.subtotal), style: const TextStyle(fontWeight: FontWeight.bold)),
+          Text(
+            currencyFormat.format(item.subtotal),
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value, {Color? valueColor}) {
+  Widget _buildInfoRow(
+    IconData icon,
+    String label,
+    String value, {
+    Color? valueColor,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
@@ -164,20 +204,42 @@ class SaleDetailView extends GetView<SaleDetailController> {
           Icon(icon, size: 18, color: Colors.grey.shade600),
           const SizedBox(width: 12),
           Text('$label ', style: const TextStyle(fontWeight: FontWeight.bold)),
-          Expanded(child: Text(value, style: TextStyle(color: valueColor), textAlign: TextAlign.end)),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(color: valueColor),
+              textAlign: TextAlign.end,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildTotalRow(String label, String value, {bool isBold = false, Color? color}) {
+  Widget _buildTotalRow(
+    String label,
+    String value, {
+    bool isBold = false,
+    Color? color,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(fontWeight: isBold ? FontWeight.bold : FontWeight.normal)),
-          Text(value, style: TextStyle(fontWeight: isBold ? FontWeight.bold : FontWeight.normal, color: color)),
+          Text(
+            label,
+            style: TextStyle(
+              fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+              color: color,
+            ),
+          ),
         ],
       ),
     );

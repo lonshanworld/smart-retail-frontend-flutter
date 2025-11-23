@@ -43,10 +43,30 @@ class MerchantStocksView extends GetView<MerchantStocksController> {
           child: ResponsiveDataTable(
             items: controller.inventoryItems,
             columns: const [
-              DataColumn(label: Text('Item', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('SKU', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('Category', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('Price', style: TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(
+                label: Text(
+                  'Item',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'SKU',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'Category',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'Price',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
             ],
             buildCells: (item) => [
               DataCell(
@@ -54,7 +74,11 @@ class MerchantStocksView extends GetView<MerchantStocksController> {
                   children: [
                     CircleAvatar(
                       backgroundColor: AppColors.merchant.shade100,
-                      child: Icon(Icons.inventory_2, color: AppColors.merchant, size: 20),
+                      child: Icon(
+                        Icons.inventory_2,
+                        color: AppColors.merchant,
+                        size: 20,
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -66,7 +90,10 @@ class MerchantStocksView extends GetView<MerchantStocksController> {
                   ],
                 ),
                 onTap: () async {
-                  final result = await Get.toNamed(Routes.MERCHANT_INVENTORY_EDIT, arguments: item);
+                  final result = await Get.toNamed(
+                    Routes.MERCHANT_INVENTORY_EDIT,
+                    arguments: item,
+                  );
                   if (result == true) {
                     controller.fetchInventoryItems();
                   }
@@ -75,7 +102,10 @@ class MerchantStocksView extends GetView<MerchantStocksController> {
               DataCell(
                 Text(item.sku ?? 'No SKU'),
                 onTap: () async {
-                  final result = await Get.toNamed(Routes.MERCHANT_INVENTORY_EDIT, arguments: item);
+                  final result = await Get.toNamed(
+                    Routes.MERCHANT_INVENTORY_EDIT,
+                    arguments: item,
+                  );
                   if (result == true) {
                     controller.fetchInventoryItems();
                   }
@@ -83,7 +113,10 @@ class MerchantStocksView extends GetView<MerchantStocksController> {
               ),
               DataCell(
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.merchant.shade50,
                     borderRadius: BorderRadius.circular(12),
@@ -97,7 +130,10 @@ class MerchantStocksView extends GetView<MerchantStocksController> {
                   ),
                 ),
                 onTap: () async {
-                  final result = await Get.toNamed(Routes.MERCHANT_INVENTORY_EDIT, arguments: item);
+                  final result = await Get.toNamed(
+                    Routes.MERCHANT_INVENTORY_EDIT,
+                    arguments: item,
+                  );
                   if (result == true) {
                     controller.fetchInventoryItems();
                   }
@@ -112,7 +148,10 @@ class MerchantStocksView extends GetView<MerchantStocksController> {
                   ),
                 ),
                 onTap: () async {
-                  final result = await Get.toNamed(Routes.MERCHANT_INVENTORY_EDIT, arguments: item);
+                  final result = await Get.toNamed(
+                    Routes.MERCHANT_INVENTORY_EDIT,
+                    arguments: item,
+                  );
                   if (result == true) {
                     controller.fetchInventoryItems();
                   }
@@ -122,7 +161,11 @@ class MerchantStocksView extends GetView<MerchantStocksController> {
             buildMobileCard: (item) => DataRowCard(
               leading: CircleAvatar(
                 backgroundColor: AppColors.merchant.shade100,
-                child: Icon(Icons.inventory_2, color: AppColors.merchant, size: 20),
+                child: Icon(
+                  Icons.inventory_2,
+                  color: AppColors.merchant,
+                  size: 20,
+                ),
               ),
               title: item.name,
               subtitle: item.sku ?? 'No SKU',
@@ -139,7 +182,10 @@ class MerchantStocksView extends GetView<MerchantStocksController> {
                 ),
               ],
               onTap: () async {
-                final result = await Get.toNamed(Routes.MERCHANT_INVENTORY_EDIT, arguments: item);
+                final result = await Get.toNamed(
+                  Routes.MERCHANT_INVENTORY_EDIT,
+                  arguments: item,
+                );
                 if (result == true) {
                   controller.fetchInventoryItems();
                 }

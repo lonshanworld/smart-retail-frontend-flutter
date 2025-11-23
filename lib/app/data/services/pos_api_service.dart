@@ -8,6 +8,7 @@ import 'package:smart_retail/app/data/services/auth_service.dart';
 import 'package:smart_retail/app/services/offline_sales_service.dart';
 import 'package:smart_retail/app/services/connectivity_service.dart';
 import 'package:smart_retail/app/services/cache_manager_service.dart';
+import 'package:smart_retail/app/utils/response_utils.dart';
 
 class MerchantPosApiService extends GetxService {
   final GetConnect _connect = Get.find<GetConnect>();
@@ -16,15 +17,71 @@ class MerchantPosApiService extends GetxService {
 
   final Map<String, List<InventoryItem>> _mockProductsByShop = {
     'shop-0': [
-      InventoryItem(id: 'prod_001', merchantId: 'mock-merchant', name: 'Espresso', sku: 'BEV-001', sellingPrice: 2.50, createdAt: DateTime.now(), updatedAt: DateTime.now()),
-      InventoryItem(id: 'prod_002', merchantId: 'mock-merchant', name: 'Latte', sku: 'BEV-002', sellingPrice: 3.50, createdAt: DateTime.now(), updatedAt: DateTime.now()),
-      InventoryItem(id: 'prod_101', merchantId: 'mock-merchant', name: 'Croissant', sku: 'PST-001', sellingPrice: 2.95, createdAt: DateTime.now(), updatedAt: DateTime.now()),
-      InventoryItem(id: 'prod_201', merchantId: 'mock-merchant', name: 'Ham & Cheese Sandwich', sku: 'SND-001', sellingPrice: 7.50, createdAt: DateTime.now(), updatedAt: DateTime.now()),
+      InventoryItem(
+        id: 'prod_001',
+        merchantId: 'mock-merchant',
+        name: 'Espresso',
+        sku: 'BEV-001',
+        sellingPrice: 2.50,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      ),
+      InventoryItem(
+        id: 'prod_002',
+        merchantId: 'mock-merchant',
+        name: 'Latte',
+        sku: 'BEV-002',
+        sellingPrice: 3.50,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      ),
+      InventoryItem(
+        id: 'prod_101',
+        merchantId: 'mock-merchant',
+        name: 'Croissant',
+        sku: 'PST-001',
+        sellingPrice: 2.95,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      ),
+      InventoryItem(
+        id: 'prod_201',
+        merchantId: 'mock-merchant',
+        name: 'Ham & Cheese Sandwich',
+        sku: 'SND-001',
+        sellingPrice: 7.50,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      ),
     ],
     'shop-1': [
-      InventoryItem(id: 'prod_102', merchantId: 'mock-merchant', name: 'Chocolate Muffin', sku: 'PST-002', sellingPrice: 3.25, createdAt: DateTime.now(), updatedAt: DateTime.now()),
-      InventoryItem(id: 'prod_103', merchantId: 'mock-merchant', name: 'Blueberry Scone', sku: 'PST-003', sellingPrice: 3.50, createdAt: DateTime.now(), updatedAt: DateTime.now()),
-      InventoryItem(id: 'prod_301', merchantId: 'mock-merchant', name: 'Bag of Coffee Beans (12oz)', sku: 'MER-001', sellingPrice: 14.99, createdAt: DateTime.now(), updatedAt: DateTime.now()),
+      InventoryItem(
+        id: 'prod_102',
+        merchantId: 'mock-merchant',
+        name: 'Chocolate Muffin',
+        sku: 'PST-002',
+        sellingPrice: 3.25,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      ),
+      InventoryItem(
+        id: 'prod_103',
+        merchantId: 'mock-merchant',
+        name: 'Blueberry Scone',
+        sku: 'PST-003',
+        sellingPrice: 3.50,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      ),
+      InventoryItem(
+        id: 'prod_301',
+        merchantId: 'mock-merchant',
+        name: 'Bag of Coffee Beans (12oz)',
+        sku: 'MER-001',
+        sellingPrice: 14.99,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      ),
     ],
     'shop-2': [], // An empty shop for testing
   };
@@ -58,10 +115,13 @@ class MerchantPosApiService extends GetxService {
   /// - If device is offline, returns cached products
   /// - If cache is expired but offline, still returns cached products
   /// - Logs warning when returning expired cache
-  Future<List<InventoryItem>> searchProducts(String shopId, String searchTerm) async {
+  Future<List<InventoryItem>> searchProducts(
+    String shopId,
+    String searchTerm,
+  ) async {
     CacheManagerService? cacheManagerService;
     ConnectivityService? connectivityService;
-    
+
     try {
       cacheManagerService = Get.find<CacheManagerService>();
       connectivityService = Get.find<ConnectivityService>();
@@ -75,15 +135,18 @@ class MerchantPosApiService extends GetxService {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(milliseconds: 400));
       final productsForShop = _mockProductsByShop[shopId] ?? [];
-      
+
       if (searchTerm.isEmpty) {
         return productsForShop;
       }
-      
+
       return productsForShop
-          .where((p) => 
-              p.name.toLowerCase().contains(searchTerm.toLowerCase()) || 
-              (p.sku?.toLowerCase().contains(searchTerm.toLowerCase()) ?? false))
+          .where(
+            (p) =>
+                p.name.toLowerCase().contains(searchTerm.toLowerCase()) ||
+                (p.sku?.toLowerCase().contains(searchTerm.toLowerCase()) ??
+                    false),
+          )
           .toList();
     }
     // =========================================================================
@@ -96,25 +159,31 @@ class MerchantPosApiService extends GetxService {
       );
 
       if (response.isOk && response.body['data'] != null) {
-        final products = (response.body['data'] as List)
-            .map((p) => InventoryItem.fromJson(p))
+        final rawList = asList(response.body['data']);
+        final products = rawList
+            .map((p) => InventoryItem.fromJson(Map<String, dynamic>.from(p)))
             .toList();
-        
+
         // Cache the products for offline use
         if (cacheManagerService != null) {
+          final toCache = rawList
+              .map((e) => Map<String, dynamic>.from(e as Map))
+              .toList();
           await cacheManagerService.cacheProducts(
-            response.body['data'] as List<Map<String, dynamic>>,
+            toCache,
             'merchant-${_authService.hashCode}', // Temporary merchant ID
           );
         }
-        
+
         return products;
       } else {
-        throw Exception(response.body?['message'] ?? 'Failed to fetch products');
+        throw Exception(
+          response.body?['message'] ?? 'Failed to fetch products',
+        );
       }
     } catch (e) {
       print('[POS API] Error fetching products: $e');
-      
+
       // Try to return cached products if offline
       bool isOnline = connectivityService?.isOnline.value ?? true;
       if (!isOnline && cacheManagerService != null) {
@@ -122,25 +191,28 @@ class MerchantPosApiService extends GetxService {
         final cachedProducts = await cacheManagerService.getCachedProducts(
           'merchant-${_authService.hashCode}', // Temporary merchant ID
         );
-        
+
         if (cachedProducts != null && cachedProducts.isNotEmpty) {
           final products = cachedProducts
               .map((p) => InventoryItem.fromJson(p))
               .toList();
-          
+
           // Filter by search term
           if (searchTerm.isEmpty) {
             return products;
           }
-          
+
           return products
-              .where((p) => 
-                  p.name.toLowerCase().contains(searchTerm.toLowerCase()) || 
-                  (p.sku?.toLowerCase().contains(searchTerm.toLowerCase()) ?? false))
+              .where(
+                (p) =>
+                    p.name.toLowerCase().contains(searchTerm.toLowerCase()) ||
+                    (p.sku?.toLowerCase().contains(searchTerm.toLowerCase()) ??
+                        false),
+              )
               .toList();
         }
       }
-      
+
       rethrow;
     }
   }
@@ -166,7 +238,7 @@ class MerchantPosApiService extends GetxService {
   Future<List<Promotion>> getActivePromotions(String shopId) async {
     CacheManagerService? cacheManagerService;
     ConnectivityService? connectivityService;
-    
+
     try {
       cacheManagerService = Get.find<CacheManagerService>();
       connectivityService = Get.find<ConnectivityService>();
@@ -175,7 +247,7 @@ class MerchantPosApiService extends GetxService {
     }
 
     print('🔍 [POS API] Requesting promotions for shop: $shopId');
-    
+
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(milliseconds: 300));
       print('✅ [POS API] Development mode - returning 2 mock promotions');
@@ -215,7 +287,7 @@ class MerchantPosApiService extends GetxService {
 
     try {
       print('📡 [POS API] Calling: ${_baseUrl}/promotions?shopId=$shopId');
-      
+
       final response = await _connect.get(
         '$_baseUrl/promotions',
         headers: await _getHeaders(),
@@ -226,35 +298,46 @@ class MerchantPosApiService extends GetxService {
       print('📥 [POS API] Response body: ${response.body}');
 
       if (response.isOk && response.body['data'] != null) {
-        final promotions = (response.body['data'] as List).map((p) => Promotion.fromJson(p)).toList();
-        print('✅ [POS API] Successfully parsed ${promotions.length} promotion(s)');
-        
+        final rawList = asList(response.body['data']);
+        final promotions = rawList
+            .map((p) => Promotion.fromJson(Map<String, dynamic>.from(p)))
+            .toList();
+        print(
+          '✅ [POS API] Successfully parsed ${promotions.length} promotion(s)',
+        );
+
         // Cache the promotions for offline use
         if (cacheManagerService != null) {
+          final toCache = rawList.map((e) => Map<String, dynamic>.from(e as Map)).toList();
           await cacheManagerService.cachePromotions(
-            response.body['data'] as List<Map<String, dynamic>>,
+            toCache,
             'merchant-${_authService.hashCode}', // Temporary merchant ID
           );
         }
-        
+
         if (promotions.isNotEmpty) {
           for (var promo in promotions) {
-            final minSpendText = promo.minSpend > 0 ? 'min: \$${promo.minSpend.toStringAsFixed(2)}' : 'no minimum';
-            print('   • ${promo.name}: ${promo.type} ${promo.value} ($minSpendText)');
+            final minSpendText = promo.minSpend > 0
+                ? 'min: \$${promo.minSpend.toStringAsFixed(2)}'
+                : 'no minimum';
+            print(
+              '   • ${promo.name}: ${promo.type} ${promo.value} ($minSpendText)',
+            );
           }
         } else {
           print('⚠️  [POS API] Response contained empty promotions array');
         }
-        
+
         return promotions;
       } else {
-        final errorMsg = response.body?['message'] ?? 'Failed to fetch promotions';
+        final errorMsg =
+            response.body?['message'] ?? 'Failed to fetch promotions';
         print('❌ [POS API] Error: $errorMsg');
         throw Exception(errorMsg);
       }
     } catch (e) {
       print('[POS API] Error fetching promotions: $e');
-      
+
       // Try to return cached promotions if offline
       bool isOnline = connectivityService?.isOnline.value ?? true;
       if (!isOnline && cacheManagerService != null) {
@@ -262,14 +345,12 @@ class MerchantPosApiService extends GetxService {
         final cachedPromotions = await cacheManagerService.getCachedPromotions(
           'merchant-${_authService.hashCode}', // Temporary merchant ID
         );
-        
+
         if (cachedPromotions != null && cachedPromotions.isNotEmpty) {
-          return cachedPromotions
-              .map((p) => Promotion.fromJson(p))
-              .toList();
+          return cachedPromotions.map((p) => Promotion.fromJson(p)).toList();
         }
       }
-      
+
       rethrow;
     }
   }
@@ -306,7 +387,7 @@ class MerchantPosApiService extends GetxService {
     // Get offline services
     OfflineSalesService? offlineSalesService;
     ConnectivityService? connectivityService;
-    
+
     try {
       offlineSalesService = Get.find<OfflineSalesService>();
     } catch (e) {
@@ -316,7 +397,9 @@ class MerchantPosApiService extends GetxService {
     try {
       connectivityService = Get.find<ConnectivityService>();
     } catch (e) {
-      print('⚠️  [POS API] ConnectivityService not initialized yet, assuming online');
+      print(
+        '⚠️  [POS API] ConnectivityService not initialized yet, assuming online',
+      );
     }
 
     // =========================================================================
@@ -327,7 +410,7 @@ class MerchantPosApiService extends GetxService {
 
       final saleId = 'sale-${DateTime.now().millisecondsSinceEpoch}';
       final now = DateTime.now();
-      
+
       final saleItems = (saleData['items'] as List).map((item) {
         final quantity = item['quantity'] as int;
         final price = item['sellingPriceAtSale'] as double;
@@ -363,15 +446,15 @@ class MerchantPosApiService extends GetxService {
 
     if (!isOnline && offlineSalesService != null) {
       print('[POS API] 🔴 Device is offline - queueing sale for later sync');
-      
+
       // Queue the sale for offline processing
       final saleQueued = await offlineSalesService.processSale(saleData);
-      
+
       if (saleQueued) {
         // Create a temporary local sale object for offline mode
         final saleId = 'sale-offline-${DateTime.now().millisecondsSinceEpoch}';
         final now = DateTime.now();
-        
+
         final saleItems = (saleData['items'] as List).map((item) {
           final quantity = item['quantity'] as int;
           final price = item['sellingPriceAtSale'] as double;
@@ -410,32 +493,36 @@ class MerchantPosApiService extends GetxService {
     // If online, attempt to send to backend
     print('[POS API] 🟢 Device is online - sending sale to backend');
     try {
-      final response = await _connect.post('$_baseUrl/checkout', saleData..['shopId'] = shopId, headers: await _getHeaders());
+      final response = await _connect.post(
+        '$_baseUrl/checkout',
+        saleData..['shopId'] = shopId,
+        headers: await _getHeaders(),
+      );
 
       if (response.statusCode == 201 && response.body['data'] != null) {
         print('[POS API] ✅ Sale processed successfully online');
-        return Sale.fromJson(response.body['data']);
+        return Sale.fromJson(asMap(response.body['data']));
       } else {
         final errorMsg = response.body?['message'] ?? 'Checkout failed';
         print('[POS API] ❌ Backend returned error: $errorMsg');
-        
+
         // If backend fails, queue for offline retry if service is available
         if (offlineSalesService != null) {
           print('[POS API] ⚠️  Queuing sale for retry...');
           await offlineSalesService.processSale(saleData);
         }
-        
+
         throw Exception(errorMsg);
       }
     } catch (e) {
       print('[POS API] ❌ Error sending sale to backend: $e');
-      
+
       // On network error, queue for offline retry if service is available
       if (offlineSalesService != null) {
         print('[POS API] ⚠️  Queuing sale for offline retry...');
         await offlineSalesService.processSale(saleData);
       }
-      
+
       rethrow;
     }
   }

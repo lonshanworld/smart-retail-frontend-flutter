@@ -48,9 +48,10 @@ class AdminDashboardView extends GetView<AdminDashboardController> {
                     label: const Text('Retry'),
                     onPressed: () => controller.fetchDashboardSummary(),
                     style: ElevatedButton.styleFrom(
-                        backgroundColor: colorScheme.errorContainer,
-                        foregroundColor: colorScheme.onErrorContainer),
-                  )
+                      backgroundColor: colorScheme.errorContainer,
+                      foregroundColor: colorScheme.onErrorContainer,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -66,13 +67,16 @@ class AdminDashboardView extends GetView<AdminDashboardController> {
                 children: [
                   const Icon(Icons.info_outline, size: 48),
                   const SizedBox(height: 16),
-                  const Text('No dashboard data available.', style: TextStyle(fontSize: 16)),
+                  const Text(
+                    'No dashboard data available.',
+                    style: TextStyle(fontSize: 16),
+                  ),
                   const SizedBox(height: 16),
                   ElevatedButton.icon(
                     icon: const Icon(Icons.refresh),
                     label: const Text('Fetch Data'),
                     onPressed: () => controller.fetchDashboardSummary(),
-                  )
+                  ),
                 ],
               ),
             ),
@@ -82,9 +86,21 @@ class AdminDashboardView extends GetView<AdminDashboardController> {
         final summary = controller.summaryData.value!;
 
         return ResponsiveLayoutBuilder(
-          mobile: (_) => _buildKpiGrid(context, summary, crossAxisCount: 2, isMobile: true),
+          mobile: (_) => _buildKpiGrid(
+            context,
+            summary,
+            crossAxisCount: 2,
+            isMobile: true,
+          ),
           tablet: (_) => _buildKpiGrid(context, summary, crossAxisCount: 3),
-          desktop: (_) => _buildKpiGrid(context, summary, crossAxisCount: 4, mainAxisSpacing: 24, crossAxisSpacing: 24, padding: const EdgeInsets.all(24)),
+          desktop: (_) => _buildKpiGrid(
+            context,
+            summary,
+            crossAxisCount: 4,
+            mainAxisSpacing: 24,
+            crossAxisSpacing: 24,
+            padding: const EdgeInsets.all(24),
+          ),
         );
       }),
     );
@@ -100,10 +116,30 @@ class AdminDashboardView extends GetView<AdminDashboardController> {
     bool isMobile = false,
   }) {
     final kpiData = [
-      _KpiItemData('Active Merchants', summary.totalActiveMerchants, Icons.storefront_outlined, Colors.blue),
-      _KpiItemData('Active Staff', summary.totalActiveStaff, Icons.people_alt_outlined, Colors.green),
-      _KpiItemData('Active Shops', summary.totalActiveShops, Icons.store_mall_directory_outlined, Colors.orange),
-      _KpiItemData('Products Listed', summary.totalProductsListed, Icons.inventory_2_outlined, Colors.purple),
+      _KpiItemData(
+        'Active Merchants',
+        summary.totalActiveMerchants,
+        Icons.storefront_outlined,
+        Colors.blue,
+      ),
+      _KpiItemData(
+        'Active Staff',
+        summary.totalActiveStaff,
+        Icons.people_alt_outlined,
+        Colors.green,
+      ),
+      _KpiItemData(
+        'Active Shops',
+        summary.totalActiveShops,
+        Icons.store_mall_directory_outlined,
+        Colors.orange,
+      ),
+      _KpiItemData(
+        'Products Listed',
+        summary.totalProductsListed,
+        Icons.inventory_2_outlined,
+        Colors.purple,
+      ),
     ];
 
     return GridView.builder(
@@ -159,7 +195,9 @@ class _KpiCard extends StatelessWidget {
                     data.title,
                     style: textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: isDarkMode ? data.color.shade200 : data.color.shade700,
+                      color: isDarkMode
+                          ? data.color.shade200
+                          : data.color.shade700,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),

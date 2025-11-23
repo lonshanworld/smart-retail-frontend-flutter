@@ -4,14 +4,17 @@ import 'package:get/get.dart';
 import 'package:smart_retail/app/data/models/shop_model.dart';
 import 'package:smart_retail/app/data/services/shop_api_service.dart';
 import 'package:smart_retail/app/routes/app_pages.dart';
+import 'package:smart_retail/app/utils/dialog_utils.dart';
 
 class AdminShopsController extends GetxController {
   final ShopApiService _shopApiService = Get.find<ShopApiService>();
 
   final RxList<Shop> shops = <Shop>[].obs;
-  final RxBool isLoading = true.obs; // True initially to show loading on first fetch
+  final RxBool isLoading =
+      true.obs; // True initially to show loading on first fetch
   final RxnString errorMessage = RxnString();
-  final RxBool isProcessingAction = false.obs; // For row-specific actions like delete/toggle
+  final RxBool isProcessingAction =
+      false.obs; // For row-specific actions like delete/toggle
 
   // Pagination State
   final RxInt currentPage = 1.obs;
@@ -33,23 +36,41 @@ class AdminShopsController extends GetxController {
     super.onInit();
 
     nameFilterController = TextEditingController(text: nameFilter.value);
-    merchantIdFilterController = TextEditingController(text: merchantIdFilter.value);
+    merchantIdFilterController = TextEditingController(
+      text: merchantIdFilter.value,
+    );
 
     nameFilterController.addListener(() {
-      if (nameFilter.value != (nameFilterController.text.trim().isEmpty ? null : nameFilterController.text.trim())) {
-        nameFilter.value = nameFilterController.text.trim().isEmpty ? null : nameFilterController.text.trim();
+      if (nameFilter.value !=
+          (nameFilterController.text.trim().isEmpty
+              ? null
+              : nameFilterController.text.trim())) {
+        nameFilter.value = nameFilterController.text.trim().isEmpty
+            ? null
+            : nameFilterController.text.trim();
       }
     });
     merchantIdFilterController.addListener(() {
-      if (merchantIdFilter.value != (merchantIdFilterController.text.trim().isEmpty ? null : merchantIdFilterController.text.trim())) {
-        merchantIdFilter.value = merchantIdFilterController.text.trim().isEmpty ? null : merchantIdFilterController.text.trim();
+      if (merchantIdFilter.value !=
+          (merchantIdFilterController.text.trim().isEmpty
+              ? null
+              : merchantIdFilterController.text.trim())) {
+        merchantIdFilter.value = merchantIdFilterController.text.trim().isEmpty
+            ? null
+            : merchantIdFilterController.text.trim();
       }
     });
 
-    debounce(nameFilter, (_) => fetchShops(resetPage: true), 
-      time: const Duration(milliseconds: 600));
-    debounce(merchantIdFilter, (_) => fetchShops(resetPage: true), 
-      time: const Duration(milliseconds: 600));
+    debounce(
+      nameFilter,
+      (_) => fetchShops(resetPage: true),
+      time: const Duration(milliseconds: 600),
+    );
+    debounce(
+      merchantIdFilter,
+      (_) => fetchShops(resetPage: true),
+      time: const Duration(milliseconds: 600),
+    );
 
     fetchShops(); // Initial fetch
   }
@@ -59,12 +80,14 @@ class AdminShopsController extends GetxController {
       currentPage.value = 1;
     }
     isLoading.value = true;
-    errorMessage.value = null; 
+    errorMessage.value = null;
     if (resetPage || currentPage.value == 1) {
-       // shops.clear(); 
+      // shops.clear();
     }
 
-    print("[AdminShopsController] Fetching shops for page ${currentPage.value} with filters: Name=${nameFilter.value}, Active=${isActiveFilter.value}, Merchant=${merchantIdFilter.value}");
+    print(
+      "[AdminShopsController] Fetching shops for page ${currentPage.value} with filters: Name=${nameFilter.value}, Active=${isActiveFilter.value}, Merchant=${merchantIdFilter.value}",
+    );
 
     final response = await _shopApiService.adminListShops(
       page: currentPage.value,
@@ -78,11 +101,13 @@ class AdminShopsController extends GetxController {
       if (currentPage.value == 1 || resetPage) {
         shops.assignAll(response.shops);
       } else {
-        shops.assignAll(response.shops); 
+        shops.assignAll(response.shops);
       }
       totalItems.value = response.pagination.totalItems;
       totalPages.value = response.pagination.totalPages;
-      print("[AdminShopsController] Fetched ${response.shops.length} shops. Total items: ${totalItems.value}");
+      print(
+        "[AdminShopsController] Fetched ${response.shops.length} shops. Total items: ${totalItems.value}",
+      );
     } else {
       errorMessage.value = "Failed to fetch shops. Please try again.";
       if (currentPage.value == 1 || resetPage) shops.clear();
@@ -103,11 +128,11 @@ class AdminShopsController extends GetxController {
       fetchShops();
     }
   }
-  
+
   void goToPage(int page) {
     if (page > 0 && page <= totalPages.value && page != currentPage.value) {
-        currentPage.value = page;
-        fetchShops();
+      currentPage.value = page;
+      fetchShops();
     }
   }
 
@@ -123,7 +148,7 @@ class AdminShopsController extends GetxController {
     isActiveFilter.value = isActive;
     fetchShops(resetPage: true);
   }
-  
+
   void clearFilters() {
     nameFilterController.text = '';
     merchantIdFilterController.text = '';
@@ -135,34 +160,45 @@ class AdminShopsController extends GetxController {
 
   Future<void> goToAddShopPage() async {
     final result = await Get.toNamed(Routes.ADMIN_ADD_EDIT_SHOP);
-    if (result == true) { 
-      fetchShops(resetPage: true); 
+    if (result == true) {
+      fetchShops(resetPage: true);
     }
   }
 
   Future<void> goToEditShopPage(Shop shop) async {
-    final result = await Get.toNamed(Routes.ADMIN_ADD_EDIT_SHOP, arguments: shop);
-    if (result == true) { 
-      fetchShops(); 
+    final result = await Get.toNamed(
+      Routes.ADMIN_ADD_EDIT_SHOP,
+      arguments: shop,
+    );
+    if (result == true) {
+      fetchShops();
     }
   }
 
   void goToShopDetailsPage(Shop shop) {
     Get.toNamed(Routes.ADMIN_SHOP_DETAIL, arguments: shop)?.then((result) {
-      if (result == true) { 
-          fetchShops(); 
+      if (result == true) {
+        fetchShops();
       }
     });
   }
 
   Future<void> deleteShop(String shopId, String shopName) async {
-    bool? confirmDelete = await Get.dialog<bool>(
-      AlertDialog(
+    bool? confirmDelete = await DialogUtils.showCustomDialog<bool>(
+      dialog: AlertDialog(
         title: const Text('Confirm Delete'),
-        content: Text('Are you sure you want to delete shop "$shopName"? This action cannot be undone.'),
+        content: Text(
+          'Are you sure you want to delete shop "$shopName"? This action cannot be undone.',
+        ),
         actions: [
-          TextButton(onPressed: () => Get.back(result: false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Get.back(result: true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Get.back(result: true),
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
         ],
       ),
     );
@@ -172,14 +208,14 @@ class AdminShopsController extends GetxController {
       try {
         final success = await _shopApiService.adminDeleteShop(shopId);
         if (success) {
-          Get.snackbar("Success", "Shop \"$shopName\" deleted successfully.", snackPosition: SnackPosition.BOTTOM);
+          DialogUtils.showSuccess("Shop \"$shopName\" deleted successfully.");
           if (shops.length == 1 && currentPage.value > 1) {
             currentPage.value--;
           }
-          fetchShops(); 
-        } 
+          fetchShops();
+        }
       } catch (e) {
-        Get.snackbar("Error", "An unexpected error occurred: ${e.toString()}", backgroundColor: Colors.red, colorText: Colors.white, snackPosition: SnackPosition.BOTTOM);
+        DialogUtils.showError("An unexpected error occurred: ${e.toString()}");
       } finally {
         isProcessingAction.value = false;
       }
@@ -188,22 +224,30 @@ class AdminShopsController extends GetxController {
 
   Future<void> toggleShopStatus(Shop shop) async {
     if (shop.id == null) return;
-    bool currentStatus = shop.isActive ?? true; 
+    bool currentStatus = shop.isActive ?? true;
     bool newStatus = !currentStatus;
     isProcessingAction.value = true;
     try {
-      final success = await _shopApiService.adminSetShopActiveStatus(shop.id!, newStatus);
+      final success = await _shopApiService.adminSetShopActiveStatus(
+        shop.id!,
+        newStatus,
+      );
       if (success) {
-        Get.snackbar("Success", "Shop \"${shop.name}\" status updated to ${newStatus ? 'Active' : 'Inactive'}.", snackPosition: SnackPosition.BOTTOM);
+        DialogUtils.showSuccess(
+          "Shop \"${shop.name}\" status updated to ${newStatus ? 'Active' : 'Inactive'}.",
+        );
         int index = shops.indexWhere((s) => s.id == shop.id);
         if (index != -1) {
-          shops[index] = shops[index].copyWith(isActive: newStatus, updatedAt: DateTime.now());
+          shops[index] = shops[index].copyWith(
+            isActive: newStatus,
+            updatedAt: DateTime.now(),
+          );
         } else {
-          fetchShops(); 
+          fetchShops();
         }
-      } 
+      }
     } catch (e) {
-      Get.snackbar("Error", "Failed to update shop status: ${e.toString()}", backgroundColor: Colors.red, colorText: Colors.white, snackPosition: SnackPosition.BOTTOM);
+      DialogUtils.showError("Failed to update shop status: ${e.toString()}");
     } finally {
       isProcessingAction.value = false;
     }

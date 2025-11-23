@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:smart_retail/app/utils/dialog_utils.dart';
 import 'package:smart_retail/app/data/services/shop_api_service.dart';
 import './shop_stock_controller.dart'; // To refresh the previous screen
 
@@ -44,7 +45,11 @@ class StockInController extends GetxController {
         return;
       }
 
-      final stockedItem = await _shopApiService.stockInItem(shopId, inventoryItemId, quantityAdded);
+      final stockedItem = await _shopApiService.stockInItem(
+        shopId,
+        inventoryItemId,
+        quantityAdded,
+      );
 
       if (stockedItem != null) {
         Get.back(); // Go back to the shop stock list view
@@ -54,22 +59,20 @@ class StockInController extends GetxController {
           final shopStockCtrl = Get.find<ShopStockController>();
           // Check if the controller instance is the one for the current shopId
           if (shopStockCtrl.shopId == shopId) {
-             await shopStockCtrl.fetchShopStock(showLoading: false);
+            await shopStockCtrl.fetchShopStock(showLoading: false);
           }
         }
-        Get.snackbar(
-          'Stock Updated',
-          'Successfully added $quantityAdded to ${itemName}. New quantity: ${stockedItem.quantity}',
-          snackPosition: SnackPosition.BOTTOM,
+        DialogUtils.showInfo(
+          'Successfully added $quantityAdded to ${itemName}. New quantity: ${stockedItem.quantity}'
         );
       } else {
         errorMessage.value = 'Failed to stock in item. Please try again.';
-        Get.snackbar('Error', errorMessage.value!, snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
+        DialogUtils.showError(errorMessage.value!);
       }
     } catch (e) {
       print("Error stocking in item: $e");
       errorMessage.value = 'An error occurred: ${e.toString()}';
-      Get.snackbar('Error', errorMessage.value!, snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
+      DialogUtils.showError(errorMessage.value!);
     } finally {
       isSaving.value = false;
     }

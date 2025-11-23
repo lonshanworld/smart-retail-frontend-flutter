@@ -20,7 +20,7 @@ class AdminAddEditShopView extends GetView<AdminAddEditShopController> {
             icon: const Icon(Icons.save),
             onPressed: () => controller.saveShop(),
             tooltip: 'Save Shop',
-          )
+          ),
         ],
       ),
       body: Container(
@@ -28,10 +28,7 @@ class AdminAddEditShopView extends GetView<AdminAddEditShopController> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              AppColors.admin.shade50.withOpacity(0.3),
-              Colors.white,
-            ],
+            colors: [AppColors.admin.shade50.withOpacity(0.3), Colors.white],
           ),
         ),
         child: SingleChildScrollView(
@@ -62,13 +59,17 @@ class AdminAddEditShopView extends GetView<AdminAddEditShopController> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Obx(() => Text(
-                              controller.isEditMode.value ? 'Edit Shop Details' : 'Create New Shop',
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
+                            Obx(
+                              () => Text(
+                                controller.isEditMode.value
+                                    ? 'Edit Shop Details'
+                                    : 'Create New Shop',
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                            )),
+                            ),
                             const SizedBox(height: 4),
                             Text(
                               'Manage shop information',
@@ -104,7 +105,7 @@ class AdminAddEditShopView extends GetView<AdminAddEditShopController> {
                             ),
                           );
                         }
-                        
+
                         return DropdownButtonFormField<String>(
                           value: controller.selectedMerchantId.value,
                           decoration: InputDecoration(
@@ -115,17 +116,27 @@ class AdminAddEditShopView extends GetView<AdminAddEditShopController> {
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.grey.shade300),
+                              borderSide: BorderSide(
+                                color: Colors.grey.shade300,
+                              ),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: AppColors.admin, width: 2),
+                              borderSide: BorderSide(
+                                color: AppColors.admin,
+                                width: 2,
+                              ),
                             ),
                             filled: true,
                             fillColor: Colors.grey.shade50,
-                            prefixIcon: Icon(Icons.business, color: AppColors.admin),
+                            prefixIcon: Icon(
+                              Icons.business,
+                              color: AppColors.admin,
+                            ),
                           ),
-                          items: controller.merchants.map((UserSelectionItem merchant) {
+                          items: controller.merchants.map((
+                            UserSelectionItem merchant,
+                          ) {
                             return DropdownMenuItem<String>(
                               value: merchant.id,
                               child: Text(
@@ -169,11 +180,17 @@ class AdminAddEditShopView extends GetView<AdminAddEditShopController> {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: AppColors.admin, width: 2),
+                            borderSide: BorderSide(
+                              color: AppColors.admin,
+                              width: 2,
+                            ),
                           ),
                           filled: true,
                           fillColor: Colors.grey.shade50,
-                          prefixIcon: Icon(Icons.storefront, color: AppColors.admin),
+                          prefixIcon: Icon(
+                            Icons.storefront,
+                            color: AppColors.admin,
+                          ),
                         ),
                         validator: controller.validateName,
                       ),
@@ -192,11 +209,17 @@ class AdminAddEditShopView extends GetView<AdminAddEditShopController> {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: AppColors.admin, width: 2),
+                            borderSide: BorderSide(
+                              color: AppColors.admin,
+                              width: 2,
+                            ),
                           ),
                           filled: true,
                           fillColor: Colors.grey.shade50,
-                          prefixIcon: Icon(Icons.location_on_outlined, color: AppColors.admin),
+                          prefixIcon: Icon(
+                            Icons.location_on_outlined,
+                            color: AppColors.admin,
+                          ),
                         ),
                         maxLines: 3,
                         validator: controller.validateAddress,
@@ -216,54 +239,65 @@ class AdminAddEditShopView extends GetView<AdminAddEditShopController> {
                         title: 'Status',
                       ),
                       const SizedBox(height: 16),
-                      Obx(() => SwitchListTile(
-                        title: const Text('Active Status'),
-                        subtitle: Text(
-                          controller.isActive.value 
-                              ? 'Shop is currently active' 
-                              : 'Shop is currently inactive',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade600,
+                      Obx(
+                        () => SwitchListTile(
+                          title: const Text('Active Status'),
+                          subtitle: Text(
+                            controller.isActive.value
+                                ? 'Shop is currently active'
+                                : 'Shop is currently inactive',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade600,
+                            ),
                           ),
+                          value: controller.isActive.value,
+                          onChanged: (bool value) {
+                            controller.isActive.value = value;
+                          },
+                          activeColor: AppColors.success,
+                          contentPadding: EdgeInsets.zero,
                         ),
-                        value: controller.isActive.value,
-                        onChanged: (bool value) {
-                          controller.isActive.value = value;
-                        },
-                        activeColor: AppColors.success,
-                        contentPadding: EdgeInsets.zero,
-                      )),
+                      ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 24),
 
                 // Save Button
-                Obx(() => ElevatedButton.icon(
-                      icon: controller.isLoading.value 
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2.0,
-                              ),
-                            )
-                          : const Icon(Icons.save),
-                      label: Text(controller.isLoading.value ? 'Saving...' : 'Save Shop'),
-                      onPressed: controller.isLoading.value ? null : () => controller.saveShop(),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.admin,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 2,
+                Obx(
+                  () => ElevatedButton.icon(
+                    icon: controller.isLoading.value
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2.0,
+                            ),
+                          )
+                        : const Icon(Icons.save),
+                    label: Text(
+                      controller.isLoading.value ? 'Saving...' : 'Save Shop',
+                    ),
+                    onPressed: controller.isLoading.value
+                        ? null
+                        : () => controller.saveShop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.admin,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      textStyle: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
                       ),
-                    )),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 2,
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -286,10 +320,7 @@ class AdminAddEditShopView extends GetView<AdminAddEditShopController> {
         const SizedBox(width: 12),
         Text(
           title,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
       ],
     );

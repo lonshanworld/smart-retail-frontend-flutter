@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:smart_retail/app/data/models/inventory_item_model.dart';
 import 'package:smart_retail/app/data/services/inventory_api_service.dart';
+import 'package:smart_retail/app/utils/dialog_utils.dart';
 
 class AddInventoryItemController extends GetxController {
-  final InventoryApiService _inventoryApiService = Get.find<InventoryApiService>();
+  final InventoryApiService _inventoryApiService =
+      Get.find<InventoryApiService>();
 
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
@@ -48,16 +50,18 @@ class AddInventoryItemController extends GetxController {
         updatedAt: DateTime.now(),
       );
 
-      final createdItem = await _inventoryApiService.createInventoryItem(newItem);
+      final createdItem = await _inventoryApiService.createInventoryItem(
+        newItem,
+      );
 
       if (createdItem != null) {
         Get.back(result: true);
-        Get.snackbar('Success', 'Inventory item created successfully');
+        DialogUtils.showSuccess('Inventory item created successfully');
       } else {
-        Get.snackbar('Error', 'Failed to create inventory item');
+        DialogUtils.showError('Failed to create inventory item');
       }
     } catch (e) {
-      Get.snackbar('Error', e.toString());
+      DialogUtils.showError(e.toString());
     } finally {
       isLoading.value = false;
     }

@@ -5,6 +5,7 @@ import 'package:smart_retail/app/modules/merchant/shop_inventory/shop_inventory_
 import 'package:smart_retail/app/widgets/app_drawer.dart';
 import 'package:smart_retail/app/widgets/app_colors.dart';
 import 'package:smart_retail/app/widgets/responsive_data_table.dart';
+import 'package:smart_retail/app/utils/dialog_utils.dart';
 
 class ShopInventoryView extends GetView<ShopInventoryController> {
   const ShopInventoryView({super.key});
@@ -14,7 +15,8 @@ class ShopInventoryView extends GetView<ShopInventoryController> {
     return Scaffold(
       appBar: AppBar(
         title: Obx(() {
-          final shopName = controller.selectedShopDetails.value?.name ?? 'Shop Inventory';
+          final shopName =
+              controller.selectedShopDetails.value?.name ?? 'Shop Inventory';
           final viewTitle = controller.selectedItemForHistory.value != null
               ? 'History for ${controller.selectedItemForHistory.value!.name}'
               : shopName;
@@ -32,7 +34,7 @@ class ShopInventoryView extends GetView<ShopInventoryController> {
               );
             }
             return Container();
-          })
+          }),
         ],
       ),
       drawer: const AppDrawer(),
@@ -58,22 +60,25 @@ class ShopInventoryView extends GetView<ShopInventoryController> {
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8.0),
               ),
-              suffixIcon: Obx(() => controller.searchTerm.value.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear),
-                      onPressed: () {
-                        controller.searchController.clear();
-                        controller.onSearchChanged('');
-                      },
-                    )
-                  : const SizedBox.shrink()),
+              suffixIcon: Obx(
+                () => controller.searchTerm.value.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          controller.searchController.clear();
+                          controller.onSearchChanged('');
+                        },
+                      )
+                    : const SizedBox.shrink(),
+              ),
             ),
             onChanged: controller.onSearchChanged,
           ),
         ),
         Expanded(
           child: Obx(() {
-            if (controller.isLoadingInventory.value && controller.shopInventoryList.isEmpty) {
+            if (controller.isLoadingInventory.value &&
+                controller.shopInventoryList.isEmpty) {
               return const Center(child: CircularProgressIndicator());
             }
             if (controller.shopInventoryList.isEmpty) {
@@ -91,10 +96,30 @@ class ShopInventoryView extends GetView<ShopInventoryController> {
               child: ResponsiveDataTable<InventoryItem>(
                 items: controller.shopInventoryList,
                 columns: const [
-                  DataColumn(label: Text('Item', style: TextStyle(fontWeight: FontWeight.bold))),
-                  DataColumn(label: Text('SKU', style: TextStyle(fontWeight: FontWeight.bold))),
-                  DataColumn(label: Text('Stock', style: TextStyle(fontWeight: FontWeight.bold))),
-                  DataColumn(label: Text('Actions', style: TextStyle(fontWeight: FontWeight.bold))),
+                  DataColumn(
+                    label: Text(
+                      'Item',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  DataColumn(
+                    label: Text(
+                      'SKU',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  DataColumn(
+                    label: Text(
+                      'Stock',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  DataColumn(
+                    label: Text(
+                      'Actions',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
                 ],
                 buildCells: (item) => [
                   DataCell(
@@ -102,7 +127,11 @@ class ShopInventoryView extends GetView<ShopInventoryController> {
                       children: [
                         CircleAvatar(
                           backgroundColor: AppColors.merchant.shade100,
-                          child: Icon(Icons.inventory_2, color: AppColors.merchant, size: 20),
+                          child: Icon(
+                            Icons.inventory_2,
+                            color: AppColors.merchant,
+                            size: 20,
+                          ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -121,15 +150,19 @@ class ShopInventoryView extends GetView<ShopInventoryController> {
                   ),
                   DataCell(
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
-                        color: (item.stockInfo?.firstOrNull?.quantity ?? 0) > 10 
-                            ? Colors.green.shade50 
+                        color: (item.stockInfo?.firstOrNull?.quantity ?? 0) > 10
+                            ? Colors.green.shade50
                             : Colors.red.shade50,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: (item.stockInfo?.firstOrNull?.quantity ?? 0) > 10 
-                              ? Colors.green 
+                          color:
+                              (item.stockInfo?.firstOrNull?.quantity ?? 0) > 10
+                              ? Colors.green
                               : Colors.red,
                           width: 1,
                         ),
@@ -137,8 +170,9 @@ class ShopInventoryView extends GetView<ShopInventoryController> {
                       child: Text(
                         '${item.stockInfo?.firstOrNull?.quantity ?? 0}',
                         style: TextStyle(
-                          color: (item.stockInfo?.firstOrNull?.quantity ?? 0) > 10 
-                              ? Colors.green.shade700 
+                          color:
+                              (item.stockInfo?.firstOrNull?.quantity ?? 0) > 10
+                              ? Colors.green.shade700
                               : Colors.red.shade700,
                           fontWeight: FontWeight.bold,
                         ),
@@ -155,28 +189,29 @@ class ShopInventoryView extends GetView<ShopInventoryController> {
                           controller.fetchStockMovementsForItem(item);
                         }
                       },
-                      itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                        const PopupMenuItem<String>(
-                          value: 'adjust',
-                          child: Row(
-                            children: [
-                              Icon(Icons.edit, size: 20),
-                              SizedBox(width: 8),
-                              Text('Adjust Stock'),
-                            ],
-                          ),
-                        ),
-                        const PopupMenuItem<String>(
-                          value: 'history',
-                          child: Row(
-                            children: [
-                              Icon(Icons.history, size: 20),
-                              SizedBox(width: 8),
-                              Text('View History'),
-                            ],
-                          ),
-                        ),
-                      ],
+                      itemBuilder: (BuildContext context) =>
+                          <PopupMenuEntry<String>>[
+                            const PopupMenuItem<String>(
+                              value: 'adjust',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.edit, size: 20),
+                                  SizedBox(width: 8),
+                                  Text('Adjust Stock'),
+                                ],
+                              ),
+                            ),
+                            const PopupMenuItem<String>(
+                              value: 'history',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.history, size: 20),
+                                  SizedBox(width: 8),
+                                  Text('View History'),
+                                ],
+                              ),
+                            ),
+                          ],
                       icon: const Icon(Icons.more_vert),
                     ),
                   ),
@@ -184,7 +219,11 @@ class ShopInventoryView extends GetView<ShopInventoryController> {
                 buildMobileCard: (item) => DataRowCard(
                   leading: CircleAvatar(
                     backgroundColor: AppColors.merchant.shade100,
-                    child: Icon(Icons.inventory_2, color: AppColors.merchant, size: 20),
+                    child: Icon(
+                      Icons.inventory_2,
+                      color: AppColors.merchant,
+                      size: 20,
+                    ),
                   ),
                   title: item.name,
                   subtitle: item.sku ?? 'No SKU',
@@ -203,28 +242,29 @@ class ShopInventoryView extends GetView<ShopInventoryController> {
                         controller.fetchStockMovementsForItem(item);
                       }
                     },
-                    itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                      const PopupMenuItem<String>(
-                        value: 'adjust',
-                        child: Row(
-                          children: [
-                            Icon(Icons.edit, size: 20),
-                            SizedBox(width: 8),
-                            Text('Adjust Stock'),
-                          ],
-                        ),
-                      ),
-                      const PopupMenuItem<String>(
-                        value: 'history',
-                        child: Row(
-                          children: [
-                            Icon(Icons.history, size: 20),
-                            SizedBox(width: 8),
-                            Text('View History'),
-                          ],
-                        ),
-                      ),
-                    ],
+                    itemBuilder: (BuildContext context) =>
+                        <PopupMenuEntry<String>>[
+                          const PopupMenuItem<String>(
+                            value: 'adjust',
+                            child: Row(
+                              children: [
+                                Icon(Icons.edit, size: 20),
+                                SizedBox(width: 8),
+                                Text('Adjust Stock'),
+                              ],
+                            ),
+                          ),
+                          const PopupMenuItem<String>(
+                            value: 'history',
+                            child: Row(
+                              children: [
+                                Icon(Icons.history, size: 20),
+                                SizedBox(width: 8),
+                                Text('View History'),
+                              ],
+                            ),
+                          ),
+                        ],
                     icon: const Icon(Icons.more_vert),
                   ),
                   onTap: () => _showAdjustStockDialog(item),
@@ -248,30 +288,56 @@ class ShopInventoryView extends GetView<ShopInventoryController> {
           child: Text(
             'No stock movement history found for ${controller.selectedItemForHistory.value?.name ?? "this item"}.',
             textAlign: TextAlign.center,
-             style: Get.textTheme.titleMedium,
+            style: Get.textTheme.titleMedium,
           ),
         );
       }
       return ResponsiveDataTable(
         items: controller.stockMovements,
         columns: const [
-          DataColumn(label: Text('Movement Type', style: TextStyle(fontWeight: FontWeight.bold))),
-          DataColumn(label: Text('Quantity Changed', style: TextStyle(fontWeight: FontWeight.bold))),
-          DataColumn(label: Text('New Qty', style: TextStyle(fontWeight: FontWeight.bold))),
-          DataColumn(label: Text('Date', style: TextStyle(fontWeight: FontWeight.bold))),
-          DataColumn(label: Text('Details', style: TextStyle(fontWeight: FontWeight.bold))),
+          DataColumn(
+            label: Text(
+              'Movement Type',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          DataColumn(
+            label: Text(
+              'Quantity Changed',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          DataColumn(
+            label: Text(
+              'New Qty',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          DataColumn(
+            label: Text('Date', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+          DataColumn(
+            label: Text(
+              'Details',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
         ],
         buildCells: (movement) => [
           DataCell(
             Row(
               children: [
                 Icon(
-                  movement.quantityChanged > 0 
-                      ? Icons.add_circle_outline 
-                      : (movement.quantityChanged < 0 ? Icons.remove_circle_outline : Icons.sync),
-                  color: movement.quantityChanged > 0 
-                      ? Colors.green 
-                      : (movement.quantityChanged < 0 ? Colors.red : Colors.grey),
+                  movement.quantityChanged > 0
+                      ? Icons.add_circle_outline
+                      : (movement.quantityChanged < 0
+                            ? Icons.remove_circle_outline
+                            : Icons.sync),
+                  color: movement.quantityChanged > 0
+                      ? Colors.green
+                      : (movement.quantityChanged < 0
+                            ? Colors.red
+                            : Colors.grey),
                   size: 20,
                 ),
                 const SizedBox(width: 8),
@@ -288,17 +354,21 @@ class ShopInventoryView extends GetView<ShopInventoryController> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: movement.quantityChanged > 0 
-                    ? Colors.green.shade50 
-                    : (movement.quantityChanged < 0 ? Colors.red.shade50 : Colors.grey.shade50),
+                color: movement.quantityChanged > 0
+                    ? Colors.green.shade50
+                    : (movement.quantityChanged < 0
+                          ? Colors.red.shade50
+                          : Colors.grey.shade50),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
                 '${movement.quantityChanged > 0 ? '+' : ''}${movement.quantityChanged}',
                 style: TextStyle(
-                  color: movement.quantityChanged > 0 
-                      ? Colors.green.shade700 
-                      : (movement.quantityChanged < 0 ? Colors.red.shade700 : Colors.grey.shade700),
+                  color: movement.quantityChanged > 0
+                      ? Colors.green.shade700
+                      : (movement.quantityChanged < 0
+                            ? Colors.red.shade700
+                            : Colors.grey.shade700),
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -336,15 +406,19 @@ class ShopInventoryView extends GetView<ShopInventoryController> {
         ],
         buildMobileCard: (movement) => DataRowCard(
           leading: CircleAvatar(
-            backgroundColor: movement.quantityChanged > 0 
-                ? Colors.green.shade100 
-                : (movement.quantityChanged < 0 ? Colors.red.shade100 : Colors.grey.shade100),
+            backgroundColor: movement.quantityChanged > 0
+                ? Colors.green.shade100
+                : (movement.quantityChanged < 0
+                      ? Colors.red.shade100
+                      : Colors.grey.shade100),
             child: Icon(
-              movement.quantityChanged > 0 
-                  ? Icons.add_circle_outline 
-                  : (movement.quantityChanged < 0 ? Icons.remove_circle_outline : Icons.sync),
-              color: movement.quantityChanged > 0 
-                  ? Colors.green 
+              movement.quantityChanged > 0
+                  ? Icons.add_circle_outline
+                  : (movement.quantityChanged < 0
+                        ? Icons.remove_circle_outline
+                        : Icons.sync),
+              color: movement.quantityChanged > 0
+                  ? Colors.green
                   : (movement.quantityChanged < 0 ? Colors.red : Colors.grey),
               size: 20,
             ),
@@ -355,7 +429,8 @@ class ShopInventoryView extends GetView<ShopInventoryController> {
             DetailRow(
               icon: Icons.numbers,
               label: 'Change',
-              value: '${movement.quantityChanged > 0 ? '+' : ''}${movement.quantityChanged}',
+              value:
+                  '${movement.quantityChanged > 0 ? '+' : ''}${movement.quantityChanged}',
             ),
             DetailRow(
               icon: Icons.inventory,
@@ -401,22 +476,29 @@ class ShopInventoryView extends GetView<ShopInventoryController> {
       'return_to_supplier',
     ];
 
-    Get.dialog(
-      AlertDialog(
+    DialogUtils.showCustomDialog(
+      dialog: AlertDialog(
         title: Text('Adjust Stock for ${item.name}'),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Text('Current Quantity: ${item.stockInfo?.firstOrNull?.quantity ?? 0}'),
+              Text(
+                'Current Quantity: ${item.stockInfo?.firstOrNull?.quantity ?? 0}',
+              ),
               const SizedBox(height: 15),
               DropdownButtonFormField<String>(
                 value: movementType,
-                decoration: const InputDecoration(labelText: 'Adjustment Type', border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                  labelText: 'Adjustment Type',
+                  border: OutlineInputBorder(),
+                ),
                 items: movementTypes.map((String value) {
                   return DropdownMenuItem<String>(
                     value: value,
-                    child: Text(value.replaceAll('_', ' ').capitalizeFirst ?? value),
+                    child: Text(
+                      value.replaceAll('_', ' ').capitalizeFirst ?? value,
+                    ),
                   );
                 }).toList(),
                 onChanged: (String? newValue) {
@@ -439,7 +521,11 @@ class ShopInventoryView extends GetView<ShopInventoryController> {
                 },
               ),
               const SizedBox(height: 15),
-              Obx(() => Text('New Quantity will be: ${(item.stockInfo?.firstOrNull?.quantity ?? 0) + quantityChange.value}')),
+              Obx(
+                () => Text(
+                  'New Quantity will be: ${(item.stockInfo?.firstOrNull?.quantity ?? 0) + quantityChange.value}',
+                ),
+              ),
               const SizedBox(height: 15),
               TextField(
                 controller: reasonController,
@@ -453,27 +539,45 @@ class ShopInventoryView extends GetView<ShopInventoryController> {
           ),
         ),
         actions: <Widget>[
-          TextButton(
-            child: const Text('Cancel'),
-            onPressed: () => Get.back(),
-          ),
+          TextButton(child: const Text('Cancel'), onPressed: () => Get.back()),
           ElevatedButton(
             child: const Text('Adjust'),
             onPressed: () {
               final int qtyChanged = int.tryParse(quantityController.text) ?? 0;
               if (qtyChanged == 0) {
-                Get.snackbar('Invalid Input', 'Quantity change cannot be zero.',
-                    snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.orange, colorText: Colors.white);
+                DialogUtils.showError(
+                  'Quantity change cannot be zero.',
+                  snackPosition: SnackPosition.BOTTOM,
+                  backgroundColor: Colors.orange,
+                  colorText: Colors.white,
+                );
                 return;
               }
-              if (((item.stockInfo?.firstOrNull?.quantity ?? 0) + qtyChanged) < 0 && !['sale', 'damaged_goods', 'theft_loss', 'expired_goods', 'return_to_supplier'].contains(movementType) ) {
-                  Get.snackbar('Invalid Operation', 'Stock quantity cannot go below zero for this adjustment type.',
-                      snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
-                  return;
+              if (((item.stockInfo?.firstOrNull?.quantity ?? 0) + qtyChanged) <
+                      0 &&
+                  ![
+                    'sale',
+                    'damaged_goods',
+                    'theft_loss',
+                    'expired_goods',
+                    'return_to_supplier',
+                  ].contains(movementType)) {
+                DialogUtils.showError(
+                  'Stock quantity cannot go below zero for this adjustment type.',
+                  snackPosition: SnackPosition.BOTTOM,
+                  backgroundColor: Colors.red,
+                  colorText: Colors.white,
+                );
+                return;
               }
 
               Get.back();
-              controller.adjustStock(item, qtyChanged, movementType, reasonController.text);
+              controller.adjustStock(
+                item,
+                qtyChanged,
+                movementType,
+                reasonController.text,
+              );
             },
           ),
         ],

@@ -13,7 +13,7 @@ class OfflineSalesService extends GetxService {
   final Rx<List<Map<String, dynamic>>> pendingSales = Rx([]);
   final Rx<List<Map<String, dynamic>>> syncedSales = Rx([]);
   final Rx<int> totalPendingCount = Rx(0);
-  
+
   // Alias for UI compatibility
   Rx<int> get pendingSalesCount => totalPendingCount;
 
@@ -97,7 +97,9 @@ class OfflineSalesService extends GetxService {
       await _localDatabaseService.queueSale(saleData);
       await _loadPendingSales();
 
-      print('[OfflineSales] Sale queued successfully. Total pending: ${totalPendingCount.value}');
+      print(
+        '[OfflineSales] Sale queued successfully. Total pending: ${totalPendingCount.value}',
+      );
       return true;
     } catch (e) {
       print('[OfflineSales] Error queuing sale: $e');

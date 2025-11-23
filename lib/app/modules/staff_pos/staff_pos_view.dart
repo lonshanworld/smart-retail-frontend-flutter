@@ -19,10 +19,7 @@ class StaffPosView extends GetView<StaffPosController> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              AppColors.staff.shade50.withOpacity(0.3),
-              Colors.white,
-            ],
+            colors: [AppColors.staff.shade50.withOpacity(0.3), Colors.white],
           ),
         ),
         child: LayoutBuilder(
@@ -51,10 +48,7 @@ class StaffPosView extends GetView<StaffPosController> {
             ],
           ),
         ),
-        Expanded(
-          flex: 1,
-          child: _buildCartPanel(),
-        ),
+        Expanded(flex: 1, child: _buildCartPanel()),
       ],
     );
   }
@@ -68,7 +62,11 @@ class StaffPosView extends GetView<StaffPosController> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Get.bottomSheet(_buildCartPanel(), isScrollControlled: true, backgroundColor: Get.theme.cardColor),
+        onPressed: () => Get.bottomSheet(
+          _buildCartPanel(),
+          isScrollControlled: true,
+          backgroundColor: Get.theme.cardColor,
+        ),
         label: const Text('View Cart'),
         icon: const Icon(Icons.shopping_cart_outlined),
       ),
@@ -83,7 +81,9 @@ class StaffPosView extends GetView<StaffPosController> {
         decoration: const InputDecoration(
           hintText: 'Search products...',
           prefixIcon: Icon(Icons.search),
-          border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(25.0))),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.all(Radius.circular(25.0)),
+          ),
         ),
       ),
     );
@@ -119,16 +119,29 @@ class StaffPosView extends GetView<StaffPosController> {
                   Expanded(
                     child: Container(
                       color: Colors.grey[200],
-                      child: const Icon(Icons.image_outlined, size: 50, color: Colors.grey),
+                      child: const Icon(
+                        Icons.image_outlined,
+                        size: 50,
+                        color: Colors.grey,
+                      ),
                     ),
                   ),
                   Padding(
                     padding: const EdgeInsets.all(8.0),
-                    child: Text(product.name, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 2, overflow: TextOverflow.ellipsis),
+                    child: Text(
+                      product.name,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                    child: Text(NumberFormat.currency(symbol: '\$').format(product.sellingPrice)),
+                    child: Text(
+                      NumberFormat.currency(
+                        symbol: '\$',
+                      ).format(product.sellingPrice),
+                    ),
                   ),
                   const SizedBox(height: 8),
                 ],
@@ -171,18 +184,38 @@ class StaffPosView extends GetView<StaffPosController> {
           const Divider(),
           _buildTotals(),
           const SizedBox(height: 16),
-          Obx(() => ElevatedButton.icon(
-                onPressed: controller.isCheckingOut.value || controller.cartItems.isEmpty ? null : controller.handleCheckout,
-                icon: controller.isCheckingOut.value ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 3)) : const Icon(Icons.payment),
-                label: Text(controller.isCheckingOut.value ? 'Processing...' : 'Checkout (${currencyFormatter.format(controller.cartTotal)})'),
-                style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
-              )),
+          Obx(
+            () => ElevatedButton.icon(
+              onPressed:
+                  controller.isCheckingOut.value || controller.cartItems.isEmpty
+                  ? null
+                  : controller.handleCheckout,
+              icon: controller.isCheckingOut.value
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 3),
+                    )
+                  : const Icon(Icons.payment),
+              label: Text(
+                controller.isCheckingOut.value
+                    ? 'Processing...'
+                    : 'Checkout (${currencyFormatter.format(controller.cartTotal)})',
+              ),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+            ),
+          ),
           const SizedBox(height: 8),
           TextButton.icon(
             onPressed: controller.clearCart,
             icon: const Icon(Icons.delete_sweep_outlined, color: Colors.red),
-            label: const Text('Clear Cart', style: TextStyle(color: Colors.red)),
-          )
+            label: const Text(
+              'Clear Cart',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
         ],
       ),
     );
@@ -192,56 +225,89 @@ class StaffPosView extends GetView<StaffPosController> {
     final currencyFormatter = NumberFormat.currency(symbol: '\$');
     return ListTile(
       contentPadding: EdgeInsets.zero,
-      title: Text(cartItem.product.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+      title: Text(
+        cartItem.product.name,
+        style: const TextStyle(fontWeight: FontWeight.bold),
+      ),
       subtitle: Text(currencyFormatter.format(cartItem.product.sellingPrice)),
-      trailing: Obx(() => Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          IconButton(icon: const Icon(Icons.remove_circle_outline), onPressed: () => controller.decrementCartItem(cartItem)),
-          Text(cartItem.quantity.value.toString(), style: Get.textTheme.titleMedium),
-          IconButton(icon: const Icon(Icons.add_circle_outline), onPressed: () => controller.incrementCartItem(cartItem)),
-        ],
-      )),
+      trailing: Obx(
+        () => Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.remove_circle_outline),
+              onPressed: () => controller.decrementCartItem(cartItem),
+            ),
+            Text(
+              cartItem.quantity.value.toString(),
+              style: Get.textTheme.titleMedium,
+            ),
+            IconButton(
+              icon: const Icon(Icons.add_circle_outline),
+              onPressed: () => controller.incrementCartItem(cartItem),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
   Widget _buildTotals() {
     final currencyFormatter = NumberFormat.currency(symbol: '\$');
-    return Obx(() => Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Subtotal', style: Get.textTheme.bodyLarge),
-                Text(currencyFormatter.format(controller.cartSubtotal), style: Get.textTheme.bodyLarge),
-              ],
-            ),
-            if (controller.discountAmount > 0) ...[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Discount', style: Get.textTheme.bodyLarge?.copyWith(color: Colors.green)),
-                  Text('-${currencyFormatter.format(controller.discountAmount)}', style: Get.textTheme.bodyLarge?.copyWith(color: Colors.green)),
-                ],
+    return Obx(
+      () => Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Subtotal', style: Get.textTheme.bodyLarge),
+              Text(
+                currencyFormatter.format(controller.cartSubtotal),
+                style: Get.textTheme.bodyLarge,
               ),
             ],
+          ),
+          if (controller.discountAmount > 0) ...[
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Tax (5%)', style: Get.textTheme.bodyLarge),
-                Text(currencyFormatter.format(controller.taxAmount), style: Get.textTheme.bodyLarge),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Total', style: Get.textTheme.headlineSmall),
-                Text(currencyFormatter.format(controller.cartTotal), style: Get.textTheme.headlineSmall?.copyWith(color: Get.theme.colorScheme.primary)),
+                Text(
+                  'Discount',
+                  style: Get.textTheme.bodyLarge?.copyWith(color: Colors.green),
+                ),
+                Text(
+                  '-${currencyFormatter.format(controller.discountAmount)}',
+                  style: Get.textTheme.bodyLarge?.copyWith(color: Colors.green),
+                ),
               ],
             ),
           ],
-        ));
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Tax (5%)', style: Get.textTheme.bodyLarge),
+              Text(
+                currencyFormatter.format(controller.taxAmount),
+                style: Get.textTheme.bodyLarge,
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Total', style: Get.textTheme.headlineSmall),
+              Text(
+                currencyFormatter.format(controller.cartTotal),
+                style: Get.textTheme.headlineSmall?.copyWith(
+                  color: Get.theme.colorScheme.primary,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildPromotionSelector() {
@@ -299,11 +365,17 @@ class StaffPosView extends GetView<StaffPosController> {
                         : '\$${controller.selectedPromotion.value!.value.toStringAsFixed(2)} off',
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
-                  Text('Min. spend: \$${controller.selectedPromotion.value!.minSpend.toStringAsFixed(2)}'),
-                  if (controller.cartSubtotal < controller.selectedPromotion.value!.minSpend)
+                  Text(
+                    'Min. spend: \$${controller.selectedPromotion.value!.minSpend.toStringAsFixed(2)}',
+                  ),
+                  if (controller.cartSubtotal <
+                      controller.selectedPromotion.value!.minSpend)
                     Text(
                       'Need \$${(controller.selectedPromotion.value!.minSpend - controller.cartSubtotal).toStringAsFixed(2)} more to apply',
-                      style: const TextStyle(color: Colors.orange, fontSize: 12),
+                      style: const TextStyle(
+                        color: Colors.orange,
+                        fontSize: 12,
+                      ),
                     ),
                 ],
               ),

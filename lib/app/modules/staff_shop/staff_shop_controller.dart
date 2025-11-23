@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:smart_retail/app/utils/dialog_utils.dart';
 import 'package:smart_retail/app/data/models/shop_model.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
 // CORRECTED: Import the unified StaffApiService which now handles fetching shop details.
@@ -37,17 +38,10 @@ class StaffShopController extends GetxController {
       // CORRECTED LOGIC:
       // The API service now gets the shop directly via the user's auth token.
       shop.value = await _apiService.getAssignedShop();
-
     } catch (e) {
       errorMessage.value = "Error fetching assigned shop: ${e.toString()}";
       shop.value = null; // Clear shop data on error
-      Get.snackbar(
-        "Loading Error",
-        errorMessage.value,
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
+      DialogUtils.showError(errorMessage.value, title: "Loading Error");
     } finally {
       isLoading.value = false;
     }

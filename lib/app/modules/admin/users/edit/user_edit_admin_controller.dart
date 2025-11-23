@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:smart_retail/app/data/models/user_model.dart';
 import 'package:smart_retail/app/services/admin_api_service.dart';
+import 'package:smart_retail/app/utils/dialog_utils.dart';
 
 class UserEditAdminController extends GetxController {
   final AdminApiService _apiService = Get.find<AdminApiService>();
@@ -38,16 +39,19 @@ class UserEditAdminController extends GetxController {
         'isActive': isActive.value,
       };
 
-      final updatedUser = await _apiService.adminUpdateUser(user.id, updateData);
+      final updatedUser = await _apiService.adminUpdateUser(
+        user.id,
+        updateData,
+      );
 
       if (updatedUser != null) {
         Get.back(result: true); // Go back and indicate success
-        Get.snackbar('Success', 'User details updated successfully.', snackPosition: SnackPosition.BOTTOM);
+        DialogUtils.showSuccess('User details updated successfully.');
       } else {
-        Get.snackbar('Error', 'Failed to update user. Please try again.', snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
+        DialogUtils.showError('Failed to update user. Please try again.');
       }
     } catch (e) {
-      Get.snackbar('Error', e.toString(), snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
+      DialogUtils.showError(e.toString());
     } finally {
       isSaving.value = false;
     }

@@ -5,8 +5,6 @@ import 'package:smart_retail/app/modules/admin/shops/detail/admin_shop_detail_co
 class AdminShopDetailBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut<AdminShopDetailController>(
-      () => AdminShopDetailController(),
-    );
+    Get.lazyPut<AdminShopDetailController>(() => AdminShopDetailController());
   }
 }

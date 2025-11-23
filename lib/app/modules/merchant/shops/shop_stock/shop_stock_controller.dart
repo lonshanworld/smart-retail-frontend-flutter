@@ -23,7 +23,7 @@ class ShopStockController extends GetxController {
   final _debouncer = Debouncer(delay: const Duration(milliseconds: 500));
 
   ShopStockController() {
-    final Map<String, dynamic> args = Get.arguments as Map<String, dynamic>; 
+    final Map<String, dynamic> args = Get.arguments as Map<String, dynamic>;
     shopId = args['shopId'] as String;
     shopName = args['shopName'] as String? ?? 'Shop Inventory';
   }
@@ -38,7 +38,7 @@ class ShopStockController extends GetxController {
       });
     });
     ever(searchText, (_) => _filterItems());
-    ever(shopStockItems, (_) => _filterItems()); 
+    ever(shopStockItems, (_) => _filterItems());
   }
 
   Future<void> fetchShopStock({bool showLoading = true}) async {
@@ -47,8 +47,9 @@ class ShopStockController extends GetxController {
         isLoading(true);
       }
       errorMessage.value = null;
-      final PaginatedShopStockResponse? response = await _shopApiService.listInventoryForShop(shopId);
-      
+      final PaginatedShopStockResponse? response = await _shopApiService
+          .listInventoryForShop(shopId);
+
       if (response != null) {
         shopStockItems.assignAll(response.items);
       } else {
@@ -70,11 +71,13 @@ class ShopStockController extends GetxController {
     if (query.isEmpty) {
       filteredShopStockItems.assignAll(shopStockItems);
     } else {
-      filteredShopStockItems.assignAll(shopStockItems.where((item) {
-        final itemNameLower = item.itemName.toLowerCase();
-        final itemSkuLower = item.itemSku?.toLowerCase() ?? '';
-        return itemNameLower.contains(query) || itemSkuLower.contains(query);
-      }).toList());
+      filteredShopStockItems.assignAll(
+        shopStockItems.where((item) {
+          final itemNameLower = item.itemName.toLowerCase();
+          final itemSkuLower = item.itemSku?.toLowerCase() ?? '';
+          return itemNameLower.contains(query) || itemSkuLower.contains(query);
+        }).toList(),
+      );
     }
   }
 
@@ -83,24 +86,30 @@ class ShopStockController extends GetxController {
   }
 
   void goToAddStock(ShopStockItem item) {
-    Get.toNamed(Routes.MERCHANT_SHOP_STOCK_IN, arguments: {
-      'shopId': shopId,
-      'shopName': shopName, 
-      'inventoryItemId': item.inventoryItemId,
-      'itemName': item.itemName,
-      'currentQuantity': item.quantity,
-    });
+    Get.toNamed(
+      Routes.MERCHANT_SHOP_STOCK_IN,
+      arguments: {
+        'shopId': shopId,
+        'shopName': shopName,
+        'inventoryItemId': item.inventoryItemId,
+        'itemName': item.itemName,
+        'currentQuantity': item.quantity,
+      },
+    );
   }
 
   void goToAdjustStock(ShopStockItem item) {
-    Get.toNamed(Routes.MERCHANT_SHOP_STOCK_ADJUST, arguments: {
-      'shopId': shopId,
-      'shopName': shopName, 
-      'inventoryItemId': item.inventoryItemId,
-      'itemName': item.itemName,
-      'currentQuantity': item.quantity,
-      'itemSku': item.itemSku,
-    });
+    Get.toNamed(
+      Routes.MERCHANT_SHOP_STOCK_ADJUST,
+      arguments: {
+        'shopId': shopId,
+        'shopName': shopName,
+        'inventoryItemId': item.inventoryItemId,
+        'itemName': item.itemName,
+        'currentQuantity': item.quantity,
+        'itemSku': item.itemSku,
+      },
+    );
   }
 
   @override

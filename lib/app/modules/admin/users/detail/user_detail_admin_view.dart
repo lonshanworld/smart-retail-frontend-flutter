@@ -52,10 +52,7 @@ class UserDetailAdminView extends GetView<UserDetailAdminController> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              AppColors.admin.shade50.withOpacity(0.3),
-              Colors.white,
-            ],
+            colors: [AppColors.admin.shade50.withOpacity(0.3), Colors.white],
           ),
         ),
         child: Obx(() {
@@ -141,7 +138,9 @@ class UserDetailAdminView extends GetView<UserDetailAdminController> {
                           radius: 40,
                           backgroundColor: roleColor.shade100,
                           child: Text(
-                            user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
+                            user.name.isNotEmpty
+                                ? user.name[0].toUpperCase()
+                                : 'U',
                             style: TextStyle(
                               color: roleColor.shade700,
                               fontSize: 32,
@@ -172,7 +171,10 @@ class UserDetailAdminView extends GetView<UserDetailAdminController> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
                               decoration: BoxDecoration(
                                 color: roleColor.shade50,
                                 borderRadius: BorderRadius.circular(12),
@@ -200,7 +202,10 @@ class UserDetailAdminView extends GetView<UserDetailAdminController> {
                             ),
                             const SizedBox(width: 12),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
                               decoration: BoxDecoration(
                                 color: user.isActive
                                     ? AppColors.success.shade50
@@ -267,7 +272,8 @@ class UserDetailAdminView extends GetView<UserDetailAdminController> {
                             label: 'Shop Name',
                             value: user.shopName!,
                           ),
-                        if (user.roleAsEnum == UserRole.staff && user.merchantId != null)
+                        if (user.roleAsEnum == UserRole.staff &&
+                            user.merchantId != null)
                           _buildDetailRow(
                             icon: Icons.supervisor_account_outlined,
                             label: 'Merchant ID',
@@ -322,10 +328,7 @@ class UserDetailAdminView extends GetView<UserDetailAdminController> {
     );
   }
 
-  Widget _buildSectionHeader({
-    required IconData icon,
-    required String title,
-  }) {
+  Widget _buildSectionHeader({required IconData icon, required String title}) {
     return Row(
       children: [
         Container(
@@ -339,10 +342,7 @@ class UserDetailAdminView extends GetView<UserDetailAdminController> {
         const SizedBox(width: 12),
         Text(
           title,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
       ],
     );

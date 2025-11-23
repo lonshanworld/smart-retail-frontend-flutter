@@ -71,11 +71,9 @@ class ResponsiveGrid extends StatelessWidget {
           spacing: spacing,
           runSpacing: spacing,
           children: children.map((child) {
-            final width = (constraints.maxWidth - (spacing * (columns - 1))) / columns;
-            return SizedBox(
-              width: width,
-              child: child,
-            );
+            final width =
+                (constraints.maxWidth - (spacing * (columns - 1))) / columns;
+            return SizedBox(width: width, child: child);
           }).toList(),
         );
       },

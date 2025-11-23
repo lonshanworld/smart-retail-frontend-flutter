@@ -6,8 +6,6 @@ class PromotionAddEditBinding extends Bindings {
   @override
   void dependencies() {
     Get.lazyPut<PromotionApiService>(() => PromotionApiService());
-    Get.lazyPut<PromotionAddEditController>(
-      () => PromotionAddEditController(),
-    );
+    Get.lazyPut<PromotionAddEditController>(() => PromotionAddEditController());
   }
 }

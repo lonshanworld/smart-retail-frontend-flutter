@@ -19,10 +19,7 @@ class PosView extends GetView<PosController> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              AppColors.merchant.shade50.withOpacity(0.3),
-              Colors.white,
-            ],
+            colors: [AppColors.merchant.shade50.withOpacity(0.3), Colors.white],
           ),
         ),
         child: LayoutBuilder(
@@ -52,10 +49,7 @@ class PosView extends GetView<PosController> {
             ],
           ),
         ),
-        Expanded(
-          flex: 1,
-          child: _buildCartPanel(),
-        ),
+        Expanded(flex: 1, child: _buildCartPanel()),
       ],
     );
   }
@@ -70,7 +64,11 @@ class PosView extends GetView<PosController> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Get.bottomSheet(_buildCartPanel(), isScrollControlled: true, backgroundColor: Get.theme.cardColor),
+        onPressed: () => Get.bottomSheet(
+          _buildCartPanel(),
+          isScrollControlled: true,
+          backgroundColor: Get.theme.cardColor,
+        ),
         label: const Text('View Cart'),
         icon: const Icon(Icons.shopping_cart_outlined),
       ),
@@ -90,10 +88,7 @@ class PosView extends GetView<PosController> {
         return DropdownButtonFormField<Shop>(
           value: controller.selectedShop.value,
           items: controller.shopList.map((shop) {
-            return DropdownMenuItem<Shop>(
-              value: shop,
-              child: Text(shop.name),
-            );
+            return DropdownMenuItem<Shop>(value: shop, child: Text(shop.name));
           }).toList(),
           onChanged: (shop) => controller.onShopSelected(shop),
           decoration: const InputDecoration(
@@ -113,7 +108,9 @@ class PosView extends GetView<PosController> {
         decoration: const InputDecoration(
           hintText: 'Search products...',
           prefixIcon: Icon(Icons.search),
-          border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(25.0))),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.all(Radius.circular(25.0)),
+          ),
         ),
       ),
     );
@@ -149,16 +146,29 @@ class PosView extends GetView<PosController> {
                   Expanded(
                     child: Container(
                       color: Colors.grey[200],
-                      child: const Icon(Icons.image_outlined, size: 50, color: Colors.grey),
+                      child: const Icon(
+                        Icons.image_outlined,
+                        size: 50,
+                        color: Colors.grey,
+                      ),
                     ),
                   ),
                   Padding(
                     padding: const EdgeInsets.all(8.0),
-                    child: Text(product.name, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 2, overflow: TextOverflow.ellipsis),
+                    child: Text(
+                      product.name,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                    child: Text(NumberFormat.currency(symbol: '\$').format(product.sellingPrice)),
+                    child: Text(
+                      NumberFormat.currency(
+                        symbol: '\$',
+                      ).format(product.sellingPrice),
+                    ),
                   ),
                   const SizedBox(height: 8),
                 ],
@@ -203,18 +213,38 @@ class PosView extends GetView<PosController> {
           const Divider(),
           _buildTotals(),
           const SizedBox(height: 16),
-          Obx(() => ElevatedButton.icon(
-                onPressed: controller.isCheckingOut.value || controller.cartItems.isEmpty ? null : controller.handleCheckout,
-                icon: controller.isCheckingOut.value ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 3)) : const Icon(Icons.payment),
-                label: Text(controller.isCheckingOut.value ? 'Processing...' : 'Checkout (${currencyFormatter.format(controller.cartTotal)})'),
-                style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
-              )),
+          Obx(
+            () => ElevatedButton.icon(
+              onPressed:
+                  controller.isCheckingOut.value || controller.cartItems.isEmpty
+                  ? null
+                  : controller.handleCheckout,
+              icon: controller.isCheckingOut.value
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 3),
+                    )
+                  : const Icon(Icons.payment),
+              label: Text(
+                controller.isCheckingOut.value
+                    ? 'Processing...'
+                    : 'Checkout (${currencyFormatter.format(controller.cartTotal)})',
+              ),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+            ),
+          ),
           const SizedBox(height: 8),
           TextButton.icon(
             onPressed: controller.clearCart,
             icon: const Icon(Icons.delete_sweep_outlined, color: Colors.red),
-            label: const Text('Clear Cart', style: TextStyle(color: Colors.red)),
-          )
+            label: const Text(
+              'Clear Cart',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
         ],
       ),
     );
@@ -224,56 +254,89 @@ class PosView extends GetView<PosController> {
     final currencyFormatter = NumberFormat.currency(symbol: '\$');
     return ListTile(
       contentPadding: EdgeInsets.zero,
-      title: Text(cartItem.product.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+      title: Text(
+        cartItem.product.name,
+        style: const TextStyle(fontWeight: FontWeight.bold),
+      ),
       subtitle: Text(currencyFormatter.format(cartItem.product.sellingPrice)),
-      trailing: Obx(() => Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          IconButton(icon: const Icon(Icons.remove_circle_outline), onPressed: () => controller.decrementCartItem(cartItem)),
-          Text(cartItem.quantity.value.toString(), style: Get.textTheme.titleMedium),
-          IconButton(icon: const Icon(Icons.add_circle_outline), onPressed: () => controller.incrementCartItem(cartItem)),
-        ],
-      )),
+      trailing: Obx(
+        () => Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.remove_circle_outline),
+              onPressed: () => controller.decrementCartItem(cartItem),
+            ),
+            Text(
+              cartItem.quantity.value.toString(),
+              style: Get.textTheme.titleMedium,
+            ),
+            IconButton(
+              icon: const Icon(Icons.add_circle_outline),
+              onPressed: () => controller.incrementCartItem(cartItem),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
   Widget _buildTotals() {
     final currencyFormatter = NumberFormat.currency(symbol: '\$');
-    return Obx(() => Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Subtotal', style: Get.textTheme.bodyLarge),
-                Text(currencyFormatter.format(controller.cartSubtotal), style: Get.textTheme.bodyLarge),
-              ],
-            ),
-            if (controller.discountAmount > 0) ...[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Discount', style: Get.textTheme.bodyLarge?.copyWith(color: Colors.green)),
-                  Text('-${currencyFormatter.format(controller.discountAmount)}', style: Get.textTheme.bodyLarge?.copyWith(color: Colors.green)),
-                ],
+    return Obx(
+      () => Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Subtotal', style: Get.textTheme.bodyLarge),
+              Text(
+                currencyFormatter.format(controller.cartSubtotal),
+                style: Get.textTheme.bodyLarge,
               ),
             ],
+          ),
+          if (controller.discountAmount > 0) ...[
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Tax (5%)', style: Get.textTheme.bodyLarge),
-                Text(currencyFormatter.format(controller.taxAmount), style: Get.textTheme.bodyLarge),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Total', style: Get.textTheme.headlineSmall),
-                Text(currencyFormatter.format(controller.cartTotal), style: Get.textTheme.headlineSmall?.copyWith(color: Get.theme.colorScheme.primary)),
+                Text(
+                  'Discount',
+                  style: Get.textTheme.bodyLarge?.copyWith(color: Colors.green),
+                ),
+                Text(
+                  '-${currencyFormatter.format(controller.discountAmount)}',
+                  style: Get.textTheme.bodyLarge?.copyWith(color: Colors.green),
+                ),
               ],
             ),
           ],
-        ));
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Tax (5%)', style: Get.textTheme.bodyLarge),
+              Text(
+                currencyFormatter.format(controller.taxAmount),
+                style: Get.textTheme.bodyLarge,
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Total', style: Get.textTheme.headlineSmall),
+              Text(
+                currencyFormatter.format(controller.cartTotal),
+                style: Get.textTheme.headlineSmall?.copyWith(
+                  color: Get.theme.colorScheme.primary,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildPromotionSelector() {
@@ -284,7 +347,7 @@ class PosView extends GetView<PosController> {
           child: Center(child: CircularProgressIndicator()),
         );
       }
-      
+
       if (controller.availablePromotions.isEmpty) {
         return const SizedBox.shrink();
       }
@@ -292,14 +355,22 @@ class PosView extends GetView<PosController> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Apply Promotion', style: Get.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+          Text(
+            'Apply Promotion',
+            style: Get.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           const SizedBox(height: 8),
           DropdownButtonFormField<String?>(
             value: controller.selectedPromotion.value?.id,
             decoration: InputDecoration(
               prefixIcon: const Icon(Icons.local_offer),
               border: const OutlineInputBorder(),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 8,
+              ),
               hintText: 'Select a promotion',
             ),
             items: [
@@ -311,15 +382,20 @@ class PosView extends GetView<PosController> {
                 final promoText = promo.type == 'percentage'
                     ? '${promo.name} (${promo.value.toStringAsFixed(0)}% off)'
                     : '${promo.name} (\$${promo.value.toStringAsFixed(2)} off)';
-                final minSpendText = promo.minSpend > 0 ? ' - Min: \$${promo.minSpend.toStringAsFixed(2)}' : '';
-                
+                final minSpendText = promo.minSpend > 0
+                    ? ' - Min: \$${promo.minSpend.toStringAsFixed(2)}'
+                    : '';
+
                 return DropdownMenuItem<String?>(
                   value: promo.id,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(promoText, style: const TextStyle(fontWeight: FontWeight.w500)),
+                      Text(
+                        promoText,
+                        style: const TextStyle(fontWeight: FontWeight.w500),
+                      ),
                       if (minSpendText.isNotEmpty)
                         Text(minSpendText, style: Get.textTheme.bodySmall),
                     ],
@@ -331,12 +407,16 @@ class PosView extends GetView<PosController> {
               if (promoId == null) {
                 controller.selectPromotion(null);
               } else {
-                final promo = controller.availablePromotions.firstWhere((p) => p.id == promoId);
+                final promo = controller.availablePromotions.firstWhere(
+                  (p) => p.id == promoId,
+                );
                 controller.selectPromotion(promo);
               }
             },
           ),
-          if (controller.selectedPromotion.value != null && controller.cartSubtotal < controller.selectedPromotion.value!.minSpend) ...[
+          if (controller.selectedPromotion.value != null &&
+              controller.cartSubtotal <
+                  controller.selectedPromotion.value!.minSpend) ...[
             const SizedBox(height: 4),
             Text(
               'Minimum spend of \$${controller.selectedPromotion.value!.minSpend.toStringAsFixed(2)} required',

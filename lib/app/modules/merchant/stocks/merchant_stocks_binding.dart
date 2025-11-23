@@ -6,8 +6,6 @@ class MerchantStocksBinding extends Bindings {
   @override
   void dependencies() {
     Get.lazyPut<InventoryApiService>(() => InventoryApiService());
-    Get.lazyPut<MerchantStocksController>(
-      () => MerchantStocksController(),
-    );
+    Get.lazyPut<MerchantStocksController>(() => MerchantStocksController());
   }
 }

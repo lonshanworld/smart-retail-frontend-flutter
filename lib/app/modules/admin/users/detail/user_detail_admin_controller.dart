@@ -25,10 +25,12 @@ class UserDetailAdminController extends GetxController {
       user.value = passedUser; // Use the passed user directly
       isLoading.value = false; // No need to fetch if we have it
       // Optionally, still call fetchUserDetails() to ensure data is fresh if needed
-      // fetchUserDetails(); 
-    }
-     else {
-      printError(info: "UserDetailAdminController: userId not provided or invalid argument type.");
+      // fetchUserDetails();
+    } else {
+      printError(
+        info:
+            "UserDetailAdminController: userId not provided or invalid argument type.",
+      );
       errorMessage.value = "User ID not found. Cannot load details.";
       isLoading.value = false;
     }
@@ -54,7 +56,7 @@ class UserDetailAdminController extends GetxController {
   //   if (user.value != null) {
   //     Get.toNamed(Routes.ADMIN_EDIT_USER, arguments: user.value); // Example route
   //   } else {
-  //     Get.snackbar("Error", "User data not available to edit.");
+  //     DialogUtils.showError("User data not available to edit.");
   //   }
   // }
 }

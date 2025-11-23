@@ -4,8 +4,6 @@ import 'package:smart_retail/app/modules/shop_settings/shop_settings_controller.
 class ShopSettingsBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut<ShopSettingsController>(
-      () => ShopSettingsController(),
-    );
+    Get.lazyPut<ShopSettingsController>(() => ShopSettingsController());
   }
 }

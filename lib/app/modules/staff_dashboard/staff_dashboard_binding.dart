@@ -5,8 +5,6 @@ import 'package:smart_retail/app/modules/staff_dashboard/staff_dashboard_control
 class StaffDashboardBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut<StaffDashboardController>(
-      () => StaffDashboardController(),
-    );
+    Get.lazyPut<StaffDashboardController>(() => StaffDashboardController());
   }
 }

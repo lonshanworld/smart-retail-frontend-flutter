@@ -6,7 +6,8 @@ class Merchant {
   final String id; // Represents users.id for users with role = 'merchant'
   final String name;
   final String email;
-  final String? shopName; // Deprecated: For backward compatibility. Use shops list instead
+  final String?
+  shopName; // Deprecated: For backward compatibility. Use shops list instead
   final String? phone;
   final String? businessAddress;
   final bool isActive;
@@ -35,18 +36,24 @@ class Merchant {
       List<Shop> shopsList = [];
       if (json.containsKey('shops') && json['shops'] is List) {
         if (kDebugMode) {
-          print('[Merchant.fromJson] Found shops array with ${(json['shops'] as List).length} items');
+          print(
+            '[Merchant.fromJson] Found shops array with ${(json['shops'] as List).length} items',
+          );
           print('[Merchant.fromJson] Shops data: ${json['shops']}');
         }
         shopsList = (json['shops'] as List)
             .map((shopJson) => Shop.fromJson(shopJson as Map<String, dynamic>))
             .toList();
         if (kDebugMode) {
-          print('[Merchant.fromJson] Parsed ${shopsList.length} shops successfully');
+          print(
+            '[Merchant.fromJson] Parsed ${shopsList.length} shops successfully',
+          );
         }
       } else {
         if (kDebugMode) {
-          print('[Merchant.fromJson] No shops array found in JSON. Keys: ${json.keys}');
+          print(
+            '[Merchant.fromJson] No shops array found in JSON. Keys: ${json.keys}',
+          );
         }
       }
 
@@ -54,13 +61,30 @@ class Merchant {
         id: AppUtils.safeJsonString(json, 'id'), // This is the user's ID
         name: AppUtils.safeJsonString(json, 'name'),
         email: AppUtils.safeJsonString(json, 'email'),
-        shopName: AppUtils.safeJsonStringOrNull(json, 'shopName') ?? AppUtils.safeJsonStringOrNull(json, 'shop_name'), // Parse shopName with fallback
-        phone: AppUtils.safeJsonStringOrNull(json, 'phone'), // Keep parsing, even if not in current 'users' table
-        businessAddress: AppUtils.safeJsonStringOrNull(json, 'businessAddress') ?? AppUtils.safeJsonStringOrNull(json, 'business_address'), // Parse businessAddress with fallback
+        shopName:
+            AppUtils.safeJsonStringOrNull(json, 'shopName') ??
+            AppUtils.safeJsonStringOrNull(
+              json,
+              'shop_name',
+            ), // Parse shopName with fallback
+        phone: AppUtils.safeJsonStringOrNull(
+          json,
+          'phone',
+        ), // Keep parsing, even if not in current 'users' table
+        businessAddress:
+            AppUtils.safeJsonStringOrNull(json, 'businessAddress') ??
+            AppUtils.safeJsonStringOrNull(
+              json,
+              'business_address',
+            ), // Parse businessAddress with fallback
         shops: shopsList,
-        isActive: json.containsKey('isActive') 
+        isActive: json.containsKey('isActive')
             ? AppUtils.safeJsonBool(json, 'isActive', defaultValue: true)
-            : AppUtils.safeJsonBool(json, 'is_active', defaultValue: true), // Parse isActive with fallback
+            : AppUtils.safeJsonBool(
+                json,
+                'is_active',
+                defaultValue: true,
+              ), // Parse isActive with fallback
         // role: AppUtils.safeJsonString(json, 'role'), // Role is on the user object, not directly on Merchant model
         createdAt: json.containsKey('createdAt')
             ? AppUtils.safeJsonDateTime(json, 'createdAt')
@@ -79,32 +103,36 @@ class Merchant {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id, // User's ID
-        'name': name,
-        'email': email,
-        'shopName': shopName, // Changed to camelCase
-        'phone': phone, // Included for Dart model completeness, acknowledge backend may not use/store if no column
-        'businessAddress': businessAddress, // Changed to camelCase
-        'isActive': isActive, // Changed to camelCase
-        'role': 'merchant', // Reflecting that this Merchant object represents a user with this role
-        'createdAt': AppUtils.toIso8601String(createdAt), // Changed to camelCase
-        'updatedAt': AppUtils.toIso8601String(updatedAt), // Changed to camelCase
-      };
+    'id': id, // User's ID
+    'name': name,
+    'email': email,
+    'shopName': shopName, // Changed to camelCase
+    'phone':
+        phone, // Included for Dart model completeness, acknowledge backend may not use/store if no column
+    'businessAddress': businessAddress, // Changed to camelCase
+    'isActive': isActive, // Changed to camelCase
+    'role':
+        'merchant', // Reflecting that this Merchant object represents a user with this role
+    'createdAt': AppUtils.toIso8601String(createdAt), // Changed to camelCase
+    'updatedAt': AppUtils.toIso8601String(updatedAt), // Changed to camelCase
+  };
 
   // Generates a payload suitable for creating a new USER with role 'merchant'
   // via the /admin/users endpoint.
   // Password needs to be handled by the calling service/controller.
   Map<String, dynamic> toJsonForUserCreationPayload({String? password}) => {
-        // 'id' is generated by the backend upon user creation
-        'name': name,
-        'email': email,
-        if (password != null && password.isNotEmpty) 'password': password, // Password for new user
-        'role': 'merchant', // Crucial: sets the user's role
-        'shopName': shopName, // Changed to camelCase - Specific to merchants in your 'users' table
-        'isActive': isActive, // Changed to camelCase
-        // 'phone' and 'businessAddress' are omitted as they are not in the current 'users' table schema.
-        // If added to 'users' table later, they can be included here.
-      };
+    // 'id' is generated by the backend upon user creation
+    'name': name,
+    'email': email,
+    if (password != null && password.isNotEmpty)
+      'password': password, // Password for new user
+    'role': 'merchant', // Crucial: sets the user's role
+    'shopName':
+        shopName, // Changed to camelCase - Specific to merchants in your 'users' table
+    'isActive': isActive, // Changed to camelCase
+    // 'phone' and 'businessAddress' are omitted as they are not in the current 'users' table schema.
+    // If added to 'users' table later, they can be included here.
+  };
 
   Merchant copyWith({
     String? id,
@@ -126,14 +154,16 @@ class Merchant {
       email: email ?? this.email,
       shopName: clearShopName ? null : (shopName ?? this.shopName), // Updated
       phone: clearPhone ? null : (phone ?? this.phone),
-      businessAddress: clearBusinessAddress ? null : (businessAddress ?? this.businessAddress),
+      businessAddress: clearBusinessAddress
+          ? null
+          : (businessAddress ?? this.businessAddress),
       isActive: isActive ?? this.isActive,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 
-  String get displayName => name; 
+  String get displayName => name;
   String get initial => name.isNotEmpty ? name[0].toUpperCase() : '?';
 }
 
@@ -151,7 +181,11 @@ class PaginatedAdminMerchantsResponse {
   factory PaginatedAdminMerchantsResponse.fromJson(Map<String, dynamic> json) {
     // Expects 'items' (or 'users', 'data') to be a list of User objects from the backend.
     // These User objects (where role='merchant') will be mapped to Merchant Dart models.
-    var list = json['items'] as List? ?? json['users'] as List? ?? json['data'] as List? ?? [];
+    var list =
+        json['items'] as List? ??
+        json['users'] as List? ??
+        json['data'] as List? ??
+        [];
     List<Merchant> merchantsList = [];
     if (list.isNotEmpty) {
       merchantsList = list
@@ -159,10 +193,12 @@ class PaginatedAdminMerchantsResponse {
           .map((item) => Merchant.fromJson(item as Map<String, dynamic>))
           .toList();
     }
-    
+
     return PaginatedAdminMerchantsResponse(
       merchants: merchantsList,
-      pagination: PaginationInfo.fromJson(json['pagination_info'] ?? json['pagination'] ?? {}),
+      pagination: PaginationInfo.fromJson(
+        json['pagination_info'] ?? json['pagination'] ?? {},
+      ),
     );
   }
 }

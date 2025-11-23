@@ -3,7 +3,7 @@ enum UserRole {
   admin,
   merchant,
   staff,
-  unknown // For default or error cases
+  unknown, // For default or error cases
 }
 
 // Helper function to convert string to UserRole

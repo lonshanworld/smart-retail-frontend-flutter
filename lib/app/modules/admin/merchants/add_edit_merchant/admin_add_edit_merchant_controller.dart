@@ -5,6 +5,8 @@ import 'package:smart_retail/app/data/models/merchant_model.dart';
 import 'package:smart_retail/app/data/models/user_model.dart'; // Import User model
 import 'package:smart_retail/app/data/services/admin_merchant_service.dart';
 
+import 'package:smart_retail/app/utils/dialog_utils.dart';
+
 class AdminAddEditMerchantController extends GetxController {
   final AdminMerchantService adminMerchantService;
 
@@ -68,7 +70,8 @@ class AdminAddEditMerchantController extends GetxController {
   }
 
   String? validateShopName(String? value) {
-    if (value == null || value.isEmpty) return "Shop name is required for a merchant.";
+    if (value == null || value.isEmpty)
+      return "Shop name is required for a merchant.";
     if (value.length < 2) return "Shop name must be at least 2 characters.";
     if (value.length > 100) return "Shop name cannot exceed 100 characters.";
     return null;
@@ -96,7 +99,8 @@ class AdminAddEditMerchantController extends GetxController {
 
   String? validateConfirmPassword(String? value) {
     if (!isEditMode.value) {
-      if (value == null || value.isEmpty) return "Confirm password is required.";
+      if (value == null || value.isEmpty)
+        return "Confirm password is required.";
       if (value != passwordController.text) return "Passwords do not match.";
     }
     return null;
@@ -104,8 +108,7 @@ class AdminAddEditMerchantController extends GetxController {
 
   Future<void> saveMerchant() async {
     if (!formKey.currentState!.validate()) {
-      Get.snackbar("Validation Error", "Please correct the errors in the form.",
-          snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.orange[700], colorText: Colors.white);
+      DialogUtils.showError("Please correct the errors in the form.");
       return;
     }
 
@@ -126,14 +129,16 @@ class AdminAddEditMerchantController extends GetxController {
         if (isActive.value != _merchantToEdit!.isActive) {
           updates['isActive'] = isActive.value;
         }
-        
+
         // Handle shop name
         final currentShopName = shopNameController.text.trim();
         final oldShopName = _merchantToEdit!.shopName ?? "";
         if (currentShopName != oldShopName) {
-          updates['shopName'] = currentShopName.isEmpty ? null : currentShopName;
+          updates['shopName'] = currentShopName.isEmpty
+              ? null
+              : currentShopName;
         }
-        
+
         // Handle phone
         final currentPhone = phoneController.text.trim();
         final oldPhone = _merchantToEdit!.phone ?? "";
@@ -142,20 +147,21 @@ class AdminAddEditMerchantController extends GetxController {
         }
 
         if (updates.isEmpty) {
-          Get.snackbar("No Changes", "No changes were made.", snackPosition: SnackPosition.BOTTOM);
+          DialogUtils.showInfo("No changes were made.");
           isLoading.value = false;
           return;
         }
-        
-        resultUser = await adminMerchantService.updateUserMerchantDetails(_merchantToEdit!.id, updates);
-        
+
+        resultUser = await adminMerchantService.updateUserMerchantDetails(
+          _merchantToEdit!.id,
+          updates,
+        );
+
         if (resultUser != null) {
           Get.back(result: true);
-          Get.snackbar("Success", "Merchant updated successfully.",
-              snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.green, colorText: Colors.white);
+          DialogUtils.showSuccess("Merchant updated successfully.");
         } else {
-          Get.snackbar("Update Failed", "Could not update merchant. Please try again.",
-              snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
+          DialogUtils.showError("Could not update merchant. Please try again.");
         }
       } else {
         Map<String, dynamic> newUserData = {
@@ -165,24 +171,25 @@ class AdminAddEditMerchantController extends GetxController {
           'role': 'MERCHANT',
           'isActive': isActive.value,
           'shopName': shopNameController.text,
-          'phone': phoneController.text.isNotEmpty ? phoneController.text : null,
+          'phone': phoneController.text.isNotEmpty
+              ? phoneController.text
+              : null,
         };
-        
-        resultUser = await adminMerchantService.createUserAsMerchant(newUserData);
+
+        resultUser = await adminMerchantService.createUserAsMerchant(
+          newUserData,
+        );
         if (resultUser != null) {
           // CORRECTED: Only navigate back with a success result.
           // The previous screen will be responsible for showing the snackbar.
           Get.back(result: true);
         } else {
-          Get.snackbar("Operation Failed", "Could not save merchant. Please try again later.",
-              snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
+          DialogUtils.showError("Could not save merchant. Please try again later.");
         }
       }
-
     } catch (e) {
       printError(info: "Error saving merchant/user: $e");
-      Get.snackbar("Error", "An unexpected error occurred: ${e.toString()}",
-          snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
+      DialogUtils.showError("An unexpected error occurred: ${e.toString()}");
     } finally {
       isLoading.value = false;
     }

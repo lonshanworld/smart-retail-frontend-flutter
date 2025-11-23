@@ -57,7 +57,10 @@ class ModernButton extends StatelessWidget {
                       Icon(icon, size: 20),
                       const SizedBox(width: 8),
                     ],
-                    Text(text, style: const TextStyle(fontWeight: FontWeight.w600)),
+                    Text(
+                      text,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
                   ],
                 ),
         ),
@@ -94,7 +97,10 @@ class ModernButton extends StatelessWidget {
                     Icon(icon, size: 20),
                     const SizedBox(width: 8),
                   ],
-                  Text(text, style: const TextStyle(fontWeight: FontWeight.w600)),
+                  Text(
+                    text,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
                 ],
               ),
       ),
@@ -138,10 +144,7 @@ class ModernIconButton extends StatelessWidget {
     );
 
     if (tooltip != null) {
-      return Tooltip(
-        message: tooltip!,
-        child: button,
-      );
+      return Tooltip(message: tooltip!, child: button);
     }
 
     return button;

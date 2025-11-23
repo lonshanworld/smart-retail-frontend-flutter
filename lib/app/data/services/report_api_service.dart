@@ -6,6 +6,7 @@ import 'package:smart_retail/app/data/models/report_model.dart';
 import 'package:smart_retail/app/data/models/sale_model.dart';
 import 'package:smart_retail/app/data/providers/api_constants.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
+import 'package:smart_retail/app/utils/response_utils.dart';
 
 class ReportApiService extends GetxService {
   final GetConnect _connect = Get.find<GetConnect>();
@@ -46,7 +47,7 @@ class ReportApiService extends GetxService {
     print('   End: ${endDate.toIso8601String()}');
     print('   ShopId: ${shopId ?? "null (all shops)"}');
     print('   GroupBy: ${groupBy ?? "null"}');
-    
+
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
       print('✅ [REPORT API] Development mode - returning 20 mock sales');
@@ -84,11 +85,14 @@ class ReportApiService extends GetxService {
 
     if (response.isOk && response.body['data'] != null) {
       print('✅ [REPORT API] Parsing sales report response');
-      final salesReport = SalesReportResponse.fromJson(response.body['data']);
-      print('✅ [REPORT API] Successfully parsed ${salesReport.sales.length} sales');
+      final salesReport = SalesReportResponse.fromJson(asMap(response.body['data']));
+      print(
+        '✅ [REPORT API] Successfully parsed ${salesReport.sales.length} sales',
+      );
       return salesReport;
     } else {
-      final errorMsg = response.body?['message'] ?? 'Failed to load sales report';
+      final errorMsg =
+          response.body?['message'] ?? 'Failed to load sales report';
       print('❌ [REPORT API] Error: $errorMsg');
       print('❌ [REPORT API] Full response: ${response.body}');
       throw Exception(errorMsg);
@@ -109,7 +113,10 @@ class ReportApiService extends GetxService {
   /// __Expected Response (Success):__
   /// - __Status Code:__ 200
   /// - __Body (JSON):__ (The sales forecast response object)
-  Future<SalesForecastResponse> getSalesForecast(String shopId, String itemId) async {
+  Future<SalesForecastResponse> getSalesForecast(
+    String shopId,
+    String itemId,
+  ) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
       return SalesForecastResponse(
@@ -118,9 +125,16 @@ class ReportApiService extends GetxService {
         productName: 'Mock Product',
         shopName: 'Mock Shop',
         currentStock: 100,
-        forecastPeriod: ForecastPeriod(startDate: DateTime.now(), endDate: DateTime.now().add(const Duration(days: 7))),
+        forecastPeriod: ForecastPeriod(
+          startDate: DateTime.now(),
+          endDate: DateTime.now().add(const Duration(days: 7)),
+        ),
         dailyForecast: [],
-        aiAnalysis: AiAnalysis(summary: 'Mock summary', positiveFactors: [], negativeFactors: []),
+        aiAnalysis: AiAnalysis(
+          summary: 'Mock summary',
+          positiveFactors: [],
+          negativeFactors: [],
+        ),
       );
     }
     final response = await _connect.get(
@@ -130,9 +144,11 @@ class ReportApiService extends GetxService {
     );
 
     if (response.statusCode == 200 && response.body['success'] == true) {
-      return SalesForecastResponse.fromJson(response.body['data']);
+      return SalesForecastResponse.fromJson(asMap(response.body['data']));
     } else {
-      throw Exception(response.body?['message'] ?? 'Failed to load sales forecast');
+      throw Exception(
+        response.body?['message'] ?? 'Failed to load sales forecast',
+      );
     }
   }
 }

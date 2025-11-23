@@ -32,10 +32,18 @@ class ShopItemsView extends GetView<ShopItemsController> {
     return ResponsiveDataTable(
       items: controller.inventoryItems,
       columns: const [
-        DataColumn(label: Text('Item', style: TextStyle(fontWeight: FontWeight.bold))),
-        DataColumn(label: Text('SKU', style: TextStyle(fontWeight: FontWeight.bold))),
-        DataColumn(label: Text('Stock', style: TextStyle(fontWeight: FontWeight.bold))),
-        DataColumn(label: Text('Price', style: TextStyle(fontWeight: FontWeight.bold))),
+        DataColumn(
+          label: Text('Item', style: TextStyle(fontWeight: FontWeight.bold)),
+        ),
+        DataColumn(
+          label: Text('SKU', style: TextStyle(fontWeight: FontWeight.bold)),
+        ),
+        DataColumn(
+          label: Text('Stock', style: TextStyle(fontWeight: FontWeight.bold)),
+        ),
+        DataColumn(
+          label: Text('Price', style: TextStyle(fontWeight: FontWeight.bold)),
+        ),
       ],
       buildCells: (item) => [
         DataCell(
@@ -54,17 +62,23 @@ class ShopItemsView extends GetView<ShopItemsController> {
               ),
             ],
           ),
-          onTap: isMerchant ? () => controller.showStockAdjustmentDialog(item) : null,
+          onTap: isMerchant
+              ? () => controller.showStockAdjustmentDialog(item)
+              : null,
         ),
         DataCell(
           Text(item.sku ?? 'No SKU'),
-          onTap: isMerchant ? () => controller.showStockAdjustmentDialog(item) : null,
+          onTap: isMerchant
+              ? () => controller.showStockAdjustmentDialog(item)
+              : null,
         ),
         DataCell(
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: item.quantity > 10 ? Colors.green.shade50 : Colors.red.shade50,
+              color: item.quantity > 10
+                  ? Colors.green.shade50
+                  : Colors.red.shade50,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: item.quantity > 10 ? Colors.green : Colors.red,
@@ -74,16 +88,22 @@ class ShopItemsView extends GetView<ShopItemsController> {
             child: Text(
               '${item.quantity}',
               style: TextStyle(
-                color: item.quantity > 10 ? Colors.green.shade700 : Colors.red.shade700,
+                color: item.quantity > 10
+                    ? Colors.green.shade700
+                    : Colors.red.shade700,
                 fontWeight: FontWeight.bold,
               ),
             ),
           ),
-          onTap: isMerchant ? () => controller.showStockAdjustmentDialog(item) : null,
+          onTap: isMerchant
+              ? () => controller.showStockAdjustmentDialog(item)
+              : null,
         ),
         DataCell(
           Text('Rs ${item.sellingPrice.toStringAsFixed(2)}'),
-          onTap: isMerchant ? () => controller.showStockAdjustmentDialog(item) : null,
+          onTap: isMerchant
+              ? () => controller.showStockAdjustmentDialog(item)
+              : null,
         ),
       ],
       buildMobileCard: (item) => DataRowCard(
@@ -105,7 +125,9 @@ class ShopItemsView extends GetView<ShopItemsController> {
             value: 'Rs ${item.sellingPrice.toStringAsFixed(2)}',
           ),
         ],
-        onTap: isMerchant ? () => controller.showStockAdjustmentDialog(item) : null,
+        onTap: isMerchant
+            ? () => controller.showStockAdjustmentDialog(item)
+            : null,
       ),
       headingRowColor: AppColors.shop.shade50,
     );

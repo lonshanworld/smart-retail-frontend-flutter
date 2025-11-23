@@ -5,32 +5,59 @@ class AppColors {
   // Primary colors
   static const MaterialColor primary = Colors.blue;
   static const MaterialColor secondary = Colors.purple;
-  
+
   // Role-based colors
   static const MaterialColor merchant = Colors.blue;
   static const MaterialColor shop = Colors.green;
   static const MaterialColor staff = Colors.orange;
   static const MaterialColor admin = Colors.indigo;
-  
+
   // Status colors
   static const MaterialColor success = Colors.green;
   static const MaterialColor warning = Colors.orange;
   static const MaterialColor error = Colors.red;
   static const MaterialColor info = Colors.blue;
-  
+
   // Gradient combinations
-  static const List<Color> primaryGradientColors = [Color(0xFF667eea), Color(0xFF764ba2)];
-  static const List<Color> successGradientColors = [Color(0xFF11998e), Color(0xFF38ef7d)];
-  static const List<Color> warningGradientColors = [Color(0xFFf46b45), Color(0xFFeea849)];
-  static const List<Color> errorGradientColors = [Color(0xFFeb3349), Color(0xFFF45c43)];
-  static const List<Color> infoGradientColors = [Color(0xFF4facfe), Color(0xFF00f2fe)];
-  
+  static const List<Color> primaryGradientColors = [
+    Color(0xFF667eea),
+    Color(0xFF764ba2),
+  ];
+  static const List<Color> successGradientColors = [
+    Color(0xFF11998e),
+    Color(0xFF38ef7d),
+  ];
+  static const List<Color> warningGradientColors = [
+    Color(0xFFf46b45),
+    Color(0xFFeea849),
+  ];
+  static const List<Color> errorGradientColors = [
+    Color(0xFFeb3349),
+    Color(0xFFF45c43),
+  ];
+  static const List<Color> infoGradientColors = [
+    Color(0xFF4facfe),
+    Color(0xFF00f2fe),
+  ];
+
   // Role-based gradient colors
-  static const List<Color> merchantGradientColors = [Color(0xFF667eea), Color(0xFF764ba2)];
-  static const List<Color> shopGradientColors = [Color(0xFF11998e), Color(0xFF38ef7d)];
-  static const List<Color> staffGradientColors = [Color(0xFFf46b45), Color(0xFFeea849)];
-  static const List<Color> adminGradientColors = [Color(0xFF6a11cb), Color(0xFF2575fc)];
-  
+  static const List<Color> merchantGradientColors = [
+    Color(0xFF667eea),
+    Color(0xFF764ba2),
+  ];
+  static const List<Color> shopGradientColors = [
+    Color(0xFF11998e),
+    Color(0xFF38ef7d),
+  ];
+  static const List<Color> staffGradientColors = [
+    Color(0xFFf46b45),
+    Color(0xFFeea849),
+  ];
+  static const List<Color> adminGradientColors = [
+    Color(0xFF6a11cb),
+    Color(0xFF2575fc),
+  ];
+
   // Gradient objects
   static const LinearGradient primaryGradient = LinearGradient(
     colors: primaryGradientColors,
@@ -57,7 +84,7 @@ class AppColors {
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
-  
+
   // Role-based gradients
   static const LinearGradient merchantGradient = LinearGradient(
     colors: merchantGradientColors,
@@ -79,7 +106,7 @@ class AppColors {
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
-  
+
   // Chart colors
   static const List<Color> chartColors = [
     Color(0xFF667eea),
@@ -91,11 +118,11 @@ class AppColors {
     Color(0xFFfccb90),
     Color(0xFFa8edea),
   ];
-  
+
   // Background
   static final Color backgroundGrey = Colors.grey.shade50;
   static const Color cardBackground = Colors.white;
-  
+
   // Text colors
   static final Color textPrimary = Colors.grey.shade900;
   static final Color textSecondary = Colors.grey.shade600;

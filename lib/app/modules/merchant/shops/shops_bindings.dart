@@ -20,8 +20,6 @@ class ShopAddEditBinding extends Bindings {
   void dependencies() {
     // This controller requires the ShopApiService for creating/updating a single shop
     Get.lazyPut<ShopApiService>(() => ShopApiService());
-    Get.lazyPut<ShopAddEditController>(
-      () => ShopAddEditController(),
-    );
+    Get.lazyPut<ShopAddEditController>(() => ShopAddEditController());
   }
 }

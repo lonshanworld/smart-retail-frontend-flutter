@@ -6,6 +6,8 @@ class MerchantStaffListBinding extends Bindings {
   @override
   void dependencies() {
     Get.lazyPut<MerchantStaffApiService>(() => MerchantStaffApiService());
-    Get.lazyPut<MerchantStaffListController>(() => MerchantStaffListController());
+    Get.lazyPut<MerchantStaffListController>(
+      () => MerchantStaffListController(),
+    );
   }
 }

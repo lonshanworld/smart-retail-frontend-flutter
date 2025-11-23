@@ -31,7 +31,7 @@ class InventoryItem {
   bool isArchived;
   DateTime createdAt;
   DateTime updatedAt;
-  
+
   bool isSynced;
   bool needsUpdate;
   bool needsCreate;
@@ -64,7 +64,7 @@ class InventoryItem {
     String? merchantId,
     String? name,
     String? description,
-    String? sku, 
+    String? sku,
     double? sellingPrice,
     double? originalPrice,
     int? lowStockThreshold,
@@ -102,14 +102,14 @@ class InventoryItem {
   factory InventoryItem.fromJson(Map<String, dynamic> json) {
     // Handle quantity field from backend (InventoryItemWithQuantity)
     List<StockInfo>? stockInfoList;
-    
+
     if (json.containsKey('quantity') && json['quantity'] != null) {
       // Backend sends quantity directly for shop-specific inventory
       stockInfoList = [
         StockInfo(
           quantity: json['quantity'] as int,
           shopId: '', // Shop ID is context-dependent
-        )
+        ),
       ];
     } else if (json.containsKey('stockInfo') && json['stockInfo'] != null) {
       stockInfoList = (json['stockInfo'] as List)
@@ -120,23 +120,38 @@ class InventoryItem {
           .map((s) => StockInfo.fromJson(s as Map<String, dynamic>))
           .toList();
     } else if (json.containsKey('stock') && json['stock'] != null) {
-      stockInfoList = [StockInfo.fromJson(json['stock'] as Map<String, dynamic>)];
+      stockInfoList = [
+        StockInfo.fromJson(json['stock'] as Map<String, dynamic>),
+      ];
     }
-    
+
     return InventoryItem(
       id: json['id'] as String?,
-      merchantId: json['merchantId'] as String? ?? json['merchant_id'] as String,
+      merchantId:
+          json['merchantId'] as String? ?? json['merchant_id'] as String,
       name: json['name'] as String,
       description: json['description'] as String?,
       sku: json['sku'] as String?,
-      sellingPrice: (json['sellingPrice'] as num? ?? json['selling_price'] as num).toDouble(),
-      originalPrice: (json['originalPrice'] as num? ?? json['original_price'] as num?)?.toDouble(),
-      lowStockThreshold: (json['lowStockThreshold'] as num? ?? json['low_stock_threshold'] as num?)?.toInt(),
+      sellingPrice:
+          (json['sellingPrice'] as num? ?? json['selling_price'] as num)
+              .toDouble(),
+      originalPrice:
+          (json['originalPrice'] as num? ?? json['original_price'] as num?)
+              ?.toDouble(),
+      lowStockThreshold:
+          (json['lowStockThreshold'] as num? ??
+                  json['low_stock_threshold'] as num?)
+              ?.toInt(),
       category: json['category'] as String?,
       supplier: json['supplier'] as String?,
-      isArchived: json['isArchived'] as bool? ?? json['is_archived'] as bool? ?? false,
-      createdAt: DateTime.parse(json['createdAt'] as String? ?? json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String? ?? json['updated_at'] as String),
+      isArchived:
+          json['isArchived'] as bool? ?? json['is_archived'] as bool? ?? false,
+      createdAt: DateTime.parse(
+        json['createdAt'] as String? ?? json['created_at'] as String,
+      ),
+      updatedAt: DateTime.parse(
+        json['updatedAt'] as String? ?? json['updated_at'] as String,
+      ),
       isSynced: true,
       stockInfo: stockInfoList,
     );
@@ -204,7 +219,8 @@ class InventoryItem {
     if (sku != null) data['sku'] = sku;
     data['sellingPrice'] = sellingPrice;
     if (originalPrice != null) data['originalPrice'] = originalPrice;
-    if (lowStockThreshold != null) data['lowStockThreshold'] = lowStockThreshold;
+    if (lowStockThreshold != null)
+      data['lowStockThreshold'] = lowStockThreshold;
     if (category != null) data['category'] = category;
     if (supplier != null) data['supplier'] = supplier;
     // Note: Archiving is handled via a separate method/endpoint for clarity.
@@ -213,9 +229,7 @@ class InventoryItem {
 
   // ADDED: Method to generate JSON for archiving/unarchiving.
   Map<String, dynamic> toJsonForArchive(bool archiveStatus) {
-      return {
-          'isArchived': archiveStatus,
-      };
+    return {'isArchived': archiveStatus};
   }
 }
 
@@ -236,14 +250,30 @@ class PaginatedInventoryResponse {
 
   factory PaginatedInventoryResponse.fromJson(Map<String, dynamic> json) {
     var itemsList = json['items'] as List;
-    List<InventoryItem> items = itemsList.map((i) => InventoryItem.fromJson(i)).toList();
+    List<InventoryItem> items = itemsList
+        .map((i) => InventoryItem.fromJson(i))
+        .toList();
 
     return PaginatedInventoryResponse(
       items: items,
-      totalItems: (json['totalItems'] as num? ?? json['total_items'] as num? ?? json['totalCount'] as num? ?? json['total_count'] as num? ?? items.length).toInt(),
-      currentPage: (json['currentPage'] as num? ?? json['current_page'] as num? ?? 1).toInt(),
-      pageSize: (json['pageSize'] as num? ?? json['page_size'] as num? ?? items.length).toInt(),
-      totalPages: (json['totalPages'] as num? ?? json['total_pages'] as num? ?? 1).toInt(),
+      totalItems:
+          (json['totalItems'] as num? ??
+                  json['total_items'] as num? ??
+                  json['totalCount'] as num? ??
+                  json['total_count'] as num? ??
+                  items.length)
+              .toInt(),
+      currentPage:
+          (json['currentPage'] as num? ?? json['current_page'] as num? ?? 1)
+              .toInt(),
+      pageSize:
+          (json['pageSize'] as num? ??
+                  json['page_size'] as num? ??
+                  items.length)
+              .toInt(),
+      totalPages:
+          (json['totalPages'] as num? ?? json['total_pages'] as num? ?? 1)
+              .toInt(),
     );
   }
 }

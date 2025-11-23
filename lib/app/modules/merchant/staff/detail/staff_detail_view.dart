@@ -36,11 +36,18 @@ class StaffDetailView extends GetView<StaffDetailController> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.person_off_outlined, size: 64, color: Colors.grey.shade400),
+                    Icon(
+                      Icons.person_off_outlined,
+                      size: 64,
+                      color: Colors.grey.shade400,
+                    ),
                     const SizedBox(height: 16),
                     Text(
                       'No staff member selected',
-                      style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.grey.shade600,
+                      ),
                     ),
                   ],
                 ),
@@ -84,7 +91,9 @@ class StaffDetailView extends GetView<StaffDetailController> {
                         ),
                         child: Center(
                           child: Text(
-                            staff.name.isNotEmpty ? staff.name[0].toUpperCase() : 'S',
+                            staff.name.isNotEmpty
+                                ? staff.name[0].toUpperCase()
+                                : 'S',
                             style: TextStyle(
                               fontSize: 36,
                               fontWeight: FontWeight.bold,
@@ -110,10 +119,13 @@ class StaffDetailView extends GetView<StaffDetailController> {
                             Row(
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: staff.isActive 
-                                        ? AppColors.success.shade100 
+                                    color: staff.isActive
+                                        ? AppColors.success.shade100
                                         : AppColors.error.shade100,
                                     borderRadius: BorderRadius.circular(20),
                                   ),
@@ -121,10 +133,12 @@ class StaffDetailView extends GetView<StaffDetailController> {
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Icon(
-                                        staff.isActive ? Icons.check_circle : Icons.cancel,
+                                        staff.isActive
+                                            ? Icons.check_circle
+                                            : Icons.cancel,
                                         size: 16,
-                                        color: staff.isActive 
-                                            ? AppColors.success.shade700 
+                                        color: staff.isActive
+                                            ? AppColors.success.shade700
                                             : AppColors.error.shade700,
                                       ),
                                       const SizedBox(width: 6),
@@ -133,8 +147,8 @@ class StaffDetailView extends GetView<StaffDetailController> {
                                         style: TextStyle(
                                           fontSize: 13,
                                           fontWeight: FontWeight.w600,
-                                          color: staff.isActive 
-                                              ? AppColors.success.shade700 
+                                          color: staff.isActive
+                                              ? AppColors.success.shade700
                                               : AppColors.error.shade700,
                                         ),
                                       ),
@@ -143,7 +157,10 @@ class StaffDetailView extends GetView<StaffDetailController> {
                                 ),
                                 const SizedBox(width: 12),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: AppColors.staff.shade100,
                                     borderRadius: BorderRadius.circular(20),
@@ -151,7 +168,11 @@ class StaffDetailView extends GetView<StaffDetailController> {
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(Icons.badge, size: 16, color: AppColors.staff.shade700),
+                                      Icon(
+                                        Icons.badge,
+                                        size: 16,
+                                        color: AppColors.staff.shade700,
+                                      ),
                                       const SizedBox(width: 6),
                                       Text(
                                         'Staff Member',
@@ -174,7 +195,7 @@ class StaffDetailView extends GetView<StaffDetailController> {
                 ),
               ),
               const SizedBox(height: 24),
-              
+
               // Contact Information Card
               ModernCard(
                 child: Padding(
@@ -184,7 +205,11 @@ class StaffDetailView extends GetView<StaffDetailController> {
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.info_outline, color: AppColors.merchant, size: 24),
+                          Icon(
+                            Icons.info_outline,
+                            color: AppColors.merchant,
+                            size: 24,
+                          ),
                           const SizedBox(width: 12),
                           const Text(
                             'Contact Information',
@@ -214,7 +239,7 @@ class StaffDetailView extends GetView<StaffDetailController> {
                 ),
               ),
               const SizedBox(height: 16),
-              
+
               // Shop Assignment Card
               if (staff.shopName != null)
                 ModernCard(
@@ -225,7 +250,11 @@ class StaffDetailView extends GetView<StaffDetailController> {
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.storefront, color: AppColors.shop, size: 24),
+                            Icon(
+                              Icons.storefront,
+                              color: AppColors.shop,
+                              size: 24,
+                            ),
                             const SizedBox(width: 12),
                             const Text(
                               'Shop Assignment',
@@ -248,7 +277,7 @@ class StaffDetailView extends GetView<StaffDetailController> {
                   ),
                 ),
               if (staff.shopName != null) const SizedBox(height: 16),
-              
+
               // Account Information Card
               ModernCard(
                 child: Padding(
@@ -258,7 +287,11 @@ class StaffDetailView extends GetView<StaffDetailController> {
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.schedule, color: AppColors.merchant.shade700, size: 24),
+                          Icon(
+                            Icons.schedule,
+                            color: AppColors.merchant.shade700,
+                            size: 24,
+                          ),
                           const SizedBox(width: 12),
                           const Text(
                             'Account Information',
@@ -273,14 +306,22 @@ class StaffDetailView extends GetView<StaffDetailController> {
                       _buildModernDetailRow(
                         icon: Icons.calendar_today,
                         label: 'Member Since',
-                        value: staff.createdAt?.toLocal().toString().split(' ')[0] ?? 'N/A',
+                        value:
+                            staff.createdAt?.toLocal().toString().split(
+                              ' ',
+                            )[0] ??
+                            'N/A',
                         iconColor: AppColors.merchant.shade600,
                       ),
                       const SizedBox(height: 16),
                       _buildModernDetailRow(
                         icon: Icons.update,
                         label: 'Last Updated',
-                        value: staff.updatedAt?.toLocal().toString().split(' ')[0] ?? 'N/A',
+                        value:
+                            staff.updatedAt?.toLocal().toString().split(
+                              ' ',
+                            )[0] ??
+                            'N/A',
                         iconColor: AppColors.merchant.shade600,
                       ),
                     ],

@@ -2,7 +2,7 @@ class MerchantStockInRequest {
   // Based on the new logic, we define the item directly.
   final String itemName;
   final String? sku;
-  final double unitPrice; 
+  final double unitPrice;
 
   // Core stock-in details
   final int quantityReceived;

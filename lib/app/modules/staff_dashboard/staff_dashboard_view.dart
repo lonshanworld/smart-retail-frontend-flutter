@@ -24,10 +24,7 @@ class StaffDashboardView extends GetView<StaffDashboardController> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              AppColors.staff.shade50.withOpacity(0.3),
-              Colors.white,
-            ],
+            colors: [AppColors.staff.shade50.withOpacity(0.3), Colors.white],
           ),
         ),
         child: Obx(() {
@@ -48,7 +45,11 @@ class StaffDashboardView extends GetView<StaffDashboardController> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.error_outline, color: AppColors.error.shade400, size: 64),
+                      Icon(
+                        Icons.error_outline,
+                        color: AppColors.error.shade400,
+                        size: 64,
+                      ),
                       const SizedBox(height: 24),
                       Text(
                         'Oops! Something went wrong',
@@ -64,7 +65,10 @@ class StaffDashboardView extends GetView<StaffDashboardController> {
                             ? controller.errorMessage.value
                             : 'Failed to load dashboard data.',
                         textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 16, color: Colors.grey),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey,
+                        ),
                       ),
                       const SizedBox(height: 24),
                       ElevatedButton.icon(
@@ -72,10 +76,13 @@ class StaffDashboardView extends GetView<StaffDashboardController> {
                         label: const Text('Retry'),
                         onPressed: () => controller.fetchDashboardSummary(),
                         style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 32,
+                            vertical: 16,
+                          ),
                           backgroundColor: AppColors.staff,
                         ),
-                      )
+                      ),
                     ],
                   ),
                 ),
@@ -91,7 +98,11 @@ class StaffDashboardView extends GetView<StaffDashboardController> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.info_outline, color: AppColors.warning.shade400, size: 64),
+                      Icon(
+                        Icons.info_outline,
+                        color: AppColors.warning.shade400,
+                        size: 64,
+                      ),
                       const SizedBox(height: 24),
                       const Text(
                         'No Data Available',
@@ -112,10 +123,13 @@ class StaffDashboardView extends GetView<StaffDashboardController> {
                         label: const Text('Refresh'),
                         onPressed: () => controller.fetchDashboardSummary(),
                         style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 32,
+                            vertical: 16,
+                          ),
                           backgroundColor: AppColors.staff,
                         ),
-                      )
+                      ),
                     ],
                   ),
                 ),
@@ -166,7 +180,11 @@ class StaffDashboardView extends GetView<StaffDashboardController> {
               color: Colors.white.withOpacity(0.2),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.store_rounded, size: 32, color: Colors.white),
+            child: const Icon(
+              Icons.store_rounded,
+              size: 32,
+              color: Colors.white,
+            ),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -218,14 +236,20 @@ class StaffDashboardView extends GetView<StaffDashboardController> {
               icon: Icons.point_of_sale_rounded,
               title: 'Point of Sale',
               subtitle: 'Process transactions',
-              gradient: [AppColors.primary.shade400, AppColors.primary.shade600],
+              gradient: [
+                AppColors.primary.shade400,
+                AppColors.primary.shade600,
+              ],
               onTap: () => Get.toNamed(Routes.STAFF_POS),
             ),
             _buildActionCard(
               icon: Icons.inventory_2_rounded,
               title: 'Inventory',
               subtitle: 'View stock levels',
-              gradient: [AppColors.success.shade400, AppColors.success.shade600],
+              gradient: [
+                AppColors.success.shade400,
+                AppColors.success.shade600,
+              ],
               onTap: () => Get.toNamed(Routes.STAFF_INVENTORY),
             ),
           ],
@@ -311,7 +335,10 @@ class StaffDashboardView extends GetView<StaffDashboardController> {
           children: [
             GradientStatCard(
               title: 'Sales Today',
-              value: NumberFormat.currency(locale: 'en_US', symbol: '\$').format(summary.salesToday),
+              value: NumberFormat.currency(
+                locale: 'en_US',
+                symbol: '\$',
+              ).format(summary.salesToday),
               icon: Icons.attach_money_rounded,
               gradient: AppColors.successGradientColors,
             ),
@@ -333,7 +360,9 @@ class StaffDashboardView extends GetView<StaffDashboardController> {
       children: [
         SectionHeader(
           title: 'Recent Activity',
-          subtitle: activities.isEmpty ? 'No activities yet' : '${activities.length} recent items',
+          subtitle: activities.isEmpty
+              ? 'No activities yet'
+              : '${activities.length} recent items',
           icon: Icons.history_rounded,
         ),
         const SizedBox(height: 16),
@@ -344,7 +373,11 @@ class StaffDashboardView extends GetView<StaffDashboardController> {
                 padding: const EdgeInsets.all(40.0),
                 child: Column(
                   children: [
-                    Icon(Icons.inbox_outlined, size: 48, color: Colors.grey.shade300),
+                    Icon(
+                      Icons.inbox_outlined,
+                      size: 48,
+                      color: Colors.grey.shade300,
+                    ),
                     const SizedBox(height: 16),
                     Text(
                       'No recent activity',
@@ -373,23 +406,29 @@ class StaffDashboardView extends GetView<StaffDashboardController> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: activities.length,
-              separatorBuilder: (context, index) => Divider(height: 1, color: Colors.grey.shade200),
+              separatorBuilder: (context, index) =>
+                  Divider(height: 1, color: Colors.grey.shade200),
               itemBuilder: (context, index) {
                 final activity = activities[index];
                 return ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   leading: Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: activity.type == 'sale' 
-                          ? AppColors.success.shade50 
+                      color: activity.type == 'sale'
+                          ? AppColors.success.shade50
                           : AppColors.warning.shade50,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Icon(
-                      activity.type == 'sale' ? Icons.receipt_rounded : Icons.inventory_rounded,
-                      color: activity.type == 'sale' 
-                          ? AppColors.success.shade600 
+                      activity.type == 'sale'
+                          ? Icons.receipt_rounded
+                          : Icons.inventory_rounded,
+                      color: activity.type == 'sale'
+                          ? AppColors.success.shade600
                           : AppColors.warning.shade600,
                       size: 22,
                     ),
@@ -404,7 +443,9 @@ class StaffDashboardView extends GetView<StaffDashboardController> {
                   subtitle: Padding(
                     padding: const EdgeInsets.only(top: 4),
                     child: Text(
-                      DateFormat.yMMMd().add_jm().format(activity.timestamp.toLocal()),
+                      DateFormat.yMMMd().add_jm().format(
+                        activity.timestamp.toLocal(),
+                      ),
                       style: TextStyle(
                         fontSize: 13,
                         color: Colors.grey.shade600,
@@ -417,7 +458,10 @@ class StaffDashboardView extends GetView<StaffDashboardController> {
                   ),
                   onTap: () {
                     if (activity.type == 'sale') {
-                      Get.toNamed(Routes.MERCHANT_SALE_DETAIL, arguments: activity.relatedId);
+                      Get.toNamed(
+                        Routes.MERCHANT_SALE_DETAIL,
+                        arguments: activity.relatedId,
+                      );
                     }
                   },
                 );

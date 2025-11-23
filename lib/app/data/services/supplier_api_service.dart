@@ -3,6 +3,7 @@ import 'package:smart_retail/app/core/config/app_config.dart';
 import 'package:smart_retail/app/data/models/supplier_model.dart';
 import 'package:smart_retail/app/data/providers/api_constants.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
+import 'package:smart_retail/app/utils/response_utils.dart';
 
 class SupplierApiService extends GetxService {
   final GetConnect _connect = Get.find<GetConnect>();
@@ -34,17 +35,28 @@ class SupplierApiService extends GetxService {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
       return [
-        Supplier(id: '1', merchantId: '1', name: 'Supplier A', contactName: 'John A', contactEmail: 'john.a@supplier.com'),
-        Supplier(id: '2', merchantId: '1', name: 'Supplier B', contactName: 'John B', contactEmail: 'john.b@supplier.com'),
+        Supplier(
+          id: '1',
+          merchantId: '1',
+          name: 'Supplier A',
+          contactName: 'John A',
+          contactEmail: 'john.a@supplier.com',
+        ),
+        Supplier(
+          id: '2',
+          merchantId: '1',
+          name: 'Supplier B',
+          contactName: 'John B',
+          contactEmail: 'john.b@supplier.com',
+        ),
       ];
     }
 
     final response = await _connect.get(_baseUrl, headers: await _getHeaders());
 
     if (response.isOk && response.body['data'] != null) {
-      return (response.body['data'] as List)
-          .map((json) => Supplier.fromJson(json))
-          .toList();
+      final rawList = asList(response.body['data']);
+      return rawList.map((json) => Supplier.fromJson(Map<String, dynamic>.from(json))).toList();
     } else {
       throw Exception(response.body?['message'] ?? 'Failed to load suppliers');
     }
@@ -65,13 +77,21 @@ class SupplierApiService extends GetxService {
   Future<Supplier> createSupplier(Map<String, dynamic> data) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
-      return Supplier.fromJson(data..['id'] = 'new-supplier-id'..['merchantId'] = '1');
+      return Supplier.fromJson(
+        data
+          ..['id'] = 'new-supplier-id'
+          ..['merchantId'] = '1',
+      );
     }
 
-    final response = await _connect.post(_baseUrl, data, headers: await _getHeaders());
+    final response = await _connect.post(
+      _baseUrl,
+      data,
+      headers: await _getHeaders(),
+    );
 
     if (response.statusCode == 201 && response.body['data'] != null) {
-      return Supplier.fromJson(response.body['data']);
+      return Supplier.fromJson(asMap(response.body['data']));
     } else {
       throw Exception(response.body?['message'] ?? 'Failed to create supplier');
     }

@@ -27,7 +27,8 @@ class ImagePlaceholder extends StatelessWidget {
         child: Icon(
           iconData,
           size: (size ?? 60) * 0.6, // Icon size relative to placeholder size
-          color: color ?? Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+          color:
+              color ?? Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
         ),
       ),
     );

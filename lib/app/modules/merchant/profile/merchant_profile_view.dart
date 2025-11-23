@@ -16,8 +16,11 @@ class MerchantProfileView extends GetView<MerchantProfileController> {
         }
         if (controller.errorMessage.value != null) {
           return Center(
-              child: Text('Error: ${controller.errorMessage.value}',
-                  style: const TextStyle(color: Colors.red)));
+            child: Text(
+              'Error: ${controller.errorMessage.value}',
+              style: const TextStyle(color: Colors.red),
+            ),
+          );
         }
         if (controller.userProfile.value == null) {
           return const Center(child: Text('Could not load profile.'));
@@ -33,8 +36,10 @@ class MerchantProfileView extends GetView<MerchantProfileController> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text('Email: ${controller.userProfile.value!.email}',
-                        style: Get.textTheme.titleMedium),
+                    Text(
+                      'Email: ${controller.userProfile.value!.email}',
+                      style: Get.textTheme.titleMedium,
+                    ),
                     const SizedBox(height: 24),
                     TextFormField(
                       controller: controller.nameController,
@@ -84,15 +89,30 @@ class MerchantProfileView extends GetView<MerchantProfileController> {
                     ),
                     const SizedBox(height: 24),
                     ElevatedButton.icon(
-                      icon: Obx(() => controller.isSaving.value
-                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Icon(Icons.save_alt_outlined)),
-                      label: Obx(() => Text(controller.isSaving.value ? 'Saving...' : 'Update Profile')),
+                      icon: Obx(
+                        () => controller.isSaving.value
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.save_alt_outlined),
+                      ),
+                      label: Obx(
+                        () => Text(
+                          controller.isSaving.value
+                              ? 'Saving...'
+                              : 'Update Profile',
+                        ),
+                      ),
                       onPressed: controller.isSaving.value
                           ? null
                           : () => controller.updateProfile(),
                       style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16)),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
                     ),
                   ],
                 ),

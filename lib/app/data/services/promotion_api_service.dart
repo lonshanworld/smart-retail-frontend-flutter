@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:get/get.dart';
 import 'package:smart_retail/app/core/config/app_config.dart';
 import 'package:smart_retail/app/data/models/promotion_model.dart';
@@ -5,6 +7,7 @@ import 'package:smart_retail/app/data/models/shop_model.dart';
 import 'package:smart_retail/app/data/models/inventory_item_model.dart';
 import 'package:smart_retail/app/data/providers/api_constants.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
+import 'package:smart_retail/app/utils/response_utils.dart';
 
 class PromotionApiService extends GetxService {
   final GetConnect _connect = Get.find<GetConnect>();
@@ -16,7 +19,10 @@ class PromotionApiService extends GetxService {
 
   Future<Map<String, String>> _getHeaders() async {
     final token = await _authService.getToken();
-    return {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'};
+    return {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    };
   }
 
   /// Fetches shops for the merchant.
@@ -27,11 +33,27 @@ class PromotionApiService extends GetxService {
   Future<List<Shop>> getShops() async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(milliseconds: 400));
-      return List.generate(3, (i) => Shop(id: 'shop-$i', name: 'Shop Branch $i', merchantId: 'merch-1', createdAt: DateTime.now(), updatedAt: DateTime.now()));
+      return List.generate(
+        3,
+        (i) => Shop(
+          id: 'shop-$i',
+          name: 'Shop Branch $i',
+          merchantId: 'merch-1',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+      );
     }
-    final response = await _connect.get(_shopsUrl, headers: await _getHeaders());
+    final response = await _connect.get(
+      _shopsUrl,
+      headers: await _getHeaders(),
+    );
     if (response.isOk && response.body['data'] != null) {
-      return (response.body['data'] as List).map((json) => Shop.fromJson(json)).toList();
+      final raw = response.body['data'];
+      final normalized = _normalizeData(raw);
+      return (normalized as List)
+          .map((json) => Shop.fromJson(Map<String, dynamic>.from(json)))
+          .toList();
     } else {
       throw Exception(response.body?['message'] ?? 'Failed to load shops');
     }
@@ -45,13 +67,34 @@ class PromotionApiService extends GetxService {
   Future<List<InventoryItem>> getProductsForShop(String shopId) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(milliseconds: 600));
-      return List.generate(10, (i) => InventoryItem(id: 'prod-$i', name: 'Product $i from Shop $shopId', sku: 'SKU$i', merchantId: 'merch-1', sellingPrice: 10.0 + i, originalPrice: 7.0 + i, createdAt: DateTime.now(), updatedAt: DateTime.now()));
+      return List.generate(
+        10,
+        (i) => InventoryItem(
+          id: 'prod-$i',
+          name: 'Product $i from Shop $shopId',
+          sku: 'SKU$i',
+          merchantId: 'merch-1',
+          sellingPrice: 10.0 + i,
+          originalPrice: 7.0 + i,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+      );
     }
-    final response = await _connect.get('$_shopsUrl/$shopId/products', headers: await _getHeaders());
+    final response = await _connect.get(
+      '$_shopsUrl/$shopId/products',
+      headers: await _getHeaders(),
+    );
     if (response.isOk && response.body['data'] != null) {
-      return (response.body['data'] as List).map((json) => InventoryItem.fromJson(json)).toList();
+      final raw = response.body['data'];
+      final normalized = _normalizeData(raw);
+      return (normalized as List)
+          .map((json) => InventoryItem.fromJson(Map<String, dynamic>.from(json)))
+          .toList();
     } else {
-      throw Exception(response.body?['message'] ?? 'Failed to load products for shop');
+      throw Exception(
+        response.body?['message'] ?? 'Failed to load products for shop',
+      );
     }
   }
 
@@ -69,14 +112,52 @@ class PromotionApiService extends GetxService {
   /// __Expected Response (Success):__
   /// - __Status Code:__ 200
   /// - __Body (JSON):__ (A paginated response of promotion objects)
-  Future<PaginatedPromotionsResponse> getPromotions({int page = 1, int pageSize = 10}) async {
+  Future<PaginatedPromotionsResponse> getPromotions({
+    int page = 1,
+    int pageSize = 10,
+  }) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
       final items = [
-        Promotion(id: 'promo-1', name: '20% Off Laptops', description: 'Discount on all laptops', type: 'percentage', value: 20, startDate: DateTime.now(), endDate: DateTime.now().add(const Duration(days: 10)), shopId: 'shop-0', merchantId: 'merch-1', minSpend: 0, conditions: {}, isActive: true, createdAt: DateTime.now(), updatedAt: DateTime.now()),
-        Promotion(id: 'promo-2', name: 'Buy One Get One Free', description: 'On select T-shirts', type: 'bogo', value: 1, startDate: DateTime.now(), endDate: DateTime.now().add(const Duration(days: 5)), shopId: 'shop-1', merchantId: 'merch-1', minSpend: 0, conditions: {}, isActive: true, createdAt: DateTime.now(), updatedAt: DateTime.now()),
+        Promotion(
+          id: 'promo-1',
+          name: '20% Off Laptops',
+          description: 'Discount on all laptops',
+          type: 'percentage',
+          value: 20,
+          startDate: DateTime.now(),
+          endDate: DateTime.now().add(const Duration(days: 10)),
+          shopId: 'shop-0',
+          merchantId: 'merch-1',
+          minSpend: 0,
+          conditions: {},
+          isActive: true,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+        Promotion(
+          id: 'promo-2',
+          name: 'Buy One Get One Free',
+          description: 'On select T-shirts',
+          type: 'bogo',
+          value: 1,
+          startDate: DateTime.now(),
+          endDate: DateTime.now().add(const Duration(days: 5)),
+          shopId: 'shop-1',
+          merchantId: 'merch-1',
+          minSpend: 0,
+          conditions: {},
+          isActive: true,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
       ];
-      return PaginatedPromotionsResponse(items: items, totalItems: items.length, currentPage: 1, totalPages: 1);
+      return PaginatedPromotionsResponse(
+        items: items,
+        totalItems: items.length,
+        currentPage: 1,
+        totalPages: 1,
+      );
     }
     final response = await _connect.get(
       _promotionsUrl,
@@ -85,7 +166,9 @@ class PromotionApiService extends GetxService {
     );
 
     if (response.statusCode == 200 && response.body['success'] == true) {
-      return PaginatedPromotionsResponse.fromJson(response.body['data']);
+      final raw = response.body['data'];
+      final normalized = _normalizeData(raw);
+      return PaginatedPromotionsResponse.fromJson(normalized);
     } else {
       throw Exception(response.body?['message'] ?? 'Failed to load promotions');
     }
@@ -118,7 +201,13 @@ class PromotionApiService extends GetxService {
   Future<Promotion> createPromotion(Map<String, dynamic> data) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
-      return Promotion.fromJson(data..['id'] = 'new-promo-id'..['merchantId'] = '1'..['createdAt'] = DateTime.now().toIso8601String()..['updatedAt'] = DateTime.now().toIso8601String());
+      return Promotion.fromJson(
+        data
+          ..['id'] = 'new-promo-id'
+          ..['merchantId'] = '1'
+          ..['createdAt'] = DateTime.now().toIso8601String()
+          ..['updatedAt'] = DateTime.now().toIso8601String(),
+      );
     }
     final response = await _connect.post(
       _promotionsUrl,
@@ -127,9 +216,13 @@ class PromotionApiService extends GetxService {
     );
 
     if (response.statusCode == 201 && response.body['success'] == true) {
-      return Promotion.fromJson(response.body['data']);
+      final raw = response.body['data'];
+      final normalized = _normalizeData(raw);
+      return Promotion.fromJson(Map<String, dynamic>.from(normalized));
     } else {
-      throw Exception(response.body?['message'] ?? 'Failed to create promotion');
+      throw Exception(
+        response.body?['message'] ?? 'Failed to create promotion',
+      );
     }
   }
 
@@ -145,10 +238,19 @@ class PromotionApiService extends GetxService {
   /// __Expected Response (Success):__
   /// - __Status Code:__ 200
   /// - __Body (JSON):__ (The updated promotion object)
-  Future<Promotion> updatePromotion(String id, Map<String, dynamic> data) async {
+  Future<Promotion> updatePromotion(
+    String id,
+    Map<String, dynamic> data,
+  ) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
-      return Promotion.fromJson(data..['id'] = id..['merchantId'] = '1'..['createdAt'] = DateTime.now().toIso8601String()..['updatedAt'] = DateTime.now().toIso8601String());
+      return Promotion.fromJson(
+        data
+          ..['id'] = id
+          ..['merchantId'] = '1'
+          ..['createdAt'] = DateTime.now().toIso8601String()
+          ..['updatedAt'] = DateTime.now().toIso8601String(),
+      );
     }
     final response = await _connect.put(
       '$_promotionsUrl/$id',
@@ -157,9 +259,27 @@ class PromotionApiService extends GetxService {
     );
 
     if (response.statusCode == 200 && response.body['success'] == true) {
-      return Promotion.fromJson(response.body['data']);
+      return Promotion.fromJson(asMap(response.body['data']));
     } else {
-      throw Exception(response.body?['message'] ?? 'Failed to update promotion');
+      throw Exception(
+        response.body?['message'] ?? 'Failed to update promotion',
+      );
+    }
+  }
+
+  /// Normalize raw response data (handles JSArray/JSObject on web) into pure
+  /// Dart List/Map structures by encoding->decoding JSON when necessary.
+  dynamic _normalizeData(dynamic raw) {
+    if (raw == null) return null;
+    try {
+      // jsonEncode/jsonDecode will convert JS interop objects into normal Dart
+      // maps/lists on web (JSArray, JSObject) and is safe for already-Dart
+      // collections as well.
+      final encoded = jsonEncode(raw);
+      return jsonDecode(encoded);
+    } catch (e) {
+      // Fallback: if encoding fails, return as-is (caller should handle types)
+      return raw;
     }
   }
 
@@ -185,7 +305,9 @@ class PromotionApiService extends GetxService {
     );
 
     if (response.statusCode != 200 || response.body['success'] != true) {
-      throw Exception(response.body?['message'] ?? 'Failed to delete promotion');
+      throw Exception(
+        response.body?['message'] ?? 'Failed to delete promotion',
+      );
     }
   }
 
@@ -220,16 +342,16 @@ class PromotionApiService extends GetxService {
         updatedAt: DateTime.now(),
       );
     }
-    final response = await _connect.put(
-      '$_promotionsUrl/$id',
-      {'isActive': isActive},
-      headers: await _getHeaders(),
-    );
+    final response = await _connect.put('$_promotionsUrl/$id', {
+      'isActive': isActive,
+    }, headers: await _getHeaders());
 
     if (response.statusCode == 200 && response.body['success'] == true) {
-      return Promotion.fromJson(response.body['data']);
+      return Promotion.fromJson(asMap(response.body['data']));
     } else {
-      throw Exception(response.body?['message'] ?? 'Failed to toggle promotion status');
+      throw Exception(
+        response.body?['message'] ?? 'Failed to toggle promotion status',
+      );
     }
   }
 }

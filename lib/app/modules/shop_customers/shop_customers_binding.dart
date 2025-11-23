@@ -8,8 +8,6 @@ class ShopCustomersBinding extends Bindings {
   void dependencies() {
     Get.lazyPut<ShopCustomersApiService>(() => ShopCustomersApiService());
     // CORRECTED: Register the controller with the correct plural name that the view expects.
-    Get.lazyPut<ShopCustomersController>(
-      () => ShopCustomersController(),
-    );
+    Get.lazyPut<ShopCustomersController>(() => ShopCustomersController());
   }
 }

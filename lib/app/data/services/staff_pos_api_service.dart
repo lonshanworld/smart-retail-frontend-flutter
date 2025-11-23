@@ -5,6 +5,7 @@ import 'package:smart_retail/app/data/models/promotion_model.dart';
 import 'package:smart_retail/app/data/models/sale_model.dart';
 import 'package:smart_retail/app/data/providers/api_constants.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
+import 'package:smart_retail/app/utils/response_utils.dart';
 
 class StaffPosApiService extends GetxService {
   final GetConnect _connect = Get.find<GetConnect>();
@@ -14,9 +15,36 @@ class StaffPosApiService extends GetxService {
   String get _baseUrl => '${ApiConstants.baseUrl}/staff/pos';
 
   final List<InventoryItem> _mockProducts = [
-    InventoryItem(id: 'prod_001', merchantId: 'mock-merchant', name: 'Espresso', sku: 'BEV-001', sellingPrice: 2.50, originalPrice: 1.0, createdAt: DateTime.now(), updatedAt: DateTime.now()),
-    InventoryItem(id: 'prod_002', merchantId: 'mock-merchant', name: 'Latte', sku: 'BEV-002', sellingPrice: 3.50, originalPrice: 1.5, createdAt: DateTime.now(), updatedAt: DateTime.now()),
-    InventoryItem(id: 'prod_101', merchantId: 'mock-merchant', name: 'Croissant', sku: 'PST-001', sellingPrice: 2.95, originalPrice: 1.2, createdAt: DateTime.now(), updatedAt: DateTime.now()),
+    InventoryItem(
+      id: 'prod_001',
+      merchantId: 'mock-merchant',
+      name: 'Espresso',
+      sku: 'BEV-001',
+      sellingPrice: 2.50,
+      originalPrice: 1.0,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    ),
+    InventoryItem(
+      id: 'prod_002',
+      merchantId: 'mock-merchant',
+      name: 'Latte',
+      sku: 'BEV-002',
+      sellingPrice: 3.50,
+      originalPrice: 1.5,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    ),
+    InventoryItem(
+      id: 'prod_101',
+      merchantId: 'mock-merchant',
+      name: 'Croissant',
+      sku: 'PST-001',
+      sellingPrice: 2.95,
+      originalPrice: 1.2,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    ),
   ];
 
   Future<Map<String, String>> _getHeaders() async {
@@ -47,8 +75,11 @@ class StaffPosApiService extends GetxService {
       }
       final lowerCaseSearchTerm = searchTerm.toLowerCase();
       return _mockProducts.where((product) {
-        final nameMatch = product.name.toLowerCase().contains(lowerCaseSearchTerm);
-        final skuMatch = product.sku?.toLowerCase().contains(lowerCaseSearchTerm) ?? false;
+        final nameMatch = product.name.toLowerCase().contains(
+          lowerCaseSearchTerm,
+        );
+        final skuMatch =
+            product.sku?.toLowerCase().contains(lowerCaseSearchTerm) ?? false;
         return nameMatch || skuMatch;
       }).toList();
     }
@@ -60,7 +91,10 @@ class StaffPosApiService extends GetxService {
     );
 
     if (response.isOk && response.body['data'] != null) {
-      return (response.body['data'] as List).map((i) => InventoryItem.fromJson(i)).toList();
+      final rawList = asList(response.body['data']);
+      return rawList
+          .map((i) => InventoryItem.fromJson(Map<String, dynamic>.from(i)))
+          .toList();
     } else {
       throw Exception(response.body?['message'] ?? 'Failed to search products');
     }
@@ -105,9 +139,14 @@ class StaffPosApiService extends GetxService {
     );
 
     if (response.isOk && response.body['data'] != null) {
-      return (response.body['data'] as List).map((i) => Promotion.fromJson(i)).toList();
+      final rawList = asList(response.body['data']);
+      return rawList
+          .map((i) => Promotion.fromJson(Map<String, dynamic>.from(i)))
+          .toList();
     } else {
-      throw Exception(response.body?['message'] ?? 'Failed to fetch promotions');
+      throw Exception(
+        response.body?['message'] ?? 'Failed to fetch promotions',
+      );
     }
   }
 
@@ -139,7 +178,11 @@ class StaffPosApiService extends GetxService {
       final now = DateTime.now();
 
       final saleItems = (saleData['items'] as List).map((item) {
-        final product = _mockProducts.firstWhere((p) => p.id == item['productId'], orElse: () => throw Exception('Mock product not found: ${item['productId']}'));
+        final product = _mockProducts.firstWhere(
+          (p) => p.id == item['productId'],
+          orElse: () =>
+              throw Exception('Mock product not found: ${item['productId']}'),
+        );
         final quantity = item['quantity'] as int;
         final price = item['sellingPriceAtSale'] as double;
         return SaleItem(
@@ -171,10 +214,14 @@ class StaffPosApiService extends GetxService {
       );
     }
 
-    final response = await _connect.post('$_baseUrl/checkout', saleData, headers: await _getHeaders());
+    final response = await _connect.post(
+      '$_baseUrl/checkout',
+      saleData,
+      headers: await _getHeaders(),
+    );
 
     if (response.statusCode == 201 && response.body['data'] != null) {
-      return Sale.fromJson(response.body['data']);
+      return Sale.fromJson(asMap(response.body['data']));
     } else {
       throw Exception(response.body?['message'] ?? 'Checkout failed');
     }

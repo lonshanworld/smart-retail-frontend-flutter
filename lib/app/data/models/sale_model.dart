@@ -2,15 +2,12 @@ class SaleItemInput {
   final String inventoryItemId;
   final int quantitySold;
 
-  SaleItemInput({
-    required this.inventoryItemId,
-    required this.quantitySold,
-  });
+  SaleItemInput({required this.inventoryItemId, required this.quantitySold});
 
   Map<String, dynamic> toJson() => {
-        'inventoryItemId': inventoryItemId,
-        'quantitySold': quantitySold,
-      };
+    'inventoryItemId': inventoryItemId,
+    'quantitySold': quantitySold,
+  };
 }
 
 class CreateSaleInput {
@@ -33,14 +30,15 @@ class CreateSaleInput {
   });
 
   Map<String, dynamic> toJson() => {
-        'shopId': shopId,
-        'paymentType': paymentType,
-        if (paymentStatus != null) 'paymentStatus': paymentStatus,
-        if (stripePaymentIntentId != null) 'stripePaymentIntentId': stripePaymentIntentId,
-        if (notes != null && notes!.isNotEmpty) 'notes': notes,
-        'items': items.map((item) => item.toJson()).toList(),
-        if (customerId != null) 'customerId': customerId,
-      };
+    'shopId': shopId,
+    'paymentType': paymentType,
+    if (paymentStatus != null) 'paymentStatus': paymentStatus,
+    if (stripePaymentIntentId != null)
+      'stripePaymentIntentId': stripePaymentIntentId,
+    if (notes != null && notes!.isNotEmpty) 'notes': notes,
+    'items': items.map((item) => item.toJson()).toList(),
+    if (customerId != null) 'customerId': customerId,
+  };
 }
 
 // --- Response Models for Fetching Sales ---
@@ -59,7 +57,8 @@ class SaleItem {
   final String? itemSku;
 
   // Calculated property for profit
-  double get profit => (sellingPriceAtSale - (originalPriceAtSale ?? 0.0)) * quantitySold;
+  double get profit =>
+      (sellingPriceAtSale - (originalPriceAtSale ?? 0.0)) * quantitySold;
 
   SaleItem({
     required this.id,
@@ -81,8 +80,10 @@ class SaleItem {
       saleId: json['saleId'],
       inventoryItemId: json['inventoryItemId'],
       quantitySold: json['quantitySold'],
-      sellingPriceAtSale: (json['sellingPriceAtSale'] as num).toDouble(), // RENAMED
-      originalPriceAtSale: (json['originalPriceAtSale'] as num?)?.toDouble(), // ADDED
+      sellingPriceAtSale: (json['sellingPriceAtSale'] as num)
+          .toDouble(), // RENAMED
+      originalPriceAtSale: (json['originalPriceAtSale'] as num?)
+          ?.toDouble(), // ADDED
       subtotal: (json['subtotal'] as num).toDouble(),
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: DateTime.parse(json['updatedAt']),
@@ -130,7 +131,9 @@ class Sale {
 
   factory Sale.fromJson(Map<String, dynamic> json) {
     var itemsList = json['items'] as List? ?? [];
-    List<SaleItem> saleItems = itemsList.map((i) => SaleItem.fromJson(i as Map<String, dynamic>)).toList();
+    List<SaleItem> saleItems = itemsList
+        .map((i) => SaleItem.fromJson(i as Map<String, dynamic>))
+        .toList();
 
     double discount = (json['discountAmount'] as num? ?? 0.0).toDouble();
     double finalAmount = (json['totalAmount'] as num).toDouble();

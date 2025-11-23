@@ -6,7 +6,10 @@ import 'package:smart_retail/app/widgets/app_colors.dart';
 import 'package:smart_retail/app/widgets/responsive_data_table.dart';
 import 'package:smart_retail/app/widgets/modern_card.dart';
 
-class MerchantShopInventoryView extends GetView<MerchantShopInventoryController> {
+import 'package:smart_retail/app/utils/dialog_utils.dart';
+
+class MerchantShopInventoryView
+    extends GetView<MerchantShopInventoryController> {
   const MerchantShopInventoryView({super.key});
 
   @override
@@ -15,7 +18,8 @@ class MerchantShopInventoryView extends GetView<MerchantShopInventoryController>
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
         title: Obx(() {
-          final shopName = controller.selectedShopDetails.value?.name ?? 'Shop Inventory';
+          final shopName =
+              controller.selectedShopDetails.value?.name ?? 'Shop Inventory';
           final viewTitle = controller.selectedItemForHistory.value != null
               ? 'History for ${controller.selectedItemForHistory.value!.name}'
               : shopName;
@@ -35,7 +39,7 @@ class MerchantShopInventoryView extends GetView<MerchantShopInventoryController>
               );
             }
             return const SizedBox.shrink();
-          })
+          }),
         ],
       ),
       floatingActionButton: Obx(() {
@@ -65,7 +69,7 @@ class MerchantShopInventoryView extends GetView<MerchantShopInventoryController>
         Obx(() {
           final shop = controller.selectedShopDetails.value;
           if (shop == null) return const SizedBox.shrink();
-          
+
           return Container(
             margin: const EdgeInsets.all(16),
             child: ModernCard(
@@ -105,7 +109,11 @@ class MerchantShopInventoryView extends GetView<MerchantShopInventoryController>
                           const SizedBox(height: 4),
                           Row(
                             children: [
-                              const Icon(Icons.location_on, size: 14, color: Colors.white70),
+                              const Icon(
+                                Icons.location_on,
+                                size: 14,
+                                color: Colors.white70,
+                              ),
                               const SizedBox(width: 4),
                               Expanded(
                                 child: Text(
@@ -129,7 +137,7 @@ class MerchantShopInventoryView extends GetView<MerchantShopInventoryController>
             ),
           );
         }),
-        
+
         // Search Bar
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -152,25 +160,28 @@ class MerchantShopInventoryView extends GetView<MerchantShopInventoryController>
                 borderRadius: BorderRadius.circular(12.0),
                 borderSide: BorderSide(color: AppColors.merchant, width: 2),
               ),
-              suffixIcon: Obx(() => controller.searchTerm.value.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear),
-                      onPressed: () {
-                        controller.searchController.clear();
-                        controller.onSearchChanged('');
-                      },
-                    )
-                  : const SizedBox.shrink()),
+              suffixIcon: Obx(
+                () => controller.searchTerm.value.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          controller.searchController.clear();
+                          controller.onSearchChanged('');
+                        },
+                      )
+                    : const SizedBox.shrink(),
+              ),
             ),
             onChanged: controller.onSearchChanged,
           ),
         ),
         const SizedBox(height: 16),
-        
+
         // Inventory Table
         Expanded(
           child: Obx(() {
-            if (controller.isLoadingInventory.value && controller.shopInventoryList.isEmpty) {
+            if (controller.isLoadingInventory.value &&
+                controller.shopInventoryList.isEmpty) {
               return const Center(child: CircularProgressIndicator());
             }
             if (controller.shopInventoryList.isEmpty) {
@@ -204,11 +215,36 @@ class MerchantShopInventoryView extends GetView<MerchantShopInventoryController>
                 child: ResponsiveDataTable<InventoryItem>(
                   items: controller.shopInventoryList,
                   columns: const [
-                    DataColumn(label: Text('Item', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('SKU', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Stock', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Price', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Actions', style: TextStyle(fontWeight: FontWeight.bold))),
+                    DataColumn(
+                      label: Text(
+                        'Item',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    DataColumn(
+                      label: Text(
+                        'SKU',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    DataColumn(
+                      label: Text(
+                        'Stock',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    DataColumn(
+                      label: Text(
+                        'Price',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    DataColumn(
+                      label: Text(
+                        'Actions',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
                   ],
                   buildCells: (item) => [
                     DataCell(
@@ -216,13 +252,19 @@ class MerchantShopInventoryView extends GetView<MerchantShopInventoryController>
                         children: [
                           CircleAvatar(
                             backgroundColor: AppColors.merchant.shade100,
-                            child: Icon(Icons.inventory_2, color: AppColors.merchant, size: 20),
+                            child: Icon(
+                              Icons.inventory_2,
+                              color: AppColors.merchant,
+                              size: 20,
+                            ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
                               item.name,
-                              style: const TextStyle(fontWeight: FontWeight.w500),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
                         ],
@@ -235,15 +277,21 @@ class MerchantShopInventoryView extends GetView<MerchantShopInventoryController>
                     ),
                     DataCell(
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
-                          color: (item.stockInfo?.firstOrNull?.quantity ?? 0) > 10 
-                              ? Colors.green.shade50 
+                          color:
+                              (item.stockInfo?.firstOrNull?.quantity ?? 0) > 10
+                              ? Colors.green.shade50
                               : Colors.red.shade50,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: (item.stockInfo?.firstOrNull?.quantity ?? 0) > 10 
-                                ? Colors.green 
+                            color:
+                                (item.stockInfo?.firstOrNull?.quantity ?? 0) >
+                                    10
+                                ? Colors.green
                                 : Colors.red,
                             width: 1,
                           ),
@@ -251,8 +299,10 @@ class MerchantShopInventoryView extends GetView<MerchantShopInventoryController>
                         child: Text(
                           '${item.stockInfo?.firstOrNull?.quantity ?? 0}',
                           style: TextStyle(
-                            color: (item.stockInfo?.firstOrNull?.quantity ?? 0) > 10 
-                                ? Colors.green.shade700 
+                            color:
+                                (item.stockInfo?.firstOrNull?.quantity ?? 0) >
+                                    10
+                                ? Colors.green.shade700
                                 : Colors.red.shade700,
                             fontWeight: FontWeight.bold,
                           ),
@@ -278,38 +328,39 @@ class MerchantShopInventoryView extends GetView<MerchantShopInventoryController>
                             _showItemDetailsDialog(item);
                           }
                         },
-                        itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                          const PopupMenuItem<String>(
-                            value: 'adjust',
-                            child: Row(
-                              children: [
-                                Icon(Icons.edit, size: 20),
-                                SizedBox(width: 8),
-                                Text('Adjust Stock'),
-                              ],
-                            ),
-                          ),
-                          const PopupMenuItem<String>(
-                            value: 'history',
-                            child: Row(
-                              children: [
-                                Icon(Icons.history, size: 20),
-                                SizedBox(width: 8),
-                                Text('View History'),
-                              ],
-                            ),
-                          ),
-                          const PopupMenuItem<String>(
-                            value: 'details',
-                            child: Row(
-                              children: [
-                                Icon(Icons.info_outline, size: 20),
-                                SizedBox(width: 8),
-                                Text('Details'),
-                              ],
-                            ),
-                          ),
-                        ],
+                        itemBuilder: (BuildContext context) =>
+                            <PopupMenuEntry<String>>[
+                              const PopupMenuItem<String>(
+                                value: 'adjust',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.edit, size: 20),
+                                    SizedBox(width: 8),
+                                    Text('Adjust Stock'),
+                                  ],
+                                ),
+                              ),
+                              const PopupMenuItem<String>(
+                                value: 'history',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.history, size: 20),
+                                    SizedBox(width: 8),
+                                    Text('View History'),
+                                  ],
+                                ),
+                              ),
+                              const PopupMenuItem<String>(
+                                value: 'details',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.info_outline, size: 20),
+                                    SizedBox(width: 8),
+                                    Text('Details'),
+                                  ],
+                                ),
+                              ),
+                            ],
                         icon: const Icon(Icons.more_vert),
                       ),
                     ),
@@ -317,7 +368,11 @@ class MerchantShopInventoryView extends GetView<MerchantShopInventoryController>
                   buildMobileCard: (item) => DataRowCard(
                     leading: CircleAvatar(
                       backgroundColor: AppColors.merchant.shade100,
-                      child: Icon(Icons.inventory_2, color: AppColors.merchant, size: 20),
+                      child: Icon(
+                        Icons.inventory_2,
+                        color: AppColors.merchant,
+                        size: 20,
+                      ),
                     ),
                     title: item.name,
                     subtitle: item.sku ?? 'No SKU',
@@ -343,38 +398,39 @@ class MerchantShopInventoryView extends GetView<MerchantShopInventoryController>
                           _showItemDetailsDialog(item);
                         }
                       },
-                      itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                        const PopupMenuItem<String>(
-                          value: 'adjust',
-                          child: Row(
-                            children: [
-                              Icon(Icons.edit, size: 20),
-                              SizedBox(width: 8),
-                              Text('Adjust Stock'),
-                            ],
-                          ),
-                        ),
-                        const PopupMenuItem<String>(
-                          value: 'history',
-                          child: Row(
-                            children: [
-                              Icon(Icons.history, size: 20),
-                              SizedBox(width: 8),
-                              Text('View History'),
-                            ],
-                          ),
-                        ),
-                        const PopupMenuItem<String>(
-                          value: 'details',
-                          child: Row(
-                            children: [
-                              Icon(Icons.info_outline, size: 20),
-                              SizedBox(width: 8),
-                              Text('Details'),
-                            ],
-                          ),
-                        ),
-                      ],
+                      itemBuilder: (BuildContext context) =>
+                          <PopupMenuEntry<String>>[
+                            const PopupMenuItem<String>(
+                              value: 'adjust',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.edit, size: 20),
+                                  SizedBox(width: 8),
+                                  Text('Adjust Stock'),
+                                ],
+                              ),
+                            ),
+                            const PopupMenuItem<String>(
+                              value: 'history',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.history, size: 20),
+                                  SizedBox(width: 8),
+                                  Text('View History'),
+                                ],
+                              ),
+                            ),
+                            const PopupMenuItem<String>(
+                              value: 'details',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.info_outline, size: 20),
+                                  SizedBox(width: 8),
+                                  Text('Details'),
+                                ],
+                              ),
+                            ),
+                          ],
                       icon: const Icon(Icons.more_vert),
                     ),
                     onTap: () => _showItemDetailsDialog(item),
@@ -399,19 +455,12 @@ class MerchantShopInventoryView extends GetView<MerchantShopInventoryController>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.history,
-                size: 64,
-                color: Colors.grey.shade400,
-              ),
+              Icon(Icons.history, size: 64, color: Colors.grey.shade400),
               const SizedBox(height: 16),
               Text(
                 'No stock movement history found for ${controller.selectedItemForHistory.value?.name ?? "this item"}.',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey.shade600,
-                ),
+                style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
               ),
             ],
           ),
@@ -422,29 +471,60 @@ class MerchantShopInventoryView extends GetView<MerchantShopInventoryController>
         child: ResponsiveDataTable(
           items: controller.stockMovements,
           columns: const [
-            DataColumn(label: Text('Movement Type', style: TextStyle(fontWeight: FontWeight.bold))),
-            DataColumn(label: Text('Quantity Changed', style: TextStyle(fontWeight: FontWeight.bold))),
-            DataColumn(label: Text('New Qty', style: TextStyle(fontWeight: FontWeight.bold))),
-            DataColumn(label: Text('Date', style: TextStyle(fontWeight: FontWeight.bold))),
-            DataColumn(label: Text('Details', style: TextStyle(fontWeight: FontWeight.bold))),
+            DataColumn(
+              label: Text(
+                'Movement Type',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            DataColumn(
+              label: Text(
+                'Quantity Changed',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            DataColumn(
+              label: Text(
+                'New Qty',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            DataColumn(
+              label: Text(
+                'Date',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            DataColumn(
+              label: Text(
+                'Details',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
           ],
           buildCells: (movement) => [
             DataCell(
               Row(
                 children: [
                   Icon(
-                    movement.quantityChanged > 0 
-                        ? Icons.add_circle_outline 
-                        : (movement.quantityChanged < 0 ? Icons.remove_circle_outline : Icons.sync),
-                    color: movement.quantityChanged > 0 
-                        ? Colors.green 
-                        : (movement.quantityChanged < 0 ? Colors.red : Colors.grey),
+                    movement.quantityChanged > 0
+                        ? Icons.add_circle_outline
+                        : (movement.quantityChanged < 0
+                              ? Icons.remove_circle_outline
+                              : Icons.sync),
+                    color: movement.quantityChanged > 0
+                        ? Colors.green
+                        : (movement.quantityChanged < 0
+                              ? Colors.red
+                              : Colors.grey),
                     size: 20,
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      movement.movementType.replaceAll('_', ' ').capitalizeFirst!,
+                      movement.movementType
+                          .replaceAll('_', ' ')
+                          .capitalizeFirst!,
                       style: const TextStyle(fontWeight: FontWeight.w500),
                     ),
                   ),
@@ -453,19 +533,26 @@ class MerchantShopInventoryView extends GetView<MerchantShopInventoryController>
             ),
             DataCell(
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
-                  color: movement.quantityChanged > 0 
-                      ? Colors.green.shade50 
-                      : (movement.quantityChanged < 0 ? Colors.red.shade50 : Colors.grey.shade50),
+                  color: movement.quantityChanged > 0
+                      ? Colors.green.shade50
+                      : (movement.quantityChanged < 0
+                            ? Colors.red.shade50
+                            : Colors.grey.shade50),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   '${movement.quantityChanged > 0 ? '+' : ''}${movement.quantityChanged}',
                   style: TextStyle(
-                    color: movement.quantityChanged > 0 
-                        ? Colors.green.shade700 
-                        : (movement.quantityChanged < 0 ? Colors.red.shade700 : Colors.grey.shade700),
+                    color: movement.quantityChanged > 0
+                        ? Colors.green.shade700
+                        : (movement.quantityChanged < 0
+                              ? Colors.red.shade700
+                              : Colors.grey.shade700),
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -503,15 +590,19 @@ class MerchantShopInventoryView extends GetView<MerchantShopInventoryController>
           ],
           buildMobileCard: (movement) => DataRowCard(
             leading: CircleAvatar(
-              backgroundColor: movement.quantityChanged > 0 
-                  ? Colors.green.shade100 
-                  : (movement.quantityChanged < 0 ? Colors.red.shade100 : Colors.grey.shade100),
+              backgroundColor: movement.quantityChanged > 0
+                  ? Colors.green.shade100
+                  : (movement.quantityChanged < 0
+                        ? Colors.red.shade100
+                        : Colors.grey.shade100),
               child: Icon(
-                movement.quantityChanged > 0 
-                    ? Icons.add_circle_outline 
-                    : (movement.quantityChanged < 0 ? Icons.remove_circle_outline : Icons.sync),
-                color: movement.quantityChanged > 0 
-                    ? Colors.green 
+                movement.quantityChanged > 0
+                    ? Icons.add_circle_outline
+                    : (movement.quantityChanged < 0
+                          ? Icons.remove_circle_outline
+                          : Icons.sync),
+                color: movement.quantityChanged > 0
+                    ? Colors.green
                     : (movement.quantityChanged < 0 ? Colors.red : Colors.grey),
                 size: 20,
               ),
@@ -522,7 +613,8 @@ class MerchantShopInventoryView extends GetView<MerchantShopInventoryController>
               DetailRow(
                 icon: Icons.numbers,
                 label: 'Change',
-                value: '${movement.quantityChanged > 0 ? '+' : ''}${movement.quantityChanged}',
+                value:
+                    '${movement.quantityChanged > 0 ? '+' : ''}${movement.quantityChanged}',
               ),
               DetailRow(
                 icon: Icons.inventory,
@@ -555,8 +647,8 @@ class MerchantShopInventoryView extends GetView<MerchantShopInventoryController>
   }
 
   void _showItemDetailsDialog(InventoryItem item) {
-    Get.dialog(
-      AlertDialog(
+    DialogUtils.showCustomDialog(
+      dialog: AlertDialog(
         title: Text(item.name),
         content: SingleChildScrollView(
           child: Column(
@@ -567,12 +659,21 @@ class MerchantShopInventoryView extends GetView<MerchantShopInventoryController>
                 _buildDetailRow('SKU:', item.sku!),
                 const SizedBox(height: 8),
               ],
-              _buildDetailRow('Current Stock:', '${item.stockInfo?.firstOrNull?.quantity ?? 0}'),
+              _buildDetailRow(
+                'Current Stock:',
+                '${item.stockInfo?.firstOrNull?.quantity ?? 0}',
+              ),
               const SizedBox(height: 8),
-              _buildDetailRow('Selling Price:', '\$${item.sellingPrice.toStringAsFixed(2)}'),
+              _buildDetailRow(
+                'Selling Price:',
+                '\$${item.sellingPrice.toStringAsFixed(2)}',
+              ),
               const SizedBox(height: 8),
               if (item.originalPrice != null) ...[
-                _buildDetailRow('Original Price:', '\$${item.originalPrice!.toStringAsFixed(2)}'),
+                _buildDetailRow(
+                  'Original Price:',
+                  '\$${item.originalPrice!.toStringAsFixed(2)}',
+                ),
                 const SizedBox(height: 8),
               ],
               if (item.description != null && item.description!.isNotEmpty) ...[
@@ -587,10 +688,7 @@ class MerchantShopInventoryView extends GetView<MerchantShopInventoryController>
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Close'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('Close')),
           ElevatedButton.icon(
             onPressed: () {
               Get.back();
@@ -612,14 +710,9 @@ class MerchantShopInventoryView extends GetView<MerchantShopInventoryController>
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
+        Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
         const SizedBox(width: 8),
-        Expanded(
-          child: Text(value),
-        ),
+        Expanded(child: Text(value)),
       ],
     );
   }
@@ -639,8 +732,8 @@ class MerchantShopInventoryView extends GetView<MerchantShopInventoryController>
       'return_to_supplier',
     ];
 
-    Get.dialog(
-      AlertDialog(
+    DialogUtils.showCustomDialog(
+      dialog: AlertDialog(
         title: Text('Adjust Stock for ${item.name}'),
         content: SingleChildScrollView(
           child: Column(
@@ -681,7 +774,9 @@ class MerchantShopInventoryView extends GetView<MerchantShopInventoryController>
                 items: movementTypes.map((String value) {
                   return DropdownMenuItem<String>(
                     value: value,
-                    child: Text(value.replaceAll('_', ' ').capitalizeFirst ?? value),
+                    child: Text(
+                      value.replaceAll('_', ' ').capitalizeFirst ?? value,
+                    ),
                   );
                 }).toList(),
                 onChanged: (String? newValue) {
@@ -693,7 +788,9 @@ class MerchantShopInventoryView extends GetView<MerchantShopInventoryController>
               const SizedBox(height: 15),
               TextField(
                 controller: quantityController,
-                keyboardType: const TextInputType.numberWithOptions(signed: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  signed: true,
+                ),
                 decoration: const InputDecoration(
                   labelText: 'Quantity Change (+/-)',
                   hintText: 'e.g., +10 or -5',
@@ -705,33 +802,41 @@ class MerchantShopInventoryView extends GetView<MerchantShopInventoryController>
                 },
               ),
               const SizedBox(height: 15),
-              Obx(() => Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: quantityChange.value >= 0 ? Colors.green.shade50 : Colors.red.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: quantityChange.value >= 0 ? Colors.green : Colors.red,
+              Obx(
+                () => Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: quantityChange.value >= 0
+                        ? Colors.green.shade50
+                        : Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: quantityChange.value >= 0
+                          ? Colors.green
+                          : Colors.red,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'New Quantity:',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        '${(item.stockInfo?.firstOrNull?.quantity ?? 0) + quantityChange.value}',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: quantityChange.value >= 0
+                              ? Colors.green.shade700
+                              : Colors.red.shade700,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'New Quantity:',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      '${(item.stockInfo?.firstOrNull?.quantity ?? 0) + quantityChange.value}',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: quantityChange.value >= 0 ? Colors.green.shade700 : Colors.red.shade700,
-                      ),
-                    ),
-                  ],
-                ),
-              )),
+              ),
               const SizedBox(height: 15),
               TextField(
                 controller: reasonController,
@@ -747,10 +852,7 @@ class MerchantShopInventoryView extends GetView<MerchantShopInventoryController>
           ),
         ),
         actions: <Widget>[
-          TextButton(
-            child: const Text('Cancel'),
-            onPressed: () => Get.back(),
-          ),
+          TextButton(child: const Text('Cancel'), onPressed: () => Get.back()),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.merchant,
@@ -760,29 +862,29 @@ class MerchantShopInventoryView extends GetView<MerchantShopInventoryController>
             onPressed: () {
               final int qtyChanged = int.tryParse(quantityController.text) ?? 0;
               if (qtyChanged == 0) {
-                Get.snackbar(
-                  'Invalid Input',
-                  'Quantity change cannot be zero.',
-                  snackPosition: SnackPosition.BOTTOM,
-                  backgroundColor: Colors.orange,
-                  colorText: Colors.white,
-                );
+                DialogUtils.showError('Quantity change cannot be zero.');
                 return;
               }
-              if (((item.stockInfo?.firstOrNull?.quantity ?? 0) + qtyChanged) < 0 &&
-                  !['sale', 'damaged_goods', 'theft_loss', 'expired_goods', 'return_to_supplier'].contains(movementType)) {
-                Get.snackbar(
-                  'Invalid Operation',
-                  'Stock quantity cannot go below zero for this adjustment type.',
-                  snackPosition: SnackPosition.BOTTOM,
-                  backgroundColor: Colors.red,
-                  colorText: Colors.white,
-                );
+              if (((item.stockInfo?.firstOrNull?.quantity ?? 0) + qtyChanged) <
+                      0 &&
+                  ![
+                    'sale',
+                    'damaged_goods',
+                    'theft_loss',
+                    'expired_goods',
+                    'return_to_supplier',
+                  ].contains(movementType)) {
+                DialogUtils.showError('Stock quantity cannot go below zero for this adjustment type.');
                 return;
               }
 
               Get.back();
-              controller.adjustStock(item, qtyChanged, movementType, reasonController.text);
+              controller.adjustStock(
+                item,
+                qtyChanged,
+                movementType,
+                reasonController.text,
+              );
             },
           ),
         ],
@@ -792,13 +894,7 @@ class MerchantShopInventoryView extends GetView<MerchantShopInventoryController>
 
   void _showBulkStockInDialog() {
     if (controller.selectedShopDetails.value == null) {
-      Get.snackbar(
-        'Error',
-        'Please select a shop first',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
+      DialogUtils.showError('Please select a shop first');
       return;
     }
 
@@ -810,8 +906,8 @@ class MerchantShopInventoryView extends GetView<MerchantShopInventoryController>
     final RxString searchQuery = ''.obs;
     final TextEditingController searchController = TextEditingController();
 
-    Get.dialog(
-      Dialog(
+    DialogUtils.showCustomDialog(
+      dialog: Dialog(
         child: Container(
           width: 650,
           constraints: const BoxConstraints(maxHeight: 750),
@@ -823,7 +919,10 @@ class MerchantShopInventoryView extends GetView<MerchantShopInventoryController>
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [AppColors.merchant.shade400, AppColors.merchant.shade700],
+                    colors: [
+                      AppColors.merchant.shade400,
+                      AppColors.merchant.shade700,
+                    ],
                   ),
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(4),
@@ -864,7 +963,7 @@ class MerchantShopInventoryView extends GetView<MerchantShopInventoryController>
                   ],
                 ),
               ),
-              
+
               // Shop Info
               Container(
                 padding: const EdgeInsets.all(16),
@@ -897,15 +996,17 @@ class MerchantShopInventoryView extends GetView<MerchantShopInventoryController>
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    suffixIcon: Obx(() => searchQuery.value.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear),
-                            onPressed: () {
-                              searchController.clear();
-                              searchQuery.value = '';
-                            },
-                          )
-                        : const SizedBox.shrink()),
+                    suffixIcon: Obx(
+                      () => searchQuery.value.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () {
+                                searchController.clear();
+                                searchQuery.value = '';
+                              },
+                            )
+                          : const SizedBox.shrink(),
+                    ),
                   ),
                   onChanged: (value) => searchQuery.value = value,
                 ),
@@ -913,12 +1014,14 @@ class MerchantShopInventoryView extends GetView<MerchantShopInventoryController>
 
               // Changes Summary
               Obx(() {
-                final changes = quantityChanges.entries.where((e) => e.value != 0).toList();
+                final changes = quantityChanges.entries
+                    .where((e) => e.value != 0)
+                    .toList();
                 if (changes.isEmpty) return const SizedBox.shrink();
-                
+
                 final increaseCount = changes.where((e) => e.value > 0).length;
                 final decreaseCount = changes.where((e) => e.value < 0).length;
-                
+
                 return Container(
                   margin: const EdgeInsets.symmetric(horizontal: 16),
                   padding: const EdgeInsets.all(12),
@@ -929,7 +1032,11 @@ class MerchantShopInventoryView extends GetView<MerchantShopInventoryController>
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.info_outline, color: Colors.blue.shade700, size: 20),
+                      Icon(
+                        Icons.info_outline,
+                        color: Colors.blue.shade700,
+                        size: 20,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -975,7 +1082,11 @@ class MerchantShopInventoryView extends GetView<MerchantShopInventoryController>
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.search_off, size: 64, color: Colors.grey.shade400),
+                          Icon(
+                            Icons.search_off,
+                            size: 64,
+                            color: Colors.grey.shade400,
+                          ),
                           const SizedBox(height: 16),
                           Text(
                             'No items found',
@@ -992,12 +1103,14 @@ class MerchantShopInventoryView extends GetView<MerchantShopInventoryController>
                     itemBuilder: (context, index) {
                       final item = filteredItems[index];
                       final isInShop = shopItemIds.contains(item.id);
-                      final currentStock = controller.shopInventoryList
-                          .firstWhereOrNull((i) => i.id == item.id)
-                          ?.stockInfo
-                          ?.firstOrNull
-                          ?.quantity ?? 0;
-                      
+                      final currentStock =
+                          controller.shopInventoryList
+                              .firstWhereOrNull((i) => i.id == item.id)
+                              ?.stockInfo
+                              ?.firstOrNull
+                              ?.quantity ??
+                          0;
+
                       return Obx(() {
                         final change = quantityChanges[item.id] ?? 0;
                         final newStock = currentStock + change;
@@ -1005,8 +1118,10 @@ class MerchantShopInventoryView extends GetView<MerchantShopInventoryController>
                         return Card(
                           margin: const EdgeInsets.only(bottom: 8),
                           elevation: change != 0 ? 4 : 1,
-                          color: change != 0 
-                              ? (change > 0 ? Colors.green.shade50 : Colors.red.shade50)
+                          color: change != 0
+                              ? (change > 0
+                                    ? Colors.green.shade50
+                                    : Colors.red.shade50)
                               : null,
                           child: Padding(
                             padding: const EdgeInsets.all(12),
@@ -1014,21 +1129,26 @@ class MerchantShopInventoryView extends GetView<MerchantShopInventoryController>
                               children: [
                                 // Item Icon
                                 CircleAvatar(
-                                  backgroundColor: isInShop 
-                                      ? AppColors.merchant.shade100 
+                                  backgroundColor: isInShop
+                                      ? AppColors.merchant.shade100
                                       : Colors.grey.shade200,
                                   child: Icon(
-                                    isInShop ? Icons.inventory_2 : Icons.add_shopping_cart,
-                                    color: isInShop ? AppColors.merchant : Colors.grey.shade600,
+                                    isInShop
+                                        ? Icons.inventory_2
+                                        : Icons.add_shopping_cart,
+                                    color: isInShop
+                                        ? AppColors.merchant
+                                        : Colors.grey.shade600,
                                     size: 20,
                                   ),
                                 ),
                                 const SizedBox(width: 12),
-                                
+
                                 // Item Info
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Row(
                                         children: [
@@ -1043,14 +1163,18 @@ class MerchantShopInventoryView extends GetView<MerchantShopInventoryController>
                                           ),
                                           if (!isInShop)
                                             Container(
-                                              padding: const EdgeInsets.symmetric(
-                                                horizontal: 8,
-                                                vertical: 2,
-                                              ),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 8,
+                                                    vertical: 2,
+                                                  ),
                                               decoration: BoxDecoration(
                                                 color: Colors.orange.shade100,
-                                                borderRadius: BorderRadius.circular(4),
-                                                border: Border.all(color: Colors.orange.shade300),
+                                                borderRadius:
+                                                    BorderRadius.circular(4),
+                                                border: Border.all(
+                                                  color: Colors.orange.shade300,
+                                                ),
                                               ),
                                               child: Text(
                                                 'NEW',
@@ -1088,8 +1212,8 @@ class MerchantShopInventoryView extends GetView<MerchantShopInventoryController>
                                                 style: TextStyle(
                                                   fontSize: 12,
                                                   fontWeight: FontWeight.bold,
-                                                  color: change > 0 
-                                                      ? Colors.green.shade700 
+                                                  color: change > 0
+                                                      ? Colors.green.shade700
                                                       : Colors.red.shade700,
                                                 ),
                                               ),
@@ -1119,23 +1243,30 @@ class MerchantShopInventoryView extends GetView<MerchantShopInventoryController>
                                   ),
                                 ),
                                 const SizedBox(width: 12),
-                                
+
                                 // Quantity Controls
                                 Container(
                                   decoration: BoxDecoration(
                                     color: Colors.white,
                                     borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: Colors.grey.shade300),
+                                    border: Border.all(
+                                      color: Colors.grey.shade300,
+                                    ),
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       // Decrease button
                                       IconButton(
-                                        icon: const Icon(Icons.remove, size: 18),
+                                        icon: const Icon(
+                                          Icons.remove,
+                                          size: 18,
+                                        ),
                                         onPressed: () {
-                                          final current = quantityChanges[item.id] ?? 0;
-                                          quantityChanges[item.id!] = current - 1;
+                                          final current =
+                                              quantityChanges[item.id] ?? 0;
+                                          quantityChanges[item.id!] =
+                                              current - 1;
                                         },
                                         color: Colors.red,
                                         tooltip: 'Decrease',
@@ -1144,29 +1275,39 @@ class MerchantShopInventoryView extends GetView<MerchantShopInventoryController>
                                           minHeight: 36,
                                         ),
                                       ),
-                                      
+
                                       // Quantity Display
                                       Container(
-                                        constraints: const BoxConstraints(minWidth: 50),
+                                        constraints: const BoxConstraints(
+                                          minWidth: 50,
+                                        ),
                                         alignment: Alignment.center,
                                         child: Text(
-                                          change == 0 ? '0' : (change > 0 ? '+$change' : '$change'),
+                                          change == 0
+                                              ? '0'
+                                              : (change > 0
+                                                    ? '+$change'
+                                                    : '$change'),
                                           style: TextStyle(
                                             fontSize: 15,
                                             fontWeight: FontWeight.bold,
-                                            color: change == 0 
+                                            color: change == 0
                                                 ? Colors.grey.shade700
-                                                : (change > 0 ? Colors.green.shade700 : Colors.red.shade700),
+                                                : (change > 0
+                                                      ? Colors.green.shade700
+                                                      : Colors.red.shade700),
                                           ),
                                         ),
                                       ),
-                                      
+
                                       // Increase button
                                       IconButton(
                                         icon: const Icon(Icons.add, size: 18),
                                         onPressed: () {
-                                          final current = quantityChanges[item.id] ?? 0;
-                                          quantityChanges[item.id!] = current + 1;
+                                          final current =
+                                              quantityChanges[item.id] ?? 0;
+                                          quantityChanges[item.id!] =
+                                              current + 1;
                                         },
                                         color: Colors.green,
                                         tooltip: 'Increase',
@@ -1204,7 +1345,9 @@ class MerchantShopInventoryView extends GetView<MerchantShopInventoryController>
                     ),
                     const SizedBox(width: 12),
                     Obx(() {
-                      final changes = quantityChanges.entries.where((e) => e.value != 0).toList();
+                      final changes = quantityChanges.entries
+                          .where((e) => e.value != 0)
+                          .toList();
                       return ElevatedButton.icon(
                         onPressed: changes.isEmpty
                             ? null
@@ -1253,8 +1396,8 @@ class MerchantShopInventoryView extends GetView<MerchantShopInventoryController>
     if (itemsToProcess.isEmpty) return;
 
     // Show confirmation dialog
-    Get.dialog(
-      AlertDialog(
+    DialogUtils.showCustomDialog(
+      dialog: AlertDialog(
         title: const Text('Confirm Stock Changes'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -1272,13 +1415,15 @@ class MerchantShopInventoryView extends GetView<MerchantShopInventoryController>
                   children: itemsToProcess.map((entry) {
                     final change = entry.value;
                     final item = entry.key;
-                    final currentStock = controller.shopInventoryList
-                        .firstWhereOrNull((i) => i.id == item.id)
-                        ?.stockInfo
-                        ?.firstOrNull
-                        ?.quantity ?? 0;
+                    final currentStock =
+                        controller.shopInventoryList
+                            .firstWhereOrNull((i) => i.id == item.id)
+                            ?.stockInfo
+                            ?.firstOrNull
+                            ?.quantity ??
+                        0;
                     final newStock = currentStock + change;
-                    
+
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 4),
                       child: Row(
@@ -1297,16 +1442,23 @@ class MerchantShopInventoryView extends GetView<MerchantShopInventoryController>
                             ),
                           ),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
-                              color: change > 0 ? Colors.green.shade100 : Colors.red.shade100,
+                              color: change > 0
+                                  ? Colors.green.shade100
+                                  : Colors.red.shade100,
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
                               change > 0 ? '+$change' : '$change',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: change > 0 ? Colors.green.shade700 : Colors.red.shade700,
+                                color: change > 0
+                                    ? Colors.green.shade700
+                                    : Colors.red.shade700,
                               ),
                             ),
                           ),
@@ -1320,10 +1472,7 @@ class MerchantShopInventoryView extends GetView<MerchantShopInventoryController>
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () {
               Get.back();

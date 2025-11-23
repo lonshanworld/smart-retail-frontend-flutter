@@ -2,6 +2,8 @@ import 'package:get/get.dart';
 import 'package:smart_retail/app/data/models/admin_dashboard_summary_model.dart';
 import 'package:smart_retail/app/services/admin_api_service.dart';
 
+import 'package:smart_retail/app/utils/dialog_utils.dart';
+
 class AdminDashboardController extends GetxController {
   final AdminApiService _apiService = Get.put(AdminApiService());
 
@@ -21,11 +23,7 @@ class AdminDashboardController extends GetxController {
       final result = await _apiService.getAdminDashboardSummary();
       summary.value = result;
     } catch (e) {
-      Get.snackbar(
-        "Error",
-        "Could not load dashboard summary. ${e.toString()}",
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      DialogUtils.showError("Could not load dashboard summary. ${e.toString()}");
     } finally {
       isLoadingSummary.value = false;
     }

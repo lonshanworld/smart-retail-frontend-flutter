@@ -30,7 +30,8 @@ class UserSelectionItem extends Equatable {
     if (json['role'] != null && json['role'] is String) {
       // Assuming json['role'] is a string like "admin", "merchant"
       displayRole = (json['role'] as String).toUserRole().toDisplayString();
-    } else if (json['role_display_name'] != null && json['role_display_name'] is String) {
+    } else if (json['role_display_name'] != null &&
+        json['role_display_name'] is String) {
       // Alternative: if the API directly provides the display name
       displayRole = json['role_display_name'] as String;
     }

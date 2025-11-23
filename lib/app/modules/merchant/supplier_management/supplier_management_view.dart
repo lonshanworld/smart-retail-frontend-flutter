@@ -13,7 +13,7 @@ class SupplierManagementView extends GetView<SupplierManagementController> {
   Widget build(BuildContext context) {
     return MerchantMainScaffold(
       title: 'Manage Suppliers',
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -24,7 +24,11 @@ class SupplierManagementView extends GetView<SupplierManagementController> {
             const SizedBox(height: 24),
             Text('Existing Suppliers', style: Get.textTheme.headlineSmall),
             const SizedBox(height: 16),
-            Expanded(child: _buildSupplierList()),
+            // Constrain the list height so the whole page can scroll when content is tall
+            SizedBox(
+              height: MediaQuery.of(context).size.height * 0.5,
+              child: _buildSupplierList(),
+            ),
           ],
         ),
       ),
@@ -40,39 +44,68 @@ class SupplierManagementView extends GetView<SupplierManagementController> {
         children: [
           TextFormField(
             controller: controller.nameController,
-            decoration: const InputDecoration(labelText: 'Supplier Name', border: OutlineInputBorder()),
-            validator: (value) => (value == null || value.isEmpty) ? 'Please enter a name' : null,
+            decoration: const InputDecoration(
+              labelText: 'Supplier Name',
+              border: OutlineInputBorder(),
+            ),
+            validator: (value) =>
+                (value == null || value.isEmpty) ? 'Please enter a name' : null,
           ),
           TextFormField(
             controller: controller.contactNameController,
-            decoration: const InputDecoration(labelText: 'Contact Name', border: OutlineInputBorder()),
+            decoration: const InputDecoration(
+              labelText: 'Contact Name',
+              border: OutlineInputBorder(),
+            ),
           ),
           TextFormField(
             controller: controller.contactEmailController,
-            decoration: const InputDecoration(labelText: 'Contact Email', border: OutlineInputBorder()),
+            decoration: const InputDecoration(
+              labelText: 'Contact Email',
+              border: OutlineInputBorder(),
+            ),
             keyboardType: TextInputType.emailAddress,
           ),
           TextFormField(
             controller: controller.contactPhoneController,
-            decoration: const InputDecoration(labelText: 'Contact Phone', border: OutlineInputBorder()),
+            decoration: const InputDecoration(
+              labelText: 'Contact Phone',
+              border: OutlineInputBorder(),
+            ),
             keyboardType: TextInputType.phone,
           ),
           TextFormField(
             controller: controller.addressController,
-            decoration: const InputDecoration(labelText: 'Address', border: OutlineInputBorder()),
+            decoration: const InputDecoration(
+              labelText: 'Address',
+              border: OutlineInputBorder(),
+            ),
           ),
           TextFormField(
             controller: controller.notesController,
-            decoration: const InputDecoration(labelText: 'Notes', border: OutlineInputBorder()),
+            decoration: const InputDecoration(
+              labelText: 'Notes',
+              border: OutlineInputBorder(),
+            ),
             maxLines: 3,
           ),
-          Obx(() => ElevatedButton.icon(
-                icon: controller.isSaving.value
-                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Icon(Icons.add),
-                label: Text(controller.isSaving.value ? 'Saving...' : 'Add Supplier'),
-                onPressed: controller.isSaving.value ? null : () => controller.createSupplier(),
-              )),
+          Obx(
+            () => ElevatedButton.icon(
+              icon: controller.isSaving.value
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.add),
+              label: Text(
+                controller.isSaving.value ? 'Saving...' : 'Add Supplier',
+              ),
+              onPressed: controller.isSaving.value
+                  ? null
+                  : () => controller.createSupplier(),
+            ),
+          ),
         ],
       ),
     );
@@ -92,7 +125,10 @@ class SupplierManagementView extends GetView<SupplierManagementController> {
               children: [
                 Icon(Icons.error_outline, size: 48, color: Colors.red.shade300),
                 const SizedBox(height: 12),
-                Text('Error: ${controller.errorMessage.value}', style: const TextStyle(color: Colors.red)),
+                Text(
+                  'Error: ${controller.errorMessage.value}',
+                  style: const TextStyle(color: Colors.red),
+                ),
               ],
             ),
           ),
@@ -105,11 +141,21 @@ class SupplierManagementView extends GetView<SupplierManagementController> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey.shade300),
+                Icon(
+                  Icons.inventory_2_outlined,
+                  size: 64,
+                  color: Colors.grey.shade300,
+                ),
                 const SizedBox(height: 16),
-                const Text('No suppliers found.', style: TextStyle(fontSize: 16, color: Colors.grey)),
+                const Text(
+                  'No suppliers found.',
+                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                ),
                 const SizedBox(height: 8),
-                const Text('Add your first supplier using the form above.', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                const Text(
+                  'Add your first supplier using the form above.',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
               ],
             ),
           ),
@@ -118,10 +164,30 @@ class SupplierManagementView extends GetView<SupplierManagementController> {
       return ResponsiveDataTable(
         items: controller.suppliers,
         columns: [
-          DataColumn(label: const Text('Supplier Name', style: TextStyle(fontWeight: FontWeight.bold))),
-          DataColumn(label: const Text('Contact Person', style: TextStyle(fontWeight: FontWeight.bold))),
-          DataColumn(label: const Text('Phone', style: TextStyle(fontWeight: FontWeight.bold))),
-          DataColumn(label: const Text('Email', style: TextStyle(fontWeight: FontWeight.bold))),
+          DataColumn(
+            label: const Text(
+              'Supplier Name',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          DataColumn(
+            label: const Text(
+              'Contact Person',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          DataColumn(
+            label: const Text(
+              'Phone',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          DataColumn(
+            label: const Text(
+              'Email',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
         ],
         buildCells: (supplier) {
           return [
@@ -130,11 +196,18 @@ class SupplierManagementView extends GetView<SupplierManagementController> {
                 children: [
                   CircleAvatar(
                     backgroundColor: AppColors.merchant.shade100,
-                    child: Icon(Icons.local_shipping, color: AppColors.merchant.shade700, size: 20),
+                    child: Icon(
+                      Icons.local_shipping,
+                      color: AppColors.merchant.shade700,
+                      size: 20,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Text(supplier.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                    child: Text(
+                      supplier.name,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
                   ),
                 ],
               ),
@@ -144,7 +217,9 @@ class SupplierManagementView extends GetView<SupplierManagementController> {
                 supplier.contactName ?? '-',
                 style: TextStyle(
                   fontSize: 13,
-                  fontStyle: supplier.contactName == null ? FontStyle.italic : null,
+                  fontStyle: supplier.contactName == null
+                      ? FontStyle.italic
+                      : null,
                   color: supplier.contactName == null ? Colors.grey : null,
                 ),
               ),
@@ -161,8 +236,12 @@ class SupplierManagementView extends GetView<SupplierManagementController> {
                       supplier.contactPhone ?? '-',
                       style: TextStyle(
                         fontSize: 13,
-                        fontStyle: supplier.contactPhone == null ? FontStyle.italic : null,
-                        color: supplier.contactPhone == null ? Colors.grey : null,
+                        fontStyle: supplier.contactPhone == null
+                            ? FontStyle.italic
+                            : null,
+                        color: supplier.contactPhone == null
+                            ? Colors.grey
+                            : null,
                       ),
                     ),
                   ),
@@ -174,7 +253,9 @@ class SupplierManagementView extends GetView<SupplierManagementController> {
                 supplier.contactEmail ?? '-',
                 style: TextStyle(
                   fontSize: 13,
-                  fontStyle: supplier.contactEmail == null ? FontStyle.italic : null,
+                  fontStyle: supplier.contactEmail == null
+                      ? FontStyle.italic
+                      : null,
                   color: supplier.contactEmail == null ? Colors.grey : null,
                 ),
               ),
@@ -185,7 +266,11 @@ class SupplierManagementView extends GetView<SupplierManagementController> {
           return DataRowCard(
             leading: CircleAvatar(
               backgroundColor: AppColors.merchant.shade100,
-              child: Icon(Icons.local_shipping, color: AppColors.merchant.shade700, size: 20),
+              child: Icon(
+                Icons.local_shipping,
+                color: AppColors.merchant.shade700,
+                size: 20,
+              ),
             ),
             title: supplier.name,
             subtitle: supplier.contactName,

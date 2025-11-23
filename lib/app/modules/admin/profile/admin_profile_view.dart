@@ -16,8 +16,11 @@ class AdminProfileView extends GetView<AdminProfileController> {
         }
         if (controller.errorMessage.value != null) {
           return Center(
-              child: Text('Error: ${controller.errorMessage.value}',
-                  style: const TextStyle(color: Colors.red)));
+            child: Text(
+              'Error: ${controller.errorMessage.value}',
+              style: const TextStyle(color: Colors.red),
+            ),
+          );
         }
         if (controller.userProfile.value == null) {
           return const Center(child: Text('Could not load profile.'));
@@ -33,11 +36,15 @@ class AdminProfileView extends GetView<AdminProfileController> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text('Email: ${controller.userProfile.value!.email}',
-                        style: Get.textTheme.titleMedium),
+                    Text(
+                      'Email: ${controller.userProfile.value!.email}',
+                      style: Get.textTheme.titleMedium,
+                    ),
                     const SizedBox(height: 8),
-                    Text('Role: ${controller.userProfile.value!.role.capitalizeFirst}',
-                        style: Get.textTheme.titleSmall),
+                    Text(
+                      'Role: ${controller.userProfile.value!.role.capitalizeFirst}',
+                      style: Get.textTheme.titleSmall,
+                    ),
                     const SizedBox(height: 24),
                     TextFormField(
                       controller: controller.nameController,
@@ -74,7 +81,9 @@ class AdminProfileView extends GetView<AdminProfileController> {
                       decoration: const InputDecoration(
                         labelText: 'Confirm New Password',
                         border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.lock_outline), // <<< CORRECTED ICON
+                        prefixIcon: Icon(
+                          Icons.lock_outline,
+                        ), // <<< CORRECTED ICON
                       ),
                       obscureText: true,
                       validator: (value) {
@@ -90,7 +99,9 @@ class AdminProfileView extends GetView<AdminProfileController> {
                       if (controller.formError.value != null) {
                         return Text(
                           controller.formError.value!,
-                          style: TextStyle(color: Theme.of(context).colorScheme.error),
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
                           textAlign: TextAlign.center,
                         );
                       }
@@ -98,17 +109,31 @@ class AdminProfileView extends GetView<AdminProfileController> {
                     }),
                     const SizedBox(height: 8),
                     ElevatedButton.icon(
-                      icon: Obx(() => controller.isSaving.value
-                          ? const SizedBox(
-                              height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                          : const Icon(Icons.save_alt_outlined)),
-                      label: Obx(() => Text(
-                          controller.isSaving.value ? 'Saving...' : 'Update Profile')),
+                      icon: Obx(
+                        () => controller.isSaving.value
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(Icons.save_alt_outlined),
+                      ),
+                      label: Obx(
+                        () => Text(
+                          controller.isSaving.value
+                              ? 'Saving...'
+                              : 'Update Profile',
+                        ),
+                      ),
                       onPressed: controller.isSaving.value
                           ? null
                           : () => controller.updateProfile(),
                       style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16)),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
                     ),
                   ],
                 ),

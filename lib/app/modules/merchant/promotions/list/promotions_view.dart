@@ -7,6 +7,7 @@ import 'package:smart_retail/app/widgets/app_colors.dart';
 import 'package:smart_retail/app/widgets/responsive_data_table.dart';
 import 'package:smart_retail/app/widgets/modern_card.dart';
 import 'promotions_controller.dart';
+import 'package:smart_retail/app/utils/dialog_utils.dart';
 
 class PromotionsView extends GetView<PromotionsController> {
   const PromotionsView({Key? key}) : super(key: key);
@@ -42,20 +43,29 @@ class PromotionsView extends GetView<PromotionsController> {
             itemCount: controller.promotions.length,
             itemBuilder: (context, index) {
               final promotion = controller.promotions[index];
-              
+
               // Format dates or show "Always Available"
               final String dateDisplay;
               if (promotion.startDate == null && promotion.endDate == null) {
                 dateDisplay = 'Always Available';
-              } else if (promotion.startDate != null && promotion.endDate != null) {
-                final formattedStartDate = DateFormat.yMMMd().format(promotion.startDate!);
-                final formattedEndDate = DateFormat.yMMMd().format(promotion.endDate!);
+              } else if (promotion.startDate != null &&
+                  promotion.endDate != null) {
+                final formattedStartDate = DateFormat.yMMMd().format(
+                  promotion.startDate!,
+                );
+                final formattedEndDate = DateFormat.yMMMd().format(
+                  promotion.endDate!,
+                );
                 dateDisplay = '$formattedStartDate - $formattedEndDate';
               } else if (promotion.startDate != null) {
-                final formattedStartDate = DateFormat.yMMMd().format(promotion.startDate!);
+                final formattedStartDate = DateFormat.yMMMd().format(
+                  promotion.startDate!,
+                );
                 dateDisplay = 'From $formattedStartDate';
               } else {
-                final formattedEndDate = DateFormat.yMMMd().format(promotion.endDate!);
+                final formattedEndDate = DateFormat.yMMMd().format(
+                  promotion.endDate!,
+                );
                 dateDisplay = 'Until $formattedEndDate';
               }
 
@@ -63,10 +73,12 @@ class PromotionsView extends GetView<PromotionsController> {
                 key: Key(promotion.id),
                 direction: DismissDirection.endToStart,
                 confirmDismiss: (direction) async {
-                  return await Get.dialog<bool>(
-                    AlertDialog(
+                  return await DialogUtils.showCustomDialog<bool>(
+                    dialog: AlertDialog(
                       title: const Text('Delete Promotion'),
-                      content: Text('Are you sure you want to delete "${promotion.name}"?'),
+                      content: Text(
+                        'Are you sure you want to delete "${promotion.name}"?',
+                      ),
                       actions: [
                         TextButton(
                           onPressed: () => Get.back(result: false),
@@ -74,7 +86,9 @@ class PromotionsView extends GetView<PromotionsController> {
                         ),
                         TextButton(
                           onPressed: () => Get.back(result: true),
-                          style: TextButton.styleFrom(foregroundColor: Colors.red),
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.red,
+                          ),
                           child: const Text('Delete'),
                         ),
                       ],
@@ -91,15 +105,25 @@ class PromotionsView extends GetView<PromotionsController> {
                   child: const Icon(Icons.delete, color: Colors.white),
                 ),
                 child: Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   child: ListTile(
                     contentPadding: const EdgeInsets.all(16),
-                    title: Text(promotion.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                    title: Text(
+                      promotion.name,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const SizedBox(height: 4),
-                        Text(promotion.description.isNotEmpty ? promotion.description : 'No description'),
+                        Text(
+                          promotion.description.isNotEmpty
+                              ? promotion.description
+                              : 'No description',
+                        ),
                         const SizedBox(height: 8),
                         Text('Dates: $dateDisplay'),
                         if (promotion.shopId != null) ...[
@@ -116,13 +140,16 @@ class PromotionsView extends GetView<PromotionsController> {
                           children: [
                             Switch(
                               value: promotion.isActive,
-                              onChanged: (value) => controller.togglePromotionStatus(promotion),
+                              onChanged: (value) =>
+                                  controller.togglePromotionStatus(promotion),
                               activeColor: Colors.green,
                             ),
                             Text(
                               promotion.isActive ? 'Active' : 'Inactive',
                               style: Get.textTheme.bodySmall?.copyWith(
-                                color: promotion.isActive ? Colors.green : Colors.grey,
+                                color: promotion.isActive
+                                    ? Colors.green
+                                    : Colors.grey,
                               ),
                             ),
                           ],
@@ -130,7 +157,8 @@ class PromotionsView extends GetView<PromotionsController> {
                         const SizedBox(width: 8),
                         IconButton(
                           icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () => controller.deletePromotion(promotion),
+                          onPressed: () =>
+                              controller.deletePromotion(promotion),
                           tooltip: 'Delete',
                         ),
                       ],

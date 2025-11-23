@@ -6,8 +6,6 @@ class ShopInventoryBinding extends Bindings {
   @override
   void dependencies() {
     Get.lazyPut<ShopInventoryApiService>(() => ShopInventoryApiService());
-    Get.lazyPut<ShopInventoryController>(
-      () => ShopInventoryController(),
-    );
+    Get.lazyPut<ShopInventoryController>(() => ShopInventoryController());
   }
 }

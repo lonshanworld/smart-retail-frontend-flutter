@@ -23,14 +23,25 @@ class AdminsAdminView extends GetView<AdminsAdminController> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.error_outline, size: 64, color: AppColors.error.shade400),
+                  Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: AppColors.error.shade400,
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     'Error loading admins',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.error.shade700),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.error.shade700,
+                    ),
                   ),
                   const SizedBox(height: 8),
-                  Text(controller.errorMessage.value!, textAlign: TextAlign.center),
+                  Text(
+                    controller.errorMessage.value!,
+                    textAlign: TextAlign.center,
+                  ),
                 ],
               ),
             ),
@@ -46,20 +57,33 @@ class AdminsAdminView extends GetView<AdminsAdminController> {
               child: ListTile(
                 leading: CircleAvatar(
                   backgroundColor: AppColors.admin.shade100,
-                  child: Icon(Icons.admin_panel_settings, color: AppColors.admin),
+                  child: Icon(
+                    Icons.admin_panel_settings,
+                    color: AppColors.admin,
+                  ),
                 ),
-                title: Text(admin.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                title: Text(
+                  admin.name,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
                 subtitle: Text(admin.email),
                 trailing: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
-                    color: admin.isActive ? AppColors.success.shade50 : AppColors.error.shade50,
+                    color: admin.isActive
+                        ? AppColors.success.shade50
+                        : AppColors.error.shade50,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     admin.isActive ? 'Active' : 'Inactive',
                     style: TextStyle(
-                      color: admin.isActive ? AppColors.success.shade700 : AppColors.error.shade700,
+                      color: admin.isActive
+                          ? AppColors.success.shade700
+                          : AppColors.error.shade700,
                       fontWeight: FontWeight.w600,
                       fontSize: 12,
                     ),

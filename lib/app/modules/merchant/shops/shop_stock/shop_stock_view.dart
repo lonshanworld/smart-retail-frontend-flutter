@@ -16,25 +16,35 @@ class ShopStockView extends GetView<ShopStockController> {
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(kToolbarHeight - 8),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 12.0,
+              vertical: 4.0,
+            ),
             child: TextField(
               controller: controller.searchController,
               decoration: InputDecoration(
                 hintText: 'Search by name or SKU...',
                 prefixIcon: const Icon(Icons.search, size: 20),
-                suffixIcon: Obx(() => controller.searchText.value.isNotEmpty
-                    ? IconButton(
-                  icon: const Icon(Icons.clear, size: 20),
-                  onPressed: () => controller.clearSearch(),
-                )
-                    : const SizedBox.shrink()),
+                suffixIcon: Obx(
+                  () => controller.searchText.value.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear, size: 20),
+                          onPressed: () => controller.clearSearch(),
+                        )
+                      : const SizedBox.shrink(),
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(25.0),
                   borderSide: BorderSide.none,
                 ),
                 filled: true,
-                fillColor: Theme.of(context).scaffoldBackgroundColor.withAlpha(200),
-                contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+                fillColor: Theme.of(
+                  context,
+                ).scaffoldBackgroundColor.withAlpha(200),
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 0,
+                  horizontal: 16,
+                ),
               ),
             ),
           ),
@@ -42,9 +52,13 @@ class ShopStockView extends GetView<ShopStockController> {
       ),
       body: Obx(() {
         Widget childWidget;
-        if (controller.isLoading.value && controller.filteredShopStockItems.isEmpty && controller.searchText.value.isEmpty && controller.shopStockItems.isEmpty) {
+        if (controller.isLoading.value &&
+            controller.filteredShopStockItems.isEmpty &&
+            controller.searchText.value.isEmpty &&
+            controller.shopStockItems.isEmpty) {
           childWidget = const Center(child: CircularProgressIndicator());
-        } else if (controller.errorMessage.value != null && controller.shopStockItems.isEmpty) {
+        } else if (controller.errorMessage.value != null &&
+            controller.shopStockItems.isEmpty) {
           childWidget = Center(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
@@ -68,29 +82,50 @@ class ShopStockView extends GetView<ShopStockController> {
               ),
             ),
           );
-        } else if (controller.shopStockItems.isEmpty && !controller.isLoading.value) {
+        } else if (controller.shopStockItems.isEmpty &&
+            !controller.isLoading.value) {
           childWidget = Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Icon(Icons.shelves, size: 60, color: Colors.grey),
                 const SizedBox(height: 16),
-                const Text('This shop has no inventory items yet.', style: TextStyle(fontSize: 16)),
+                const Text(
+                  'This shop has no inventory items yet.',
+                  style: TextStyle(fontSize: 16),
+                ),
                 const SizedBox(height: 8),
-                const Text('Stock in items to see them here.', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
+                const Text(
+                  'Stock in items to see them here.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey),
+                ),
               ],
             ),
           );
-        } else if (controller.filteredShopStockItems.isEmpty && controller.searchText.value.isNotEmpty) {
+        } else if (controller.filteredShopStockItems.isEmpty &&
+            controller.searchText.value.isNotEmpty) {
           childWidget = Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.search_off_outlined, size: 60, color: Colors.grey),
+                const Icon(
+                  Icons.search_off_outlined,
+                  size: 60,
+                  color: Colors.grey,
+                ),
                 const SizedBox(height: 16),
-                Text('No items match "${controller.searchText.value}".', style: const TextStyle(fontSize: 16), textAlign: TextAlign.center,),
+                Text(
+                  'No items match "${controller.searchText.value}".',
+                  style: const TextStyle(fontSize: 16),
+                  textAlign: TextAlign.center,
+                ),
                 const SizedBox(height: 8),
-                const Text('Try a different search term or clear the search.', style: TextStyle(color: Colors.grey), textAlign: TextAlign.center,),
+                const Text(
+                  'Try a different search term or clear the search.',
+                  style: TextStyle(color: Colors.grey),
+                  textAlign: TextAlign.center,
+                ),
               ],
             ),
           );
@@ -98,11 +133,36 @@ class ShopStockView extends GetView<ShopStockController> {
           childWidget = ResponsiveDataTable<ShopStockItem>(
             items: controller.filteredShopStockItems,
             columns: const [
-              DataColumn(label: Text('Item', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('SKU', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('Price', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('Quantity', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('Actions', style: TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(
+                label: Text(
+                  'Item',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'SKU',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'Price',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'Quantity',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'Actions',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
             ],
             buildCells: (item) => [
               DataCell(
@@ -110,7 +170,11 @@ class ShopStockView extends GetView<ShopStockController> {
                   children: [
                     CircleAvatar(
                       backgroundColor: AppColors.merchant.shade100,
-                      child: Icon(Icons.inventory_2_outlined, color: AppColors.merchant, size: 20),
+                      child: Icon(
+                        Icons.inventory_2_outlined,
+                        color: AppColors.merchant,
+                        size: 20,
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -131,9 +195,14 @@ class ShopStockView extends GetView<ShopStockController> {
               ),
               DataCell(
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
-                    color: item.quantity > 10 ? Colors.green.shade50 : Colors.red.shade50,
+                    color: item.quantity > 10
+                        ? Colors.green.shade50
+                        : Colors.red.shade50,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: item.quantity > 10 ? Colors.green : Colors.red,
@@ -143,7 +212,9 @@ class ShopStockView extends GetView<ShopStockController> {
                   child: Text(
                     '${item.quantity}',
                     style: TextStyle(
-                      color: item.quantity > 10 ? Colors.green.shade700 : Colors.red.shade700,
+                      color: item.quantity > 10
+                          ? Colors.green.shade700
+                          : Colors.red.shade700,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -155,10 +226,16 @@ class ShopStockView extends GetView<ShopStockController> {
                   children: [
                     OutlinedButton.icon(
                       icon: const Icon(Icons.tune_outlined, size: 16),
-                      label: const Text('Adjust', style: TextStyle(fontSize: 12)),
+                      label: const Text(
+                        'Adjust',
+                        style: TextStyle(fontSize: 12),
+                      ),
                       onPressed: () => controller.goToAdjustStock(item),
                       style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         foregroundColor: Colors.orange[700],
                         side: BorderSide(color: Colors.orange[300]!),
                       ),
@@ -166,10 +243,16 @@ class ShopStockView extends GetView<ShopStockController> {
                     const SizedBox(width: 6),
                     ElevatedButton.icon(
                       icon: const Icon(Icons.add_shopping_cart, size: 16),
-                      label: const Text('Stock In', style: TextStyle(fontSize: 12)),
+                      label: const Text(
+                        'Stock In',
+                        style: TextStyle(fontSize: 12),
+                      ),
                       onPressed: () => controller.goToAddStock(item),
                       style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         backgroundColor: AppColors.merchant,
                       ),
                     ),
@@ -180,7 +263,11 @@ class ShopStockView extends GetView<ShopStockController> {
             buildMobileCard: (item) => DataRowCard(
               leading: CircleAvatar(
                 backgroundColor: AppColors.merchant.shade100,
-                child: Icon(Icons.inventory_2_outlined, color: AppColors.merchant, size: 20),
+                child: Icon(
+                  Icons.inventory_2_outlined,
+                  color: AppColors.merchant,
+                  size: 20,
+                ),
               ),
               title: item.itemName,
               subtitle: item.itemSku ?? 'N/A',
@@ -204,7 +291,10 @@ class ShopStockView extends GetView<ShopStockController> {
                     label: const Text('Adjust', style: TextStyle(fontSize: 11)),
                     onPressed: () => controller.goToAdjustStock(item),
                     style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       foregroundColor: Colors.orange[700],
                       side: BorderSide(color: Colors.orange[300]!),
                     ),
@@ -212,10 +302,16 @@ class ShopStockView extends GetView<ShopStockController> {
                   const SizedBox(height: 4),
                   ElevatedButton.icon(
                     icon: const Icon(Icons.add_shopping_cart, size: 16),
-                    label: const Text('Stock In', style: TextStyle(fontSize: 11)),
+                    label: const Text(
+                      'Stock In',
+                      style: TextStyle(fontSize: 11),
+                    ),
                     onPressed: () => controller.goToAddStock(item),
                     style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       backgroundColor: AppColors.merchant,
                     ),
                   ),

@@ -49,12 +49,16 @@ class DetailItem extends StatelessWidget {
             child: isSelectable
                 ? SelectableText(
                     value,
-                    style: Get.textTheme.bodyMedium?.copyWith(color: valueColor),
+                    style: Get.textTheme.bodyMedium?.copyWith(
+                      color: valueColor,
+                    ),
                     maxLines: valueMaxLines,
                   )
                 : Text(
                     value,
-                    style: Get.textTheme.bodyMedium?.copyWith(color: valueColor),
+                    style: Get.textTheme.bodyMedium?.copyWith(
+                      color: valueColor,
+                    ),
                     maxLines: valueMaxLines,
                     overflow: TextOverflow.ellipsis,
                   ),

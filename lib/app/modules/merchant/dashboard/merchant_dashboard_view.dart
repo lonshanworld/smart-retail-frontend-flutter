@@ -24,10 +24,7 @@ class MerchantDashboardView extends GetView<MerchantDashboardController> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              AppColors.primary.shade50.withOpacity(0.3),
-              Colors.white,
-            ],
+            colors: [AppColors.primary.shade50.withOpacity(0.3), Colors.white],
           ),
         ),
         child: RefreshIndicator(
@@ -55,7 +52,10 @@ class MerchantDashboardView extends GetView<MerchantDashboardController> {
     );
   }
 
-  Widget _buildShopSelector(BuildContext context, MerchantDashboardController controller) {
+  Widget _buildShopSelector(
+    BuildContext context,
+    MerchantDashboardController controller,
+  ) {
     return Obx(() {
       if (controller.isLoadingShops.value) {
         return const ModernCard(
@@ -82,15 +82,9 @@ class MerchantDashboardView extends GetView<MerchantDashboardController> {
       }
 
       List<DropdownMenuItem<Shop?>> shopItems = [
-        const DropdownMenuItem<Shop?>(
-          value: null,
-          child: Text("All Shops"),
-        ),
+        const DropdownMenuItem<Shop?>(value: null, child: Text("All Shops")),
         ...controller.shopList.map((shop) {
-          return DropdownMenuItem<Shop?>(
-            value: shop,
-            child: Text(shop.name),
-          );
+          return DropdownMenuItem<Shop?>(value: shop, child: Text(shop.name));
         }).toList(),
       ];
 
@@ -99,7 +93,10 @@ class MerchantDashboardView extends GetView<MerchantDashboardController> {
           decoration: InputDecoration(
             labelText: 'Select Shop',
             labelStyle: TextStyle(color: AppColors.primary.shade700),
-            prefixIcon: Icon(Icons.store_rounded, color: AppColors.primary.shade600),
+            prefixIcon: Icon(
+              Icons.store_rounded,
+              color: AppColors.primary.shade600,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.0),
               borderSide: BorderSide(color: AppColors.primary.shade200),
@@ -114,7 +111,10 @@ class MerchantDashboardView extends GetView<MerchantDashboardController> {
             ),
             filled: true,
             fillColor: Colors.grey.shade50,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 16.0,
+            ),
           ),
           value: controller.selectedShop.value,
           items: shopItems,
@@ -127,7 +127,10 @@ class MerchantDashboardView extends GetView<MerchantDashboardController> {
     });
   }
 
-  Widget _buildKpiSection(BuildContext context, MerchantDashboardController controller) {
+  Widget _buildKpiSection(
+    BuildContext context,
+    MerchantDashboardController controller,
+  ) {
     return Obx(() {
       if (controller.isLoadingDashboard.value) {
         return const ModernCard(
@@ -146,7 +149,11 @@ class MerchantDashboardView extends GetView<MerchantDashboardController> {
               padding: const EdgeInsets.all(40.0),
               child: Column(
                 children: [
-                  Icon(Icons.error_outline, size: 48, color: AppColors.error.shade400),
+                  Icon(
+                    Icons.error_outline,
+                    size: 48,
+                    color: AppColors.error.shade400,
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     'Error loading dashboard',
@@ -175,22 +182,20 @@ class MerchantDashboardView extends GetView<MerchantDashboardController> {
               padding: const EdgeInsets.all(40.0),
               child: Column(
                 children: [
-                  Icon(Icons.store_outlined, size: 48, color: Colors.grey.shade400),
+                  Icon(
+                    Icons.store_outlined,
+                    size: 48,
+                    color: Colors.grey.shade400,
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     "No dashboard data available",
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey.shade600,
-                    ),
+                    style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     "Select a shop to view metrics",
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade500,
-                    ),
+                    style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
                   ),
                 ],
               ),
@@ -217,7 +222,8 @@ class MerchantDashboardView extends GetView<MerchantDashboardController> {
             children: [
               GradientStatCard(
                 title: 'Total Revenue',
-                value: '\$${summary.totalSalesRevenue.value.toStringAsFixed(2)}',
+                value:
+                    '\$${summary.totalSalesRevenue.value.toStringAsFixed(2)}',
                 icon: Icons.attach_money_rounded,
                 gradient: AppColors.successGradientColors,
               ),
@@ -229,7 +235,8 @@ class MerchantDashboardView extends GetView<MerchantDashboardController> {
               ),
               StatCard(
                 title: 'Avg. Order Value',
-                value: '\$${summary.averageOrderValue.value.toStringAsFixed(2)}',
+                value:
+                    '\$${summary.averageOrderValue.value.toStringAsFixed(2)}',
                 icon: Icons.shopping_cart_checkout_rounded,
                 color: AppColors.warning,
               ),
@@ -240,7 +247,10 @@ class MerchantDashboardView extends GetView<MerchantDashboardController> {
     });
   }
 
-  Widget _buildManagementActionsSection(BuildContext context, MerchantDashboardController controller) {
+  Widget _buildManagementActionsSection(
+    BuildContext context,
+    MerchantDashboardController controller,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -260,7 +270,10 @@ class MerchantDashboardView extends GetView<MerchantDashboardController> {
               icon: Icons.inventory_2_rounded,
               title: 'Master Inventory',
               subtitle: 'Manage products & stock',
-              gradient: [AppColors.warning.shade400, AppColors.warning.shade600],
+              gradient: [
+                AppColors.warning.shade400,
+                AppColors.warning.shade600,
+              ],
               onTap: () => Get.toNamed(Routes.MERCHANT_INVENTORY),
             ),
             _buildActionCard(
@@ -274,14 +287,20 @@ class MerchantDashboardView extends GetView<MerchantDashboardController> {
               icon: Icons.people_alt_rounded,
               title: 'Suppliers',
               subtitle: 'Manage supplier relationships',
-              gradient: [AppColors.secondary.shade400, AppColors.secondary.shade600],
+              gradient: [
+                AppColors.secondary.shade400,
+                AppColors.secondary.shade600,
+              ],
               onTap: () => Get.toNamed(Routes.MERCHANT_SUPPLIERS),
             ),
             _buildActionCard(
               icon: Icons.badge_rounded,
               title: 'Staff',
               subtitle: 'Manage team members',
-              gradient: [AppColors.success.shade400, AppColors.success.shade600],
+              gradient: [
+                AppColors.success.shade400,
+                AppColors.success.shade600,
+              ],
               onTap: () => Get.toNamed(Routes.MERCHANT_STAFF),
             ),
           ],
@@ -349,12 +368,17 @@ class MerchantDashboardView extends GetView<MerchantDashboardController> {
     );
   }
 
-  Widget _buildTopProductsSection(BuildContext context, MerchantDashboardController controller) {
+  Widget _buildTopProductsSection(
+    BuildContext context,
+    MerchantDashboardController controller,
+  ) {
     return Obx(() {
-      if (controller.isLoadingDashboard.value && controller.dashboardSummary.value == null) {
+      if (controller.isLoadingDashboard.value &&
+          controller.dashboardSummary.value == null) {
         return const SizedBox.shrink();
       }
-      if (controller.dashboardSummary.value == null || controller.dashboardSummary.value!.topSellingProducts.isEmpty) {
+      if (controller.dashboardSummary.value == null ||
+          controller.dashboardSummary.value!.topSellingProducts.isEmpty) {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -370,7 +394,11 @@ class MerchantDashboardView extends GetView<MerchantDashboardController> {
                   padding: const EdgeInsets.all(40.0),
                   child: Column(
                     children: [
-                      Icon(Icons.shopping_bag_outlined, size: 48, color: Colors.grey.shade300),
+                      Icon(
+                        Icons.shopping_bag_outlined,
+                        size: 48,
+                        color: Colors.grey.shade300,
+                      ),
                       const SizedBox(height: 16),
                       Text(
                         "No top selling products yet",
@@ -417,10 +445,8 @@ class MerchantDashboardView extends GetView<MerchantDashboardController> {
               itemBuilder: (context, index) {
                 return _buildProductListItem(products[index], index + 1);
               },
-              separatorBuilder: (context, index) => Divider(
-                height: 24,
-                color: Colors.grey.shade200,
-              ),
+              separatorBuilder: (context, index) =>
+                  Divider(height: 24, color: Colors.grey.shade200),
             ),
           ),
         ],
@@ -442,10 +468,10 @@ class MerchantDashboardView extends GetView<MerchantDashboardController> {
                 colors: rank == 1
                     ? [Colors.amber.shade400, Colors.amber.shade600]
                     : rank == 2
-                        ? [Colors.grey.shade300, Colors.grey.shade400]
-                        : rank == 3
-                            ? [Colors.brown.shade300, Colors.brown.shade400]
-                            : [AppColors.primary.shade200, AppColors.primary.shade300],
+                    ? [Colors.grey.shade300, Colors.grey.shade400]
+                    : rank == 3
+                    ? [Colors.brown.shade300, Colors.brown.shade400]
+                    : [AppColors.primary.shade200, AppColors.primary.shade300],
               ),
               borderRadius: BorderRadius.circular(12),
             ),
@@ -476,10 +502,7 @@ class MerchantDashboardView extends GetView<MerchantDashboardController> {
                 const SizedBox(height: 4),
                 Text(
                   "ID: ${product.productId}",
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey.shade600,
-                  ),
+                  style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
                 ),
               ],
             ),
@@ -489,7 +512,10 @@ class MerchantDashboardView extends GetView<MerchantDashboardController> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.success.shade50,
                   borderRadius: BorderRadius.circular(20),
@@ -497,7 +523,11 @@ class MerchantDashboardView extends GetView<MerchantDashboardController> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.shopping_bag_rounded, size: 14, color: AppColors.success.shade700),
+                    Icon(
+                      Icons.shopping_bag_rounded,
+                      size: 14,
+                      color: AppColors.success.shade700,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       "${product.quantitySold ?? 'N/A'}",

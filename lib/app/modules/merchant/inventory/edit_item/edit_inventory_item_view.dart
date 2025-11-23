@@ -8,9 +8,7 @@ class EditInventoryItemView extends GetView<EditInventoryItemController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Edit Inventory Item'),
-      ),
+      appBar: AppBar(title: const Text('Edit Inventory Item')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -59,9 +57,13 @@ class EditInventoryItemView extends GetView<EditInventoryItemController> {
                         border: OutlineInputBorder(),
                         prefixText: '\$',
                       ),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                       validator: (value) {
-                        if (value != null && value.isNotEmpty && double.tryParse(value) == null) {
+                        if (value != null &&
+                            value.isNotEmpty &&
+                            double.tryParse(value) == null) {
                           return 'Invalid number';
                         }
                         return null;
@@ -77,7 +79,9 @@ class EditInventoryItemView extends GetView<EditInventoryItemController> {
                         border: OutlineInputBorder(),
                         prefixText: '\$',
                       ),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Selling price is required';
@@ -100,16 +104,29 @@ class EditInventoryItemView extends GetView<EditInventoryItemController> {
                 ),
               ),
               const SizedBox(height: 32),
-              Obx(() => ElevatedButton.icon(
-                    icon: controller.isLoading.value
-                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.0))
-                        : const Icon(Icons.save_outlined),
-                    label: Text(controller.isLoading.value ? 'Saving...' : 'Update Item'),
-                    onPressed: controller.isLoading.value ? null : controller.updateInventoryItem,
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                  )),
+              Obx(
+                () => ElevatedButton.icon(
+                  icon: controller.isLoading.value
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.0,
+                          ),
+                        )
+                      : const Icon(Icons.save_outlined),
+                  label: Text(
+                    controller.isLoading.value ? 'Saving...' : 'Update Item',
+                  ),
+                  onPressed: controller.isLoading.value
+                      ? null
+                      : controller.updateInventoryItem,
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
+              ),
             ],
           ),
         ),

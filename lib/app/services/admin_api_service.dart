@@ -3,6 +3,7 @@ import 'package:smart_retail/app/core/config/app_config.dart';
 import 'package:smart_retail/app/data/models/user_model.dart';
 import 'package:smart_retail/app/data/models/admin_dashboard_summary_model.dart'; // New
 import 'package:smart_retail/app/data/providers/api_constants.dart';
+import 'package:smart_retail/app/utils/response_utils.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
 
 class AdminApiService extends GetxService {
@@ -63,9 +64,11 @@ class AdminApiService extends GetxService {
     );
 
     if (response.statusCode == 200 && response.body['success'] == true) {
-      return AdminDashboardSummary.fromJson(response.body['data']);
+      return AdminDashboardSummary.fromJson(asMap(response.body['data']));
     } else {
-      throw Exception(response.body?['message'] ?? 'Failed to get admin dashboard summary');
+      throw Exception(
+        response.body?['message'] ?? 'Failed to get admin dashboard summary',
+      );
     }
   }
 
@@ -86,10 +89,18 @@ class AdminApiService extends GetxService {
   /// __Expected Response (Success):__
   /// - __Status Code:__ 200
   /// - __Body (JSON):__ (The updated user object)
-  Future<User?> adminUpdateUser(String userId, Map<String, dynamic> updates) async {
+  Future<User?> adminUpdateUser(
+    String userId,
+    Map<String, dynamic> updates,
+  ) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
-      return User.fromJson(updates..['id'] = userId..['email'] = 'mock@email.com'..['role'] = 'merchant');
+      return User.fromJson(
+        updates
+          ..['id'] = userId
+          ..['email'] = 'mock@email.com'
+          ..['role'] = 'merchant',
+      );
     }
     final response = await _connect.put(
       '$_baseUrl/users/$userId',
@@ -98,7 +109,7 @@ class AdminApiService extends GetxService {
     );
 
     if (response.statusCode == 200 && response.body['success'] == true) {
-      return User.fromJson(response.body['data']);
+      return User.fromJson(asMap(response.body['data']));
     } else {
       throw Exception(response.body?['message'] ?? 'Failed to update user');
     }

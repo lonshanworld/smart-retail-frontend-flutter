@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:smart_retail/app/utils/dialog_utils.dart';
 import 'package:smart_retail/app/data/models/shop_model.dart';
 import 'package:smart_retail/app/data/services/shop_api_service.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart'; // To get user ID and role
@@ -55,17 +56,24 @@ class ShopAddEditController extends GetxController {
         // Update existing shop
         Map<String, dynamic> updates = {
           'name': nameController.text,
-          'address': addressController.text.isNotEmpty ? addressController.text : null,
+          'address': addressController.text.isNotEmpty
+              ? addressController.text
+              : null,
         };
         // Ensure the merchantId is not accidentally changed during update if it's part of the `updates` map implicitly.
         // The API should ideally protect against this, or the DTO for update shouldn't include merchantId.
-        savedShop = await _shopApiService.updateShop(_editingShop!.id!, updates);
+        savedShop = await _shopApiService.updateShop(
+          _editingShop!.id!,
+          updates,
+        );
       } else {
         // Create new shop
         Shop newShop = Shop(
           merchantId: currentUserId, // Use the fetched currentUserId
           name: nameController.text,
-          address: addressController.text.isNotEmpty ? addressController.text : null,
+          address: addressController.text.isNotEmpty
+              ? addressController.text
+              : null,
           createdAt: DateTime.now(), // Client-side, backend will override
           updatedAt: DateTime.now(), // Client-side, backend will override
         );
@@ -77,21 +85,17 @@ class ShopAddEditController extends GetxController {
         // Notify MerchantShopsController to refresh the list
         if (Get.isRegistered<MerchantShopsController>()) {
           final shopsCtrl = Get.find<MerchantShopsController>();
-          await shopsCtrl.fetchShops(); 
+          await shopsCtrl.fetchShops();
         }
-        Get.snackbar(
-          isEditing.value ? 'Shop Updated' : 'Shop Created',
-          'Successfully saved shop: ${savedShop.name}',
-          snackPosition: SnackPosition.BOTTOM,
-        );
+        DialogUtils.showSuccess('Successfully saved shop: ${savedShop.name}');
       } else {
         errorMessage.value = 'Failed to save shop. Please try again.';
-        Get.snackbar('Error', errorMessage.value!, snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
+        DialogUtils.showError(errorMessage.value!);
       }
     } catch (e) {
       print("Error saving shop: $e");
       errorMessage.value = 'An error occurred: ${e.toString()}';
-      Get.snackbar('Error', errorMessage.value!, snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
+      DialogUtils.showError(errorMessage.value!);
     } finally {
       isSaving.value = false;
     }

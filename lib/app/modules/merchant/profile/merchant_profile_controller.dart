@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:smart_retail/app/data/models/user_model.dart';
 import 'package:smart_retail/app/data/services/merchant_profile_api_service.dart';
+import 'package:smart_retail/app/utils/dialog_utils.dart';
 
 class MerchantProfileController extends GetxController {
-  final MerchantProfileApiService _apiService = Get.find<MerchantProfileApiService>();
+  final MerchantProfileApiService _apiService =
+      Get.find<MerchantProfileApiService>();
 
   // Form
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
@@ -45,9 +47,7 @@ class MerchantProfileController extends GetxController {
 
     isSaving.value = true;
     try {
-      final updates = <String, dynamic>{
-        'name': nameController.text.trim(),
-      };
+      final updates = <String, dynamic>{'name': nameController.text.trim()};
       if (passwordController.text.isNotEmpty) {
         updates['password'] = passwordController.text;
       }
@@ -56,10 +56,10 @@ class MerchantProfileController extends GetxController {
       userProfile.value = updatedUser; // Refresh local profile data
       passwordController.clear();
       confirmPasswordController.clear();
-      
-      Get.snackbar('Success', 'Your profile has been updated.', snackPosition: SnackPosition.BOTTOM);
+
+      DialogUtils.showSuccess('Your profile has been updated.');
     } catch (e) {
-      Get.snackbar('Error', "Update failed: ${e.toString()}", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red);
+      DialogUtils.showError("Update failed: ${e.toString()}");
     } finally {
       isSaving.value = false;
     }

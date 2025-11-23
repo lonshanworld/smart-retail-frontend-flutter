@@ -13,7 +13,11 @@ class StaffAddEditView extends GetView<StaffAddEditController> {
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        title: Obx(() => Text(controller.isEditMode.value ? 'Edit Staff' : 'Add New Staff')),
+        title: Obx(
+          () => Text(
+            controller.isEditMode.value ? 'Edit Staff' : 'Add New Staff',
+          ),
+        ),
         backgroundColor: AppColors.merchant,
         foregroundColor: Colors.white,
         elevation: 0,
@@ -28,10 +32,7 @@ class StaffAddEditView extends GetView<StaffAddEditController> {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  AppColors.merchant.shade50,
-                  Colors.white,
-                ],
+                colors: [AppColors.merchant.shade50, Colors.white],
               ),
               child: Padding(
                 padding: const EdgeInsets.all(24.0),
@@ -54,16 +55,18 @@ class StaffAddEditView extends GetView<StaffAddEditController> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Obx(() => Text(
-                            controller.isEditMode.value 
-                                ? 'Update Staff Information' 
-                                : 'Add New Staff Member',
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.merchant.shade900,
+                          Obx(
+                            () => Text(
+                              controller.isEditMode.value
+                                  ? 'Update Staff Information'
+                                  : 'Add New Staff Member',
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.merchant.shade900,
+                              ),
                             ),
-                          )),
+                          ),
                           const SizedBox(height: 4),
                           Text(
                             'Fill in the details below',
@@ -80,7 +83,7 @@ class StaffAddEditView extends GetView<StaffAddEditController> {
               ),
             ),
             const SizedBox(height: 24),
-            
+
             // Form Card
             ModernCard(
               child: Padding(
@@ -93,7 +96,11 @@ class StaffAddEditView extends GetView<StaffAddEditController> {
                       // Personal Information Section
                       Row(
                         children: [
-                          Icon(Icons.person_outline, color: AppColors.merchant, size: 24),
+                          Icon(
+                            Icons.person_outline,
+                            color: AppColors.merchant,
+                            size: 24,
+                          ),
                           const SizedBox(width: 12),
                           const Text(
                             'Personal Information',
@@ -105,14 +112,17 @@ class StaffAddEditView extends GetView<StaffAddEditController> {
                         ],
                       ),
                       const SizedBox(height: 20),
-                      
+
                       // Name Field
                       TextFormField(
                         controller: controller.nameController,
                         decoration: InputDecoration(
                           labelText: 'Full Name',
                           hintText: 'Enter staff member\'s full name',
-                          prefixIcon: Icon(Icons.person, color: AppColors.merchant.shade600),
+                          prefixIcon: Icon(
+                            Icons.person,
+                            color: AppColors.merchant.shade600,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -122,22 +132,30 @@ class StaffAddEditView extends GetView<StaffAddEditController> {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: AppColors.merchant, width: 2),
+                            borderSide: BorderSide(
+                              color: AppColors.merchant,
+                              width: 2,
+                            ),
                           ),
                           filled: true,
                           fillColor: Colors.grey.shade50,
                         ),
-                        validator: (value) => (value?.isEmpty ?? true) ? 'Name is required' : null,
+                        validator: (value) => (value?.isEmpty ?? true)
+                            ? 'Name is required'
+                            : null,
                       ),
                       const SizedBox(height: 20),
-                      
+
                       // Email Field
                       TextFormField(
                         controller: controller.emailController,
                         decoration: InputDecoration(
                           labelText: 'Email Address',
                           hintText: 'staff@example.com',
-                          prefixIcon: Icon(Icons.email_outlined, color: AppColors.merchant.shade600),
+                          prefixIcon: Icon(
+                            Icons.email_outlined,
+                            color: AppColors.merchant.shade600,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -147,54 +165,76 @@ class StaffAddEditView extends GetView<StaffAddEditController> {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: AppColors.merchant, width: 2),
+                            borderSide: BorderSide(
+                              color: AppColors.merchant,
+                              width: 2,
+                            ),
                           ),
                           filled: true,
                           fillColor: Colors.grey.shade50,
                         ),
                         keyboardType: TextInputType.emailAddress,
-                        validator: (value) => (GetUtils.isEmail(value ?? '')) ? null : 'Enter a valid email',
+                        validator: (value) => (GetUtils.isEmail(value ?? ''))
+                            ? null
+                            : 'Enter a valid email',
                       ),
                       const SizedBox(height: 20),
-                      
+
                       // Password Field (only for new staff)
-                      Obx(() => controller.isEditMode.value
-                          ? const SizedBox.shrink()
-                          : Column(
-                              children: [
-                                TextFormField(
-                                  controller: controller.passwordController,
-                                  decoration: InputDecoration(
-                                    labelText: 'Password',
-                                    hintText: 'Enter secure password',
-                                    prefixIcon: Icon(Icons.lock_outline, color: AppColors.merchant.shade600),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
+                      Obx(
+                        () => controller.isEditMode.value
+                            ? const SizedBox.shrink()
+                            : Column(
+                                children: [
+                                  TextFormField(
+                                    controller: controller.passwordController,
+                                    decoration: InputDecoration(
+                                      labelText: 'Password',
+                                      hintText: 'Enter secure password',
+                                      prefixIcon: Icon(
+                                        Icons.lock_outline,
+                                        color: AppColors.merchant.shade600,
+                                      ),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: BorderSide(
+                                          color: Colors.grey.shade300,
+                                        ),
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: BorderSide(
+                                          color: AppColors.merchant,
+                                          width: 2,
+                                        ),
+                                      ),
+                                      filled: true,
+                                      fillColor: Colors.grey.shade50,
                                     ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide(color: Colors.grey.shade300),
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide(color: AppColors.merchant, width: 2),
-                                    ),
-                                    filled: true,
-                                    fillColor: Colors.grey.shade50,
+                                    obscureText: true,
+                                    validator: (value) =>
+                                        (value?.isEmpty ?? true)
+                                        ? 'Password is required'
+                                        : null,
                                   ),
-                                  obscureText: true,
-                                  validator: (value) => (value?.isEmpty ?? true) ? 'Password is required' : null,
-                                ),
-                                const SizedBox(height: 20),
-                              ],
-                            )),
-                      
+                                  const SizedBox(height: 20),
+                                ],
+                              ),
+                      ),
+
                       const Divider(height: 40),
-                      
+
                       // Shop Assignment Section
                       Row(
                         children: [
-                          Icon(Icons.store_outlined, color: AppColors.shop, size: 24),
+                          Icon(
+                            Icons.store_outlined,
+                            color: AppColors.shop,
+                            size: 24,
+                          ),
                           const SizedBox(width: 12),
                           const Text(
                             'Shop Assignment',
@@ -206,16 +246,20 @@ class StaffAddEditView extends GetView<StaffAddEditController> {
                         ],
                       ),
                       const SizedBox(height: 20),
-                      
+
                       // Shop Dropdown
                       _buildShopDropdown(),
-                      
+
                       const Divider(height: 40),
-                      
+
                       // Status Section
                       Row(
                         children: [
-                          Icon(Icons.toggle_on_outlined, color: AppColors.merchant.shade700, size: 24),
+                          Icon(
+                            Icons.toggle_on_outlined,
+                            color: AppColors.merchant.shade700,
+                            size: 24,
+                          ),
                           const SizedBox(width: 12),
                           const Text(
                             'Account Status',
@@ -227,7 +271,7 @@ class StaffAddEditView extends GetView<StaffAddEditController> {
                         ],
                       ),
                       const SizedBox(height: 20),
-                      
+
                       // Active Status Toggle
                       Container(
                         padding: const EdgeInsets.all(16),
@@ -260,17 +304,20 @@ class StaffAddEditView extends GetView<StaffAddEditController> {
                                 ],
                               ),
                             ),
-                            Obx(() => Switch(
-                                  value: controller.isActive.value,
-                                  onChanged: (value) => controller.isActive.value = value,
-                                  activeColor: AppColors.success,
-                                )),
+                            Obx(
+                              () => Switch(
+                                value: controller.isActive.value,
+                                onChanged: (value) =>
+                                    controller.isActive.value = value,
+                                activeColor: AppColors.success,
+                              ),
+                            ),
                           ],
                         ),
                       ),
-                      
+
                       const SizedBox(height: 32),
-                      
+
                       // Error Message
                       Obx(() {
                         if (controller.formError.value != null) {
@@ -280,11 +327,16 @@ class StaffAddEditView extends GetView<StaffAddEditController> {
                             decoration: BoxDecoration(
                               color: AppColors.error.shade50,
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: AppColors.error.shade300),
+                              border: Border.all(
+                                color: AppColors.error.shade300,
+                              ),
                             ),
                             child: Row(
                               children: [
-                                Icon(Icons.error_outline, color: AppColors.error.shade700),
+                                Icon(
+                                  Icons.error_outline,
+                                  color: AppColors.error.shade700,
+                                ),
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Text(
@@ -301,41 +353,49 @@ class StaffAddEditView extends GetView<StaffAddEditController> {
                         }
                         return const SizedBox.shrink();
                       }),
-                      
+
                       // Save Button
-                      Obx(() => SizedBox(
-                            height: 56,
-                            child: ElevatedButton.icon(
-                              icon: controller.isSaving.value
-                                  ? const SizedBox(
-                                      height: 20,
-                                      width: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: Colors.white,
-                                      ),
-                                    )
-                                  : const Icon(Icons.save, size: 24),
-                              label: Text(
-                                controller.isSaving.value 
-                                    ? 'Saving...' 
-                                    : controller.isEditMode.value 
-                                        ? 'Update Staff' 
-                                        : 'Add Staff',
-                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                              ),
-                              onPressed: controller.isSaving.value ? null : () => controller.saveStaff(),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.merchant,
-                                foregroundColor: Colors.white,
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                disabledBackgroundColor: AppColors.merchant.shade300,
+                      Obx(
+                        () => SizedBox(
+                          height: 56,
+                          child: ElevatedButton.icon(
+                            icon: controller.isSaving.value
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Icon(Icons.save, size: 24),
+                            label: Text(
+                              controller.isSaving.value
+                                  ? 'Saving...'
+                                  : controller.isEditMode.value
+                                  ? 'Update Staff'
+                                  : 'Add Staff',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
-                          )),
+                            onPressed: controller.isSaving.value
+                                ? null
+                                : () => controller.saveStaff(),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.merchant,
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              disabledBackgroundColor:
+                                  AppColors.merchant.shade300,
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -422,9 +482,7 @@ class StaffAddEditView extends GetView<StaffAddEditController> {
         decoration: InputDecoration(
           labelText: 'Assigned Shop',
           prefixIcon: Icon(Icons.storefront, color: AppColors.shop.shade600),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(color: Colors.grey.shade300),

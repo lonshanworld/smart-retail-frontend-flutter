@@ -4,6 +4,8 @@ import 'package:smart_retail/app/data/models/user_model.dart';
 import 'package:smart_retail/app/data/services/admin_profile_api_service.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
 
+import 'package:smart_retail/app/utils/dialog_utils.dart';
+
 class AdminProfileController extends GetxController {
   final AdminProfileApiService _apiService = Get.find<AdminProfileApiService>();
   final AuthService _authService = Get.find<AuthService>();
@@ -48,23 +50,21 @@ class AdminProfileController extends GetxController {
 
     isSaving.value = true;
     try {
-      final updates = <String, dynamic>{
-        'name': nameController.text.trim(),
-      };
+      final updates = <String, dynamic>{'name': nameController.text.trim()};
       if (passwordController.text.isNotEmpty) {
         updates['password'] = passwordController.text;
       }
 
       final updatedUser = await _apiService.updateMyProfile(updates);
-      
+
       // IMPORTANT: Update the user in the global AuthService as well
       _authService.user.value = updatedUser;
 
       userProfile.value = updatedUser; // Refresh local profile data
       passwordController.clear();
       confirmPasswordController.clear();
-      
-      Get.snackbar('Success', 'Your profile has been updated.', snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.green, colorText: Colors.white);
+
+      DialogUtils.showSuccess('Your profile has been updated.');
     } catch (e) {
       formError.value = "Update failed: ${e.toString()}";
     } finally {

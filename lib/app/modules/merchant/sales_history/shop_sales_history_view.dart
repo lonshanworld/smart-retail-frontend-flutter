@@ -16,7 +16,9 @@ class ShopSalesHistoryView extends GetView<ShopSalesHistoryController> {
 
     // Listener for pagination
     scrollController.addListener(() {
-      if (scrollController.position.pixels >= scrollController.position.maxScrollExtent - 200 && // Load a bit before reaching the absolute end
+      if (scrollController.position.pixels >=
+              scrollController.position.maxScrollExtent -
+                  200 && // Load a bit before reaching the absolute end
           !controller.isLoadingMore.value &&
           controller.currentPage.value < controller.totalPages.value) {
         controller.loadMoreSales();
@@ -68,9 +70,16 @@ class ShopSalesHistoryView extends GetView<ShopSalesHistoryController> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.history_toggle_off_outlined, size: 60, color: Colors.grey),
+                Icon(
+                  Icons.history_toggle_off_outlined,
+                  size: 60,
+                  color: Colors.grey,
+                ),
                 SizedBox(height: 16),
-                Text('No sales recorded for this shop yet.', style: TextStyle(fontSize: 16)),
+                Text(
+                  'No sales recorded for this shop yet.',
+                  style: TextStyle(fontSize: 16),
+                ),
               ],
             ),
           );
@@ -84,11 +93,36 @@ class ShopSalesHistoryView extends GetView<ShopSalesHistoryController> {
                 child: ResponsiveDataTable<Sale>(
                   items: controller.sales,
                   columns: const [
-                    DataColumn(label: Text('Sale ID', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Date', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Items', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Payment', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Total', style: TextStyle(fontWeight: FontWeight.bold))),
+                    DataColumn(
+                      label: Text(
+                        'Sale ID',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    DataColumn(
+                      label: Text(
+                        'Date',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    DataColumn(
+                      label: Text(
+                        'Items',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    DataColumn(
+                      label: Text(
+                        'Payment',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    DataColumn(
+                      label: Text(
+                        'Total',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
                   ],
                   buildCells: (sale) => [
                     DataCell(
@@ -96,18 +130,27 @@ class ShopSalesHistoryView extends GetView<ShopSalesHistoryController> {
                         children: [
                           CircleAvatar(
                             backgroundColor: AppColors.merchant.shade100,
-                            child: Icon(Icons.receipt_long_outlined, color: AppColors.merchant, size: 20),
+                            child: Icon(
+                              Icons.receipt_long_outlined,
+                              color: AppColors.merchant,
+                              size: 20,
+                            ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
                               sale.id.substring(0, 8),
-                              style: const TextStyle(fontWeight: FontWeight.w500),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
                         ],
                       ),
-                      onTap: () => Get.toNamed(Routes.MERCHANT_SALE_DETAIL, arguments: sale.id),
+                      onTap: () => Get.toNamed(
+                        Routes.MERCHANT_SALE_DETAIL,
+                        arguments: sale.id,
+                      ),
                     ),
                     DataCell(
                       Column(
@@ -120,15 +163,24 @@ class ShopSalesHistoryView extends GetView<ShopSalesHistoryController> {
                           ),
                           Text(
                             DateFormat.jm().format(sale.saleDate.toLocal()),
-                            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade600,
+                            ),
                           ),
                         ],
                       ),
-                      onTap: () => Get.toNamed(Routes.MERCHANT_SALE_DETAIL, arguments: sale.id),
+                      onTap: () => Get.toNamed(
+                        Routes.MERCHANT_SALE_DETAIL,
+                        arguments: sale.id,
+                      ),
                     ),
                     DataCell(
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.merchant.shade50,
                           borderRadius: BorderRadius.circular(12),
@@ -141,11 +193,17 @@ class ShopSalesHistoryView extends GetView<ShopSalesHistoryController> {
                           ),
                         ),
                       ),
-                      onTap: () => Get.toNamed(Routes.MERCHANT_SALE_DETAIL, arguments: sale.id),
+                      onTap: () => Get.toNamed(
+                        Routes.MERCHANT_SALE_DETAIL,
+                        arguments: sale.id,
+                      ),
                     ),
                     DataCell(
                       Text(sale.paymentType),
-                      onTap: () => Get.toNamed(Routes.MERCHANT_SALE_DETAIL, arguments: sale.id),
+                      onTap: () => Get.toNamed(
+                        Routes.MERCHANT_SALE_DETAIL,
+                        arguments: sale.id,
+                      ),
                     ),
                     DataCell(
                       Text(
@@ -156,16 +214,25 @@ class ShopSalesHistoryView extends GetView<ShopSalesHistoryController> {
                           color: Colors.green,
                         ),
                       ),
-                      onTap: () => Get.toNamed(Routes.MERCHANT_SALE_DETAIL, arguments: sale.id),
+                      onTap: () => Get.toNamed(
+                        Routes.MERCHANT_SALE_DETAIL,
+                        arguments: sale.id,
+                      ),
                     ),
                   ],
                   buildMobileCard: (sale) => DataRowCard(
                     leading: CircleAvatar(
                       backgroundColor: AppColors.merchant.shade100,
-                      child: Icon(Icons.receipt_long_outlined, color: AppColors.merchant, size: 20),
+                      child: Icon(
+                        Icons.receipt_long_outlined,
+                        color: AppColors.merchant,
+                        size: 20,
+                      ),
                     ),
                     title: 'Sale ${sale.id.substring(0, 8)}',
-                    subtitle: DateFormat.yMMMd().add_jm().format(sale.saleDate.toLocal()),
+                    subtitle: DateFormat.yMMMd().add_jm().format(
+                      sale.saleDate.toLocal(),
+                    ),
                     details: [
                       DetailRow(
                         icon: Icons.shopping_cart,
@@ -192,7 +259,10 @@ class ShopSalesHistoryView extends GetView<ShopSalesHistoryController> {
                         color: Colors.green,
                       ),
                     ),
-                    onTap: () => Get.toNamed(Routes.MERCHANT_SALE_DETAIL, arguments: sale.id),
+                    onTap: () => Get.toNamed(
+                      Routes.MERCHANT_SALE_DETAIL,
+                      arguments: sale.id,
+                    ),
                   ),
                   headingRowColor: AppColors.merchant.shade50,
                 ),

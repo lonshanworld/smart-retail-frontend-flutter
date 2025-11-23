@@ -19,7 +19,7 @@ class ShopSalesApiService extends GetxService {
   ///
   /// __Request:__
   /// - __Method:__ GET
-  /// - __Endpoint:__ 
+  /// - __Endpoint:__
   ///   - For merchants: `/api/v1/merchant/shops/{shopId}/sales`
   ///   - For staff: `/api/v1/shop/shops/{shopId}/sales`
   /// - __Query Parameters:__
@@ -40,7 +40,7 @@ class ShopSalesApiService extends GetxService {
     // Determine the correct endpoint based on user role
     final userRole = _authService.user.value?.role;
     final String baseUrl;
-    
+
     if (userRole == 'merchant') {
       baseUrl = '${ApiConstants.baseUrl}/merchant/shops';
       print('👔 [SHOP SALES API] Using merchant endpoint');
@@ -53,37 +53,43 @@ class ShopSalesApiService extends GetxService {
     print('🌐 [SHOP SALES API] Full URL: $url');
 
     try {
-      final response = await _connect.get(
-        url,
-        headers: await _getHeaders(),
-      );
+      final response = await _connect.get(url, headers: await _getHeaders());
 
       print('📥 [SHOP SALES API] Response status: ${response.statusCode}');
 
       if (response.isOk && response.body != null) {
         print('✅ [SHOP SALES API] Successfully fetched sales');
-        print('📊 [SHOP SALES API] Response body type: ${response.body.runtimeType}');
-        
-        final paginatedResponse = PaginatedSalesResponse.fromJson(response.body);
-        
+        print(
+          '📊 [SHOP SALES API] Response body type: ${response.body.runtimeType}',
+        );
+
+        final paginatedResponse = PaginatedSalesResponse.fromJson(
+          response.body,
+        );
+
         print('📋 [SHOP SALES API] Parsed response:');
         print('   - Items count: ${paginatedResponse.items.length}');
         print('   - Total items: ${paginatedResponse.totalItems}');
         print('   - Current page: ${paginatedResponse.currentPage}');
         print('   - Total pages: ${paginatedResponse.totalPages}');
-        
+
         for (int i = 0; i < paginatedResponse.items.length; i++) {
           final sale = paginatedResponse.items[i];
-          print('   Sale #${i + 1}: ID=${sale.id}, Date=${sale.saleDate}, Total=${sale.totalAmount}, ItemsCount=${sale.items.length}');
+          print(
+            '   Sale #${i + 1}: ID=${sale.id}, Date=${sale.saleDate}, Total=${sale.totalAmount}, ItemsCount=${sale.items.length}',
+          );
           for (int j = 0; j < sale.items.length; j++) {
             final item = sale.items[j];
-            print('      Item #${j + 1}: SellingPrice=${item.sellingPriceAtSale}, OriginalPrice=${item.originalPriceAtSale}');
+            print(
+              '      Item #${j + 1}: SellingPrice=${item.sellingPriceAtSale}, OriginalPrice=${item.originalPriceAtSale}',
+            );
           }
         }
-        
+
         return paginatedResponse;
       } else {
-        final errorMsg = response.body?['message'] ?? 'Failed to fetch shop sales';
+        final errorMsg =
+            response.body?['message'] ?? 'Failed to fetch shop sales';
         print('❌ [SHOP SALES API] Error: $errorMsg');
         print('📥 [SHOP SALES API] Response body: ${response.body}');
         throw Exception(errorMsg);

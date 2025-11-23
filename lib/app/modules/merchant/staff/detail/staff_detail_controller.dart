@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:smart_retail/app/utils/dialog_utils.dart';
 import 'package:smart_retail/app/data/models/user_model.dart';
 import 'package:smart_retail/app/routes/app_pages.dart';
 
@@ -13,7 +14,7 @@ class StaffDetailController extends GetxController {
     } else {
       // Handle error case where staff data is missing
       Get.back();
-      Get.snackbar('Error', 'Could not load staff details.');
+      DialogUtils.showError('Could not load staff details.');
     }
   }
 

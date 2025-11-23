@@ -28,31 +28,75 @@ class _ShopMainScaffoldState extends State<ShopMainScaffold> {
   final AuthService _authService = Get.find<AuthService>();
 
   final List<Map<String, dynamic>> _allShopNavItems = [
-    {'route': Routes.SHOP_DASHBOARD, 'label': 'Dashboard', 'icon': Icons.dashboard_outlined, 'selectedIcon': Icons.dashboard},
-    {'route': Routes.SHOP_SALES, 'label': 'Sales', 'icon': Icons.receipt_long_outlined, 'selectedIcon': Icons.receipt_long},
-    {'route': Routes.SHOP_INVENTORY, 'label': 'Inventory', 'icon': Icons.inventory_2_outlined, 'selectedIcon': Icons.inventory_2},
-    {'route': Routes.SHOP_ITEMS, 'label': 'Items', 'icon': Icons.list_alt_outlined, 'selectedIcon': Icons.list_alt},
-    {'route': Routes.SHOP_POS, 'label': 'POS', 'icon': Icons.point_of_sale_outlined, 'selectedIcon': Icons.point_of_sale},
-    {'route': Routes.SHOP_CUSTOMERS, 'label': 'Customers', 'icon': Icons.people_outline, 'selectedIcon': Icons.people},
-    {'route': Routes.SHOP_PROFILE, 'label': 'Profile', 'icon': Icons.person_outline, 'selectedIcon': Icons.person},
-    {'route': Routes.SHOP_SETTINGS, 'label': 'Settings', 'icon': Icons.settings_outlined, 'selectedIcon': Icons.settings},
+    {
+      'route': Routes.SHOP_DASHBOARD,
+      'label': 'Dashboard',
+      'icon': Icons.dashboard_outlined,
+      'selectedIcon': Icons.dashboard,
+    },
+    {
+      'route': Routes.SHOP_SALES,
+      'label': 'Sales',
+      'icon': Icons.receipt_long_outlined,
+      'selectedIcon': Icons.receipt_long,
+    },
+    {
+      'route': Routes.SHOP_INVENTORY,
+      'label': 'Inventory',
+      'icon': Icons.inventory_2_outlined,
+      'selectedIcon': Icons.inventory_2,
+    },
+    {
+      'route': Routes.SHOP_ITEMS,
+      'label': 'Items',
+      'icon': Icons.list_alt_outlined,
+      'selectedIcon': Icons.list_alt,
+    },
+    {
+      'route': Routes.SHOP_POS,
+      'label': 'POS',
+      'icon': Icons.point_of_sale_outlined,
+      'selectedIcon': Icons.point_of_sale,
+    },
+    {
+      'route': Routes.SHOP_CUSTOMERS,
+      'label': 'Customers',
+      'icon': Icons.people_outline,
+      'selectedIcon': Icons.people,
+    },
+    {
+      'route': Routes.SHOP_PROFILE,
+      'label': 'Profile',
+      'icon': Icons.person_outline,
+      'selectedIcon': Icons.person,
+    },
+    {
+      'route': Routes.SHOP_SETTINGS,
+      'label': 'Settings',
+      'icon': Icons.settings_outlined,
+      'selectedIcon': Icons.settings,
+    },
   ];
 
   /// Get filtered nav items based on user role
   List<Map<String, dynamic>> get _shopNavItems {
     final userRole = _authService.user.value?.role;
-    
+
     // Hide Inventory for staff users
     if (userRole == 'staff') {
-      return _allShopNavItems.where((item) => item['route'] != Routes.SHOP_INVENTORY).toList();
+      return _allShopNavItems
+          .where((item) => item['route'] != Routes.SHOP_INVENTORY)
+          .toList();
     }
-    
+
     return _allShopNavItems;
   }
 
   int _calculateSelectedIndex() {
     final String currentRoute = Get.currentRoute;
-    int index = _shopNavItems.indexWhere((item) => currentRoute.startsWith(item['route']!));
+    int index = _shopNavItems.indexWhere(
+      (item) => currentRoute.startsWith(item['route']!),
+    );
     return index > -1 ? index : 0;
   }
 
@@ -87,12 +131,14 @@ class _ShopMainScaffoldState extends State<ShopMainScaffold> {
       builder: (context, constraints) {
         final bool isMobile = constraints.maxWidth < webBreakpoint;
         return Scaffold(
-          appBar: isMobile ? AppBar(
-            title: Text(widget.title),
-            backgroundColor: AppColors.shop,
-            foregroundColor: Colors.white,
-            elevation: 0,
-          ) : null,
+          appBar: isMobile
+              ? AppBar(
+                  title: Text(widget.title),
+                  backgroundColor: AppColors.shop,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                )
+              : null,
           drawer: isMobile ? _buildModernDrawer() : null,
           floatingActionButton: widget.floatingActionButton,
           floatingActionButtonLocation: widget.floatingActionButtonLocation,
@@ -106,7 +152,10 @@ class _ShopMainScaffoldState extends State<ShopMainScaffold> {
                         children: [
                           // Modern app bar for desktop
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 16,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.white,
                               boxShadow: [
@@ -131,10 +180,15 @@ class _ShopMainScaffoldState extends State<ShopMainScaffold> {
                                 // User profile badge
                                 Obx(() {
                                   final User? user = _authService.user.value;
-                                  final Shop? shop = _authService.currentShop.value;
-                                  if (user == null) return const SizedBox.shrink();
+                                  final Shop? shop =
+                                      _authService.currentShop.value;
+                                  if (user == null)
+                                    return const SizedBox.shrink();
                                   return Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 8,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: AppColors.shop.shade50,
                                       borderRadius: BorderRadius.circular(20),
@@ -145,17 +199,21 @@ class _ShopMainScaffoldState extends State<ShopMainScaffold> {
                                           radius: 16,
                                           backgroundColor: AppColors.shop,
                                           child: Text(
-                                            shop != null && shop.name.isNotEmpty 
-                                                ? shop.name[0].toUpperCase() 
-                                                : user.name.isNotEmpty 
-                                                    ? user.name[0].toUpperCase() 
-                                                    : 'S',
-                                            style: const TextStyle(color: Colors.white, fontSize: 14),
+                                            shop != null && shop.name.isNotEmpty
+                                                ? shop.name[0].toUpperCase()
+                                                : user.name.isNotEmpty
+                                                ? user.name[0].toUpperCase()
+                                                : 'S',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 14,
+                                            ),
                                           ),
                                         ),
                                         const SizedBox(width: 8),
                                         Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
                                             if (shop != null)
@@ -163,7 +221,8 @@ class _ShopMainScaffoldState extends State<ShopMainScaffold> {
                                                 shop.name,
                                                 style: TextStyle(
                                                   fontWeight: FontWeight.w600,
-                                                  color: AppColors.shop.shade900,
+                                                  color:
+                                                      AppColors.shop.shade900,
                                                   fontSize: 13,
                                                 ),
                                               ),
@@ -210,10 +269,7 @@ class _ShopMainScaffoldState extends State<ShopMainScaffold> {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            AppColors.shop.shade700,
-            AppColors.shop.shade900,
-          ],
+          colors: [AppColors.shop.shade700, AppColors.shop.shade900],
         ),
       ),
       child: Column(
@@ -289,12 +345,19 @@ class _ShopMainScaffoldState extends State<ShopMainScaffold> {
                       onTap: () => _onDestinationSelected(index),
                       borderRadius: BorderRadius.circular(12),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
                         decoration: BoxDecoration(
-                          color: isSelected ? Colors.white.withOpacity(0.15) : Colors.transparent,
+                          color: isSelected
+                              ? Colors.white.withOpacity(0.15)
+                              : Colors.transparent,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: isSelected ? Colors.white.withOpacity(0.3) : Colors.transparent,
+                            color: isSelected
+                                ? Colors.white.withOpacity(0.3)
+                                : Colors.transparent,
                             width: 1,
                           ),
                         ),
@@ -312,7 +375,9 @@ class _ShopMainScaffoldState extends State<ShopMainScaffold> {
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 15,
-                                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                                  fontWeight: isSelected
+                                      ? FontWeight.w600
+                                      : FontWeight.w400,
                                 ),
                               ),
                             ),
@@ -346,7 +411,7 @@ class _ShopMainScaffoldState extends State<ShopMainScaffold> {
     return Obx(() {
       final User? user = _authService.user.value;
       if (user == null) return const SizedBox.shrink();
-      
+
       return Container(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -424,10 +489,7 @@ class _ShopMainScaffoldState extends State<ShopMainScaffold> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              AppColors.shop.shade700,
-              AppColors.shop.shade900,
-            ],
+            colors: [AppColors.shop.shade700, AppColors.shop.shade900],
           ),
         ),
         child: SafeArea(
@@ -485,7 +547,9 @@ class _ShopMainScaffoldState extends State<ShopMainScaffold> {
                         item['label'],
                         style: TextStyle(
                           color: Colors.white,
-                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                          fontWeight: isSelected
+                              ? FontWeight.w600
+                              : FontWeight.w400,
                         ),
                       ),
                       selected: isSelected,
@@ -493,7 +557,8 @@ class _ShopMainScaffoldState extends State<ShopMainScaffold> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      onTap: () => _onDestinationSelected(index, fromDrawer: true),
+                      onTap: () =>
+                          _onDestinationSelected(index, fromDrawer: true),
                     );
                   },
                 ),

@@ -14,28 +14,34 @@ class StockInService extends GetxService {
 
   /// Submits a stock-in record for a specific shop.
   /// The backend will handle creating a new item or updating the quantity of an existing one.
-  Future<void> stockInItem(String shopId, MerchantStockInRequest requestData) async {
+  Future<void> stockInItem(
+    String shopId,
+    MerchantStockInRequest requestData,
+  ) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
-      print("Mock Stock-In Success for Shop ID: $shopId with data: ${requestData.toJson()}");
+      print(
+        "Mock Stock-In Success for Shop ID: $shopId with data: ${requestData.toJson()}",
+      );
       // In a real scenario, you might get validation errors here.
       // For example, if a SKU already exists with a different name.
       // We will simulate a simple success case.
-      return; 
+      return;
     }
 
     final token = await _authService.getToken();
     final response = await _connect.post(
-      '${ApiConstants.baseUrl}/merchant/shops/$shopId/stock-in', 
+      '${ApiConstants.baseUrl}/merchant/shops/$shopId/stock-in',
       requestData.toJson(),
       headers: {'Authorization': 'Bearer $token'},
     );
 
     if (response.statusCode == 200 || response.statusCode == 201) {
-        return;
+      return;
     } else {
       // Use the custom exception model for better error handling in the controller.
-      final message = response.body?['message'] as String? ?? 'Failed to record stock-in';
+      final message =
+          response.body?['message'] as String? ?? 'Failed to record stock-in';
       if (response.statusCode == 400) {
         throw ApiValidationException(message);
       } else if (response.statusCode == 401) {

@@ -4,6 +4,7 @@ import 'package:smart_retail/app/data/models/shop_model.dart';
 import 'package:smart_retail/app/data/models/user_selection_item.dart';
 import 'package:smart_retail/app/data/services/shop_api_service.dart';
 import 'package:smart_retail/app/data/services/user_api_service.dart';
+import 'package:smart_retail/app/utils/dialog_utils.dart';
 
 class AdminAddEditShopController extends GetxController {
   final ShopApiService _shopApiService = Get.find<ShopApiService>();
@@ -53,8 +54,7 @@ class AdminAddEditShopController extends GetxController {
       final result = await _userApiService.getMerchantsForSelection();
       merchants.assignAll(result);
     } catch (e) {
-      Get.snackbar("Error", "Could not fetch merchants: ${e.toString()}",
-          backgroundColor: Colors.red, colorText: Colors.white);
+      DialogUtils.showError("Could not fetch merchants: ${e.toString()}");
     } finally {
       isFetchingMerchants.value = false;
     }
@@ -89,10 +89,7 @@ class AdminAddEditShopController extends GetxController {
 
   Future<void> saveShop() async {
     if (!formKey.currentState!.validate()) {
-      Get.snackbar("Validation Error", "Please correct the errors in the form.",
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.orange,
-          colorText: Colors.white);
+      DialogUtils.showWarning("Please correct the errors in the form.");
       return;
     }
 
@@ -115,7 +112,9 @@ class AdminAddEditShopController extends GetxController {
 
         final currentAddress = _shopToEdit!.address ?? "";
         if (addressController.text != currentAddress) {
-          updates['address'] = addressController.text.isEmpty ? null : addressController.text;
+          updates['address'] = addressController.text.isEmpty
+              ? null
+              : addressController.text;
           changed = true;
         }
 
@@ -125,19 +124,22 @@ class AdminAddEditShopController extends GetxController {
         }
 
         if (!changed) {
-          Get.snackbar("No Changes", "No changes were made to the shop details.",
-              snackPosition: SnackPosition.BOTTOM);
+          DialogUtils.showInfo("No changes were made to the shop details.");
           isLoading.value = false;
           return;
         }
 
-        resultShop = await _shopApiService.adminUpdateShop(_shopToEdit!.id!, updates);
-
+        resultShop = await _shopApiService.adminUpdateShop(
+          _shopToEdit!.id!,
+          updates,
+        );
       } else {
         final newShop = Shop(
           merchantId: selectedMerchantId.value!,
           name: nameController.text,
-          address: addressController.text.isEmpty ? null : addressController.text,
+          address: addressController.text.isEmpty
+              ? null
+              : addressController.text,
           isActive: isActive.value,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
@@ -150,21 +152,15 @@ class AdminAddEditShopController extends GetxController {
       if (resultShop != null) {
         Get.back(result: true);
       } else {
-        Get.snackbar(
-            "Operation Failed",
-            isEditMode.value
-                ? "Could not update shop. Please try again."
-                : "Could not create shop. Please try again.",
-            snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: Colors.red,
-            colorText: Colors.white);
+        DialogUtils.showError(
+          isEditMode.value
+              ? "Could not update shop. Please try again."
+              : "Could not create shop. Please try again.",
+        );
       }
     } catch (e) {
       print("[AdminAddEditShopController] Error saving shop: $e");
-      Get.snackbar("Error", "An unexpected error occurred: ${e.toString()}",
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red,
-          colorText: Colors.white);
+      DialogUtils.showError("An unexpected error occurred: ${e.toString()}");
     } finally {
       isLoading.value = false;
     }

@@ -1,11 +1,13 @@
-import 'package:flutter/material.dart'; // For Get.snackbar
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:smart_retail/app/utils/dialog_utils.dart';
 import 'package:smart_retail/app/core/config/app_config.dart';
 import 'package:smart_retail/app/data/models/user_model.dart';
 import 'package:smart_retail/app/data/providers/api_constants.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
 import 'package:smart_retail/app/data/models/admin_paginated_users_response.dart'; // <<< ADDED IMPORT
 import 'package:smart_retail/app/data/models/user_selection_item.dart'; // <<< ADDED IMPORT
+import 'package:smart_retail/app/utils/response_utils.dart';
 
 class AdminUserService extends GetxService {
   final GetConnect _connect = GetConnect(timeout: const Duration(seconds: 30));
@@ -20,7 +22,10 @@ class AdminUserService extends GetxService {
       print("Auth token is null in AdminUserService");
       return null;
     }
-    return {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'};
+    return {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    };
   }
 
   /// Fetches a paginated list of users.
@@ -50,11 +55,41 @@ class AdminUserService extends GetxService {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
       final users = [
-        User(id: '1', name: 'Test Merchant', email: 'merchant@test.com', role: 'merchant', isActive: true, createdAt: DateTime.now(), updatedAt: DateTime.now()),
-        User(id: '2', name: 'Test Staff', email: 'staff@test.com', role: 'staff', isActive: true, createdAt: DateTime.now(), updatedAt: DateTime.now()),
-        User(id: '3', name: 'Inactive User', email: 'inactive@test.com', role: 'merchant', isActive: false, createdAt: DateTime.now(), updatedAt: DateTime.now()),
+        User(
+          id: '1',
+          name: 'Test Merchant',
+          email: 'merchant@test.com',
+          role: 'merchant',
+          isActive: true,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+        User(
+          id: '2',
+          name: 'Test Staff',
+          email: 'staff@test.com',
+          role: 'staff',
+          isActive: true,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+        User(
+          id: '3',
+          name: 'Inactive User',
+          email: 'inactive@test.com',
+          role: 'merchant',
+          isActive: false,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
       ];
-      return AdminPaginatedUsersResponse(users: users, currentPage: 1, totalPages: 1, pageSize: 10, totalCount: 3);
+      return AdminPaginatedUsersResponse(
+        users: users,
+        currentPage: 1,
+        totalPages: 1,
+        pageSize: 10,
+        totalCount: 3,
+      );
     }
     final headers = await _getAuthHeaders();
     if (headers == null) return null;
@@ -65,7 +100,8 @@ class AdminUserService extends GetxService {
     };
     if (role != null && role.isNotEmpty) queryParams['role'] = role;
     if (isActive != null) queryParams['isActive'] = isActive.toString();
-    if (searchTerm != null && searchTerm.isNotEmpty) queryParams['q'] = searchTerm;
+    if (searchTerm != null && searchTerm.isNotEmpty)
+      queryParams['q'] = searchTerm;
 
     final response = await _connect.get(
       _adminUsersBaseUrl,
@@ -74,11 +110,17 @@ class AdminUserService extends GetxService {
     );
 
     if (response.statusCode == 200 && response.body['status'] == 'success') {
-      // Assuming response.body['data'] is the Map for AdminPaginatedUsersResponse.fromJson
-      return AdminPaginatedUsersResponse.fromJson(response.body['data'] as Map<String, dynamic>);
+      // Use defensive normalization for the response data
+      return AdminPaginatedUsersResponse.fromJson(
+        asMap(response.body['data']),
+      );
     } else {
-      print('Error listing users: ${response.statusCode} - ${response.bodyString}');
-      Get.snackbar("Error", "Failed to fetch users: ${response.body?['message'] ?? response.statusText}", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
+      print(
+        'Error listing users: ${response.statusCode} - ${response.bodyString}',
+      );
+      DialogUtils.showError(
+        "Failed to fetch users: ${response.body?['message'] ?? response.statusText}",
+      );
       return null;
     }
   }
@@ -110,10 +152,14 @@ class AdminUserService extends GetxService {
     );
     print('after response ${response.body}');
     if (response.statusCode! < 300) {
-      return User.fromJson(response.body['data']['user']);
+      return User.fromJson(asMap(response.body['data']['user']));
     } else {
-      print('Error creating user: ${response.statusCode} - ${response.bodyString}');
-      Get.snackbar("Error", "Failed to create user: ${response.body?['message'] ?? response.statusText}", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
+      print(
+        'Error creating user: ${response.statusCode} - ${response.bodyString}',
+      );
+      DialogUtils.showError(
+        "Failed to create user: ${response.body?['message'] ?? response.statusText}",
+      );
       return null;
     }
   }
@@ -132,7 +178,14 @@ class AdminUserService extends GetxService {
   Future<User?> getUserById(String userId) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
-      return User(id: userId, name: 'Mock User', email: 'mock@test.com', role: 'merchant', createdAt: DateTime.now(), updatedAt: DateTime.now());
+      return User(
+        id: userId,
+        name: 'Mock User',
+        email: 'mock@test.com',
+        role: 'merchant',
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
     }
     final headers = await _getAuthHeaders();
     if (headers == null) return null;
@@ -143,10 +196,14 @@ class AdminUserService extends GetxService {
     );
 
     if (response.statusCode == 200 && response.body['status'] == 'success') {
-      return User.fromJson(response.body['data'] as Map<String, dynamic>);
+      return User.fromJson(asMap(response.body['data']));
     } else {
-      print('Error fetching user $userId: ${response.statusCode} - ${response.bodyString}');
-      Get.snackbar("Error", "Failed to fetch user: ${response.body?['message'] ?? response.statusText}", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
+      print(
+        'Error fetching user $userId: ${response.statusCode} - ${response.bodyString}',
+      );
+      DialogUtils.showError(
+        "Failed to fetch user: ${response.body?['message'] ?? response.statusText}",
+      );
       return null;
     }
   }
@@ -178,10 +235,14 @@ class AdminUserService extends GetxService {
     );
 
     if (response.statusCode == 200 && response.body['status'] == 'success') {
-      return User.fromJson(response.body['data'] as Map<String, dynamic>);
+      return User.fromJson(asMap(response.body['data']));
     } else {
-      print('Error updating user $userId: ${response.statusCode} - ${response.bodyString}');
-      Get.snackbar("Error", "Failed to update user: ${response.body?['message'] ?? response.statusText}", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
+      print(
+        'Error updating user $userId: ${response.statusCode} - ${response.bodyString}',
+      );
+      DialogUtils.showError(
+        "Failed to update user: ${response.body?['message'] ?? response.statusText}",
+      );
       return null;
     }
   }
@@ -210,11 +271,15 @@ class AdminUserService extends GetxService {
     );
 
     if (response.statusCode == 200 && response.body['status'] == 'success') {
-      Get.snackbar("Success", response.body?['message'] ?? "User deactivated successfully", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.green, colorText: Colors.white);
+      DialogUtils.showSuccess(response.body?['message'] ?? "User deactivated successfully");
       return true;
     } else {
-      print('Error deactivating user $userId: ${response.statusCode} - ${response.bodyString}');
-      Get.snackbar("Error", "Failed to deactivate user: ${response.body?['message'] ?? response.statusText}", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
+      print(
+        'Error deactivating user $userId: ${response.statusCode} - ${response.bodyString}',
+      );
+      DialogUtils.showError(
+        "Failed to deactivate user: ${response.body?['message'] ?? response.statusText}",
+      );
       return false;
     }
   }
@@ -233,7 +298,15 @@ class AdminUserService extends GetxService {
   Future<User?> activateUser(String userId) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
-      return User(id: userId, name: 'Mock User', email: 'mock@test.com', role: 'merchant', isActive: true, createdAt: DateTime.now(), updatedAt: DateTime.now());
+      return User(
+        id: userId,
+        name: 'Mock User',
+        email: 'mock@test.com',
+        role: 'merchant',
+        isActive: true,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
     }
     final headers = await _getAuthHeaders();
     if (headers == null) return null;
@@ -245,11 +318,15 @@ class AdminUserService extends GetxService {
     );
 
     if (response.statusCode == 200 && response.body['status'] == 'success') {
-      Get.snackbar("Success", response.body?['message'] ?? "User activated successfully", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.green, colorText: Colors.white);
-      return User.fromJson(response.body['data'] as Map<String, dynamic>);
+      DialogUtils.showSuccess(response.body?['message'] ?? "User activated successfully");
+      return User.fromJson(asMap(response.body['data']));
     } else {
-      print('Error activating user $userId: ${response.statusCode} - ${response.bodyString}');
-      Get.snackbar("Error", "Failed to activate user: ${response.body?['message'] ?? response.statusText}", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
+      print(
+        'Error activating user $userId: ${response.statusCode} - ${response.bodyString}',
+      );
+      DialogUtils.showError(
+        "Failed to activate user: ${response.body?['message'] ?? response.statusText}",
+      );
       return null;
     }
   }
@@ -276,20 +353,24 @@ class AdminUserService extends GetxService {
     // It might be something like '$userId/force' or with a query parameter like '?permanent=true'.
     // For now, I'm using a common pattern: '$userId/permanent-delete'
     final response = await _connect.delete(
-      '$_adminUsersBaseUrl/$userId/permanent-delete', 
+      '$_adminUsersBaseUrl/$userId/permanent-delete',
       headers: headers,
     );
 
     if (response.statusCode == 200 && response.body['status'] == 'success') {
-      Get.snackbar("Success", response.body?['message'] ?? "User permanently deleted", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.orange, colorText: Colors.white);
+      DialogUtils.showSuccess(response.body?['message'] ?? "User permanently deleted");
       return true;
     } else {
-      print('Error permanently deleting user $userId: ${response.statusCode} - ${response.bodyString}');
-      Get.snackbar("Error", "Failed to permanently delete user: ${response.body?['message'] ?? response.statusText}", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
+      print(
+        'Error permanently deleting user $userId: ${response.statusCode} - ${response.bodyString}',
+      );
+      DialogUtils.showError(
+        "Failed to permanently delete user: ${response.body?['message'] ?? response.statusText}",
+      );
       return false;
     }
   }
-  
+
   /// Fetches a list of merchants for selection in a dropdown.
   ///
   /// __Request:__
@@ -314,16 +395,22 @@ class AdminUserService extends GetxService {
     if (headers == null) return null;
 
     final response = await _connect.get(
-      '$_adminUsersBaseUrl/merchants-for-selection', 
+      '$_adminUsersBaseUrl/merchants-for-selection',
       headers: headers,
     );
 
     if (response.statusCode == 200 && response.body['status'] == 'success') {
-      List<dynamic> listJson = response.body['data'] as List<dynamic>? ?? [];
-      return listJson.map((json) => UserSelectionItem.fromJson(json as Map<String,dynamic>)).toList();
+      final rawList = asList(response.body['data']);
+      return rawList
+          .map((json) => UserSelectionItem.fromJson(Map<String, dynamic>.from(json)))
+          .toList();
     } else {
-      print('Error fetching merchants for selection: ${response.statusCode} - ${response.bodyString}');
-      Get.snackbar("Error", "Failed to fetch merchant list: ${response.body?['message'] ?? response.statusText}", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
+      print(
+        'Error fetching merchants for selection: ${response.statusCode} - ${response.bodyString}',
+      );
+      DialogUtils.showError(
+        "Failed to fetch merchant list: ${response.body?['message'] ?? response.statusText}",
+      );
       return null;
     }
   }

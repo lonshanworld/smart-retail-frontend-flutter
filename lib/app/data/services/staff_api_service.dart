@@ -6,6 +6,7 @@ import 'package:smart_retail/app/data/models/shop_model.dart';
 import 'package:smart_retail/app/data/models/staff_dashboard_model.dart';
 import 'package:smart_retail/app/data/providers/api_constants.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
+import 'package:smart_retail/app/utils/response_utils.dart';
 
 class StaffApiService extends GetxService {
   final GetConnect _connect = Get.find<GetConnect>();
@@ -35,7 +36,8 @@ class StaffApiService extends GetxService {
   Future<Shop> getAssignedShop() async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
-      final assignedShopId = _authService.user.value?.assignedShopId ?? 'mock-shop-1';
+      final assignedShopId =
+          _authService.user.value?.assignedShopId ?? 'mock-shop-1';
       return Shop(
         id: assignedShopId,
         name: 'Downtown Coffee House',
@@ -47,11 +49,16 @@ class StaffApiService extends GetxService {
       );
     }
 
-    final response = await _connect.get('$_baseUrl/assigned-shop', headers: await _getHeaders());
+    final response = await _connect.get(
+      '$_baseUrl/assigned-shop',
+      headers: await _getHeaders(),
+    );
     if (response.isOk && response.body['data'] != null) {
-      return Shop.fromJson(response.body['data']);
+      return Shop.fromJson(asMap(response.body['data']));
     } else {
-      throw Exception(response.body?['message'] ?? 'Failed to fetch assigned shop');
+      throw Exception(
+        response.body?['message'] ?? 'Failed to fetch assigned shop',
+      );
     }
   }
 
@@ -69,17 +76,25 @@ class StaffApiService extends GetxService {
       await Future.delayed(const Duration(seconds: 1));
       final currentUser = _authService.user.value;
       if (currentUser != null && currentUser.role == 'staff') {
-        return currentUser.copyWith(name: 'Mock Staff User', phone: '123-456-7890');
+        return currentUser.copyWith(
+          name: 'Mock Staff User',
+          phone: '123-456-7890',
+        );
       } else {
         throw Exception('Mock staff user not found or role is incorrect.');
       }
     }
 
-    final response = await _connect.get('$_baseUrl/profile', headers: await _getHeaders());
+    final response = await _connect.get(
+      '$_baseUrl/profile',
+      headers: await _getHeaders(),
+    );
     if (response.isOk && response.body['data'] != null) {
-      return User.fromJson(response.body['data']);
+      return User.fromJson(asMap(response.body['data']));
     } else {
-      throw Exception(response.body?['message'] ?? 'Failed to fetch staff profile');
+      throw Exception(
+        response.body?['message'] ?? 'Failed to fetch staff profile',
+      );
     }
   }
 
@@ -96,17 +111,41 @@ class StaffApiService extends GetxService {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(milliseconds: 800));
       return [
-        Salary(id: 'sal-1', staffId: _authService.userId.value!, amount: 2200.0, paymentDate: DateTime(2023, 5, 28), notes: 'May Salary'),
-        Salary(id: 'sal-2', staffId: _authService.userId.value!, amount: 2200.0, paymentDate: DateTime(2023, 4, 28), notes: 'April Salary'),
-        Salary(id: 'sal-3', staffId: _authService.userId.value!, amount: 2150.0, paymentDate: DateTime(2023, 3, 28), notes: 'March Salary (includes OT)'),
+        Salary(
+          id: 'sal-1',
+          staffId: _authService.userId.value!,
+          amount: 2200.0,
+          paymentDate: DateTime(2023, 5, 28),
+          notes: 'May Salary',
+        ),
+        Salary(
+          id: 'sal-2',
+          staffId: _authService.userId.value!,
+          amount: 2200.0,
+          paymentDate: DateTime(2023, 4, 28),
+          notes: 'April Salary',
+        ),
+        Salary(
+          id: 'sal-3',
+          staffId: _authService.userId.value!,
+          amount: 2150.0,
+          paymentDate: DateTime(2023, 3, 28),
+          notes: 'March Salary (includes OT)',
+        ),
       ];
     }
-    
-    final response = await _connect.get('$_baseUrl/salary', headers: await _getHeaders());
+
+    final response = await _connect.get(
+      '$_baseUrl/salary',
+      headers: await _getHeaders(),
+    );
     if (response.isOk && response.body['data'] != null) {
-      return (response.body['data'] as List).map((i) => Salary.fromJson(i)).toList();
+      final rawList = asList(response.body['data']);
+      return rawList.map((i) => Salary.fromJson(Map<String, dynamic>.from(i))).toList();
     } else {
-      throw Exception(response.body?['message'] ?? 'Failed to fetch salary history');
+      throw Exception(
+        response.body?['message'] ?? 'Failed to fetch salary history',
+      );
     }
   }
 
@@ -150,12 +189,14 @@ class StaffApiService extends GetxService {
     print('📥 [STAFF API] Response status: ${response.statusCode}');
     print('📥 [STAFF API] Response body: ${response.body}');
 
-    if (response.statusCode! < 300 ) {
+    if (response.statusCode! < 300) {
       print('✅ [STAFF API] Parsing dashboard data...');
       print('   Data: ${response.body['data']}');
-      return StaffDashboardSummaryResponse.fromJson(response.body['data']);
+      return StaffDashboardSummaryResponse.fromJson(asMap(response.body['data']));
     } else {
-      throw Exception(response.body?['message'] ?? 'Failed to get staff dashboard summary');
+      throw Exception(
+        response.body?['message'] ?? 'Failed to get staff dashboard summary',
+      );
     }
   }
 }

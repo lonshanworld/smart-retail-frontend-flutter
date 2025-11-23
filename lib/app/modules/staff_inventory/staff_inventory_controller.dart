@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:smart_retail/app/utils/dialog_utils.dart';
 import 'package:smart_retail/app/data/models/shop_inventory_item.dart';
 import 'package:smart_retail/app/data/services/staff_inventory_api_service.dart';
 
 class StaffInventoryController extends GetxController {
-  final StaffInventoryApiService _apiService = Get.find<StaffInventoryApiService>();
+  final StaffInventoryApiService _apiService =
+      Get.find<StaffInventoryApiService>();
 
   final RxBool isLoading = true.obs;
   final RxList<ShopInventoryItem> inventoryItems = <ShopInventoryItem>[].obs;
@@ -40,7 +42,7 @@ class StaffInventoryController extends GetxController {
       filteredItems.assignAll(items);
     } catch (e) {
       errorMessage.value = "Failed to load inventory: ${e.toString()}";
-      Get.snackbar('Error', errorMessage.value);
+      DialogUtils.showError(errorMessage.value);
     } finally {
       isLoading.value = false;
     }
@@ -54,11 +56,14 @@ class StaffInventoryController extends GetxController {
       filteredItems.assignAll(inventoryItems);
     } else {
       // Otherwise, filter by name or SKU.
-      filteredItems.assignAll(inventoryItems.where((item) {
-        final nameMatch = item.name.toLowerCase().contains(searchTerm);
-        final skuMatch = item.sku?.toLowerCase().contains(searchTerm) ?? false;
-        return nameMatch || skuMatch;
-      }).toList());
+      filteredItems.assignAll(
+        inventoryItems.where((item) {
+          final nameMatch = item.name.toLowerCase().contains(searchTerm);
+          final skuMatch =
+              item.sku?.toLowerCase().contains(searchTerm) ?? false;
+          return nameMatch || skuMatch;
+        }).toList(),
+      );
     }
   }
 

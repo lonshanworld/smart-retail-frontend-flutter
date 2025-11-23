@@ -4,7 +4,8 @@ import 'package:smart_retail/app/data/services/inventory_api_service.dart';
 import 'package:smart_retail/app/routes/app_pages.dart';
 
 class MerchantStocksController extends GetxController {
-  final InventoryApiService _inventoryApiService = Get.find<InventoryApiService>();
+  final InventoryApiService _inventoryApiService =
+      Get.find<InventoryApiService>();
 
   final RxList<InventoryItem> inventoryItems = <InventoryItem>[].obs;
   final RxBool isLoading = true.obs;
@@ -22,7 +23,9 @@ class MerchantStocksController extends GetxController {
       errorMessage.value = null;
       print('[MerchantStocks] Fetching inventory items...');
       final response = await _inventoryApiService.listInventoryItems();
-      print('[MerchantStocks] Response received: ${response != null ? '${response.items.length} items' : 'null'}');
+      print(
+        '[MerchantStocks] Response received: ${response != null ? '${response.items.length} items' : 'null'}',
+      );
       if (response != null) {
         inventoryItems.assignAll(response.items);
         print('[MerchantStocks] Items assigned: ${inventoryItems.length}');

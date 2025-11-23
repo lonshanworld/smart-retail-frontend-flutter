@@ -41,14 +41,34 @@ class Promotion {
       name: json['name'],
       description: json['description'] ?? '',
       type: json['type'] ?? json['promoType'] ?? json['promo_type'],
-      value: (json['value'] ?? json['promoValue'] ?? json['promo_value'] as num).toDouble(),
-      minSpend: (json['minSpend'] ?? json['min_spend'] as num?)?.toDouble() ?? 0.0,
-      conditions: json['conditions'] != null ? Map<String, dynamic>.from(jsonDecode(json['conditions'] ?? '{}')) : {},
-      startDate: json['startDate'] != null ? DateTime.parse(json['startDate']) : (json['start_date'] != null ? DateTime.parse(json['start_date']) : null),
-      endDate: json['endDate'] != null ? DateTime.parse(json['endDate']) : (json['end_date'] != null ? DateTime.parse(json['end_date']) : null),
+      value: (json['value'] ?? json['promoValue'] ?? json['promo_value'] as num)
+          .toDouble(),
+      minSpend:
+          (json['minSpend'] ?? json['min_spend'] as num?)?.toDouble() ?? 0.0,
+      conditions: json['conditions'] != null
+          ? Map<String, dynamic>.from(jsonDecode(json['conditions'] ?? '{}'))
+          : {},
+      startDate: json['startDate'] != null
+          ? DateTime.parse(json['startDate'])
+          : (json['start_date'] != null
+                ? DateTime.parse(json['start_date'])
+                : null),
+      endDate: json['endDate'] != null
+          ? DateTime.parse(json['endDate'])
+          : (json['end_date'] != null
+                ? DateTime.parse(json['end_date'])
+                : null),
       isActive: json['isActive'] ?? json['is_active'] ?? true,
-      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : (json['created_at'] != null ? DateTime.parse(json['created_at']) : DateTime.now()),
-      updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : (json['updated_at'] != null ? DateTime.parse(json['updated_at']) : DateTime.now()),
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
+          : (json['created_at'] != null
+                ? DateTime.parse(json['created_at'])
+                : DateTime.now()),
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.parse(json['updatedAt'])
+          : (json['updated_at'] != null
+                ? DateTime.parse(json['updated_at'])
+                : DateTime.now()),
     );
   }
 }
@@ -68,7 +88,9 @@ class PaginatedPromotionsResponse {
 
   factory PaginatedPromotionsResponse.fromJson(Map<String, dynamic> json) {
     var itemsList = json['items'] as List;
-    List<Promotion> promotions = itemsList.map((i) => Promotion.fromJson(i)).toList();
+    List<Promotion> promotions = itemsList
+        .map((i) => Promotion.fromJson(i))
+        .toList();
 
     return PaginatedPromotionsResponse(
       items: promotions,

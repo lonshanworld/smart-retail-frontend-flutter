@@ -6,8 +6,6 @@ class UserEditAdminBinding extends Bindings {
   @override
   void dependencies() {
     Get.lazyPut<AdminApiService>(() => AdminApiService());
-    Get.lazyPut<UserEditAdminController>(
-      () => UserEditAdminController(),
-    );
+    Get.lazyPut<UserEditAdminController>(() => UserEditAdminController());
   }
 }

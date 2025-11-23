@@ -7,10 +7,12 @@ import '../models/shop_model.dart';
 import '../models/shop_stock_model.dart'; // For type hints, though we might store simpler structure in DB
 import 'dart:math';
 
-class DatabaseService extends GetxService  {
-  static const String _dbName = kIsWeb ? 'smart_retail_web.db' : 'smart_retail_mobile.db';
+class DatabaseService extends GetxService {
+  static const String _dbName = kIsWeb
+      ? 'smart_retail_web.db'
+      : 'smart_retail_mobile.db';
   static const int _dbVersion = 2; // Incremented version due to schema changes
-  
+
   static const String _inventoryTableName = 'inventory_items';
   static const String _shopsTableName = 'shops';
   static const String _shopStockTableName = 'shop_stock';
@@ -33,18 +35,25 @@ class DatabaseService extends GetxService  {
       final dbPath = await getDatabasesPath();
       path = join(dbPath, _dbName);
     }
-    return await databaseFactory.openDatabase(path, options: OpenDatabaseOptions(
-      version: _dbVersion,
-      onCreate: _onCreateDB,
-      onUpgrade: _onUpgradeDB, // Added for schema migrations
-      onOpen: (db) async {
-        await db.execute('PRAGMA foreign_keys = ON;'); // Enable foreign key support
-      }
-    ));
+    return await databaseFactory.openDatabase(
+      path,
+      options: OpenDatabaseOptions(
+        version: _dbVersion,
+        onCreate: _onCreateDB,
+        onUpgrade: _onUpgradeDB, // Added for schema migrations
+        onOpen: (db) async {
+          await db.execute(
+            'PRAGMA foreign_keys = ON;',
+          ); // Enable foreign key support
+        },
+      ),
+    );
   }
 
   Future<void> _onCreateDB(Database db, int version) async {
-    await db.execute('PRAGMA foreign_keys = ON;'); // Ensure FKs are on during creation too
+    await db.execute(
+      'PRAGMA foreign_keys = ON;',
+    ); // Ensure FKs are on during creation too
     await _createInventoryTable(db);
     await _createShopsTable(db);
     await _createShopStockTable(db);
@@ -60,7 +69,7 @@ class DatabaseService extends GetxService  {
       //    For simplicity, we'll recreate it if it exists from an older schema without this structure.
       // 2. Create shops table
       // 3. Create shop_stock table
-      
+
       // Recreate inventory table with new schema (simplest for this change)
       await db.execute('DROP TABLE IF EXISTS $_inventoryTableName;');
       await _createInventoryTable(db);
@@ -129,110 +138,174 @@ class DatabaseService extends GetxService  {
       )
     ''');
     print("Table '$_shopStockTableName' created or verified.");
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_stock_shop_item ON $_shopStockTableName (shopId, inventoryItemId);');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_stock_shop_item ON $_shopStockTableName (shopId, inventoryItemId);',
+    );
   }
 
   // --- Inventory Item (Master Product) CRUD Operations ---
   Future<int> insertInventoryItem(InventoryItem item) async {
     final db = await database;
-    return await db.insert(_inventoryTableName, item.toDbMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+    return await db.insert(
+      _inventoryTableName,
+      item.toDbMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
 
   Future<InventoryItem?> getInventoryItemById(String id) async {
     final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query(_inventoryTableName, where: 'id = ?', whereArgs: [id]);
+    final List<Map<String, dynamic>> maps = await db.query(
+      _inventoryTableName,
+      where: 'id = ?',
+      whereArgs: [id],
+    );
     return maps.isNotEmpty ? InventoryItem.fromDbMap(maps.first) : null;
   }
 
   Future<List<InventoryItem>> getAllInventoryItems(String merchantId) async {
     final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query(_inventoryTableName, where: 'merchantId = ?', whereArgs: [merchantId], orderBy: 'name ASC');
+    final List<Map<String, dynamic>> maps = await db.query(
+      _inventoryTableName,
+      where: 'merchantId = ?',
+      whereArgs: [merchantId],
+      orderBy: 'name ASC',
+    );
     return List.generate(maps.length, (i) => InventoryItem.fromDbMap(maps[i]));
   }
 
   Future<int> updateInventoryItem(InventoryItem item) async {
     final db = await database;
-    return await db.update(_inventoryTableName, item.toDbMap(), where: 'id = ?', whereArgs: [item.id]);
+    return await db.update(
+      _inventoryTableName,
+      item.toDbMap(),
+      where: 'id = ?',
+      whereArgs: [item.id],
+    );
   }
 
   Future<int> deleteInventoryItem(String id) async {
     final db = await database;
     // Deleting an inventory item will cascade delete related shop_stock entries due to FK constraint
-    return await db.delete(_inventoryTableName, where: 'id = ?', whereArgs: [id]);
+    return await db.delete(
+      _inventoryTableName,
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
-  
-  Future<List<InventoryItem>> getItemsToCreate({required String merchantId}) async {
+
+  Future<List<InventoryItem>> getItemsToCreate({
+    required String merchantId,
+  }) async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query(
-      _inventoryTableName, 
-      where: 'merchantId = ? AND needsCreate = ? AND isSynced = ?', 
-      whereArgs: [merchantId, 1, 0]
+      _inventoryTableName,
+      where: 'merchantId = ? AND needsCreate = ? AND isSynced = ?',
+      whereArgs: [merchantId, 1, 0],
     );
     return List.generate(maps.length, (i) => InventoryItem.fromDbMap(maps[i]));
   }
 
-  Future<List<InventoryItem>> getItemsToUpdate({required String merchantId}) async {
+  Future<List<InventoryItem>> getItemsToUpdate({
+    required String merchantId,
+  }) async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query(
-      _inventoryTableName, 
-      where: 'merchantId = ? AND needsUpdate = ? AND needsCreate = ?', 
-      whereArgs: [merchantId, 1, 0] 
+      _inventoryTableName,
+      where: 'merchantId = ? AND needsUpdate = ? AND needsCreate = ?',
+      whereArgs: [merchantId, 1, 0],
     );
     return List.generate(maps.length, (i) => InventoryItem.fromDbMap(maps[i]));
   }
 
-  Future<int> markItemAsSynced(String localId, String backendId, DateTime updatedAt) async {
+  Future<int> markItemAsSynced(
+    String localId,
+    String backendId,
+    DateTime updatedAt,
+  ) async {
     final db = await database;
     InventoryItem? itemToUpdate = await getInventoryItemById(localId);
     if (itemToUpdate == null) return 0;
 
-    if (localId != backendId) { // Item was newly created
-        await deleteInventoryItem(localId); // Delete temp local record
-        InventoryItem syncedItem = itemToUpdate.copyWith(
-            id: backendId, 
-            isSynced: true, 
-            needsCreate: false, 
-            needsUpdate: false, 
-            updatedAt: updatedAt
-        );
-        return await insertInventoryItem(syncedItem); // Insert with backend ID
-    } else { // Item was updated
-        return await db.update(
-          _inventoryTableName,
-          {'isSynced': 1, 'needsCreate': 0, 'needsUpdate': 0, 'updatedAt': updatedAt.toIso8601String()},
-          where: 'id = ?', whereArgs: [backendId],
-        );
+    if (localId != backendId) {
+      // Item was newly created
+      await deleteInventoryItem(localId); // Delete temp local record
+      InventoryItem syncedItem = itemToUpdate.copyWith(
+        id: backendId,
+        isSynced: true,
+        needsCreate: false,
+        needsUpdate: false,
+        updatedAt: updatedAt,
+      );
+      return await insertInventoryItem(syncedItem); // Insert with backend ID
+    } else {
+      // Item was updated
+      return await db.update(
+        _inventoryTableName,
+        {
+          'isSynced': 1,
+          'needsCreate': 0,
+          'needsUpdate': 0,
+          'updatedAt': updatedAt.toIso8601String(),
+        },
+        where: 'id = ?',
+        whereArgs: [backendId],
+      );
     }
   }
 
   Future<void> clearAllInventoryForMerchant(String merchantId) async {
     final db = await database;
     // This will also delete related shop_stock entries due to ON DELETE CASCADE
-    await db.delete(_inventoryTableName, where: 'merchantId = ?', whereArgs: [merchantId]);
-    print("All master inventory items (and their shop stock) cleared for merchant $merchantId from local DB.");
+    await db.delete(
+      _inventoryTableName,
+      where: 'merchantId = ?',
+      whereArgs: [merchantId],
+    );
+    print(
+      "All master inventory items (and their shop stock) cleared for merchant $merchantId from local DB.",
+    );
   }
 
   // --- Shop CRUD Operations ---
   Future<int> insertShop(Shop shop) async {
     final db = await database;
-    return await db.insert(_shopsTableName, shop.toDbMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+    return await db.insert(
+      _shopsTableName,
+      shop.toDbMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
 
   Future<Shop?> getShopById(String id) async {
     final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query(_shopsTableName, where: 'id = ?', whereArgs: [id]);
+    final List<Map<String, dynamic>> maps = await db.query(
+      _shopsTableName,
+      where: 'id = ?',
+      whereArgs: [id],
+    );
     return maps.isNotEmpty ? Shop.fromDbMap(maps.first) : null;
   }
 
   Future<List<Shop>> getAllShopsByMerchantId(String merchantId) async {
     final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query(_shopsTableName, where: 'merchantId = ?', whereArgs: [merchantId], orderBy: 'name ASC');
+    final List<Map<String, dynamic>> maps = await db.query(
+      _shopsTableName,
+      where: 'merchantId = ?',
+      whereArgs: [merchantId],
+      orderBy: 'name ASC',
+    );
     return List.generate(maps.length, (i) => Shop.fromDbMap(maps[i]));
   }
 
   Future<int> updateShop(Shop shop) async {
     final db = await database;
-    return await db.update(_shopsTableName, shop.toDbMap(), where: 'id = ?', whereArgs: [shop.id]);
+    return await db.update(
+      _shopsTableName,
+      shop.toDbMap(),
+      where: 'id = ?',
+      whereArgs: [shop.id],
+    );
   }
 
   Future<int> deleteShop(String id) async {
@@ -244,8 +317,14 @@ class DatabaseService extends GetxService  {
   Future<void> clearAllShopsForMerchant(String merchantId) async {
     final db = await database;
     // This will also delete related shop_stock entries due to ON DELETE CASCADE
-    await db.delete(_shopsTableName, where: 'merchantId = ?', whereArgs: [merchantId]);
-    print("All shops (and their stock) cleared for merchant $merchantId from local DB.");
+    await db.delete(
+      _shopsTableName,
+      where: 'merchantId = ?',
+      whereArgs: [merchantId],
+    );
+    print(
+      "All shops (and their stock) cleared for merchant $merchantId from local DB.",
+    );
   }
 
   // --- ShopStock Operations ---
@@ -256,7 +335,8 @@ class DatabaseService extends GetxService  {
     required String shopId,
     required String inventoryItemId,
     required int quantity,
-    required DateTime lastStockedInAt, // Usually from server on successful stock-in/sync
+    required DateTime
+    lastStockedInAt, // Usually from server on successful stock-in/sync
     String? existingShopStockId, // if known, for update
   }) async {
     final db = await database;
@@ -282,17 +362,29 @@ class DatabaseService extends GetxService  {
       // Update existing stock record
       stockData['id'] = existing.first['id'] as String; // Use existing ID
       // stockData['createdAt'] = existing.first['createdAt'] as String; // Keep original createdAt
-      return await db.update(_shopStockTableName, stockData, where: 'id = ?', whereArgs: [stockData['id']]);
+      return await db.update(
+        _shopStockTableName,
+        stockData,
+        where: 'id = ?',
+        whereArgs: [stockData['id']],
+      );
     } else {
       // Insert new stock record
       stockData['id'] = Uuid().v4(); // Generate new UUID for shop_stock entry
       stockData['createdAt'] = now.toIso8601String();
-      return await db.insert(_shopStockTableName, stockData, conflictAlgorithm: ConflictAlgorithm.replace);
+      return await db.insert(
+        _shopStockTableName,
+        stockData,
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
     }
   }
 
   // Gets a simple map representing the raw shop stock record
-  Future<Map<String, dynamic>?> getRawShopStock(String shopId, String inventoryItemId) async {
+  Future<Map<String, dynamic>?> getRawShopStock(
+    String shopId,
+    String inventoryItemId,
+  ) async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query(
       _shopStockTableName,
@@ -302,29 +394,45 @@ class DatabaseService extends GetxService  {
     );
     return maps.isNotEmpty ? maps.first : null;
   }
-  
+
   // Clears all stock for a specific shop (e.g., when shop is deleted, though cascade should handle)
   Future<void> clearStockForShop(String shopId) async {
-      final db = await database;
-      await db.delete(_shopStockTableName, where: 'shopId = ?', whereArgs: [shopId]);
-      print("Stock cleared for shop $shopId.");
+    final db = await database;
+    await db.delete(
+      _shopStockTableName,
+      where: 'shopId = ?',
+      whereArgs: [shopId],
+    );
+    print("Stock cleared for shop $shopId.");
   }
 
   // Clears all stock for a specific inventory item across all shops (e.g. item deleted, though cascade should handle)
   Future<void> clearStockForInventoryItem(String inventoryItemId) async {
-      final db = await database;
-      await db.delete(_shopStockTableName, where: 'inventoryItemId = ?', whereArgs: [inventoryItemId]);
-      print("Stock cleared for inventory item $inventoryItemId across all shops.");
+    final db = await database;
+    await db.delete(
+      _shopStockTableName,
+      where: 'inventoryItemId = ?',
+      whereArgs: [inventoryItemId],
+    );
+    print(
+      "Stock cleared for inventory item $inventoryItemId across all shops.",
+    );
   }
 
   Future<void> clearAllDataForMerchant(String merchantId) async {
     // Order matters if not relying solely on CASCADE or if FKs were off.
     // With ON DELETE CASCADE, deleting from `shops` and `inventory_items` should clean up `shop_stock`.
-    await clearAllShopsForMerchant(merchantId); // This will cascade to shop_stock related to these shops
-    await clearAllInventoryForMerchant(merchantId); // This will cascade to shop_stock related to these items
-    print("All data (shops, inventory, stock) cleared for merchant $merchantId from local DB.");
+    await clearAllShopsForMerchant(
+      merchantId,
+    ); // This will cascade to shop_stock related to these shops
+    await clearAllInventoryForMerchant(
+      merchantId,
+    ); // This will cascade to shop_stock related to these items
+    print(
+      "All data (shops, inventory, stock) cleared for merchant $merchantId from local DB.",
+    );
   }
-  
+
   Future<void> close() async {
     final db = _database;
     if (db != null && db.isOpen) {
@@ -337,7 +445,6 @@ class DatabaseService extends GetxService  {
   // A simple UUID generator placeholder. Consider using the 'uuid' package.
   // Ensure you import 'dart:math' if you keep this.
   // static final _random = Random(); // Make it static if Uuid methods are static or Uuid is a singleton
- 
 }
 
 // Basic Uuid class for generating IDs locally for new DB entries if needed.
@@ -347,10 +454,10 @@ class Uuid {
   String v4() {
     // Basic pseudo-UUID - replace with a proper package like 'uuid' for production
     return '${_random.nextInt(0xFFFFFFFF).toRadixString(16).padLeft(8, '0')}-'
-           '${_random.nextInt(0xFFFF).toRadixString(16).padLeft(4, '0')}-'
-           '4${_random.nextInt(0xFFF).toRadixString(16).padLeft(3, '0')}-'
-           // ignore: lines_longer_than_80_chars
-           '${(_random.nextInt(0x3FFF) | 0x8000).toRadixString(16).padLeft(4, '0')}-'
-           '${_random.nextInt(0xFFFFFFFFFFFF).toRadixString(16).padLeft(12, '0')}';
+        '${_random.nextInt(0xFFFF).toRadixString(16).padLeft(4, '0')}-'
+        '4${_random.nextInt(0xFFF).toRadixString(16).padLeft(3, '0')}-'
+        // ignore: lines_longer_than_80_chars
+        '${(_random.nextInt(0x3FFF) | 0x8000).toRadixString(16).padLeft(4, '0')}-'
+        '${_random.nextInt(0xFFFFFFFFFFFF).toRadixString(16).padLeft(12, '0')}';
   }
 }

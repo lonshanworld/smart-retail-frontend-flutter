@@ -28,7 +28,9 @@ class CenteredMessage extends StatelessWidget {
               Icon(
                 icon,
                 size: 60,
-                color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.6),
+                color: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.color?.withOpacity(0.6),
               ),
               const SizedBox(height: 16),
             ],
@@ -36,8 +38,10 @@ class CenteredMessage extends StatelessWidget {
               message,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.8),
-                  ),
+                color: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.color?.withOpacity(0.8),
+              ),
             ),
             if (onRetry != null) ...[
               const SizedBox(height: 20),
@@ -46,7 +50,10 @@ class CenteredMessage extends StatelessWidget {
                 label: Text(retryText),
                 onPressed: onRetry,
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
                 ),
               ),
             ],

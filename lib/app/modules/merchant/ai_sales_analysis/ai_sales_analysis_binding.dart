@@ -4,8 +4,6 @@ import 'package:smart_retail/app/modules/merchant/ai_sales_analysis/ai_sales_ana
 class AiSalesAnalysisBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut<AiSalesAnalysisController>(
-      () => AiSalesAnalysisController(),
-    );
+    Get.lazyPut<AiSalesAnalysisController>(() => AiSalesAnalysisController());
   }
 }

@@ -29,8 +29,12 @@ class ShopCustomer {
       email: json['email'] as String?,
       phone: json['phone'] as String?,
       // Handle both camelCase and snake_case for dates
-      createdAt: DateTime.parse((json['createdAt'] ?? json['created_at']) as String),
-      updatedAt: DateTime.parse((json['updatedAt'] ?? json['updated_at']) as String),
+      createdAt: DateTime.parse(
+        (json['createdAt'] ?? json['created_at']) as String,
+      ),
+      updatedAt: DateTime.parse(
+        (json['updatedAt'] ?? json['updated_at']) as String,
+      ),
     );
   }
 }

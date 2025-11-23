@@ -27,22 +27,79 @@ class _MerchantMainScaffoldState extends State<MerchantMainScaffold> {
   final AuthService _authService = Get.find<AuthService>();
 
   final List<Map<String, dynamic>> _merchantNavItems = [
-    {'route': Routes.MERCHANT_DASHBOARD, 'label': 'Dashboard', 'icon': Icons.dashboard_outlined, 'selectedIcon': Icons.dashboard},
-    {'route': Routes.MERCHANT_STAFF, 'label': 'Staff', 'icon': Icons.badge_outlined, 'selectedIcon': Icons.badge},
-    {'route': Routes.MERCHANT_SHOPS, 'label': 'Shops', 'icon': Icons.store_mall_directory_outlined, 'selectedIcon': Icons.store_mall_directory},
-    {'route': Routes.MERCHANT_INVENTORY, 'label': 'Stocks', 'icon': Icons.inventory_2_outlined, 'selectedIcon': Icons.inventory_2},
-    {'route': Routes.MERCHANT_SUPPLIERS, 'label': 'Suppliers', 'icon': Icons.local_shipping_outlined, 'selectedIcon': Icons.local_shipping},
-    {'route': Routes.MERCHANT_POS, 'label': 'POS', 'icon': Icons.point_of_sale_outlined, 'selectedIcon': Icons.point_of_sale},
-    {'route': Routes.MERCHANT_PROMOTIONS, 'label': 'Promotions', 'icon': Icons.campaign_outlined, 'selectedIcon': Icons.campaign},
-    {'route': Routes.MERCHANT_REPORTS, 'label': 'Reports', 'icon': Icons.analytics_outlined, 'selectedIcon': Icons.analytics},
-    {'route': Routes.MERCHANT_AI_SALES_ANALYSIS, 'label': 'AI Analysis', 'icon': Icons.auto_awesome_outlined, 'selectedIcon': Icons.auto_awesome},
-    {'route': Routes.MERCHANT_PROFILE, 'label': 'Profile', 'icon': Icons.person_outline, 'selectedIcon': Icons.person},
-    {'route': Routes.MERCHANT_SETTINGS, 'label': 'Settings', 'icon': Icons.settings_outlined, 'selectedIcon': Icons.settings},
+    {
+      'route': Routes.MERCHANT_DASHBOARD,
+      'label': 'Dashboard',
+      'icon': Icons.dashboard_outlined,
+      'selectedIcon': Icons.dashboard,
+    },
+    {
+      'route': Routes.MERCHANT_STAFF,
+      'label': 'Staff',
+      'icon': Icons.badge_outlined,
+      'selectedIcon': Icons.badge,
+    },
+    {
+      'route': Routes.MERCHANT_SHOPS,
+      'label': 'Shops',
+      'icon': Icons.store_mall_directory_outlined,
+      'selectedIcon': Icons.store_mall_directory,
+    },
+    {
+      'route': Routes.MERCHANT_INVENTORY,
+      'label': 'Stocks',
+      'icon': Icons.inventory_2_outlined,
+      'selectedIcon': Icons.inventory_2,
+    },
+    {
+      'route': Routes.MERCHANT_SUPPLIERS,
+      'label': 'Suppliers',
+      'icon': Icons.local_shipping_outlined,
+      'selectedIcon': Icons.local_shipping,
+    },
+    {
+      'route': Routes.MERCHANT_POS,
+      'label': 'POS',
+      'icon': Icons.point_of_sale_outlined,
+      'selectedIcon': Icons.point_of_sale,
+    },
+    {
+      'route': Routes.MERCHANT_PROMOTIONS,
+      'label': 'Promotions',
+      'icon': Icons.campaign_outlined,
+      'selectedIcon': Icons.campaign,
+    },
+    {
+      'route': Routes.MERCHANT_REPORTS,
+      'label': 'Reports',
+      'icon': Icons.analytics_outlined,
+      'selectedIcon': Icons.analytics,
+    },
+    {
+      'route': Routes.MERCHANT_AI_SALES_ANALYSIS,
+      'label': 'AI Analysis',
+      'icon': Icons.auto_awesome_outlined,
+      'selectedIcon': Icons.auto_awesome,
+    },
+    {
+      'route': Routes.MERCHANT_PROFILE,
+      'label': 'Profile',
+      'icon': Icons.person_outline,
+      'selectedIcon': Icons.person,
+    },
+    {
+      'route': Routes.MERCHANT_SETTINGS,
+      'label': 'Settings',
+      'icon': Icons.settings_outlined,
+      'selectedIcon': Icons.settings,
+    },
   ];
 
   int _calculateSelectedIndex() {
     final String currentRoute = Get.currentRoute;
-    int index = _merchantNavItems.indexWhere((item) => currentRoute.startsWith(item['route']!));
+    int index = _merchantNavItems.indexWhere(
+      (item) => currentRoute.startsWith(item['route']!),
+    );
     return index > -1 ? index : 0;
   }
 
@@ -71,12 +128,14 @@ class _MerchantMainScaffoldState extends State<MerchantMainScaffold> {
       builder: (context, constraints) {
         final bool isMobile = constraints.maxWidth < webBreakpoint;
         return Scaffold(
-          appBar: isMobile ? AppBar(
-            title: Text(widget.title),
-            backgroundColor: AppColors.merchant,
-            foregroundColor: Colors.white,
-            elevation: 0,
-          ) : null,
+          appBar: isMobile
+              ? AppBar(
+                  title: Text(widget.title),
+                  backgroundColor: AppColors.merchant,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                )
+              : null,
           drawer: isMobile ? _buildModernDrawer() : null,
           floatingActionButton: widget.floatingActionButton,
           floatingActionButtonLocation: widget.floatingActionButtonLocation,
@@ -90,7 +149,10 @@ class _MerchantMainScaffoldState extends State<MerchantMainScaffold> {
                         children: [
                           // Modern app bar for desktop
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 16,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.white,
                               boxShadow: [
@@ -115,9 +177,13 @@ class _MerchantMainScaffoldState extends State<MerchantMainScaffold> {
                                 // User profile badge
                                 Obx(() {
                                   final User? user = _authService.user.value;
-                                  if (user == null) return const SizedBox.shrink();
+                                  if (user == null)
+                                    return const SizedBox.shrink();
                                   return Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 8,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: AppColors.merchant.shade50,
                                       borderRadius: BorderRadius.circular(20),
@@ -128,8 +194,13 @@ class _MerchantMainScaffoldState extends State<MerchantMainScaffold> {
                                           radius: 16,
                                           backgroundColor: AppColors.merchant,
                                           child: Text(
-                                            user.name.isNotEmpty ? user.name[0].toUpperCase() : 'M',
-                                            style: const TextStyle(color: Colors.white, fontSize: 14),
+                                            user.name.isNotEmpty
+                                                ? user.name[0].toUpperCase()
+                                                : 'M',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 14,
+                                            ),
                                           ),
                                         ),
                                         const SizedBox(width: 8),
@@ -174,10 +245,7 @@ class _MerchantMainScaffoldState extends State<MerchantMainScaffold> {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            AppColors.merchant.shade700,
-            AppColors.merchant.shade900,
-          ],
+          colors: [AppColors.merchant.shade700, AppColors.merchant.shade900],
         ),
       ),
       child: Column(
@@ -245,12 +313,19 @@ class _MerchantMainScaffoldState extends State<MerchantMainScaffold> {
                       onTap: () => _onDestinationSelected(index),
                       borderRadius: BorderRadius.circular(12),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
                         decoration: BoxDecoration(
-                          color: isSelected ? Colors.white.withOpacity(0.15) : Colors.transparent,
+                          color: isSelected
+                              ? Colors.white.withOpacity(0.15)
+                              : Colors.transparent,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: isSelected ? Colors.white.withOpacity(0.3) : Colors.transparent,
+                            color: isSelected
+                                ? Colors.white.withOpacity(0.3)
+                                : Colors.transparent,
                             width: 1,
                           ),
                         ),
@@ -268,7 +343,9 @@ class _MerchantMainScaffoldState extends State<MerchantMainScaffold> {
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 15,
-                                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                                  fontWeight: isSelected
+                                      ? FontWeight.w600
+                                      : FontWeight.w400,
                                 ),
                               ),
                             ),
@@ -302,7 +379,7 @@ class _MerchantMainScaffoldState extends State<MerchantMainScaffold> {
     return Obx(() {
       final User? user = _authService.user.value;
       if (user == null) return const SizedBox.shrink();
-      
+
       return Container(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -380,10 +457,7 @@ class _MerchantMainScaffoldState extends State<MerchantMainScaffold> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              AppColors.merchant.shade700,
-              AppColors.merchant.shade900,
-            ],
+            colors: [AppColors.merchant.shade700, AppColors.merchant.shade900],
           ),
         ),
         child: SafeArea(
@@ -437,7 +511,9 @@ class _MerchantMainScaffoldState extends State<MerchantMainScaffold> {
                         item['label'],
                         style: TextStyle(
                           color: Colors.white,
-                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                          fontWeight: isSelected
+                              ? FontWeight.w600
+                              : FontWeight.w400,
                         ),
                       ),
                       selected: isSelected,
@@ -445,7 +521,8 @@ class _MerchantMainScaffoldState extends State<MerchantMainScaffold> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      onTap: () => _onDestinationSelected(index, fromDrawer: true),
+                      onTap: () =>
+                          _onDestinationSelected(index, fromDrawer: true),
                     );
                   },
                 ),

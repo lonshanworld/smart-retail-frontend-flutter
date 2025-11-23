@@ -18,10 +18,7 @@ class MerchantStaffListView extends GetView<MerchantStaffListController> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              AppColors.merchant.shade50.withOpacity(0.3),
-              Colors.white,
-            ],
+            colors: [AppColors.merchant.shade50.withOpacity(0.3), Colors.white],
           ),
         ),
         child: Obx(() {
@@ -29,7 +26,9 @@ class MerchantStaffListView extends GetView<MerchantStaffListController> {
             return const Center(child: CircularProgressIndicator());
           }
           if (controller.errorMessage.value != null) {
-            return Center(child: Text('Error: ${controller.errorMessage.value}'));
+            return Center(
+              child: Text('Error: ${controller.errorMessage.value}'),
+            );
           }
           return _buildStaffList();
         }),
@@ -47,11 +46,36 @@ class MerchantStaffListView extends GetView<MerchantStaffListController> {
     return ResponsiveDataTable<User>(
       items: controller.staffList,
       columns: [
-        DataColumn(label: const Text('Staff', style: TextStyle(fontWeight: FontWeight.bold))),
-        DataColumn(label: const Text('Email', style: TextStyle(fontWeight: FontWeight.bold))),
-        DataColumn(label: const Text('Shop', style: TextStyle(fontWeight: FontWeight.bold))),
-        DataColumn(label: const Text('Status', style: TextStyle(fontWeight: FontWeight.bold))),
-        DataColumn(label: const Text('Actions', style: TextStyle(fontWeight: FontWeight.bold))),
+        DataColumn(
+          label: const Text(
+            'Staff',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ),
+        DataColumn(
+          label: const Text(
+            'Email',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ),
+        DataColumn(
+          label: const Text(
+            'Shop',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ),
+        DataColumn(
+          label: const Text(
+            'Status',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ),
+        DataColumn(
+          label: const Text(
+            'Actions',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ),
       ],
       buildCells: (staff) {
         return [
@@ -62,12 +86,18 @@ class MerchantStaffListView extends GetView<MerchantStaffListController> {
                   backgroundColor: AppColors.staff.shade100,
                   child: Text(
                     staff.name.isNotEmpty ? staff.name[0].toUpperCase() : 'S',
-                    style: TextStyle(color: AppColors.staff.shade700, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      color: AppColors.staff.shade700,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text(staff.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                  child: Text(
+                    staff.name,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
                 ),
               ],
             ),
@@ -81,7 +111,11 @@ class MerchantStaffListView extends GetView<MerchantStaffListController> {
             staff.shopName != null
                 ? Row(
                     children: [
-                      Icon(Icons.storefront, size: 16, color: AppColors.shop.shade600),
+                      Icon(
+                        Icons.storefront,
+                        size: 16,
+                        color: AppColors.shop.shade600,
+                      ),
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
@@ -92,17 +126,24 @@ class MerchantStaffListView extends GetView<MerchantStaffListController> {
                       ),
                     ],
                   )
-                : Text('-', style: TextStyle(fontSize: 13, color: Colors.grey.shade500)),
+                : Text(
+                    '-',
+                    style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+                  ),
             onTap: () => controller.goToStaffDetails(staff),
           ),
           DataCell(
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: staff.isActive ? AppColors.success.shade50 : AppColors.error.shade50,
+                color: staff.isActive
+                    ? AppColors.success.shade50
+                    : AppColors.error.shade50,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: staff.isActive ? AppColors.success.shade300 : AppColors.error.shade300,
+                  color: staff.isActive
+                      ? AppColors.success.shade300
+                      : AppColors.error.shade300,
                 ),
               ),
               child: Text(
@@ -110,7 +151,9 @@ class MerchantStaffListView extends GetView<MerchantStaffListController> {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: staff.isActive ? AppColors.success.shade700 : AppColors.error.shade700,
+                  color: staff.isActive
+                      ? AppColors.success.shade700
+                      : AppColors.error.shade700,
                 ),
               ),
             ),
@@ -138,7 +181,10 @@ class MerchantStaffListView extends GetView<MerchantStaffListController> {
             backgroundColor: AppColors.staff.shade100,
             child: Text(
               staff.name.isNotEmpty ? staff.name[0].toUpperCase() : 'S',
-              style: TextStyle(color: AppColors.staff.shade700, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                color: AppColors.staff.shade700,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
           title: staff.name,
@@ -160,8 +206,22 @@ class MerchantStaffListView extends GetView<MerchantStaffListController> {
               if (value == 'view') controller.goToStaffDetails(staff);
             },
             itemBuilder: (context) => [
-              const PopupMenuItem(value: 'view', child: ListTile(leading: Icon(Icons.visibility), title: Text('View'), contentPadding: EdgeInsets.zero)),
-              const PopupMenuItem(value: 'edit', child: ListTile(leading: Icon(Icons.edit), title: Text('Edit'), contentPadding: EdgeInsets.zero)),
+              const PopupMenuItem(
+                value: 'view',
+                child: ListTile(
+                  leading: Icon(Icons.visibility),
+                  title: Text('View'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'edit',
+                child: ListTile(
+                  leading: Icon(Icons.edit),
+                  title: Text('Edit'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
               // Delete option removed due to foreign key constraints with stock_movements
             ],
           ),

@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:smart_retail/app/utils/dialog_utils.dart';
 import 'package:smart_retail/app/data/models/user_model.dart';
 import 'package:smart_retail/app/data/services/staff_api_service.dart';
 
@@ -23,7 +24,7 @@ class StaffProfileController extends GetxController {
       userProfile.value = profile;
     } catch (e) {
       errorMessage.value = 'Failed to load profile: $e';
-      Get.snackbar('Error', errorMessage.value);
+      DialogUtils.showError(errorMessage.value);
     } finally {
       isLoading.value = false;
     }

@@ -1,6 +1,7 @@
 // lib/app/modules/admin/merchants/admin_merchants_controller.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:smart_retail/app/utils/dialog_utils.dart';
 import 'package:smart_retail/app/data/models/merchant_model.dart';
 import 'package:smart_retail/app/data/services/admin_merchant_service.dart';
 import 'package:smart_retail/app/routes/app_pages.dart'; // For navigation
@@ -72,9 +73,13 @@ class AdminMerchantsController extends GetxController {
   /// This is now the primary method to trigger a search.
   void applyFilters() {
     // Update the reactive variables from the text controllers
-    nameFilter.value = nameFilterController.text.trim().isEmpty ? null : nameFilterController.text.trim();
-    emailFilter.value = emailFilterController.text.trim().isEmpty ? null : emailFilterController.text.trim();
-    
+    nameFilter.value = nameFilterController.text.trim().isEmpty
+        ? null
+        : nameFilterController.text.trim();
+    emailFilter.value = emailFilterController.text.trim().isEmpty
+        ? null
+        : emailFilterController.text.trim();
+
     // Fetch will use the updated reactive variables.
     fetchMerchants(resetPage: true);
   }
@@ -94,7 +99,7 @@ class AdminMerchantsController extends GetxController {
     nameFilter.value = null;
     emailFilter.value = null;
     isActiveFilter.value = null;
-    
+
     fetchMerchants(resetPage: true);
   }
 
@@ -122,14 +127,19 @@ class AdminMerchantsController extends GetxController {
   }
 
   Future<void> goToEditMerchantPage(Merchant merchant) async {
-    final result = await Get.toNamed(Routes.ADMIN_ADD_EDIT_MERCHANT, arguments: merchant);
+    final result = await Get.toNamed(
+      Routes.ADMIN_ADD_EDIT_MERCHANT,
+      arguments: merchant,
+    );
     if (result == true) {
       fetchMerchants(); // Re-fetch current page
     }
   }
 
   void goToMerchantDetailsPage(Merchant merchant) {
-    Get.toNamed(Routes.ADMIN_MERCHANT_DETAIL, arguments: merchant)?.then((result) {
+    Get.toNamed(Routes.ADMIN_MERCHANT_DETAIL, arguments: merchant)?.then((
+      result,
+    ) {
       if (result == true) {
         fetchMerchants();
       }
@@ -143,15 +153,23 @@ class AdminMerchantsController extends GetxController {
     bool currentStatus = merchant.isActive;
     bool newStatus = !currentStatus;
 
-    bool? confirmToggle = await Get.dialog<bool>(
-      AlertDialog(
+    bool? confirmToggle = await DialogUtils.showCustomDialog<bool>(
+      dialog: AlertDialog(
         title: Text(newStatus ? 'Confirm Activation' : 'Confirm Deactivation'),
-        content: Text('Are you sure you want to ${newStatus ? "activate" : "deactivate"} merchant user "${merchant.name}"?'),
+        content: Text(
+          'Are you sure you want to ${newStatus ? "activate" : "deactivate"} merchant user "${merchant.name}"?',
+        ),
         actions: [
-          TextButton(onPressed: () => Get.back(result: false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: const Text('Cancel'),
+          ),
           TextButton(
             onPressed: () => Get.back(result: true),
-            child: Text(newStatus ? 'Activate' : 'Deactivate', style: TextStyle(color: newStatus ? Colors.green : Colors.red)),
+            child: Text(
+              newStatus ? 'Activate' : 'Deactivate',
+              style: TextStyle(color: newStatus ? Colors.green : Colors.red),
+            ),
           ),
         ],
       ),
@@ -161,18 +179,24 @@ class AdminMerchantsController extends GetxController {
 
     isProcessingAction.value = true;
     try {
-      final success = await adminMerchantService.setMerchantUserActiveStatus(merchant.id, newStatus);
+      final success = await adminMerchantService.setMerchantUserActiveStatus(
+        merchant.id,
+        newStatus,
+      );
       if (success) {
         int index = merchants.indexWhere((m) => m.id == merchant.id);
         if (index != -1) {
-          merchants[index] = merchant.copyWith(isActive: newStatus, updatedAt: DateTime.now());
-           merchants.refresh();
+          merchants[index] = merchant.copyWith(
+            isActive: newStatus,
+            updatedAt: DateTime.now(),
+          );
+          merchants.refresh();
         } else {
           fetchMerchants();
         }
       }
     } catch (e) {
-      Get.snackbar("Error", "Failed to update merchant status: ${e.toString()}", backgroundColor: Colors.red, colorText: Colors.white);
+      DialogUtils.showError("Failed to update merchant status: ${e.toString()}");
     } finally {
       isProcessingAction.value = false;
     }
@@ -180,13 +204,21 @@ class AdminMerchantsController extends GetxController {
 
   Future<void> deleteMerchant(String merchantId, String merchantName) async {
     // ... (rest of the method is unchanged)
-    bool? confirmDelete = await Get.dialog<bool>(
-      AlertDialog(
+    bool? confirmDelete = await DialogUtils.showCustomDialog<bool>(
+      dialog: AlertDialog(
         title: const Text('Confirm Delete'),
-        content: Text('Are you sure you want to PERMANENTLY delete merchant user "$merchantName"? This action cannot be undone.'),
+        content: Text(
+          'Are you sure you want to PERMANENTLY delete merchant user "$merchantName"? This action cannot be undone.',
+        ),
         actions: [
-          TextButton(onPressed: () => Get.back(result: false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Get.back(result: true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Get.back(result: true),
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
         ],
       ),
     );
@@ -203,12 +235,12 @@ class AdminMerchantsController extends GetxController {
         applyFilters(); // Re-fetch with current filters
       }
     } catch (e) {
-       Get.snackbar("Error", "Failed to delete merchant: ${e.toString()}", backgroundColor: Colors.red, colorText: Colors.white);
+      DialogUtils.showError("Failed to delete merchant: ${e.toString()}");
     } finally {
       isProcessingAction.value = false;
     }
   }
-  
+
   @override
   void onClose() {
     nameFilterController.dispose();

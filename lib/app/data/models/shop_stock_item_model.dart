@@ -23,14 +23,20 @@ class ShopStockItem {
 
   factory ShopStockItem.fromJson(Map<String, dynamic> json) {
     return ShopStockItem(
-      itemId: json['itemId'] as String? ?? json['item_id'] as String, // Support both
+      itemId:
+          json['itemId'] as String? ??
+          json['item_id'] as String, // Support both
       itemName: json['itemName'] as String? ?? json['item_name'] as String,
-      itemDescription: json['itemDescription'] as String? ?? json['item_description'] as String?,
+      itemDescription:
+          json['itemDescription'] as String? ??
+          json['item_description'] as String?,
       sku: json['sku'] as String?,
       barcode: json['barcode'] as String?,
       imageUrl: json['imageUrl'] as String? ?? json['image_url'] as String?,
       quantity: json['quantity'] as int, // Stock quantity from shop_stocks
-      shopId: json['shopId'] as String? ?? json['shop_id'] as String, // Support both
+      shopId:
+          json['shopId'] as String? ??
+          json['shop_id'] as String, // Support both
       // Map other fields as necessary
     );
   }

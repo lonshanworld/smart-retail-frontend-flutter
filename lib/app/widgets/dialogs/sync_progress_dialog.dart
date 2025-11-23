@@ -6,10 +6,8 @@ import 'package:smart_retail/app/services/sync_service.dart';
 class SyncProgressDialog extends StatelessWidget {
   final SyncService syncService;
 
-  const SyncProgressDialog({
-    Key? key,
-    required this.syncService,
-  }) : super(key: key);
+  const SyncProgressDialog({Key? key, required this.syncService})
+    : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -33,8 +31,8 @@ class SyncProgressDialog extends StatelessWidget {
                   child: Text(
                     'Syncing Data',
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
@@ -76,11 +74,7 @@ class SyncProgressDialog extends StatelessWidget {
                       color: Colors.red.withOpacity(0.1),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(
-                      Icons.error,
-                      color: Colors.red,
-                      size: 40,
-                    ),
+                    child: Icon(Icons.error, color: Colors.red, size: 40),
                   ),
                 );
               }
@@ -113,9 +107,8 @@ class SyncProgressDialog extends StatelessWidget {
                         ),
                         Text(
                           '${syncService.syncedCount.value}/${syncService.pendingSalesCount.value}',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
@@ -124,7 +117,8 @@ class SyncProgressDialog extends StatelessWidget {
                       borderRadius: BorderRadius.circular(4),
                       child: LinearProgressIndicator(
                         value: syncService.pendingSalesCount.value > 0
-                            ? syncService.syncedCount.value / syncService.pendingSalesCount.value
+                            ? syncService.syncedCount.value /
+                                  syncService.pendingSalesCount.value
                             : 0,
                         minHeight: 6,
                         backgroundColor: Colors.grey[300],
@@ -141,18 +135,18 @@ class SyncProgressDialog extends StatelessWidget {
                     Text(
                       '✓ ${syncService.syncedCount.value} sales synced successfully',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.green,
-                            fontWeight: FontWeight.w500,
-                          ),
+                        color: Colors.green,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                     if (syncService.failedCount.value > 0) ...[
                       SizedBox(height: 8),
                       Text(
                         '✗ ${syncService.failedCount.value} sales failed (will retry later)',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.orange,
-                              fontWeight: FontWeight.w500,
-                            ),
+                          color: Colors.orange,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ],
                   ],
@@ -161,9 +155,9 @@ class SyncProgressDialog extends StatelessWidget {
                 return Text(
                   '✗ Sync failed - will retry when connection improves',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.red,
-                        fontWeight: FontWeight.w500,
-                      ),
+                    color: Colors.red,
+                    fontWeight: FontWeight.w500,
+                  ),
                 );
               }
               return SizedBox.shrink();

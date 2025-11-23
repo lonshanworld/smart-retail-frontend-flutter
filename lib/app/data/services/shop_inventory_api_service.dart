@@ -6,6 +6,7 @@ import 'package:smart_retail/app/data/models/shop_model.dart';
 import 'package:smart_retail/app/data/models/stock_movement_model.dart';
 import 'package:smart_retail/app/data/providers/api_constants.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
+import 'package:smart_retail/app/utils/response_utils.dart';
 
 class ShopInventoryApiService extends GetxService {
   final GetConnect _connect = Get.find<GetConnect>();
@@ -14,7 +15,7 @@ class ShopInventoryApiService extends GetxService {
 
   /// Base URL for merchant-specific shop operations (e.g., get list of shops)
   String get _merchantBaseUrl => '${ApiConstants.baseUrl}/merchant/shops';
-  
+
   /// Base URL for shop-level operations accessible by both merchant and staff
   String get _shopBaseUrl => '${ApiConstants.baseUrl}/shop';
 
@@ -38,20 +39,25 @@ class ShopInventoryApiService extends GetxService {
   Future<List<ShopInventoryItem>> getShopInventory(String shopId) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
-      return List.generate(5, (i) => ShopInventoryItem(
-        id: 'si-item-$i',
-        productId: 'prod-$i',
-        name: 'Product $i in Shop $shopId',
-        sku: 'SKU-$i',
-        quantity: 10 + i,
-        sellingPrice: 15.0 + i,
-      ));
+      return List.generate(
+        5,
+        (i) => ShopInventoryItem(
+          id: 'si-item-$i',
+          productId: 'prod-$i',
+          name: 'Product $i in Shop $shopId',
+          sku: 'SKU-$i',
+          quantity: 10 + i,
+          sellingPrice: 15.0 + i,
+        ),
+      );
     }
 
     // Both merchant and staff use the /shop/items endpoint
     final String baseUrl = '${ApiConstants.baseUrl}/shop';
     print('🔍 [SHOP INVENTORY API] Fetching inventory for shopId: $shopId');
-    print('🌐 [SHOP INVENTORY API] Using endpoint: $baseUrl/items?shopId=$shopId');
+    print(
+      '🌐 [SHOP INVENTORY API] Using endpoint: $baseUrl/items?shopId=$shopId',
+    );
 
     final response = await _connect.get(
       '$baseUrl/items?shopId=$shopId',
@@ -61,11 +67,18 @@ class ShopInventoryApiService extends GetxService {
     print('📥 [SHOP INVENTORY API] Response status: ${response.statusCode}');
 
     if (response.isOk && response.body['data'] != null) {
-      print('✅ [SHOP INVENTORY API] Successfully fetched ${(response.body['data'] as List).length} items');
-      return (response.body['data'] as List).map((i) => ShopInventoryItem.fromJson(i)).toList();
+      final rawList = asList(response.body['data']);
+      print(
+        '✅ [SHOP INVENTORY API] Successfully fetched ${rawList.length} items',
+      );
+      return rawList
+          .map((i) => ShopInventoryItem.fromJson(Map<String, dynamic>.from(i)))
+          .toList();
     } else {
       print('❌ [SHOP INVENTORY API] Error: ${response.body?['message']}');
-      throw Exception(response.body?['message'] ?? 'Failed to load shop inventory');
+      throw Exception(
+        response.body?['message'] ?? 'Failed to load shop inventory',
+      );
     }
   }
 
@@ -89,7 +102,11 @@ class ShopInventoryApiService extends GetxService {
   /// __Expected Response (Success):__
   /// - __Status Code:__ 200/201
   /// - __Body (JSON):__ Success confirmation
-  Future<bool> addStockToShop(String shopId, String productId, int quantity) async {
+  Future<bool> addStockToShop(
+    String shopId,
+    String productId,
+    int quantity,
+  ) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
       return true;
@@ -97,15 +114,21 @@ class ShopInventoryApiService extends GetxService {
 
     final payload = {
       'items': [
-        {'productId': productId, 'quantity': quantity}
-      ]
+        {'productId': productId, 'quantity': quantity},
+      ],
     };
-    final response = await _connect.post('$_merchantBaseUrl/$shopId/stock-in', payload, headers: await _getHeaders());
+    final response = await _connect.post(
+      '$_merchantBaseUrl/$shopId/stock-in',
+      payload,
+      headers: await _getHeaders(),
+    );
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       return true;
     } else {
-      throw Exception(response.body?['message'] ?? 'Failed to add stock to shop');
+      throw Exception(
+        response.body?['message'] ?? 'Failed to add stock to shop',
+      );
     }
   }
 
@@ -122,16 +145,34 @@ class ShopInventoryApiService extends GetxService {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(milliseconds: 500));
       return [
-        Shop(id: 'shop-1', merchantId: 'merchant-1', name: 'Downtown Store', address: '123 Main St', createdAt: DateTime.now(), updatedAt: DateTime.now()),
-        Shop(id: 'shop-2', merchantId: 'merchant-1', name: 'Uptown Mall', address: '456 Market Ave', createdAt: DateTime.now(), updatedAt: DateTime.now()),
+        Shop(
+          id: 'shop-1',
+          merchantId: 'merchant-1',
+          name: 'Downtown Store',
+          address: '123 Main St',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+        Shop(
+          id: 'shop-2',
+          merchantId: 'merchant-1',
+          name: 'Uptown Mall',
+          address: '456 Market Ave',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
       ];
     }
 
     try {
-      final response = await _connect.get(_merchantBaseUrl, headers: await _getHeaders());
+      final response = await _connect.get(
+        _merchantBaseUrl,
+        headers: await _getHeaders(),
+      );
       print('getShops response: ${response.body}');
-      if (response.isOk && response.body != null && response.body['data'] != null) {
-
+      if (response.isOk &&
+          response.body != null &&
+          response.body['data'] != null) {
         final data = response.body['data'];
         if (data is List) {
           return data.map((item) {
@@ -164,23 +205,33 @@ class ShopInventoryApiService extends GetxService {
   Future<List<InventoryItem>> getInventoryForShop(String shopId) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(milliseconds: 800));
-      return List.generate(10, (i) => InventoryItem(
-        id: 'item-$i',
-        merchantId: 'merchant-1',
-        name: 'Product $i',
-        sku: 'SKU-$i',
-        sellingPrice: 15.0 + i,
-        originalPrice: 10.0 + i,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-        stockInfo: [StockInfo(quantity: 20 + i * 5, shopId: shopId, shopName: 'Shop')],
-      ));
+      return List.generate(
+        10,
+        (i) => InventoryItem(
+          id: 'item-$i',
+          merchantId: 'merchant-1',
+          name: 'Product $i',
+          sku: 'SKU-$i',
+          sellingPrice: 15.0 + i,
+          originalPrice: 10.0 + i,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          stockInfo: [
+            StockInfo(quantity: 20 + i * 5, shopId: shopId, shopName: 'Shop'),
+          ],
+        ),
+      );
     }
 
     try {
-      final response = await _connect.get('$_merchantBaseUrl/$shopId/products', headers: await _getHeaders());
+      final response = await _connect.get(
+        '$_merchantBaseUrl/$shopId/products',
+        headers: await _getHeaders(),
+      );
       print('getInventoryForShop response: ${response.body}');
-      if (response.isOk && response.body != null && response.body['data'] != null) {
+      if (response.isOk &&
+          response.body != null &&
+          response.body['data'] != null) {
         final data = response.body['data'];
         if (data is List) {
           return data.map((item) {
@@ -191,10 +242,14 @@ class ShopInventoryApiService extends GetxService {
             }
           }).toList();
         } else {
-          throw Exception('Expected list of inventory items but got ${data.runtimeType}');
+          throw Exception(
+            'Expected list of inventory items but got ${data.runtimeType}',
+          );
         }
       } else {
-        throw Exception(response.body?['message'] ?? 'Failed to load inventory for shop');
+        throw Exception(
+          response.body?['message'] ?? 'Failed to load inventory for shop',
+        );
       }
     } catch (e) {
       throw Exception('Failed to load inventory for shop: $e');
@@ -210,28 +265,42 @@ class ShopInventoryApiService extends GetxService {
   /// __Expected Response (Success):__
   /// - __Status Code:__ 200
   /// - __Body (JSON):__ A list of `StockMovement` objects.
-  Future<List<StockMovement>> getMovementHistory(String shopId, String itemId) async {
+  Future<List<StockMovement>> getMovementHistory(
+    String shopId,
+    String itemId,
+  ) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(milliseconds: 600));
-      return List.generate(5, (i) => StockMovement(
-        id: 'movement-$i',
-        itemId: itemId,
-        shopId: shopId,
-        movementType: i % 2 == 0 ? 'stock_in' : 'sale',
-        quantityChanged: i % 2 == 0 ? 10 : -5,
-        newQuantity: 50 - i * 5,
-        userId: 'user-1',
-        movementDate: DateTime.now().subtract(Duration(days: i)),
-        reason: 'Test movement $i',
-      ));
+      return List.generate(
+        5,
+        (i) => StockMovement(
+          id: 'movement-$i',
+          itemId: itemId,
+          shopId: shopId,
+          movementType: i % 2 == 0 ? 'stock_in' : 'sale',
+          quantityChanged: i % 2 == 0 ? 10 : -5,
+          newQuantity: 50 - i * 5,
+          userId: 'user-1',
+          movementDate: DateTime.now().subtract(Duration(days: i)),
+          reason: 'Test movement $i',
+        ),
+      );
     }
 
-    final response = await _connect.get('$_merchantBaseUrl/$shopId/inventory/$itemId/movements', headers: await _getHeaders());
+    final response = await _connect.get(
+      '$_merchantBaseUrl/$shopId/inventory/$itemId/movements',
+      headers: await _getHeaders(),
+    );
 
     if (response.isOk && response.body['data'] != null) {
-      return (response.body['data'] as List).map((i) => StockMovement.fromJson(i)).toList();
+      final rawList = asList(response.body['data']);
+      return rawList
+          .map((i) => StockMovement.fromJson(Map<String, dynamic>.from(i)))
+          .toList();
     } else {
-      throw Exception(response.body?['message'] ?? 'Failed to load movement history');
+      throw Exception(
+        response.body?['message'] ?? 'Failed to load movement history',
+      );
     }
   }
 
@@ -303,9 +372,7 @@ class ShopInventoryApiService extends GetxService {
       return;
     }
 
-    final payload = {
-      'items': items,
-    };
+    final payload = {'items': items};
 
     print('bulkStockIn calling: $_merchantBaseUrl/$shopId/stock-in');
     print('bulkStockIn payload: $payload');

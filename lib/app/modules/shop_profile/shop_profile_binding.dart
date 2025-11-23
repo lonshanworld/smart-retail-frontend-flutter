@@ -4,8 +4,6 @@ import 'package:smart_retail/app/modules/shop_profile/shop_profile_controller.da
 class ShopProfileBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut<ShopProfileController>(
-      () => ShopProfileController(),
-    );
+    Get.lazyPut<ShopProfileController>(() => ShopProfileController());
   }
 }

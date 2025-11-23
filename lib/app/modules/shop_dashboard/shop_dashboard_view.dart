@@ -23,10 +23,7 @@ class ShopDashboardView extends GetView<ShopDashboardController> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              AppColors.shop.shade50.withOpacity(0.3),
-              Colors.white,
-            ],
+            colors: [AppColors.shop.shade50.withOpacity(0.3), Colors.white],
           ),
         ),
         child: RefreshIndicator(
@@ -51,7 +48,11 @@ class ShopDashboardView extends GetView<ShopDashboardController> {
                       padding: const EdgeInsets.all(60.0),
                       child: Column(
                         children: [
-                          Icon(Icons.error_outline, size: 64, color: AppColors.error.shade400),
+                          Icon(
+                            Icons.error_outline,
+                            size: 64,
+                            color: AppColors.error.shade400,
+                          ),
                           const SizedBox(height: 24),
                           Text(
                             'Could not load dashboard data',
@@ -110,7 +111,9 @@ class ShopDashboardView extends GetView<ShopDashboardController> {
           children: [
             GradientStatCard(
               title: 'Sales Today',
-              value: NumberFormat.currency(symbol: '\$').format(summary.salesToday),
+              value: NumberFormat.currency(
+                symbol: '\$',
+              ).format(summary.salesToday),
               icon: Icons.attach_money_rounded,
               gradient: AppColors.successGradientColors,
             ),
@@ -124,8 +127,12 @@ class ShopDashboardView extends GetView<ShopDashboardController> {
               title: 'Low Stock Items',
               value: summary.lowStockItems.toString(),
               icon: Icons.warning_amber_rounded,
-              color: summary.lowStockItems > 0 ? AppColors.warning : AppColors.success,
-              subtitle: summary.lowStockItems > 0 ? 'Needs attention' : 'All good',
+              color: summary.lowStockItems > 0
+                  ? AppColors.warning
+                  : AppColors.success,
+              subtitle: summary.lowStockItems > 0
+                  ? 'Needs attention'
+                  : 'All good',
             ),
           ],
         ),
@@ -153,28 +160,40 @@ class ShopDashboardView extends GetView<ShopDashboardController> {
               icon: Icons.point_of_sale_rounded,
               title: 'Point of Sale',
               subtitle: 'Process transactions',
-              gradient: [AppColors.primary.shade400, AppColors.primary.shade600],
+              gradient: [
+                AppColors.primary.shade400,
+                AppColors.primary.shade600,
+              ],
               onTap: () => Get.toNamed(Routes.SHOP_POS),
             ),
             _buildActionCard(
               icon: Icons.inventory_2_rounded,
               title: 'Inventory',
               subtitle: 'Manage stock levels',
-              gradient: [AppColors.warning.shade400, AppColors.warning.shade600],
+              gradient: [
+                AppColors.warning.shade400,
+                AppColors.warning.shade600,
+              ],
               onTap: () => Get.toNamed(Routes.SHOP_INVENTORY),
             ),
             _buildActionCard(
               icon: Icons.people_rounded,
               title: 'Customers',
               subtitle: 'View customer list',
-              gradient: [AppColors.secondary.shade400, AppColors.secondary.shade600],
+              gradient: [
+                AppColors.secondary.shade400,
+                AppColors.secondary.shade600,
+              ],
               onTap: () => Get.toNamed(Routes.SHOP_CUSTOMERS),
             ),
             _buildActionCard(
               icon: Icons.shopping_bag_rounded,
               title: 'Products',
               subtitle: 'Browse products',
-              gradient: [AppColors.success.shade400, AppColors.success.shade600],
+              gradient: [
+                AppColors.success.shade400,
+                AppColors.success.shade600,
+              ],
               onTap: () => Get.toNamed(Routes.SHOP_ITEMS),
             ),
           ],

@@ -26,14 +26,23 @@ class Shop {
   factory Shop.fromJson(Map<String, dynamic> json) {
     return Shop(
       id: json['id'] as String?,
-      merchantId: json['merchantId'] as String? ?? json['merchant_id'] as String? ?? '',
+      merchantId:
+          json['merchantId'] as String? ?? json['merchant_id'] as String? ?? '',
       name: json['name'] as String? ?? '',
       address: json['address'] as String?,
       phone: json['phone'] as String?,
       isActive: json['isActive'] as bool? ?? json['is_active'] as bool?,
       isPrimary: json['isPrimary'] as bool? ?? json['is_primary'] as bool?,
-      createdAt: DateTime.parse(json['createdAt'] as String? ?? json['created_at'] as String? ?? DateTime.now().toIso8601String()),
-      updatedAt: DateTime.parse(json['updatedAt'] as String? ?? json['updated_at'] as String? ?? DateTime.now().toIso8601String()),
+      createdAt: DateTime.parse(
+        json['createdAt'] as String? ??
+            json['created_at'] as String? ??
+            DateTime.now().toIso8601String(),
+      ),
+      updatedAt: DateTime.parse(
+        json['updatedAt'] as String? ??
+            json['updated_at'] as String? ??
+            DateTime.now().toIso8601String(),
+      ),
     );
   }
 
@@ -54,17 +63,14 @@ class Shop {
   Map<String, dynamic> toJsonForCreate(String merchantId) {
     return {
       'name': name,
-      'merchantId' : merchantId,
+      'merchantId': merchantId,
       if (address != null && address!.isNotEmpty) 'address': address,
       if (phone != null && phone!.isNotEmpty) 'phone': phone,
     };
   }
 
   Map<String, dynamic> toJsonForAdminCreate() {
-    final Map<String, dynamic> data = {
-      'merchantId': merchantId,
-      'name': name,
-    };
+    final Map<String, dynamic> data = {'merchantId': merchantId, 'name': name};
     if (address != null && address!.isNotEmpty) {
       data['address'] = address;
     }
@@ -85,12 +91,10 @@ class Shop {
     data['name'] = name;
     if (address != null) {
       data['address'] = address;
-    } else {
-    }
+    } else {}
     if (phone != null) {
       data['phone'] = phone;
-    } else {
-    }
+    } else {}
     return data;
   }
 
@@ -215,10 +219,7 @@ class PaginatedAdminShopsResponse {
   final List<Shop> shops;
   final PaginationInfo pagination;
 
-  PaginatedAdminShopsResponse({
-    required this.shops,
-    required this.pagination,
-  });
+  PaginatedAdminShopsResponse({required this.shops, required this.pagination});
 
   factory PaginatedAdminShopsResponse.fromJson(Map<String, dynamic> json) {
     var shopsListFromJson = json['data'] as List? ?? [];
@@ -229,9 +230,14 @@ class PaginatedAdminShopsResponse {
     var paginationJson = json['pagination'] as Map<String, dynamic>?;
     PaginationInfo paginationInfo;
     if (paginationJson != null) {
-        paginationInfo = PaginationInfo.fromJson(paginationJson);
+      paginationInfo = PaginationInfo.fromJson(paginationJson);
     } else {
-        paginationInfo = PaginationInfo(totalItems: 0, currentPage: 1, pageSize: 10, totalPages: 0);
+      paginationInfo = PaginationInfo(
+        totalItems: 0,
+        currentPage: 1,
+        pageSize: 10,
+        totalPages: 0,
+      );
     }
 
     return PaginatedAdminShopsResponse(
@@ -262,26 +268,41 @@ class PaginatedShopResponse {
     int totalItemsJson, currentPageJson, pageSizeJson, totalPagesJson;
 
     if (dataField is Map<String, dynamic>) {
-        shopsListJson = dataField['shops'] as List? ?? dataField['data'] as List? ?? [];
-        totalItemsJson = (dataField['totalItems'] as num?)?.toInt() ?? (dataField['total_items'] as num?)?.toInt() ?? shopsListJson.length;
-        currentPageJson = (dataField['currentPage'] as num?)?.toInt() ?? (dataField['current_page'] as num?)?.toInt() ?? 1;
-        pageSizeJson = (dataField['pageSize'] as num?)?.toInt() ?? (dataField['page_size'] as num?)?.toInt() ?? (shopsListJson.isNotEmpty ? shopsListJson.length : 10) ;
-        totalPagesJson = (dataField['totalPages'] as num?)?.toInt() ?? (dataField['total_pages'] as num?)?.toInt() ?? ((totalItemsJson + pageSizeJson -1) ~/ pageSizeJson);
+      shopsListJson =
+          dataField['shops'] as List? ?? dataField['data'] as List? ?? [];
+      totalItemsJson =
+          (dataField['totalItems'] as num?)?.toInt() ??
+          (dataField['total_items'] as num?)?.toInt() ??
+          shopsListJson.length;
+      currentPageJson =
+          (dataField['currentPage'] as num?)?.toInt() ??
+          (dataField['current_page'] as num?)?.toInt() ??
+          1;
+      pageSizeJson =
+          (dataField['pageSize'] as num?)?.toInt() ??
+          (dataField['page_size'] as num?)?.toInt() ??
+          (shopsListJson.isNotEmpty ? shopsListJson.length : 10);
+      totalPagesJson =
+          (dataField['totalPages'] as num?)?.toInt() ??
+          (dataField['total_pages'] as num?)?.toInt() ??
+          ((totalItemsJson + pageSizeJson - 1) ~/ pageSizeJson);
     } else if (dataField is List) {
-        shopsListJson = dataField;
-        totalItemsJson = shopsListJson.length;
-        currentPageJson = 1;
-        pageSizeJson = shopsListJson.length > 0 ? shopsListJson.length : 10;
-        totalPagesJson = 1;
+      shopsListJson = dataField;
+      totalItemsJson = shopsListJson.length;
+      currentPageJson = 1;
+      pageSizeJson = shopsListJson.length > 0 ? shopsListJson.length : 10;
+      totalPagesJson = 1;
     } else {
-        shopsListJson = [];
-        totalItemsJson = 0;
-        currentPageJson = 1;
-        pageSizeJson = 10;
-        totalPagesJson = 0;
+      shopsListJson = [];
+      totalItemsJson = 0;
+      currentPageJson = 1;
+      pageSizeJson = 10;
+      totalPagesJson = 0;
     }
 
-    List<Shop> shops = shopsListJson.map((s) => Shop.fromJson(s as Map<String, dynamic>)).toList();
+    List<Shop> shops = shopsListJson
+        .map((s) => Shop.fromJson(s as Map<String, dynamic>))
+        .toList();
 
     return PaginatedShopResponse(
       shops: shops,

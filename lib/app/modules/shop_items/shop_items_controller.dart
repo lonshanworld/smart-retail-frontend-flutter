@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:smart_retail/app/utils/dialog_utils.dart';
 import 'package:smart_retail/app/data/models/shop_inventory_item.dart';
 import 'package:smart_retail/app/data/services/shop_items_api_service.dart';
 
@@ -16,7 +17,7 @@ class ShopItemsController extends GetxController {
     // Get shopId from route parameters
     shopId = Get.parameters['shopId'] ?? '';
     if (shopId.isEmpty) {
-      Get.snackbar('Error', 'Shop ID is required');
+      DialogUtils.showError('Shop ID is required');
       return;
     }
     fetchInventoryItems();
@@ -40,7 +41,7 @@ class ShopItemsController extends GetxController {
       }).toList();
       inventoryItems.assignAll(shopItems);
     } catch (e) {
-      Get.snackbar('Error', 'Could not load inventory items: $e');
+      DialogUtils.showError('Could not load inventory items: $e');
     } finally {
       isLoading.value = false;
     }
@@ -49,8 +50,8 @@ class ShopItemsController extends GetxController {
   void showStockAdjustmentDialog(ShopInventoryItem item) {
     final currentQuantity = item.quantity.obs;
 
-    Get.dialog(
-      AlertDialog(
+    DialogUtils.showCustomDialog(
+      dialog: AlertDialog(
         title: Text('Adjust Stock for ${item.name}'),
         content: Obx(
           () => Row(
@@ -64,7 +65,10 @@ class ShopItemsController extends GetxController {
                   }
                 },
               ),
-              Text('${currentQuantity.value}', style: Get.textTheme.headlineMedium),
+              Text(
+                '${currentQuantity.value}',
+                style: Get.textTheme.headlineMedium,
+              ),
               IconButton(
                 icon: const Icon(Icons.add_circle_outline),
                 onPressed: () => currentQuantity.value++,
@@ -73,10 +77,7 @@ class ShopItemsController extends GetxController {
           ),
         ),
         actions: [
-          TextButton(
-            child: const Text('Cancel'),
-            onPressed: () => Get.back(),
-          ),
+          TextButton(child: const Text('Cancel'), onPressed: () => Get.back()),
           ElevatedButton(
             child: const Text('Save'),
             onPressed: () {
@@ -93,9 +94,9 @@ class ShopItemsController extends GetxController {
     try {
       await _apiService.updateStockQuantity(itemId, newQuantity);
       await fetchInventoryItems(); // Refresh the list
-      Get.snackbar('Success', 'Stock updated successfully');
+      DialogUtils.showSuccess('Stock updated successfully');
     } catch (e) {
-      Get.snackbar('Error', 'Failed to update stock: $e');
+      DialogUtils.showError('Failed to update stock: $e');
     }
   }
 }

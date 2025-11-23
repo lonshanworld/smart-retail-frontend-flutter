@@ -5,12 +5,18 @@ import 'package:intl/intl.dart';
 class AppUtils {
   // --- JSON Parsing Helpers ---
 
-  static String safeJsonString(Map<String, dynamic> json, String key, {String defaultValue = ''}) {
+  static String safeJsonString(
+    Map<String, dynamic> json,
+    String key, {
+    String defaultValue = '',
+  }) {
     try {
       return json[key]?.toString() ?? defaultValue;
     } catch (e) {
       if (kDebugMode) {
-        print('[AppUtils.safeJsonString] Error parsing key "$key": $e. Returning default: "$defaultValue"');
+        print(
+          '[AppUtils.safeJsonString] Error parsing key "$key": $e. Returning default: "$defaultValue"',
+        );
       }
       return defaultValue;
     }
@@ -21,13 +27,19 @@ class AppUtils {
       return json[key]?.toString();
     } catch (e) {
       if (kDebugMode) {
-        print('[AppUtils.safeJsonStringOrNull] Error parsing key "$key": $e. Returning null.');
+        print(
+          '[AppUtils.safeJsonStringOrNull] Error parsing key "$key": $e. Returning null.',
+        );
       }
       return null;
     }
   }
 
-  static int safeJsonInt(Map<String, dynamic> json, String key, {int defaultValue = 0}) {
+  static int safeJsonInt(
+    Map<String, dynamic> json,
+    String key, {
+    int defaultValue = 0,
+  }) {
     try {
       final value = json[key];
       if (value is int) {
@@ -40,13 +52,19 @@ class AppUtils {
       return defaultValue;
     } catch (e) {
       if (kDebugMode) {
-        print('[AppUtils.safeJsonInt] Error parsing key "$key": $e. Returning default: $defaultValue');
+        print(
+          '[AppUtils.safeJsonInt] Error parsing key "$key": $e. Returning default: $defaultValue',
+        );
       }
       return defaultValue;
     }
   }
 
-  static double safeJsonDouble(Map<String, dynamic> json, String key, {double defaultValue = 0.0}) {
+  static double safeJsonDouble(
+    Map<String, dynamic> json,
+    String key, {
+    double defaultValue = 0.0,
+  }) {
     try {
       final value = json[key];
       if (value is double) {
@@ -59,13 +77,19 @@ class AppUtils {
       return defaultValue;
     } catch (e) {
       if (kDebugMode) {
-        print('[AppUtils.safeJsonDouble] Error parsing key "$key": $e. Returning default: $defaultValue');
+        print(
+          '[AppUtils.safeJsonDouble] Error parsing key "$key": $e. Returning default: $defaultValue',
+        );
       }
       return defaultValue;
     }
   }
 
-  static bool safeJsonBool(Map<String, dynamic> json, String key, {bool defaultValue = false}) {
+  static bool safeJsonBool(
+    Map<String, dynamic> json,
+    String key, {
+    bool defaultValue = false,
+  }) {
     try {
       final value = json[key];
       if (value is bool) {
@@ -80,28 +104,40 @@ class AppUtils {
       return defaultValue;
     } catch (e) {
       if (kDebugMode) {
-        print('[AppUtils.safeJsonBool] Error parsing key "$key": $e. Returning default: $defaultValue');
+        print(
+          '[AppUtils.safeJsonBool] Error parsing key "$key": $e. Returning default: $defaultValue',
+        );
       }
       return defaultValue;
     }
   }
 
-  static DateTime safeJsonDateTime(Map<String, dynamic> json, String key, {DateTime? defaultValue}) {
+  static DateTime safeJsonDateTime(
+    Map<String, dynamic> json,
+    String key, {
+    DateTime? defaultValue,
+  }) {
     try {
       final value = json[key];
       if (value is String && value.isNotEmpty) {
         return DateTime.parse(value).toLocal();
       }
-      return defaultValue ?? DateTime.now().toLocal(); // Fallback to now or a specific default
+      return defaultValue ??
+          DateTime.now().toLocal(); // Fallback to now or a specific default
     } catch (e) {
       if (kDebugMode) {
-        print('[AppUtils.safeJsonDateTime] Error parsing key "$key": $e. Returning default.');
+        print(
+          '[AppUtils.safeJsonDateTime] Error parsing key "$key": $e. Returning default.',
+        );
       }
       return defaultValue ?? DateTime.now().toLocal();
     }
   }
 
-  static DateTime? safeJsonDateTimeOrNull(Map<String, dynamic> json, String key) {
+  static DateTime? safeJsonDateTimeOrNull(
+    Map<String, dynamic> json,
+    String key,
+  ) {
     try {
       final value = json[key];
       if (value is String && value.isNotEmpty) {
@@ -110,19 +146,27 @@ class AppUtils {
       return null;
     } catch (e) {
       if (kDebugMode) {
-        print('[AppUtils.safeJsonDateTimeOrNull] Error parsing key "$key": $e. Returning null.');
+        print(
+          '[AppUtils.safeJsonDateTimeOrNull] Error parsing key "$key": $e. Returning null.',
+        );
       }
       return null;
     }
   }
 
-  static List<T> safeJsonList<T>(Map<String, dynamic> json, String key, T Function(dynamic) parser) {
+  static List<T> safeJsonList<T>(
+    Map<String, dynamic> json,
+    String key,
+    T Function(dynamic) parser,
+  ) {
     try {
       final list = json[key] as List?;
       return list?.map((item) => parser(item)).toList() ?? [];
     } catch (e) {
       if (kDebugMode) {
-        print('[AppUtils.safeJsonList] Error parsing list key "$key": $e. Returning empty list.');
+        print(
+          '[AppUtils.safeJsonList] Error parsing list key "$key": $e. Returning empty list.',
+        );
       }
       return [];
     }
@@ -138,7 +182,10 @@ class AppUtils {
     return DateFormat(format).format(date);
   }
 
-  static String formatDateTime(DateTime? dateTime, {String format = 'yyyy-MM-dd HH:mm:ss'}) {
+  static String formatDateTime(
+    DateTime? dateTime, {
+    String format = 'yyyy-MM-dd HH:mm:ss',
+  }) {
     if (dateTime == null) return 'N/A';
     return DateFormat(format).format(dateTime.toLocal());
   }

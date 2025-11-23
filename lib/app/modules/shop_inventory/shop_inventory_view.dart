@@ -13,14 +13,16 @@ class ShopInventoryView extends GetView<ShopInventoryController> {
   Widget build(BuildContext context) {
     final AuthService authService = Get.find<AuthService>();
     final bool isMerchant = authService.user.value?.role == 'merchant';
-    
+
     return ShopMainScaffold(
       title: 'Shop Inventory',
-      floatingActionButton: isMerchant ? FloatingActionButton.extended(
-        onPressed: controller.goToAddItemToStockPage,
-        label: const Text('Add Item to Stock'),
-        icon: const Icon(Icons.add),
-      ) : null,
+      floatingActionButton: isMerchant
+          ? FloatingActionButton.extended(
+              onPressed: controller.goToAddItemToStockPage,
+              label: const Text('Add Item to Stock'),
+              icon: const Icon(Icons.add),
+            )
+          : null,
       body: Obx(() {
         if (controller.isLoading.value) {
           return const Center(child: CircularProgressIndicator());
@@ -38,16 +40,38 @@ class ShopInventoryView extends GetView<ShopInventoryController> {
           );
         }
         if (controller.inventoryItems.isEmpty) {
-          return const Center(child: Text('No inventory items found for this shop.'));
+          return const Center(
+            child: Text('No inventory items found for this shop.'),
+          );
         }
 
         return ResponsiveDataTable(
           items: controller.inventoryItems,
           columns: [
-            DataColumn(label: const Text('Item', style: TextStyle(fontWeight: FontWeight.bold))),
-            DataColumn(label: const Text('SKU', style: TextStyle(fontWeight: FontWeight.bold))),
-            DataColumn(label: const Text('Quantity', style: TextStyle(fontWeight: FontWeight.bold))),
-            DataColumn(label: const Text('Price', style: TextStyle(fontWeight: FontWeight.bold))),
+            DataColumn(
+              label: const Text(
+                'Item',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            DataColumn(
+              label: const Text(
+                'SKU',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            DataColumn(
+              label: const Text(
+                'Quantity',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            DataColumn(
+              label: const Text(
+                'Price',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
           ],
           buildCells: (item) {
             return [
@@ -56,11 +80,18 @@ class ShopInventoryView extends GetView<ShopInventoryController> {
                   children: [
                     CircleAvatar(
                       backgroundColor: AppColors.shop.shade100,
-                      child: Icon(Icons.inventory_2, color: AppColors.shop.shade700, size: 20),
+                      child: Icon(
+                        Icons.inventory_2,
+                        color: AppColors.shop.shade700,
+                        size: 20,
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: Text(item.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                      child: Text(
+                        item.name,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
                     ),
                   ],
                 ),
@@ -77,9 +108,14 @@ class ShopInventoryView extends GetView<ShopInventoryController> {
               ),
               DataCell(
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
-                    color: item.quantity > 10 ? AppColors.success.shade50 : AppColors.error.shade50,
+                    color: item.quantity > 10
+                        ? AppColors.success.shade50
+                        : AppColors.error.shade50,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -87,7 +123,9 @@ class ShopInventoryView extends GetView<ShopInventoryController> {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: item.quantity > 10 ? AppColors.success.shade700 : AppColors.error.shade700,
+                      color: item.quantity > 10
+                          ? AppColors.success.shade700
+                          : AppColors.error.shade700,
                     ),
                   ),
                 ),
@@ -95,7 +133,10 @@ class ShopInventoryView extends GetView<ShopInventoryController> {
               DataCell(
                 Text(
                   '\$${item.sellingPrice.toStringAsFixed(2)}',
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ];
@@ -104,7 +145,11 @@ class ShopInventoryView extends GetView<ShopInventoryController> {
             return DataRowCard(
               leading: CircleAvatar(
                 backgroundColor: AppColors.shop.shade100,
-                child: Icon(Icons.inventory_2, color: AppColors.shop.shade700, size: 20),
+                child: Icon(
+                  Icons.inventory_2,
+                  color: AppColors.shop.shade700,
+                  size: 20,
+                ),
               ),
               title: item.name,
               subtitle: item.sku ?? 'No SKU',
@@ -113,7 +158,9 @@ class ShopInventoryView extends GetView<ShopInventoryController> {
                   icon: Icons.inventory,
                   label: 'Quantity',
                   value: '${item.quantity}',
-                  valueColor: item.quantity > 10 ? AppColors.success : AppColors.error,
+                  valueColor: item.quantity > 10
+                      ? AppColors.success
+                      : AppColors.error,
                   valueFontWeight: FontWeight.w600,
                 ),
                 DetailRow(

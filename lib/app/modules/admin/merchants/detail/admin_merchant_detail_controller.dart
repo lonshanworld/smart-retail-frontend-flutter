@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:smart_retail/app/data/models/merchant_model.dart';
 import 'package:smart_retail/app/data/services/admin_merchant_service.dart';
 import 'package:smart_retail/app/routes/app_pages.dart';
+import 'package:smart_retail/app/utils/dialog_utils.dart';
 
 class AdminMerchantDetailController extends GetxController {
   final AdminMerchantService adminMerchantService;
@@ -28,14 +29,22 @@ class AdminMerchantDetailController extends GetxController {
       // Set initial data from list (for quick display)
       merchant.value = argument;
       // But fetch full details including shops array
-      printInfo(info: "AdminMerchantDetailController received Merchant object. Fetching full details with shops...");
+      printInfo(
+        info:
+            "AdminMerchantDetailController received Merchant object. Fetching full details with shops...",
+      );
       fetchMerchantDetailsById(argument.id);
     } else if (argument is String) {
       // If only an ID is passed (e.g. from a notification or deep link)
-      printInfo(info: "AdminMerchantDetailController received Merchant ID: $argument. Fetching details...");
+      printInfo(
+        info:
+            "AdminMerchantDetailController received Merchant ID: $argument. Fetching details...",
+      );
       fetchMerchantDetailsById(argument);
     } else {
-      printError(info: "AdminMerchantDetailController received invalid arguments.");
+      printError(
+        info: "AdminMerchantDetailController received invalid arguments.",
+      );
       errorMessage.value = "Could not load merchant details. Invalid data.";
       isLoading.value = false;
     }
@@ -45,7 +54,9 @@ class AdminMerchantDetailController extends GetxController {
     isLoading.value = true;
     errorMessage.value = null;
     try {
-      final fetchedMerchant = await adminMerchantService.getMerchantById(merchantId);
+      final fetchedMerchant = await adminMerchantService.getMerchantById(
+        merchantId,
+      );
       if (fetchedMerchant != null) {
         merchant.value = fetchedMerchant;
       } else {
@@ -64,21 +75,25 @@ class AdminMerchantDetailController extends GetxController {
       await fetchMerchantDetailsById(merchant.value!.id);
     } else {
       _loadMerchantDetailsFromArgs(); // Fallback if ID is somehow missing
-      if(merchant.value == null) {
-        Get.snackbar("Error", "Cannot refresh. Merchant data is unavailable.", snackPosition: SnackPosition.BOTTOM);
+      if (merchant.value == null) {
+        DialogUtils.showError("Cannot refresh. Merchant data is unavailable.");
       }
     }
   }
 
   void navigateToEditMerchant() {
     if (merchant.value != null) {
-      Get.toNamed(Routes.ADMIN_ADD_EDIT_MERCHANT, arguments: merchant.value)?.then((result) {
-        if (result == true) { // If edit page indicates a change
+      Get.toNamed(
+        Routes.ADMIN_ADD_EDIT_MERCHANT,
+        arguments: merchant.value,
+      )?.then((result) {
+        if (result == true) {
+          // If edit page indicates a change
           refreshMerchantDetails(); // Refresh to show updated data
         }
       });
     } else {
-      Get.snackbar("Error", "Merchant data not available for editing.", snackPosition: SnackPosition.BOTTOM);
+      DialogUtils.showError("Merchant data not available for editing.");
     }
   }
 }

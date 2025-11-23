@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:smart_retail/app/utils/dialog_utils.dart';
 import 'package:smart_retail/app/data/models/inventory_item_model.dart';
 import 'package:smart_retail/app/data/models/report_model.dart';
 import 'package:smart_retail/app/data/models/shop_model.dart';
@@ -9,7 +10,8 @@ import 'package:smart_retail/app/data/services/shop_api_service.dart';
 class ReportController extends GetxController {
   final ReportApiService _reportApiService = Get.find<ReportApiService>();
   final ShopApiService _shopApiService = Get.find<ShopApiService>();
-  final InventoryApiService _inventoryApiService = Get.find<InventoryApiService>();
+  final InventoryApiService _inventoryApiService =
+      Get.find<InventoryApiService>();
 
   var shops = <Shop>[].obs;
   var inventoryItems = <InventoryItem>[].obs;
@@ -33,7 +35,7 @@ class ReportController extends GetxController {
       final result = await _shopApiService.listShops();
       shops.assignAll(result);
     } catch (e) {
-      Get.snackbar('Error', 'Could not load shops: $e');
+      DialogUtils.showError('Could not load shops: $e');
     } finally {
       isLoadingShops.value = false;
     }
@@ -43,12 +45,16 @@ class ReportController extends GetxController {
     if (selectedShop.value == null) return;
     try {
       isLoadingItems.value = true;
-      final result = await _inventoryApiService.listInventoryItems(page: 1, pageSize: 500);
-      if (result != null) { // Corrected: Added null check
+      final result = await _inventoryApiService.listInventoryItems(
+        page: 1,
+        pageSize: 500,
+      );
+      if (result != null) {
+        // Corrected: Added null check
         inventoryItems.assignAll(result.items);
       }
     } catch (e) {
-      Get.snackbar('Error', 'Could not load inventory items: $e');
+      DialogUtils.showError('Could not load inventory items: $e');
     } finally {
       isLoadingItems.value = false;
     }
@@ -56,16 +62,22 @@ class ReportController extends GetxController {
 
   Future<void> generateReport() async {
     if (selectedShop.value == null || selectedItem.value == null) {
-      Get.snackbar('Missing Selection', 'Please select both a shop and an item.');
+      DialogUtils.showWarning(
+        'Please select both a shop and an item.',
+        title: 'Missing Selection',
+      );
       return;
     }
     try {
       isLoading.value = true;
       // Corrected: Added null assertions
-      final result = await _reportApiService.getSalesForecast(selectedShop.value!.id!, selectedItem.value!.id!);
+      final result = await _reportApiService.getSalesForecast(
+        selectedShop.value!.id!,
+        selectedItem.value!.id!,
+      );
       forecastResponse.value = result;
     } catch (e) {
-      Get.snackbar('Error', 'Failed to generate report: $e');
+      DialogUtils.showError('Failed to generate report: $e');
       forecastResponse.value = null;
     } finally {
       isLoading.value = false;

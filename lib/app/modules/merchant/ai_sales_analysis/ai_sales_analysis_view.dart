@@ -65,7 +65,8 @@ class AiSalesAnalysisView extends GetView<AiSalesAnalysisController> {
           child: TextField(
             controller: controller.promptController,
             decoration: const InputDecoration(
-              hintText: 'Ask about your sales, e.g., "What are my best sellers?"',
+              hintText:
+                  'Ask about your sales, e.g., "What are my best sellers?"',
               border: OutlineInputBorder(),
             ),
             onSubmitted: (_) => controller.getAnalysis(),
@@ -73,7 +74,7 @@ class AiSalesAnalysisView extends GetView<AiSalesAnalysisController> {
         ),
         const SizedBox(width: 8),
         IconButton(
-          icon: const Icon(Icons.send), 
+          icon: const Icon(Icons.send),
           onPressed: () => controller.getAnalysis(),
           tooltip: 'Get Analysis',
         ),
@@ -87,10 +88,17 @@ class AiSalesAnalysisView extends GetView<AiSalesAnalysisController> {
         return const Center(child: CircularProgressIndicator());
       }
       if (controller.errorMessage.value != null) {
-        return Center(child: Text('Error: ${controller.errorMessage.value}', style: const TextStyle(color: Colors.red)));
+        return Center(
+          child: Text(
+            'Error: ${controller.errorMessage.value}',
+            style: const TextStyle(color: Colors.red),
+          ),
+        );
       }
       if (controller.analysisResult.value.isEmpty) {
-        return const Center(child: Text('Ask a question to see your analysis.'));
+        return const Center(
+          child: Text('Ask a question to see your analysis.'),
+        );
       }
       return SingleChildScrollView(
         child: Text(controller.analysisResult.value),

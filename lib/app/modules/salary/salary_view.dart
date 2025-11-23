@@ -6,9 +6,7 @@ class SalaryView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Salary'),
-      ),
+      appBar: AppBar(title: const Text('Salary')),
       body: const Center(
         child: Text(
           'Salary information will be displayed here.',

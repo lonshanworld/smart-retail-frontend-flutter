@@ -4,6 +4,7 @@ import 'package:smart_retail/app/data/models/user_model.dart';
 import 'package:smart_retail/app/data/models/shop_model.dart';
 import 'package:smart_retail/app/data/providers/api_constants.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
+import 'package:smart_retail/app/utils/response_utils.dart';
 
 class PaginatedStaffResponse {
   final List<User> staff;
@@ -83,7 +84,10 @@ class MerchantStaffApiService extends GetxService {
   ///     }
   ///   }
   ///   ```
-  Future<PaginatedStaffResponse> listStaff({int page = 1, int pageSize = 10}) async {
+  Future<PaginatedStaffResponse> listStaff({
+    int page = 1,
+    int pageSize = 10,
+  }) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
       final mockStaff = List.generate(
@@ -95,7 +99,9 @@ class MerchantStaffApiService extends GetxService {
           role: 'staff',
           isActive: index % 4 != 0, // Make some inactive
           merchantId: 'mock-merchant-id',
-          assignedShopId: (index % 3 == 0) ? 'shop-${index % 3}' : null, // Assign some staff to shops
+          assignedShopId: (index % 3 == 0)
+              ? 'shop-${index % 3}'
+              : null, // Assign some staff to shops
           createdAt: DateTime.now().subtract(Duration(days: index)),
           updatedAt: DateTime.now(),
         ),
@@ -116,7 +122,7 @@ class MerchantStaffApiService extends GetxService {
     );
 
     if (response.isOk && response.body['data'] != null) {
-      return PaginatedStaffResponse.fromJson(response.body['data']);
+      return PaginatedStaffResponse.fromJson(asMap(response.body['data']));
     } else {
       throw Exception(response.body?['message'] ?? 'Failed to load staff');
     }
@@ -134,18 +140,25 @@ class MerchantStaffApiService extends GetxService {
   Future<List<Shop>> getShopsForSelection() async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(milliseconds: 500));
-      return List.generate(5, (index) => Shop(
-        id: 'shop-$index',
-        name: 'Shop Branch $index',
-        address: '$index Main St',
-        merchantId: 'mock-merchant-id',
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      ));
+      return List.generate(
+        5,
+        (index) => Shop(
+          id: 'shop-$index',
+          name: 'Shop Branch $index',
+          address: '$index Main St',
+          merchantId: 'mock-merchant-id',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+      );
     }
-    final response = await _connect.get(_shopsBaseUrl, headers: await _getHeaders());
+    final response = await _connect.get(
+      _shopsBaseUrl,
+      headers: await _getHeaders(),
+    );
     if (response.isOk && response.body['data'] != null) {
-      return (response.body['data'] as List).map((i) => Shop.fromJson(i)).toList();
+      final rawList = asList(response.body['data']);
+      return rawList.map((i) => Shop.fromJson(Map<String, dynamic>.from(i))).toList();
     } else {
       throw Exception(response.body?['message'] ?? 'Failed to load shops');
     }
@@ -192,13 +205,19 @@ class MerchantStaffApiService extends GetxService {
     }
     print('save staff reach here ?? $data');
 
-    final response = await _connect.post(_baseUrl, data, headers: await _getHeaders());
+    final response = await _connect.post(
+      _baseUrl,
+      data,
+      headers: await _getHeaders(),
+    );
     print('after save staff and check response ${response.body}');
 
     if (response.statusCode == 201 && response.body['data'] != null) {
-      return User.fromJson(response.body['data']);
+      return User.fromJson(asMap(response.body['data']));
     } else {
-      throw Exception(response.body?['message'] ?? 'Failed to create staff member');
+      throw Exception(
+        response.body?['message'] ?? 'Failed to create staff member',
+      );
     }
   }
 
@@ -236,11 +255,17 @@ class MerchantStaffApiService extends GetxService {
         updatedAt: DateTime.now(),
       );
     }
-    final response = await _connect.put('$_baseUrl/$staffId', data, headers: await _getHeaders());
+    final response = await _connect.put(
+      '$_baseUrl/$staffId',
+      data,
+      headers: await _getHeaders(),
+    );
     if (response.isOk && response.body['data'] != null) {
-      return User.fromJson(response.body['data']);
+      return User.fromJson(asMap(response.body['data']));
     } else {
-      throw Exception(response.body?['message'] ?? 'Failed to update staff member');
+      throw Exception(
+        response.body?['message'] ?? 'Failed to update staff member',
+      );
     }
   }
 
@@ -261,10 +286,15 @@ class MerchantStaffApiService extends GetxService {
       return;
     }
 
-    final response = await _connect.delete('$_baseUrl/$staffId', headers: await _getHeaders());
+    final response = await _connect.delete(
+      '$_baseUrl/$staffId',
+      headers: await _getHeaders(),
+    );
 
     if (!response.isOk) {
-      throw Exception(response.body?['message'] ?? 'Failed to delete staff member');
+      throw Exception(
+        response.body?['message'] ?? 'Failed to delete staff member',
+      );
     }
   }
 }

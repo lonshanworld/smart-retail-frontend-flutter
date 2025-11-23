@@ -3,6 +3,7 @@ import 'package:smart_retail/app/core/config/app_config.dart';
 import 'package:smart_retail/app/data/models/user_model.dart';
 import 'package:smart_retail/app/data/providers/api_constants.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
+import 'package:smart_retail/app/utils/response_utils.dart';
 
 /// AdminStaffApiService - Service for managing all staff users from the admin perspective.
 class AdminStaffApiService extends GetConnect {
@@ -52,13 +53,11 @@ class AdminStaffApiService extends GetConnect {
     final response = await get(_baseUrl, headers: await _getHeaders());
     print("check response for admin staff ${response.body}");
     if (response.isOk && response.body != null) {
-
-      if(response.body['data'] == null){
+      if (response.body['data'] == null) {
         return [];
-      }else{
-        return (response.body['data'] as List)
-            .map((staffJson) => User.fromJson(staffJson))
-            .toList();
+      } else {
+        final rawList = asList(response.body['data']);
+        return rawList.map((staffJson) => User.fromJson(Map<String, dynamic>.from(staffJson))).toList();
       }
     } else {
       throw Exception('Failed to load staff: ${response.statusText}');

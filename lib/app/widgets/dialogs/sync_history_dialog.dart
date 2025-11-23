@@ -7,10 +7,8 @@ import 'package:intl/intl.dart';
 class SyncHistoryDialog extends StatelessWidget {
   final SyncService syncService;
 
-  const SyncHistoryDialog({
-    Key? key,
-    required this.syncService,
-  }) : super(key: key);
+  const SyncHistoryDialog({Key? key, required this.syncService})
+    : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +46,9 @@ class SyncHistoryDialog extends StatelessWidget {
                       Obx(() {
                         final lastSync = syncService.lastSyncTime.value;
                         if (lastSync != null) {
-                          final formatter = DateFormat('MMM dd, yyyy - hh:mm a');
+                          final formatter = DateFormat(
+                            'MMM dd, yyyy - hh:mm a',
+                          );
                           return Text(
                             'Last sync: ${formatter.format(lastSync)}',
                             style: TextStyle(
@@ -59,10 +59,7 @@ class SyncHistoryDialog extends StatelessWidget {
                         }
                         return Text(
                           'No sync history',
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 12,
-                          ),
+                          style: TextStyle(color: Colors.white70, fontSize: 12),
                         );
                       }),
                     ],
@@ -88,11 +85,7 @@ class SyncHistoryDialog extends StatelessWidget {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          Icons.history,
-                          size: 48,
-                          color: Colors.grey[300],
-                        ),
+                        Icon(Icons.history, size: 48, color: Colors.grey[300]),
                         SizedBox(height: 16),
                         Text(
                           'No sync history yet',
@@ -114,7 +107,9 @@ class SyncHistoryDialog extends StatelessWidget {
                   final formatter = DateFormat('hh:mm a');
                   final isSuccess = log.status == 'success';
                   final statusColor = isSuccess ? Colors.green : Colors.red;
-                  final statusIcon = isSuccess ? Icons.check_circle : Icons.error;
+                  final statusIcon = isSuccess
+                      ? Icons.check_circle
+                      : Icons.error;
 
                   return ListTile(
                     leading: Icon(statusIcon, color: statusColor),
@@ -130,7 +125,8 @@ class SyncHistoryDialog extends StatelessWidget {
                           '${log.entityType} - ${log.action}',
                           style: TextStyle(fontSize: 12),
                         ),
-                        if (log.errorMessage != null && log.errorMessage!.isNotEmpty)
+                        if (log.errorMessage != null &&
+                            log.errorMessage!.isNotEmpty)
                           Text(
                             log.errorMessage!,
                             style: TextStyle(
@@ -144,12 +140,12 @@ class SyncHistoryDialog extends StatelessWidget {
                     ),
                     trailing: Text(
                       formatter.format(log.createdAt),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                     ),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                   );
                 },
               );

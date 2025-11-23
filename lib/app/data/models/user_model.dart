@@ -69,19 +69,21 @@ class User {
       role: roleValue,
       isActive: parseBool(json['isActive'] ?? json['is_active']),
       phone: json['phone'] as String?,
-      assignedShopId: json['assignedShopId'] as String? ?? json['assigned_shop_id'] as String?,
+      assignedShopId:
+          json['assignedShopId'] as String? ??
+          json['assigned_shop_id'] as String?,
       merchantId: merchantId,
       merchantName: merchantName,
       createdAt: json['createdAt'] != null
           ? DateTime.tryParse(json['createdAt'].toString())
           : (json['created_at'] != null
-          ? DateTime.tryParse(json['created_at'].toString())
-          : null),
+                ? DateTime.tryParse(json['created_at'].toString())
+                : null),
       updatedAt: json['updatedAt'] != null
           ? DateTime.tryParse(json['updatedAt'].toString())
           : (json['updated_at'] != null
-          ? DateTime.tryParse(json['updated_at'].toString())
-          : null),
+                ? DateTime.tryParse(json['updated_at'].toString())
+                : null),
       shop: json['shop'] != null
           ? Shop.fromJson(json['shop'])
           : (json['Shop'] != null ? Shop.fromJson(json['Shop']) : null),
@@ -119,19 +121,21 @@ class User {
       role: roleValue,
       isActive: parseBool(userJson['isActive'] ?? userJson['is_active']),
       phone: userJson['phone'] as String?,
-      assignedShopId: userJson['assignedShopId'] as String? ?? userJson['assigned_shop_id'] as String?,
+      assignedShopId:
+          userJson['assignedShopId'] as String? ??
+          userJson['assigned_shop_id'] as String?,
       merchantId: merchantId,
       merchantName: merchantName,
       createdAt: userJson['createdAt'] != null
           ? DateTime.tryParse(userJson['createdAt'].toString())
           : (userJson['created_at'] != null
-          ? DateTime.tryParse(userJson['created_at'].toString())
-          : null),
+                ? DateTime.tryParse(userJson['created_at'].toString())
+                : null),
       updatedAt: userJson['updatedAt'] != null
           ? DateTime.tryParse(userJson['updatedAt'].toString())
           : (userJson['updated_at'] != null
-          ? DateTime.tryParse(userJson['updated_at'].toString())
-          : null),
+                ? DateTime.tryParse(userJson['updated_at'].toString())
+                : null),
       shop: json['shop'] != null ? Shop.fromJson(json['shop']) : null,
     );
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:smart_retail/app/utils/dialog_utils.dart';
 import 'package:smart_retail/app/data/models/supplier_model.dart';
 import 'package:smart_retail/app/data/services/supplier_api_service.dart';
 
@@ -58,7 +59,7 @@ class SupplierManagementController extends GetxController {
 
       final newSupplier = await _apiService.createSupplier(data);
       suppliers.add(newSupplier);
-      
+
       // Clear the form
       formKey.currentState?.reset();
       nameController.clear();
@@ -68,14 +69,14 @@ class SupplierManagementController extends GetxController {
       addressController.clear();
       notesController.clear();
 
-      Get.snackbar('Success', 'Supplier "${newSupplier.name}" created.', snackPosition: SnackPosition.BOTTOM);
+      DialogUtils.showSuccess('Supplier "${newSupplier.name}" created.');
     } catch (e) {
-      Get.snackbar('Error', "Failed to create supplier: ${e.toString()}", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red);
+      DialogUtils.showError("Failed to create supplier: ${e.toString()}");
     } finally {
       isSaving.value = false;
     }
   }
-  
+
   @override
   void onClose() {
     nameController.dispose();

@@ -4,8 +4,10 @@ class StockMovement {
   final String id;
   final String itemId;
   final String shopId;
-  final String movementType; // e.g., "stock_in", "sale", "adjustment_damage", "adjustment_theft", "initial_stock"
-  final int quantityChanged; // Can be positive (stock in) or negative (stock out)
+  final String
+  movementType; // e.g., "stock_in", "sale", "adjustment_damage", "adjustment_theft", "initial_stock"
+  final int
+  quantityChanged; // Can be positive (stock in) or negative (stock out)
   final int newQuantity; // Stock quantity after this movement
   final String? reason; // Optional reason for adjustment
   final String userId; // User who performed the action
@@ -34,14 +36,21 @@ class StockMovement {
   factory StockMovement.fromJson(Map<String, dynamic> json) {
     return StockMovement(
       id: json['id'] as String,
-      itemId: json['itemId'] as String? ?? json['item_id'] as String? ?? json['inventoryItemId'] as String,
+      itemId:
+          json['itemId'] as String? ??
+          json['item_id'] as String? ??
+          json['inventoryItemId'] as String,
       shopId: json['shopId'] as String? ?? json['shop_id'] as String,
-      movementType: json['movementType'] as String? ?? json['movement_type'] as String,
-      quantityChanged: json['quantityChanged'] as int? ?? json['quantity_changed'] as int,
+      movementType:
+          json['movementType'] as String? ?? json['movement_type'] as String,
+      quantityChanged:
+          json['quantityChanged'] as int? ?? json['quantity_changed'] as int,
       newQuantity: json['newQuantity'] as int? ?? json['new_quantity'] as int,
       reason: json['reason'] as String?,
       userId: json['userId'] as String? ?? json['user_id'] as String,
-      movementDate: DateTime.parse(json['movementDate'] as String? ?? json['movement_date'] as String), // Ensure API returns ISO 8601
+      movementDate: DateTime.parse(
+        json['movementDate'] as String? ?? json['movement_date'] as String,
+      ), // Ensure API returns ISO 8601
       notes: json['notes'] as String?,
       // itemName: json['item_name'] as String?, // If API includes this
       // itemSku: json['item_sku'] as String?,   // If API includes this

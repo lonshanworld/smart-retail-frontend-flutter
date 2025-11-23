@@ -52,7 +52,7 @@ class ResponsiveDataTable<T> extends StatelessWidget {
   Widget _buildDataTable() {
     final verticalController = ScrollController();
     final horizontalController = ScrollController();
-    
+
     return ScrollbarTheme(
       data: ScrollbarThemeData(
         thumbVisibility: MaterialStateProperty.all(true),
@@ -77,9 +77,7 @@ class ResponsiveDataTable<T> extends StatelessWidget {
               child: ConstrainedBox(
                 constraints: const BoxConstraints(minWidth: 800),
                 child: Theme(
-                  data: ThemeData(
-                    dividerColor: Colors.grey.shade200,
-                  ),
+                  data: ThemeData(dividerColor: Colors.grey.shade200),
                   child: DataTable(
                     sortAscending: sortAscending,
                     sortColumnIndex: sortColumnIndex,
@@ -92,7 +90,9 @@ class ResponsiveDataTable<T> extends StatelessWidget {
                     columns: columns,
                     rows: items.map((item) {
                       return DataRow(
-                        onSelectChanged: onRowTap != null ? (_) => onRowTap!(item) : null,
+                        onSelectChanged: onRowTap != null
+                            ? (_) => onRowTap!(item)
+                            : null,
                         cells: buildCells(item),
                       );
                     }).toList(),
@@ -108,7 +108,7 @@ class ResponsiveDataTable<T> extends StatelessWidget {
 
   Widget _buildMobileList() {
     final scrollController = ScrollController();
-    
+
     if (buildMobileCard != null) {
       return ScrollbarTheme(
         data: ScrollbarThemeData(
@@ -161,10 +161,12 @@ class ResponsiveDataTable<T> extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: buildCells(items[index])
-                      .map((cell) => Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 4),
-                            child: cell.child,
-                          ))
+                      .map(
+                        (cell) => Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: cell.child,
+                        ),
+                      )
                       .toList(),
                 ),
               ),
@@ -205,9 +207,7 @@ class DataRowCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
@@ -222,10 +222,7 @@ class DataRowCard extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (leading != null) ...[
-                leading!,
-                const SizedBox(width: 16),
-              ],
+              if (leading != null) ...[leading!, const SizedBox(width: 16)],
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -248,7 +245,8 @@ class DataRowCard extends StatelessWidget {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: statusColor?.withOpacity(0.1) ??
+                              color:
+                                  statusColor?.withOpacity(0.1) ??
                                   Colors.grey.shade200,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
@@ -284,10 +282,7 @@ class DataRowCard extends StatelessWidget {
                   ],
                 ),
               ),
-              if (trailing != null) ...[
-                const SizedBox(width: 12),
-                trailing!,
-              ],
+              if (trailing != null) ...[const SizedBox(width: 12), trailing!],
             ],
           ),
         ),
@@ -325,10 +320,7 @@ class DetailRow extends StatelessWidget {
           ],
           Text(
             '$label: ',
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.grey.shade700,
-            ),
+            style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
           ),
           Expanded(
             child: Text(

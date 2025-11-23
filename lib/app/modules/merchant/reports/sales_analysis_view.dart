@@ -25,10 +25,14 @@ class SalesAnalysisView extends GetView<SalesAnalysisController> {
                 return const Center(child: CircularProgressIndicator());
               }
               if (controller.errorMessage.value != null) {
-                return Center(child: Text('Error: ${controller.errorMessage.value}'));
+                return Center(
+                  child: Text('Error: ${controller.errorMessage.value}'),
+                );
               }
               if (controller.sales.isEmpty) {
-                return const Center(child: Text('No sales data found for the selected period.'));
+                return const Center(
+                  child: Text('No sales data found for the selected period.'),
+                );
               }
               return _buildSalesDataTable();
             }),
@@ -46,9 +50,11 @@ class SalesAnalysisView extends GetView<SalesAnalysisController> {
         children: [
           _buildPeriodDropdown(),
           const SizedBox(width: 16),
-          Obx(() => controller.selectedPeriod.value == ReportPeriod.custom
-              ? _buildCustomDateRange(context)
-              : const SizedBox.shrink()),
+          Obx(
+            () => controller.selectedPeriod.value == ReportPeriod.custom
+                ? _buildCustomDateRange(context)
+                : const SizedBox.shrink(),
+          ),
           _buildShopDropdown(),
           const SizedBox(width: 16),
           _buildGroupByDropdown(),
@@ -58,17 +64,34 @@ class SalesAnalysisView extends GetView<SalesAnalysisController> {
   }
 
   Widget _buildPeriodDropdown() {
-    return Obx(() => DropdownButton<ReportPeriod>(
-          value: controller.selectedPeriod.value,
-          onChanged: controller.onPeriodChanged,
-          items: const [
-            DropdownMenuItem(value: ReportPeriod.daily, child: Text('Last 24 Hours')),
-            DropdownMenuItem(value: ReportPeriod.weekly, child: Text('Last 7 Days')),
-            DropdownMenuItem(value: ReportPeriod.monthly, child: Text('Last 30 Days')),
-            DropdownMenuItem(value: ReportPeriod.yearly, child: Text('Last Year')),
-            DropdownMenuItem(value: ReportPeriod.custom, child: Text('Custom Range')),
-          ],
-        ));
+    return Obx(
+      () => DropdownButton<ReportPeriod>(
+        value: controller.selectedPeriod.value,
+        onChanged: controller.onPeriodChanged,
+        items: const [
+          DropdownMenuItem(
+            value: ReportPeriod.daily,
+            child: Text('Last 24 Hours'),
+          ),
+          DropdownMenuItem(
+            value: ReportPeriod.weekly,
+            child: Text('Last 7 Days'),
+          ),
+          DropdownMenuItem(
+            value: ReportPeriod.monthly,
+            child: Text('Last 30 Days'),
+          ),
+          DropdownMenuItem(
+            value: ReportPeriod.yearly,
+            child: Text('Last Year'),
+          ),
+          DropdownMenuItem(
+            value: ReportPeriod.custom,
+            child: Text('Custom Range'),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildCustomDateRange(BuildContext context) {
@@ -76,12 +99,20 @@ class SalesAnalysisView extends GetView<SalesAnalysisController> {
       children: [
         InkWell(
           onTap: () => controller.selectCustomDate(context, true),
-          child: Obx(() => Text('Start: ${controller.customStartDate.value != null ? DateFormat.yMd().format(controller.customStartDate.value!) : 'Select'}')),
+          child: Obx(
+            () => Text(
+              'Start: ${controller.customStartDate.value != null ? DateFormat.yMd().format(controller.customStartDate.value!) : 'Select'}',
+            ),
+          ),
         ),
         const SizedBox(width: 16),
         InkWell(
           onTap: () => controller.selectCustomDate(context, false),
-          child: Obx(() => Text('End: ${controller.customEndDate.value != null ? DateFormat.yMd().format(controller.customEndDate.value!) : 'Select'}')),
+          child: Obx(
+            () => Text(
+              'End: ${controller.customEndDate.value != null ? DateFormat.yMd().format(controller.customEndDate.value!) : 'Select'}',
+            ),
+          ),
         ),
         const SizedBox(width: 16),
       ],
@@ -89,45 +120,65 @@ class SalesAnalysisView extends GetView<SalesAnalysisController> {
   }
 
   Widget _buildShopDropdown() {
-    return Obx(() => DropdownButton<Shop?>(
-          value: controller.selectedShop.value,
-          hint: const Text('All Shops'),
-          onChanged: controller.onShopChanged,
-          items: [
-            const DropdownMenuItem<Shop?>(value: null, child: Text('All Shops')),
-            ...controller.shops.map((s) => DropdownMenuItem(value: s, child: Text(s.name)))
-          ],
-        ));
+    return Obx(
+      () => DropdownButton<Shop?>(
+        value: controller.selectedShop.value,
+        hint: const Text('All Shops'),
+        onChanged: controller.onShopChanged,
+        items: [
+          const DropdownMenuItem<Shop?>(value: null, child: Text('All Shops')),
+          ...controller.shops.map(
+            (s) => DropdownMenuItem(value: s, child: Text(s.name)),
+          ),
+        ],
+      ),
+    );
   }
 
-    Widget _buildGroupByDropdown() {
-    return Obx(() => DropdownButton<String>(
-          value: controller.selectedGroupBy.value,
-          onChanged: controller.onGroupByChanged,
-          items: const [
-            DropdownMenuItem(value: 'daily', child: Text('By Day')),
-            DropdownMenuItem(value: 'weekly', child: Text('By Week')),
-            DropdownMenuItem(value: 'monthly', child: Text('By Month')),
-            DropdownMenuItem(value: 'item', child: Text('By Item')),
-          ],
-        ));
+  Widget _buildGroupByDropdown() {
+    return Obx(
+      () => DropdownButton<String>(
+        value: controller.selectedGroupBy.value,
+        onChanged: controller.onGroupByChanged,
+        items: const [
+          DropdownMenuItem(value: 'daily', child: Text('By Day')),
+          DropdownMenuItem(value: 'weekly', child: Text('By Week')),
+          DropdownMenuItem(value: 'monthly', child: Text('By Month')),
+          DropdownMenuItem(value: 'item', child: Text('By Item')),
+        ],
+      ),
+    );
   }
 
   Widget _buildSalesDataTable() {
     return ResponsiveDataTable<Sale>(
       items: controller.sales,
       columns: const [
-        DataColumn(label: Text('Date', style: TextStyle(fontWeight: FontWeight.bold))),
-        DataColumn(label: Text('Shop', style: TextStyle(fontWeight: FontWeight.bold))),
-        DataColumn(label: Text('Items', style: TextStyle(fontWeight: FontWeight.bold))),
-        DataColumn(label: Text('Total', style: TextStyle(fontWeight: FontWeight.bold))),
-        DataColumn(label: Text('Profit', style: TextStyle(fontWeight: FontWeight.bold))),
+        DataColumn(
+          label: Text('Date', style: TextStyle(fontWeight: FontWeight.bold)),
+        ),
+        DataColumn(
+          label: Text('Shop', style: TextStyle(fontWeight: FontWeight.bold)),
+        ),
+        DataColumn(
+          label: Text('Items', style: TextStyle(fontWeight: FontWeight.bold)),
+        ),
+        DataColumn(
+          label: Text('Total', style: TextStyle(fontWeight: FontWeight.bold)),
+        ),
+        DataColumn(
+          label: Text('Profit', style: TextStyle(fontWeight: FontWeight.bold)),
+        ),
       ],
       buildCells: (sale) => [
         DataCell(
           Row(
             children: [
-              Icon(Icons.calendar_today, size: 16, color: AppColors.merchant.shade300),
+              Icon(
+                Icons.calendar_today,
+                size: 16,
+                color: AppColors.merchant.shade300,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(DateFormat.yMd().add_jm().format(sale.createdAt)),

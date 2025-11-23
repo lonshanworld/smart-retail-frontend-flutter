@@ -2,9 +2,11 @@ import 'package:get/get.dart';
 import 'package:smart_retail/app/data/models/shop_model.dart';
 import 'package:smart_retail/app/data/services/merchant_shops_api_service.dart';
 import 'package:smart_retail/app/routes/app_pages.dart';
+import 'package:smart_retail/app/utils/dialog_utils.dart';
 
 class MerchantShopsController extends GetxController {
-  final MerchantShopsApiService _apiService = Get.find<MerchantShopsApiService>();
+  final MerchantShopsApiService _apiService =
+      Get.find<MerchantShopsApiService>();
 
   final RxList<Shop> shopList = <Shop>[].obs;
   final RxBool isLoading = true.obs;
@@ -24,7 +26,7 @@ class MerchantShopsController extends GetxController {
       shopList.assignAll(shops);
     } catch (e) {
       errorMessage.value = e.toString();
-      Get.snackbar('Error', 'Could not fetch shops: $e');
+      DialogUtils.showError('Could not fetch shops: $e');
     } finally {
       isLoading.value = false;
     }
@@ -39,7 +41,9 @@ class MerchantShopsController extends GetxController {
   }
 
   void goToEditShop(Shop shop) {
-    Get.toNamed(Routes.MERCHANT_SHOPS_ADD_EDIT, arguments: shop)?.then((result) {
+    Get.toNamed(Routes.MERCHANT_SHOPS_ADD_EDIT, arguments: shop)?.then((
+      result,
+    ) {
       if (result == true) {
         fetchShops(); // Refresh the list if a shop was updated
       }
@@ -51,9 +55,9 @@ class MerchantShopsController extends GetxController {
       // Optional: Show a confirmation dialog
       await _apiService.deleteShop(shopId);
       fetchShops(); // Refresh the list
-      Get.snackbar('Success', 'Shop deleted successfully');
+      DialogUtils.showSuccess('Shop deleted successfully');
     } catch (e) {
-      Get.snackbar('Error', 'Failed to delete shop: $e');
+      DialogUtils.showError('Failed to delete shop: $e');
     }
   }
 

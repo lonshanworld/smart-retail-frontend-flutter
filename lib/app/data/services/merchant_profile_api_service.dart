@@ -3,6 +3,7 @@ import 'package:smart_retail/app/core/config/app_config.dart';
 import 'package:smart_retail/app/data/models/user_model.dart';
 import 'package:smart_retail/app/data/providers/api_constants.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
+import 'package:smart_retail/app/utils/response_utils.dart';
 
 class MerchantProfileApiService extends GetxService {
   final GetConnect _connect = Get.find<GetConnect>();
@@ -42,7 +43,7 @@ class MerchantProfileApiService extends GetxService {
 
     final response = await _connect.get(_baseUrl, headers: await _getHeaders());
     if (response.isOk && response.body['data'] != null) {
-      return User.fromJson(response.body['data']);
+      return User.fromJson(asMap(response.body['data']));
     } else {
       throw Exception(response.body?['message'] ?? 'Failed to load profile');
     }
@@ -68,8 +69,10 @@ class MerchantProfileApiService extends GetxService {
   /// - __Body (JSON):__ (The updated user object)
   Future<User> updateMyProfile(Map<String, dynamic> updates) async {
     // Ensure no empty values are sent for optional fields
-    updates.removeWhere((key, value) => value == null || (value is String && value.isEmpty));
-    
+    updates.removeWhere(
+      (key, value) => value == null || (value is String && value.isEmpty),
+    );
+
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
       final currentUser = _authService.user.value;
@@ -89,7 +92,7 @@ class MerchantProfileApiService extends GetxService {
     );
 
     if (response.isOk && response.body['data'] != null) {
-      return User.fromJson(response.body['data']);
+      return User.fromJson(asMap(response.body['data']));
     } else {
       throw Exception(response.body?['message'] ?? 'Failed to update profile');
     }

@@ -1,4 +1,3 @@
-
 // lib/app/modules/admin/dashboard/models/admin_dashboard_summary_model.dart
 class AdminDashboardSummaryModel {
   final int totalActiveMerchants;

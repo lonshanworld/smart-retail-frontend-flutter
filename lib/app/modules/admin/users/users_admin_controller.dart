@@ -1,6 +1,7 @@
 // lib/app/modules/admin/users/users_admin_controller.dart
 import 'package:flutter/material.dart'; // Added for AlertDialog
 import 'package:get/get.dart';
+import 'package:smart_retail/app/utils/dialog_utils.dart';
 import 'package:smart_retail/app/data/models/user_model.dart';
 import 'package:smart_retail/app/data/services/user_api_service.dart';
 import 'package:smart_retail/app/routes/app_pages.dart';
@@ -11,7 +12,8 @@ class UsersAdminController extends GetxController {
 
   final RxList<User> users = <User>[].obs;
   final RxBool isLoading = true.obs; // General loading for the list
-  final RxBool isUpdatingStatus = false.obs; // Specific loading for status update
+  final RxBool isUpdatingStatus =
+      false.obs; // Specific loading for status update
   final RxnString errorMessage = RxnString();
   final RxString selectedRoleFilter = ''.obs;
 
@@ -25,9 +27,15 @@ class UsersAdminController extends GetxController {
     try {
       isLoading.value = true;
       errorMessage.value = null;
-      final roleToFetch = role ?? (selectedRoleFilter.value.isEmpty ? null : selectedRoleFilter.value);
-      print("UsersAdminController: Fetching users with role filter: $roleToFetch");
-      final fetchedUsers = await _userApiService.getUsers(roleFilter: roleToFetch);
+      final roleToFetch =
+          role ??
+          (selectedRoleFilter.value.isEmpty ? null : selectedRoleFilter.value);
+      print(
+        "UsersAdminController: Fetching users with role filter: $roleToFetch",
+      );
+      final fetchedUsers = await _userApiService.getUsers(
+        roleFilter: roleToFetch,
+      );
       users.assignAll(fetchedUsers);
       print("UsersAdminController: Fetched ${users.length} users.");
     } catch (e) {
@@ -50,20 +58,26 @@ class UsersAdminController extends GetxController {
   }
 
   void goToEditUserPage(User user) {
-    print("UsersAdminController: Navigating to Add/Edit User Page for ${user.name} in EDIT mode");
+    print(
+      "UsersAdminController: Navigating to Add/Edit User Page for ${user.name} in EDIT mode",
+    );
     Get.toNamed(Routes.ADMIN_ADD_EDIT_USER, arguments: user);
   }
 
   void goToUserDetailsPage(User user) {
-    print("UsersAdminController: Navigating to User Details Page for ${user.name}");
+    print(
+      "UsersAdminController: Navigating to User Details Page for ${user.name}",
+    );
     Get.toNamed(Routes.ADMIN_USER_DETAIL, arguments: user.id);
   }
 
   Future<void> deleteUser(String userId, String userName) async {
-    bool? confirmDelete = await Get.dialog<bool>(
-      AlertDialog(
+    bool? confirmDelete = await DialogUtils.showCustomDialog<bool>(
+      dialog: AlertDialog(
         title: const Text('Confirm Delete'),
-        content: Text('Are you sure you want to delete user "$userName"? This action cannot be undone.'),
+        content: Text(
+          'Are you sure you want to delete user "$userName"? This action cannot be undone.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Get.back(result: false),
@@ -79,14 +93,14 @@ class UsersAdminController extends GetxController {
 
     if (confirmDelete == true) {
       print("UsersAdminController: Attempting to delete user $userId");
-      isLoading.value = true; 
+      isLoading.value = true;
       try {
         await _userApiService.deleteUser(userId);
-        Get.snackbar("Success", "User $userName deleted successfully.", snackPosition: SnackPosition.BOTTOM);
+        DialogUtils.showSuccess("User $userName deleted successfully.");
         fetchUsers(); // Refresh the list
       } catch (e) {
         print("UsersAdminController: Error deleting user $userId: $e");
-        Get.snackbar("Error", "Failed to delete user $userName: ${e.toString()}", backgroundColor: Colors.red, colorText: Colors.white, snackPosition: SnackPosition.BOTTOM);
+        DialogUtils.showError("Failed to delete user $userName: ${e.toString()}");
       } finally {
         isLoading.value = false;
       }
@@ -98,10 +112,12 @@ class UsersAdminController extends GetxController {
     final newStatus = !user.isActive;
     final actionText = newStatus ? "activate" : "deactivate";
 
-    bool? confirmToggle = await Get.dialog<bool>(
-      AlertDialog(
+    bool? confirmToggle = await DialogUtils.showCustomDialog<bool>(
+      dialog: AlertDialog(
         title: Text('Confirm ${actionText.capitalizeFirstLetter()}'),
-        content: Text('Are you sure you want to $actionText user "${user.name}"?'),
+        content: Text(
+          'Are you sure you want to $actionText user "${user.name}"?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Get.back(result: false),
@@ -109,7 +125,10 @@ class UsersAdminController extends GetxController {
           ),
           TextButton(
             onPressed: () => Get.back(result: true),
-            child: Text(actionText.capitalizeFirstLetter(), style: TextStyle(color: newStatus ? Colors.green : Colors.orange)),
+            child: Text(
+              actionText.capitalizeFirstLetter(),
+              style: TextStyle(color: newStatus ? Colors.green : Colors.orange),
+            ),
           ),
         ],
       ),
@@ -117,24 +136,16 @@ class UsersAdminController extends GetxController {
 
     if (confirmToggle == true) {
       print("UsersAdminController: Attempting to $actionText user ${user.id}");
-      isUpdatingStatus.value = true; 
+      isUpdatingStatus.value = true;
       try {
         await _userApiService.updateUser(user.id, {'isActive': newStatus});
-        Get.snackbar(
-          "Success",
-          "User ${user.name} ${actionText}d successfully.",
-          snackPosition: SnackPosition.BOTTOM,
-        );
-        fetchUsers(); 
+        DialogUtils.showSuccess("User ${user.name} ${actionText}d successfully.");
+        fetchUsers();
       } catch (e) {
-        print("UsersAdminController: Error ${actionText}ing user ${user.id}: $e");
-        Get.snackbar(
-          "Error",
-          "Failed to $actionText user ${user.name}: ${e.toString()}",
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.BOTTOM,
+        print(
+          "UsersAdminController: Error ${actionText}ing user ${user.id}: $e",
         );
+        DialogUtils.showError("Failed to $actionText user ${user.name}: ${e.toString()}");
       } finally {
         isUpdatingStatus.value = false;
       }

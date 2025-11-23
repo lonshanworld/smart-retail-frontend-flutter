@@ -3,6 +3,7 @@ import 'package:smart_retail/app/core/config/app_config.dart';
 import 'package:smart_retail/app/data/models/inventory_item_model.dart';
 import 'package:smart_retail/app/data/providers/api_constants.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
+import 'package:smart_retail/app/utils/response_utils.dart';
 
 class PaginatedStockResponse {
   final List<InventoryItem> items;
@@ -12,7 +13,9 @@ class PaginatedStockResponse {
 
   factory PaginatedStockResponse.fromJson(Map<String, dynamic> json) {
     return PaginatedStockResponse(
-      items: (json['items'] as List).map((i) => InventoryItem.fromJson(i)).toList(),
+      items: (json['items'] as List)
+          .map((i) => InventoryItem.fromJson(i))
+          .toList(),
       totalCount: json['totalItems'],
     );
   }
@@ -68,26 +71,34 @@ class MerchantStocksApiService extends GetxService {
   ///     }
   ///   }
   ///   ```
-  Future<PaginatedStockResponse> getCombinedStocks({int page = 1, int pageSize = 20, String? searchTerm}) async {
+  Future<PaginatedStockResponse> getCombinedStocks({
+    int page = 1,
+    int pageSize = 20,
+    String? searchTerm,
+  }) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(milliseconds: 800));
-      final items = List.generate(50, (i) => InventoryItem(
-        id: 'item-$i',
-        name: 'Product Name $i',
-        sku: 'SKU-00$i',
-        sellingPrice: (i+1) * 12.5,
-        originalPrice: ((i+1) * 12.5) * 0.7, // Original price is 70% of selling price
-        merchantId: 'mock-merchant',
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-        stockInfo: [
-          StockInfo(
-            quantity: (i * 5) % 100,
-            shopId: 'shop-${i%2}',
-            shopName: i % 2 == 0 ? 'Downtown Store' : 'Uptown Mall',
-          )
-        ]
-      ));
+      final items = List.generate(
+        50,
+        (i) => InventoryItem(
+          id: 'item-$i',
+          name: 'Product Name $i',
+          sku: 'SKU-00$i',
+          sellingPrice: (i + 1) * 12.5,
+          originalPrice:
+              ((i + 1) * 12.5) * 0.7, // Original price is 70% of selling price
+          merchantId: 'mock-merchant',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          stockInfo: [
+            StockInfo(
+              quantity: (i * 5) % 100,
+              shopId: 'shop-${i % 2}',
+              shopName: i % 2 == 0 ? 'Downtown Store' : 'Uptown Mall',
+            ),
+          ],
+        ),
+      );
 
       return PaginatedStockResponse(items: items, totalCount: items.length);
     }
@@ -98,12 +109,18 @@ class MerchantStocksApiService extends GetxService {
       if (searchTerm != null && searchTerm.isNotEmpty) 'searchTerm': searchTerm,
     };
 
-    final response = await _connect.get(_baseUrl, headers: await _getHeaders(), query: query);
+    final response = await _connect.get(
+      _baseUrl,
+      headers: await _getHeaders(),
+      query: query,
+    );
 
     if (response.isOk && response.body['data'] != null) {
-      return PaginatedStockResponse.fromJson(response.body['data']);
+      return PaginatedStockResponse.fromJson(asMap(response.body['data']));
     } else {
-      throw Exception(response.body?['message'] ?? 'Failed to load combined stock data');
+      throw Exception(
+        response.body?['message'] ?? 'Failed to load combined stock data',
+      );
     }
   }
 }

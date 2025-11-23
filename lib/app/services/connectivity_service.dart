@@ -14,7 +14,7 @@ class ConnectivityService extends GetxService {
 
   void _initConnectivity() {
     _connectivityStream = _connectivity.onConnectivityChanged;
-    
+
     // Listen to connectivity changes
     _connectivityStream.listen((results) {
       _updateConnectionStatus(results);
@@ -36,13 +36,15 @@ class ConnectivityService extends GetxService {
 
   void _updateConnectionStatus(List<ConnectivityResult> results) {
     // Check if any connection is available (not none)
-    bool hasConnection = results.isNotEmpty && !results.contains(ConnectivityResult.none);
-    
+    bool hasConnection =
+        results.isNotEmpty && !results.contains(ConnectivityResult.none);
+
     // If the list is empty or only contains none, we're offline
-    if (results.isEmpty || (results.length == 1 && results.first == ConnectivityResult.none)) {
+    if (results.isEmpty ||
+        (results.length == 1 && results.first == ConnectivityResult.none)) {
       hasConnection = false;
     }
-    
+
     // Add some delay to prevent fluttering
     Future.delayed(Duration(milliseconds: 500), () {
       isOnline.value = hasConnection;
@@ -64,8 +66,9 @@ class ConnectivityService extends GetxService {
   }
 
   Stream<bool> get onConnectivityChanged {
-    return _connectivityStream.map((results) => 
-      results.isNotEmpty && !results.contains(ConnectivityResult.none)
+    return _connectivityStream.map(
+      (results) =>
+          results.isNotEmpty && !results.contains(ConnectivityResult.none),
     );
   }
 

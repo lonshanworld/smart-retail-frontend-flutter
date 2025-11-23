@@ -11,20 +11,21 @@ class NotificationsView extends GetView<NotificationsController> {
   Widget build(BuildContext context) {
     final scrollController = ScrollController();
     scrollController.addListener(() {
-      if (scrollController.position.pixels == scrollController.position.maxScrollExtent) {
-        controller.fetchNotifications(); // Load more when scrolled to the bottom
+      if (scrollController.position.pixels ==
+          scrollController.position.maxScrollExtent) {
+        controller
+            .fetchNotifications(); // Load more when scrolled to the bottom
       }
     });
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Notifications'),
-      ),
+      appBar: AppBar(title: const Text('Notifications')),
       body: Obx(() {
         if (controller.isLoading.value && controller.notifications.isEmpty) {
           return const Center(child: CircularProgressIndicator());
         }
-        if (controller.errorMessage.value != null && controller.notifications.isEmpty) {
+        if (controller.errorMessage.value != null &&
+            controller.notifications.isEmpty) {
           return Center(child: Text(controller.errorMessage.value!));
         }
         if (controller.notifications.isEmpty) {
@@ -35,7 +36,8 @@ class NotificationsView extends GetView<NotificationsController> {
           onRefresh: () => controller.fetchNotifications(isRefresh: true),
           child: ListView.builder(
             controller: scrollController,
-            itemCount: controller.notifications.length + (controller.hasMore ? 1 : 0),
+            itemCount:
+                controller.notifications.length + (controller.hasMore ? 1 : 0),
             itemBuilder: (context, index) {
               if (index == controller.notifications.length) {
                 return const Padding(
@@ -74,15 +76,21 @@ class NotificationsView extends GetView<NotificationsController> {
                     Text(
                       notification.title,
                       style: TextStyle(
-                        fontWeight: isRead ? FontWeight.normal : FontWeight.bold,
+                        fontWeight: isRead
+                            ? FontWeight.normal
+                            : FontWeight.bold,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(notification.message, style: Get.textTheme.bodySmall),
                     const SizedBox(height: 6),
                     Text(
-                      DateFormat.yMMMd().add_jm().format(notification.createdAt.toLocal()),
-                      style: Get.textTheme.bodySmall?.copyWith(color: Colors.grey),
+                      DateFormat.yMMMd().add_jm().format(
+                        notification.createdAt.toLocal(),
+                      ),
+                      style: Get.textTheme.bodySmall?.copyWith(
+                        color: Colors.grey,
+                      ),
                     ),
                   ],
                 ),

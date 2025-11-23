@@ -3,7 +3,8 @@ import 'package:get/get.dart';
 import 'package:smart_retail/app/data/services/sales_analysis_api_service.dart';
 
 class AiSalesAnalysisController extends GetxController {
-  final SalesAnalysisApiService _apiService = Get.find<SalesAnalysisApiService>();
+  final SalesAnalysisApiService _apiService =
+      Get.find<SalesAnalysisApiService>();
 
   final TextEditingController promptController = TextEditingController();
   final RxBool isLoading = false.obs;

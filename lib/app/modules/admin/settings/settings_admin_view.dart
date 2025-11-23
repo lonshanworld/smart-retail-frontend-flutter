@@ -31,10 +31,7 @@ class SettingsAdminView extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 'No settings available at this time',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey.shade500,
-                ),
+                style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
               ),
             ],
           ),

@@ -43,7 +43,8 @@ class ShopStockItem {
       itemName: json['itemName'] as String,
       itemSku: json['itemSku'] as String?,
       itemUnitPrice: (json['itemUnitPrice'] as num).toDouble(),
-      itemIsArchived: json['itemIsArchived'] as bool? ?? false, // If included from backend
+      itemIsArchived:
+          json['itemIsArchived'] as bool? ?? false, // If included from backend
     );
   }
 
@@ -102,7 +103,9 @@ class PaginatedShopStockResponse {
 
   factory PaginatedShopStockResponse.fromJson(Map<String, dynamic> json) {
     var itemsList = json['items'] as List;
-    List<ShopStockItem> items = itemsList.map((i) => ShopStockItem.fromJson(i)).toList();
+    List<ShopStockItem> items = itemsList
+        .map((i) => ShopStockItem.fromJson(i))
+        .toList();
 
     return PaginatedShopStockResponse(
       items: items,

@@ -91,7 +91,6 @@ import 'package:smart_retail/app/modules/staff_settings/staff_settings_binding.d
 import 'package:smart_retail/app/modules/settings_printer/printer_settings_view.dart';
 import 'package:smart_retail/app/modules/settings_printer/printer_settings_binding.dart';
 
-
 // Shop Dashboard Imports
 import 'package:smart_retail/app/modules/shop_login/shop_login_view.dart';
 import 'package:smart_retail/app/modules/shop_login/shop_login_binding.dart';
@@ -107,7 +106,7 @@ import 'package:smart_retail/app/modules/shop_pos/shop_pos_view.dart';
 import 'package:smart_retail/app/modules/shop_pos/shop_pos_binding.dart';
 import 'package:smart_retail/app/modules/shop_customers/shop_customers_view.dart';
 // CORRECTED: Import the new binding
-import 'package:smart_retail/app/modules/shop_customers/shop_customers_binding.dart'; 
+import 'package:smart_retail/app/modules/shop_customers/shop_customers_binding.dart';
 import 'package:smart_retail/app/modules/shop_settings/shop_settings_view.dart';
 import 'package:smart_retail/app/modules/shop_settings/shop_settings_binding.dart';
 
@@ -134,14 +133,8 @@ class AppPages {
   static const String INITIAL = Routes.CUSTOMER_INTRO;
 
   static final routes = [
-    GetPage(
-      name: Routes.INTRO,
-      page: () => const IntroView(),
-    ),
-    GetPage(
-      name: Routes.ADMIN_INTRO,
-      page: () => const AdminIntroView(),
-    ),
+    GetPage(name: Routes.INTRO, page: () => const IntroView()),
+    GetPage(name: Routes.ADMIN_INTRO, page: () => const AdminIntroView()),
     GetPage(
       name: Routes.CUSTOMER_INTRO,
       page: () => const CustomerLandingView(),
@@ -186,10 +179,10 @@ class AppPages {
       middlewares: [AuthMiddleware(requiredRole: UserRole.merchant)],
     ),
     GetPage(
-        name: Routes.MERCHANT_STOCKS,
-        page: () => const MerchantStocksView(),
-        binding: MerchantStocksBinding(),
-        middlewares: [AuthMiddleware(requiredRole: UserRole.merchant)],
+      name: Routes.MERCHANT_STOCKS,
+      page: () => const MerchantStocksView(),
+      binding: MerchantStocksBinding(),
+      middlewares: [AuthMiddleware(requiredRole: UserRole.merchant)],
     ),
     GetPage(
       name: Routes.MERCHANT_STOCK_MOVE,
@@ -222,7 +215,7 @@ class AppPages {
     GetPage(
       name: Routes.MERCHANT_SHOPS,
       page: () => const ShopsView(),
-      binding: ShopsBinding(), 
+      binding: ShopsBinding(),
       transition: Transition.fadeIn,
       middlewares: [AuthMiddleware(requiredRole: UserRole.merchant)],
     ),
@@ -237,7 +230,7 @@ class AppPages {
     //   name: Routes.MERCHANT_SHOP_INVENTORY,
     //   page: () => MoveStockView (),
     //   binding: ShopInventoryBinding(),
-    //   transition: Transition.cupertino, 
+    //   transition: Transition.cupertino,
     //   middlewares: [AuthMiddleware(requiredRole: UserRole.merchant)],
     // ),
     GetPage(
@@ -261,9 +254,9 @@ class AppPages {
       middlewares: [AuthMiddleware(requiredRole: UserRole.merchant)],
     ),
     GetPage(
-      name: Routes.STAFF_STOCK_IN_FORM, 
+      name: Routes.STAFF_STOCK_IN_FORM,
       page: () => const StockInView(),
-      binding: StockInBinding(), 
+      binding: StockInBinding(),
       transition: Transition.rightToLeft,
       middlewares: [AuthMiddleware(requiredRole: UserRole.staff)],
     ),
@@ -363,7 +356,7 @@ class AppPages {
     // Staff Routes
     GetPage(
       name: Routes.STAFF_DASHBOARD,
-      page: () => const StaffDashboardView(), 
+      page: () => const StaffDashboardView(),
       binding: StaffDashboardBinding(),
       transition: Transition.cupertino,
       middlewares: [AuthMiddleware(requiredRole: UserRole.staff)],
@@ -422,56 +415,74 @@ class AppPages {
       name: Routes.SHOP_DASHBOARD,
       page: () => const ShopDashboardView(),
       binding: ShopDashboardBinding(),
-      middlewares: [AuthMiddleware(requiredRoles: [UserRole.staff, UserRole.merchant])],
+      middlewares: [
+        AuthMiddleware(requiredRoles: [UserRole.staff, UserRole.merchant]),
+      ],
     ),
     GetPage(
       name: Routes.SHOP_SALES,
       page: () => const ShopSalesView(),
       binding: ShopSalesBinding(),
-      middlewares: [AuthMiddleware(requiredRoles: [UserRole.staff, UserRole.merchant])],
+      middlewares: [
+        AuthMiddleware(requiredRoles: [UserRole.staff, UserRole.merchant]),
+      ],
     ),
     GetPage(
       name: Routes.SHOP_INVENTORY,
       page: () => const ShopInventoryView(),
       binding: ShopInventoryBinding(),
-      middlewares: [AuthMiddleware(requiredRoles: [UserRole.staff, UserRole.merchant])],
+      middlewares: [
+        AuthMiddleware(requiredRoles: [UserRole.staff, UserRole.merchant]),
+      ],
     ),
     GetPage(
       name: Routes.SHOP_ITEMS,
       page: () => const ShopItemsView(),
       binding: ShopItemsBinding(),
-      middlewares: [AuthMiddleware(requiredRoles: [UserRole.staff, UserRole.merchant])],
+      middlewares: [
+        AuthMiddleware(requiredRoles: [UserRole.staff, UserRole.merchant]),
+      ],
     ),
     GetPage(
       name: Routes.SHOP_POS,
       page: () => const ShopPosView(),
       binding: ShopPosBinding(),
-      middlewares: [AuthMiddleware(requiredRoles: [UserRole.staff, UserRole.merchant])],
+      middlewares: [
+        AuthMiddleware(requiredRoles: [UserRole.staff, UserRole.merchant]),
+      ],
     ),
     GetPage(
       name: Routes.SHOP_CUSTOMERS,
       page: () => const ShopCustomersView(),
       // CORRECTED: Use the new binding
-      binding: ShopCustomersBinding(), 
-      middlewares: [AuthMiddleware(requiredRoles: [UserRole.staff, UserRole.merchant])],
+      binding: ShopCustomersBinding(),
+      middlewares: [
+        AuthMiddleware(requiredRoles: [UserRole.staff, UserRole.merchant]),
+      ],
     ),
     GetPage(
       name: Routes.SHOP_PROFILE,
       page: () => const ShopProfileView(),
       binding: ShopProfileBinding(),
-      middlewares: [AuthMiddleware(requiredRoles: [UserRole.staff, UserRole.merchant])],
+      middlewares: [
+        AuthMiddleware(requiredRoles: [UserRole.staff, UserRole.merchant]),
+      ],
     ),
     GetPage(
       name: Routes.SHOP_SETTINGS,
       page: () => const ShopSettingsView(),
       binding: ShopSettingsBinding(),
-      middlewares: [AuthMiddleware(requiredRoles: [UserRole.staff, UserRole.merchant])],
+      middlewares: [
+        AuthMiddleware(requiredRoles: [UserRole.staff, UserRole.merchant]),
+      ],
     ),
     GetPage(
       name: Routes.SHOP_PRINTER_SETTINGS,
       page: () => const PrinterSettingsView(),
       binding: PrinterSettingsBinding(),
-      middlewares: [AuthMiddleware(requiredRoles: [UserRole.staff, UserRole.merchant])],
+      middlewares: [
+        AuthMiddleware(requiredRoles: [UserRole.staff, UserRole.merchant]),
+      ],
     ),
 
     // Admin Routes

@@ -20,13 +20,17 @@ class ShopDrawer extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Icon(Icons.store, size: 50, color: Theme.of(context).colorScheme.onPrimary),
+                Icon(
+                  Icons.store,
+                  size: 50,
+                  color: Theme.of(context).colorScheme.onPrimary,
+                ),
                 const SizedBox(height: 12),
                 Text(
                   'Staff Menu', // Corrected Title
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: Theme.of(context).colorScheme.onPrimary,
-                      ),
+                    color: Theme.of(context).colorScheme.onPrimary,
+                  ),
                 ),
               ],
             ),
@@ -63,7 +67,7 @@ class ShopDrawer extends StatelessWidget {
 
   void _navigateTo(String route) {
     // Close the drawer first
-    Get.back(); 
+    Get.back();
     // Use offAndToNamed to prevent building up a stack of dashboard pages
     if (Get.currentRoute != route) {
       Get.offAndToNamed(route);

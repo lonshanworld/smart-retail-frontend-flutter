@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:smart_retail/app/utils/dialog_utils.dart';
 import 'package:smart_retail/app/data/models/shop_model.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
 import 'package:smart_retail/app/data/services/shop_api_service.dart';
@@ -29,32 +30,42 @@ class ShopLoginController extends GetxController {
             emailController.text,
             passwordController.text,
           );
-           if (success) {
+          if (success) {
             // Both staff and merchant access the same shop, so pass shopId for both
-            Get.offAllNamed(Routes.SHOP_DASHBOARD, parameters: {'shopId': shopIdController.text});
+            Get.offAllNamed(
+              Routes.SHOP_DASHBOARD,
+              parameters: {'shopId': shopIdController.text},
+            );
           }
-        } else { // Merchant Login
+        } else {
+          // Merchant Login
           // Login as merchant and verify shop ownership
           success = await _authService.loginMerchantToShop(
             '944e9452-197e-4ce1-8c6a-1ea36f0bdacc',
-            emailController.text, 
+            emailController.text,
             passwordController.text,
           );
-          
+
           if (success) {
             // Navigate to shop dashboard with shopId parameter
             final shopId = '944e9452-197e-4ce1-8c6a-1ea36f0bdacc';
-            Get.offAllNamed(Routes.SHOP_DASHBOARD, parameters: {'shopId': shopId});
+            Get.offAllNamed(
+              Routes.SHOP_DASHBOARD,
+              parameters: {'shopId': shopId},
+            );
           }
         }
 
         if (!success) {
-          Get.snackbar('Login Failed', _authService.errorMessage.value.isNotEmpty 
-            ? _authService.errorMessage.value 
-            : 'Invalid credentials for the selected role.');
+          DialogUtils.showError(
+            _authService.errorMessage.value.isNotEmpty
+                ? _authService.errorMessage.value
+                : 'Invalid credentials for the selected role.',
+            title: 'Login Failed',
+          );
         }
       } catch (e) {
-        Get.snackbar('Error', 'An unexpected error occurred: $e');
+        DialogUtils.showError('An unexpected error occurred: $e');
       } finally {
         isLoading.value = false;
       }

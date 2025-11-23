@@ -16,20 +16,26 @@ class StaffDashboardSummaryResponse {
     print('   Raw JSON: $json');
     print('   JSON type: ${json.runtimeType}');
     print('   Keys: ${json.keys.toList()}');
-    
+
     // Handle recentActivities safely
     List<ActivityItemDTO> activities = [];
     if (json['recentActivities'] != null) {
-      print('   recentActivities type: ${json['recentActivities'].runtimeType}');
+      print(
+        '   recentActivities type: ${json['recentActivities'].runtimeType}',
+      );
       print('   recentActivities value: ${json['recentActivities']}');
-      
+
       final activitiesData = json['recentActivities'];
       if (activitiesData is List) {
-        print('   ✅ recentActivities is a List with ${activitiesData.length} items');
+        print(
+          '   ✅ recentActivities is a List with ${activitiesData.length} items',
+        );
         activities = activitiesData
             .map((item) {
               try {
-                print('   Parsing activity item: $item (type: ${item.runtimeType})');
+                print(
+                  '   Parsing activity item: $item (type: ${item.runtimeType})',
+                );
                 return ActivityItemDTO.fromJson(item as Map<String, dynamic>);
               } catch (e) {
                 print('   ❌ Error parsing activity item: $e');
@@ -51,7 +57,7 @@ class StaffDashboardSummaryResponse {
       transactionsToday: (json['transactionsToday'] as num?)?.toInt() ?? 0,
       recentActivities: activities,
     );
-    
+
     print('✅ [STAFF MODEL] Parsed successfully');
     return result;
   }
@@ -74,7 +80,7 @@ class ActivityItemDTO {
     return ActivityItemDTO(
       type: json['type'] as String? ?? 'unknown',
       details: json['details'] as String? ?? 'No details',
-      timestamp: json['timestamp'] != null 
+      timestamp: json['timestamp'] != null
           ? DateTime.parse(json['timestamp'] as String)
           : DateTime.now(),
       relatedId: json['relatedId'] as String?,

@@ -52,16 +52,18 @@ class ShopSalesHistoryController extends GetxController {
         sales.addAll(response.items);
         totalPages.value = response.totalPages;
         if (!initialLoad && response.items.isNotEmpty) {
-          currentPage.value++; // Increment current page if more items were loaded
+          currentPage
+              .value++; // Increment current page if more items were loaded
         }
       } else {
         errorMessage.value = "Failed to fetch sales history.";
-        if (initialLoad) sales.clear(); // Ensure list is empty on error during initial load
+        if (initialLoad)
+          sales.clear(); // Ensure list is empty on error during initial load
       }
     } catch (e) {
       print("Error fetching sales history for shop $shopId: $e");
       errorMessage.value = "An error occurred. Please try again.";
-       if (initialLoad) sales.clear();
+      if (initialLoad) sales.clear();
     } finally {
       if (initialLoad) isLoading(false);
       isLoadingMore(false);
@@ -70,8 +72,10 @@ class ShopSalesHistoryController extends GetxController {
 
   // Call this method when user scrolls to the end of the list
   void loadMoreSales() {
-    if (!isLoading.value && !isLoadingMore.value && currentPage.value < totalPages.value) {
-        fetchSalesHistory(initialLoad: false);
+    if (!isLoading.value &&
+        !isLoadingMore.value &&
+        currentPage.value < totalPages.value) {
+      fetchSalesHistory(initialLoad: false);
     }
   }
 

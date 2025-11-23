@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:smart_retail/app/utils/dialog_utils.dart';
 import 'package:smart_retail/app/data/enums/user_role.dart';
 import 'package:smart_retail/app/data/models/user_model.dart';
 import 'package:smart_retail/app/data/models/user_selection_item.dart'; // Verified import
@@ -14,7 +15,8 @@ class AdminUsersController extends GetxController {
   // --- State Variables ---
   var isLoading = true.obs;
   var userList = <User>[].obs;
-  var merchantSelectionList = <UserSelectionItem>[].obs; // Uses UserSelectionItem
+  var merchantSelectionList =
+      <UserSelectionItem>[].obs; // Uses UserSelectionItem
   var errorMessage = RxnString();
 
   // Pagination
@@ -48,7 +50,11 @@ class AdminUsersController extends GetxController {
     searchController.addListener(() {
       searchTerm.value = searchController.text;
     });
-    debounce(searchTerm, (_) => fetchUsers(page: 1), time: const Duration(milliseconds: 500));
+    debounce(
+      searchTerm,
+      (_) => fetchUsers(page: 1),
+      time: const Duration(milliseconds: 500),
+    );
     fetchUsers();
     fetchMerchantsForSelection();
   }
@@ -72,7 +78,9 @@ class AdminUsersController extends GetxController {
       final paginatedResponse = await adminUserService.listUsers(
         page: currentPage.value,
         pageSize: pageSize.value,
-        role: selectedRoleFilter.value != null ? userRoleToString(selectedRoleFilter.value!) : null,
+        role: selectedRoleFilter.value != null
+            ? userRoleToString(selectedRoleFilter.value!)
+            : null,
         isActive: selectedStatusFilter.value,
         searchTerm: searchTerm.value,
       );
@@ -103,7 +111,10 @@ class AdminUsersController extends GetxController {
       }
     } catch (e) {
       printError(info: e.toString());
-      Get.snackbar("Error", "Could not load merchants for selection: ${e.toString()}", snackPosition: SnackPosition.BOTTOM);
+      DialogUtils.showError(
+        "Could not load merchants for selection: ${e.toString()}",
+        snackPosition: SnackPosition.BOTTOM,
+      );
     }
   }
 
@@ -132,15 +143,21 @@ class AdminUsersController extends GetxController {
 
   Future<void> saveUser() async {
     if (!userFormKey.currentState!.validate()) {
-      Get.snackbar("Validation Error", "Please correct the errors in the form.", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
+      DialogUtils.showError(
+        "Please correct the errors in the form.",
+        title: "Validation Error",
+      );
       return;
     }
 
     if (selectedRole.value == null) {
-      Get.snackbar("Validation Error", "Please select a role for the user.", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
+      DialogUtils.showError(
+        "Please select a role for the user.",
+        title: "Validation Error",
+      );
       return;
     }
-    
+
     final Map<String, dynamic> userData = {
       'name': nameController.value.text,
       'email': emailController.value.text,
@@ -158,29 +175,37 @@ class AdminUsersController extends GetxController {
     try {
       if (isEditMode.value) {
         if (editableUser.value == null) {
-            errorMessage.value = "Error: No user selected for editing.";
-            isLoading.value = false;
-            return;
+          errorMessage.value = "Error: No user selected for editing.";
+          isLoading.value = false;
+          return;
         }
 
         Map<String, dynamic> updatePayload = {};
-        if (nameController.value.text != editableUser.value!.name) updatePayload['name'] = nameController.value.text;
-        if (emailController.value.text != editableUser.value!.email) updatePayload['email'] = emailController.value.text;
-        if (selectedRole.value != editableUser.value!.roleAsEnum) updatePayload['role'] = userRoleToString(selectedRole.value!);
-        
+        if (nameController.value.text != editableUser.value!.name) {
+          updatePayload['name'] = nameController.value.text;
+        }
+        if (emailController.value.text != editableUser.value!.email) {
+          updatePayload['email'] = emailController.value.text;
+        }
+        if (selectedRole.value != editableUser.value!.roleAsEnum) {
+          updatePayload['role'] = userRoleToString(selectedRole.value!);
+        }
+
         if (selectedRole.value == UserRole.staff) {
           if (selectedMerchantId.value != editableUser.value!.merchantId) {
             updatePayload['merchantId'] = selectedMerchantId.value;
           }
         } else {
           if (editableUser.value!.merchantId != null) {
-             updatePayload['merchantId'] = null;
+            updatePayload['merchantId'] = null;
           }
         }
-        if (isActive.value != editableUser.value!.isActive) updatePayload['isActive'] = isActive.value;
-        
+        if (isActive.value != editableUser.value!.isActive) {
+          updatePayload['isActive'] = isActive.value;
+        }
+
         if (updatePayload.isEmpty && passwordController.value.text.isEmpty) {
-          Get.snackbar("Info", "No changes detected.", snackPosition: SnackPosition.BOTTOM);
+          DialogUtils.showInfo("No changes detected.");
           isLoading.value = false;
           return;
         }
@@ -189,27 +214,44 @@ class AdminUsersController extends GetxController {
           updatePayload['password'] = passwordController.value.text;
         }
 
-        final updatedUser = await adminUserService.updateUser(editableUser.value!.id, updatePayload);
+        final updatedUser = await adminUserService.updateUser(
+          editableUser.value!.id,
+          updatePayload,
+        );
         if (updatedUser != null) {
           fetchUsers(page: currentPage.value);
-          Get.snackbar("Success", "User updated successfully!", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.green, colorText: Colors.white);
+          DialogUtils.showSuccess(
+            "User updated successfully!",
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.green,
+            colorText: Colors.white,
+          );
           if (Get.isDialogOpen ?? false) Get.back();
           if (Get.isBottomSheetOpen ?? false) Get.back();
         } else {
           errorMessage.value = "Failed to update user.";
         }
-      } else { // Create User
+      } else {
+        // Create User
         if (passwordController.value.text.isEmpty) {
-            Get.snackbar("Validation Error", "Password is required for new user.", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
-            isLoading.value = false;
-            return;
+          DialogUtils.showError(
+            "Password is required for new user.",
+            title: "Validation Error",
+          );
+          isLoading.value = false;
+          return;
         }
         userData['password'] = passwordController.value.text;
         userData['isActive'] = isActive.value;
         final createdUser = await adminUserService.createUser(userData);
         if (createdUser != null) {
           fetchUsers(page: 1);
-          Get.snackbar("Success", "User created successfully!", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.green, colorText: Colors.white);
+          DialogUtils.showSuccess(
+            "User created successfully!",
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.green,
+            colorText: Colors.white,
+          );
           if (Get.isDialogOpen ?? false) Get.back();
           if (Get.isBottomSheetOpen ?? false) Get.back();
         } else {
@@ -219,7 +261,12 @@ class AdminUsersController extends GetxController {
     } catch (e) {
       printError(info: e.toString());
       errorMessage.value = "Error saving user: ${e.toString()}";
-      Get.snackbar("Error", "Failed to save user: ${e.toString()}", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
+      DialogUtils.showError(
+        "Failed to save user: ${e.toString()}",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
     } finally {
       isLoading.value = false;
     }
@@ -230,18 +277,31 @@ class AdminUsersController extends GetxController {
     String actionText = user.isActive ? "deactivate" : "activate";
     Color actionColor = user.isActive ? Colors.red : Colors.green;
 
-    confirmed = await Get.dialog<bool>(
-      AlertDialog(
-        title: Text("Confirm ${actionText.capitalizeFirstLetter()}"),
-        content: Text("Are you sure you want to $actionText user '${user.name}'?"),
-        actions: [
-          TextButton(onPressed: () => Get.back(result: false), child: const Text("Cancel")),
-          TextButton(onPressed: () => Get.back(result: true), child: Text(actionText.capitalizeFirstLetter(), style: TextStyle(color: actionColor))),
-        ],
-      ),
-    ) ?? false;
+    confirmed =
+        await DialogUtils.showCustomDialog<bool>(
+          dialog: AlertDialog(
+            title: Text("Confirm ${actionText.capitalizeFirstLetter()}"),
+            content: Text(
+              "Are you sure you want to $actionText user '${user.name}'?",
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Get.back(result: false),
+                child: const Text("Cancel"),
+              ),
+              TextButton(
+                onPressed: () => Get.back(result: true),
+                child: Text(
+                  actionText.capitalizeFirstLetter(),
+                  style: TextStyle(color: actionColor),
+                ),
+              ),
+            ],
+          ),
+        ) ??
+        false;
 
-    if(!confirmed) return;
+    if (!confirmed) return;
 
     isLoading.value = true;
     try {
@@ -250,38 +310,66 @@ class AdminUsersController extends GetxController {
         final success = await adminUserService.deleteUser(user.id);
         if (success) {
           fetchUsers(page: currentPage.value);
-           Get.snackbar("Success", "User deactivated successfully.", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.green, colorText: Colors.white);
+          DialogUtils.showSuccess(
+            "User deactivated successfully.",
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.green,
+            colorText: Colors.white,
+          );
         } else {
-          errorMessage.value = "Failed to deactivate user."; // Service already shows a snackbar
+          errorMessage.value =
+              "Failed to deactivate user."; // Service already shows a snackbar
         }
       } else {
         final activatedUser = await adminUserService.activateUser(user.id);
         if (activatedUser != null) {
           fetchUsers(page: currentPage.value);
-          Get.snackbar("Success", "User activated successfully.", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.green, colorText: Colors.white);
+          DialogUtils.showSuccess(
+            "User activated successfully.",
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.green,
+            colorText: Colors.white,
+          );
         } else {
-          errorMessage.value = "Failed to activate user."; // Service already shows a snackbar
+          errorMessage.value =
+              "Failed to activate user."; // Service already shows a snackbar
         }
       }
     } catch (e) {
       printError(info: e.toString());
-      Get.snackbar("Error", "Failed to update user status: ${e.toString()}", snackPosition: SnackPosition.BOTTOM);
+      DialogUtils.showError(
+        "Failed to update user status: ${e.toString()}",
+        snackPosition: SnackPosition.BOTTOM,
+      );
     } finally {
       isLoading.value = false;
     }
   }
-  
+
   Future<void> hardDeleteUser(String userId) async {
-    bool confirmed = await Get.dialog<bool>(
-      AlertDialog(
-        title: const Text("Confirm Permanent Deletion"),
-        content: const Text("Are you sure you want to PERMANENTLY DELETE this user? This action cannot be undone."),
-        actions: [
-          TextButton(onPressed: () => Get.back(result: false), child: const Text("Cancel")),
-          TextButton(onPressed: () => Get.back(result: true), child: const Text("DELETE PERMANENTLY", style: TextStyle(color: Colors.red))),
-        ],
-      ),
-    ) ?? false;
+    bool confirmed =
+        await DialogUtils.showCustomDialog<bool>(
+          dialog: AlertDialog(
+            title: const Text("Confirm Permanent Deletion"),
+            content: const Text(
+              "Are you sure you want to PERMANENTLY DELETE this user? This action cannot be undone.",
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Get.back(result: false),
+                child: const Text("Cancel"),
+              ),
+              TextButton(
+                onPressed: () => Get.back(result: true),
+                child: const Text(
+                  "DELETE PERMANENTLY",
+                  style: TextStyle(color: Colors.red),
+                ),
+              ),
+            ],
+          ),
+        ) ??
+        false;
 
     if (!confirmed) return;
 
@@ -289,16 +377,24 @@ class AdminUsersController extends GetxController {
     try {
       final success = await adminUserService.hardDeleteUser(userId);
       if (success) {
-        fetchUsers(page: currentPage.value); // Consider fetching page 1 or staying on current
-        Get.snackbar("Success", "User permanently deleted.", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.orange, colorText: Colors.white);
+        fetchUsers(
+          page: currentPage.value,
+        ); // Consider fetching page 1 or staying on current
+        DialogUtils.showSuccess(
+          "User permanently deleted.",
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.orange,
+          colorText: Colors.white,
+        );
       } else {
-        errorMessage.value = "Failed to permanently delete user."; // Service will show specific error
-         // Get.snackbar("Error", errorMessage.value!, snackPosition: SnackPosition.BOTTOM); // Service handles this
+        errorMessage.value =
+            "Failed to permanently delete user."; // Service will show specific error
+        // DialogUtils.showError(errorMessage.value!); // Service handles this
       }
     } catch (e) {
       printError(info: e.toString());
       errorMessage.value = "Error deleting user: ${e.toString()}";
-      Get.snackbar("Error", errorMessage.value!, snackPosition: SnackPosition.BOTTOM);
+      DialogUtils.showError(errorMessage.value!);
     } finally {
       isLoading.value = false;
     }

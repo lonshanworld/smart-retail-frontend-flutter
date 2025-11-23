@@ -9,9 +9,7 @@ class StockInView extends GetView<StockInController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Stock In: ${controller.itemName}'),
-      ),
+      appBar: AppBar(title: Text('Stock In: ${controller.itemName}')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -28,7 +26,9 @@ class StockInView extends GetView<StockInController> {
                     children: [
                       Text(
                         controller.itemName,
-                        style: Get.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                        style: Get.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Text(
@@ -49,7 +49,7 @@ class StockInView extends GetView<StockInController> {
                 ),
                 keyboardType: TextInputType.number,
                 inputFormatters: <TextInputFormatter>[
-                  FilteringTextInputFormatter.digitsOnly
+                  FilteringTextInputFormatter.digitsOnly,
                 ],
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -76,17 +76,30 @@ class StockInView extends GetView<StockInController> {
                 }
                 return const SizedBox.shrink();
               }),
-              Obx(() => ElevatedButton.icon(
-                    icon: controller.isSaving.value
-                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.0))
-                        : const Icon(Icons.add_shopping_cart_outlined),
-                    label: Text(controller.isSaving.value ? 'Adding Stock...' : 'Add Stock'),
-                    onPressed: controller.isSaving.value ? null : () => controller.performStockIn(),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      textStyle: const TextStyle(fontSize: 16),
-                    ),
-                  )),
+              Obx(
+                () => ElevatedButton.icon(
+                  icon: controller.isSaving.value
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.0,
+                          ),
+                        )
+                      : const Icon(Icons.add_shopping_cart_outlined),
+                  label: Text(
+                    controller.isSaving.value ? 'Adding Stock...' : 'Add Stock',
+                  ),
+                  onPressed: controller.isSaving.value
+                      ? null
+                      : () => controller.performStockIn(),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    textStyle: const TextStyle(fontSize: 16),
+                  ),
+                ),
+              ),
             ],
           ),
         ),

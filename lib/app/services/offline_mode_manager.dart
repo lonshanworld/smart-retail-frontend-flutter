@@ -2,15 +2,18 @@ import 'package:get/get.dart';
 import 'connectivity_service.dart';
 
 class OfflineModeManager extends GetxService {
-  final ConnectivityService _connectivityService = Get.find<ConnectivityService>();
+  final ConnectivityService _connectivityService =
+      Get.find<ConnectivityService>();
 
   bool canProcessSales() => true; // Always allowed, will be queued offline
   bool canViewDashboard() => true; // Cached data available
   bool canViewProducts() => true; // Cached data available
   bool canViewPromotions() => true; // Cached data available
   bool canAddStock() => _connectivityService.isOnline.value; // Requires online
-  bool canModifyInventory() => _connectivityService.isOnline.value; // Requires online
-  bool canModifyCustomers() => _connectivityService.isOnline.value; // Requires online
+  bool canModifyInventory() =>
+      _connectivityService.isOnline.value; // Requires online
+  bool canModifyCustomers() =>
+      _connectivityService.isOnline.value; // Requires online
   bool canAccessReports() => true; // Can view local cache
   bool canViewSalesHistory() => true; // Local history available
   bool canSync() => _connectivityService.isOnline.value;
@@ -54,6 +57,6 @@ class OfflineModeManager extends GetxService {
   }
 
   // Observe connectivity changes
-  Stream<bool> get onConnectivityChanged => 
-    _connectivityService.onConnectivityChanged;
+  Stream<bool> get onConnectivityChanged =>
+      _connectivityService.onConnectivityChanged;
 }

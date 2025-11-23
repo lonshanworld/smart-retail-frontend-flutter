@@ -25,12 +25,15 @@ class StaffShopView extends GetView<StaffShopController> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(controller.errorMessage.value, style: const TextStyle(color: Colors.red)),
+                  Text(
+                    controller.errorMessage.value,
+                    style: const TextStyle(color: Colors.red),
+                  ),
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () => controller.fetchAssignedShop(),
                     child: const Text('Retry'),
-                  )
+                  ),
                 ],
               ),
             );
@@ -39,7 +42,9 @@ class StaffShopView extends GetView<StaffShopController> {
           // If shop data is null after loading, show a friendly message.
           final shop = controller.shop.value;
           if (shop == null) {
-            return const Center(child: Text('No shop has been assigned to your account.'));
+            return const Center(
+              child: Text('No shop has been assigned to your account.'),
+            );
           }
 
           // If data is successfully loaded, display the shop details in a card.
@@ -56,21 +61,37 @@ class StaffShopView extends GetView<StaffShopController> {
                     children: [
                       Text(
                         shop.name,
-                        style: Get.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                        style: Get.textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       const Divider(),
                       const SizedBox(height: 16),
-                      _buildDetailRow(Icons.location_on_outlined, 'Address', shop.address ?? 'Not available'),
+                      _buildDetailRow(
+                        Icons.location_on_outlined,
+                        'Address',
+                        shop.address ?? 'Not available',
+                      ),
                       const SizedBox(height: 16),
-                      _buildDetailRow(Icons.phone_outlined, 'Phone', shop.phone ?? 'Not available'),
+                      _buildDetailRow(
+                        Icons.phone_outlined,
+                        'Phone',
+                        shop.phone ?? 'Not available',
+                      ),
                       const SizedBox(height: 16),
-                      _buildDetailRow(Icons.business_outlined, 'Merchant ID', shop.merchantId),
+                      _buildDetailRow(
+                        Icons.business_outlined,
+                        'Merchant ID',
+                        shop.merchantId,
+                      ),
                       const SizedBox(height: 16),
                       _buildDetailRow(
                         Icons.calendar_today_outlined,
                         'Created On',
-                        shop.createdAt != null ? DateFormat.yMMMd().format(shop.createdAt!) : 'N/A',
+                        shop.createdAt != null
+                            ? DateFormat.yMMMd().format(shop.createdAt!)
+                            : 'N/A',
                       ),
                     ],
                   ),
@@ -94,7 +115,12 @@ class StaffShopView extends GetView<StaffShopController> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: Get.textTheme.bodySmall?.copyWith(color: Colors.grey[600])),
+              Text(
+                title,
+                style: Get.textTheme.bodySmall?.copyWith(
+                  color: Colors.grey[600],
+                ),
+              ),
               const SizedBox(height: 2),
               Text(value, style: Get.textTheme.titleMedium),
             ],

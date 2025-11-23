@@ -6,8 +6,6 @@ class AddInventoryItemBinding extends Bindings {
   @override
   void dependencies() {
     Get.lazyPut<InventoryApiService>(() => InventoryApiService());
-    Get.lazyPut<AddInventoryItemController>(
-      () => AddInventoryItemController(),
-    );
+    Get.lazyPut<AddInventoryItemController>(() => AddInventoryItemController());
   }
 }

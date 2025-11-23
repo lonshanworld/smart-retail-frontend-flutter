@@ -41,44 +41,59 @@ class ShopsAdminView extends GetView<AdminShopsController> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Filters", style: Get.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 10), 
+          Text(
+            "Filters",
+            style: Get.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 10),
           Row(
             children: [
               Expanded(
                 child: TextFormField(
-                  controller: controller.nameFilterController, 
+                  controller: controller.nameFilterController,
                   decoration: InputDecoration(
                     labelText: "Shop Name",
                     hintText: "Filter by name...",
                     isDense: true,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                    suffixIcon: Obx(() => (controller.nameFilter.value ?? '').isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear, size: 20), 
-                            onPressed: () => controller.onNameSubmittedOrCleared(null), 
-                            tooltip: "Clear Name Filter",
-                          )
-                        : const SizedBox.shrink()),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    suffixIcon: Obx(
+                      () => (controller.nameFilter.value ?? '').isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear, size: 20),
+                              onPressed: () =>
+                                  controller.onNameSubmittedOrCleared(null),
+                              tooltip: "Clear Name Filter",
+                            )
+                          : const SizedBox.shrink(),
+                    ),
                   ),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: TextFormField(
-                  controller: controller.merchantIdFilterController, 
+                  controller: controller.merchantIdFilterController,
                   decoration: InputDecoration(
                     labelText: "Merchant ID",
                     hintText: "Filter by Merchant ID...",
                     isDense: true,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                    suffixIcon: Obx(() => (controller.merchantIdFilter.value ?? '').isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear, size: 20), 
-                            onPressed: () => controller.onMerchantIdSubmittedOrCleared(null), 
-                            tooltip: "Clear Merchant ID Filter",
-                          )
-                        : const SizedBox.shrink()),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    suffixIcon: Obx(
+                      () => (controller.merchantIdFilter.value ?? '').isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear, size: 20),
+                              onPressed: () => controller
+                                  .onMerchantIdSubmittedOrCleared(null),
+                              tooltip: "Clear Merchant ID Filter",
+                            )
+                          : const SizedBox.shrink(),
+                    ),
                   ),
                 ),
               ),
@@ -90,21 +105,25 @@ class ShopsAdminView extends GetView<AdminShopsController> {
             children: [
               Expanded(
                 flex: 2,
-                child: Obx(() => DropdownButtonFormField<bool?>(
-                      decoration: InputDecoration(
-                        labelText: 'Status',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                        isDense: true,
+                child: Obx(
+                  () => DropdownButtonFormField<bool?>(
+                    decoration: InputDecoration(
+                      labelText: 'Status',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      value: controller.isActiveFilter.value,
-                      hint: const Text("Any Status"),
-                      items: const [
-                        DropdownMenuItem(value: null, child: Text("Any Status")),
-                        DropdownMenuItem(value: true, child: Text("Active")),
-                        DropdownMenuItem(value: false, child: Text("Inactive")),
-                      ],
-                      onChanged: controller.applyIsActiveFilter,
-                    )),
+                      isDense: true,
+                    ),
+                    value: controller.isActiveFilter.value,
+                    hint: const Text("Any Status"),
+                    items: const [
+                      DropdownMenuItem(value: null, child: Text("Any Status")),
+                      DropdownMenuItem(value: true, child: Text("Active")),
+                      DropdownMenuItem(value: false, child: Text("Inactive")),
+                    ],
+                    onChanged: controller.applyIsActiveFilter,
+                  ),
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -117,9 +136,10 @@ class ShopsAdminView extends GetView<AdminShopsController> {
                     label: const Text("Clear"),
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 12),
-                      backgroundColor: Get.theme.colorScheme.secondaryContainer, 
-                      foregroundColor: Get.theme.colorScheme.onSecondaryContainer, 
-                    )
+                      backgroundColor: Get.theme.colorScheme.secondaryContainer,
+                      foregroundColor:
+                          Get.theme.colorScheme.onSecondaryContainer,
+                    ),
                   ),
                 ),
               ),
@@ -132,7 +152,9 @@ class ShopsAdminView extends GetView<AdminShopsController> {
 
   Widget _buildShopList() {
     return Obx(() {
-      if (controller.isLoading.value && controller.shops.isEmpty && controller.currentPage.value == 1) {
+      if (controller.isLoading.value &&
+          controller.shops.isEmpty &&
+          controller.currentPage.value == 1) {
         return const LoadingIndicator(message: 'Fetching shops...');
       }
       if (controller.errorMessage.value != null && controller.shops.isEmpty) {
@@ -142,7 +164,7 @@ class ShopsAdminView extends GetView<AdminShopsController> {
           onRetry: () => controller.fetchShops(resetPage: true),
         );
       }
-      if (controller.shops.isEmpty && !controller.isLoading.value) { 
+      if (controller.shops.isEmpty && !controller.isLoading.value) {
         return CenteredMessage(
           message: "No shops found matching your criteria.",
           icon: Icons.storefront_outlined,
@@ -156,19 +178,34 @@ class ShopsAdminView extends GetView<AdminShopsController> {
           items: controller.shops,
           columns: [
             DataColumn(
-              label: const Text('Shop', style: TextStyle(fontWeight: FontWeight.bold)),
+              label: const Text(
+                'Shop',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
             DataColumn(
-              label: const Text('Merchant ID', style: TextStyle(fontWeight: FontWeight.bold)),
+              label: const Text(
+                'Merchant ID',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
             DataColumn(
-              label: const Text('Address', style: TextStyle(fontWeight: FontWeight.bold)),
+              label: const Text(
+                'Address',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
             DataColumn(
-              label: const Text('Status', style: TextStyle(fontWeight: FontWeight.bold)),
+              label: const Text(
+                'Status',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
             DataColumn(
-              label: const Text('Actions', style: TextStyle(fontWeight: FontWeight.bold)),
+              label: const Text(
+                'Actions',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           ],
           buildCells: (shop) {
@@ -178,13 +215,15 @@ class ShopsAdminView extends GetView<AdminShopsController> {
                 Row(
                   children: [
                     CircleAvatar(
-                      backgroundColor: isActive 
-                          ? AppColors.shop.shade100 
+                      backgroundColor: isActive
+                          ? AppColors.shop.shade100
                           : Colors.grey.shade200,
                       child: Icon(
-                        isActive ? Icons.storefront : Icons.store_mall_directory_outlined,
-                        color: isActive 
-                            ? AppColors.shop.shade700 
+                        isActive
+                            ? Icons.storefront
+                            : Icons.store_mall_directory_outlined,
+                        color: isActive
+                            ? AppColors.shop.shade700
                             : Colors.grey.shade600,
                         size: 20,
                       ),
@@ -236,15 +275,18 @@ class ShopsAdminView extends GetView<AdminShopsController> {
               ),
               DataCell(
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
-                    color: isActive 
-                        ? AppColors.success.shade50 
+                    color: isActive
+                        ? AppColors.success.shade50
                         : AppColors.error.shade50,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: isActive 
-                          ? AppColors.success.shade300 
+                      color: isActive
+                          ? AppColors.success.shade300
                           : AppColors.error.shade300,
                     ),
                   ),
@@ -253,8 +295,8 @@ class ShopsAdminView extends GetView<AdminShopsController> {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: isActive 
-                          ? AppColors.success.shade700 
+                      color: isActive
+                          ? AppColors.success.shade700
                           : AppColors.error.shade700,
                     ),
                   ),
@@ -268,13 +310,15 @@ class ShopsAdminView extends GetView<AdminShopsController> {
             final isActive = shop.isActive ?? false;
             return DataRowCard(
               leading: CircleAvatar(
-                backgroundColor: isActive 
-                    ? AppColors.shop.shade100 
+                backgroundColor: isActive
+                    ? AppColors.shop.shade100
                     : Colors.grey.shade200,
                 child: Icon(
-                  isActive ? Icons.storefront : Icons.store_mall_directory_outlined,
-                  color: isActive 
-                      ? AppColors.shop.shade700 
+                  isActive
+                      ? Icons.storefront
+                      : Icons.store_mall_directory_outlined,
+                  color: isActive
+                      ? AppColors.shop.shade700
                       : Colors.grey.shade600,
                   size: 20,
                 ),
@@ -358,7 +402,10 @@ class ShopsAdminView extends GetView<AdminShopsController> {
           value: 'delete',
           child: ListTile(
             leading: Icon(Icons.delete_outline, color: Colors.red, size: 20),
-            title: Text('Delete', style: TextStyle(color: Colors.red, fontSize: 14)),
+            title: Text(
+              'Delete',
+              style: TextStyle(color: Colors.red, fontSize: 14),
+            ),
             contentPadding: EdgeInsets.zero,
           ),
         ),
@@ -369,7 +416,8 @@ class ShopsAdminView extends GetView<AdminShopsController> {
   Widget _buildPaginationControls() {
     return Obx(() {
       if (controller.totalPages.value <= 1) return const SizedBox.shrink();
-      if (controller.isLoading.value && controller.shops.isEmpty) return const SizedBox.shrink();
+      if (controller.isLoading.value && controller.shops.isEmpty)
+        return const SizedBox.shrink();
 
       return Card(
         elevation: 2,
@@ -380,7 +428,9 @@ class ShopsAdminView extends GetView<AdminShopsController> {
             children: [
               IconButton(
                 icon: const Icon(Icons.chevron_left),
-                onPressed: controller.currentPage.value > 1 ? controller.previousPage : null,
+                onPressed: controller.currentPage.value > 1
+                    ? controller.previousPage
+                    : null,
                 tooltip: "Previous Page",
               ),
               Flexible(
@@ -392,7 +442,10 @@ class ShopsAdminView extends GetView<AdminShopsController> {
               ),
               IconButton(
                 icon: const Icon(Icons.chevron_right),
-                onPressed: controller.currentPage.value < controller.totalPages.value ? controller.nextPage : null,
+                onPressed:
+                    controller.currentPage.value < controller.totalPages.value
+                    ? controller.nextPage
+                    : null,
                 tooltip: "Next Page",
               ),
             ],

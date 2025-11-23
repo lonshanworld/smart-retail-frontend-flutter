@@ -3,6 +3,7 @@ import 'package:smart_retail/app/core/config/app_config.dart';
 import 'package:smart_retail/app/data/models/sale_model.dart';
 import 'package:smart_retail/app/data/providers/api_constants.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
+import 'package:smart_retail/app/utils/response_utils.dart';
 
 class PaymentApiService extends GetxService {
   final GetConnect _connect = Get.find<GetConnect>();
@@ -50,7 +51,11 @@ class PaymentApiService extends GetxService {
   ///     }
   ///   }
   ///   ```
-  Future<String> createPaymentIntent(List<SaleItemInput> items, String shopId, {String? customerId}) async {
+  Future<String> createPaymentIntent(
+    List<SaleItemInput> items,
+    String shopId, {
+    String? customerId,
+  }) async {
     // =========================================================================
     // MOCK IMPLEMENTATION
     // =========================================================================
@@ -74,9 +79,11 @@ class PaymentApiService extends GetxService {
     );
 
     if (response.statusCode == 200 && response.body['success'] == true) {
-      return response.body['data']['clientSecret'];
+      return asMap(response.body['data'])['clientSecret'];
     } else {
-      throw Exception(response.body?['message'] ?? 'Failed to create payment intent');
+      throw Exception(
+        response.body?['message'] ?? 'Failed to create payment intent',
+      );
     }
   }
 }

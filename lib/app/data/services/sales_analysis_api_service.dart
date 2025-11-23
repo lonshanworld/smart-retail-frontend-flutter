@@ -57,12 +57,12 @@ class SalesAnalysisApiService extends GetxService {
     if (response.isOk && response.body['success'] == true) {
       final analysis = response.body['analysis'] as String;
       print('✅ [AI SALES API] Analysis received (${analysis.length} chars)');
-      
+
       // Optionally log the SQL and data for debugging
       if (response.body['sql'] != null) {
         print('   SQL: ${response.body['sql']}');
       }
-      
+
       return analysis;
     } else {
       final errorMsg = response.body?['message'] ?? 'Failed to get AI analysis';

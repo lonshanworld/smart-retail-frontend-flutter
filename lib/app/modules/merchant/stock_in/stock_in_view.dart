@@ -9,9 +9,7 @@ class StockInView extends GetView<StockInController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Add Item to Shop Stock'),
-      ),
+      appBar: AppBar(title: const Text('Add Item to Shop Stock')),
       body: Obx(() {
         if (controller.isLoading.value) {
           return const Center(child: CircularProgressIndicator());
@@ -41,7 +39,7 @@ class StockInView extends GetView<StockInController> {
                 ),
               ),
               const SizedBox(height: 24),
-              
+
               DropdownButtonFormField<InventoryItem>(
                 value: controller.selectedItem.value,
                 hint: const Text('Select an item'),
@@ -57,7 +55,9 @@ class StockInView extends GetView<StockInController> {
                 items: controller.masterItems.map((InventoryItem item) {
                   return DropdownMenuItem<InventoryItem>(
                     value: item,
-                    child: Text('${item.name} ${item.sku != null ? "(${item.sku})" : ""}'),
+                    child: Text(
+                      '${item.name} ${item.sku != null ? "(${item.sku})" : ""}',
+                    ),
                   );
                 }).toList(),
                 onChanged: controller.selectItem,
@@ -86,24 +86,33 @@ class StockInView extends GetView<StockInController> {
                 },
               ),
               const SizedBox(height: 32),
-              Obx(() => ElevatedButton.icon(
-                onPressed: controller.isSaving.value ? null : controller.addStockToShop,
-                icon: controller.isSaving.value
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                      )
-                    : const Icon(Icons.add),
-                label: Text(controller.isSaving.value ? 'Adding Stock...' : 'Add Stock'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  minimumSize: const Size(double.infinity, 50),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+              Obx(
+                () => ElevatedButton.icon(
+                  onPressed: controller.isSaving.value
+                      ? null
+                      : controller.addStockToShop,
+                  icon: controller.isSaving.value
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(Icons.add),
+                  label: Text(
+                    controller.isSaving.value ? 'Adding Stock...' : 'Add Stock',
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    minimumSize: const Size(double.infinity, 50),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                 ),
-              )),
+              ),
             ],
           ),
         );

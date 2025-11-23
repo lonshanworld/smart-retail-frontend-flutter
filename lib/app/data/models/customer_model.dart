@@ -1,4 +1,3 @@
-
 class Customer {
   final String id;
   final String shopId;

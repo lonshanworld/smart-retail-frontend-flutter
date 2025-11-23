@@ -1,8 +1,5 @@
 /// Portal types for different deployments
-enum PortalType {
-  admin,
-  customer,
-}
+enum PortalType { admin, customer }
 
 /// Configuration for different portal deployments
 class PortalConfig {
@@ -25,8 +22,8 @@ class PortalConfig {
   /// Factory to create portal config from environment string
   factory PortalConfig.fromEnvironment(String? portalEnv) {
     // Default to customer portal if not specified
-    final portalType = portalEnv?.toLowerCase() == 'admin' 
-        ? PortalType.admin 
+    final portalType = portalEnv?.toLowerCase() == 'admin'
+        ? PortalType.admin
         : PortalType.customer;
 
     switch (portalType) {

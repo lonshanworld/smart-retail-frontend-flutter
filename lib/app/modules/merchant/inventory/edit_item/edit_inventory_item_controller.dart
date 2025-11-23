@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:smart_retail/app/data/models/inventory_item_model.dart';
 import 'package:smart_retail/app/data/services/inventory_api_service.dart';
+import 'package:smart_retail/app/utils/dialog_utils.dart';
 
 class EditInventoryItemController extends GetxController {
-  final InventoryApiService _inventoryApiService = Get.find<InventoryApiService>();
+  final InventoryApiService _inventoryApiService =
+      Get.find<InventoryApiService>();
 
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
@@ -25,10 +27,18 @@ class EditInventoryItemController extends GetxController {
 
     nameController = TextEditingController(text: itemToEdit.value?.name);
     skuController = TextEditingController(text: itemToEdit.value?.sku);
-    descriptionController = TextEditingController(text: itemToEdit.value?.description);
-    originalPriceController = TextEditingController(text: itemToEdit.value?.originalPrice?.toString());
-    sellingPriceController = TextEditingController(text: itemToEdit.value?.sellingPrice.toString());
-    categoryController = TextEditingController(text: itemToEdit.value?.category);
+    descriptionController = TextEditingController(
+      text: itemToEdit.value?.description,
+    );
+    originalPriceController = TextEditingController(
+      text: itemToEdit.value?.originalPrice?.toString(),
+    );
+    sellingPriceController = TextEditingController(
+      text: itemToEdit.value?.sellingPrice.toString(),
+    );
+    categoryController = TextEditingController(
+      text: itemToEdit.value?.category,
+    );
   }
 
   Future<void> updateInventoryItem() async {
@@ -48,16 +58,19 @@ class EditInventoryItemController extends GetxController {
         'category': categoryController.text,
       };
 
-      final updatedItem = await _inventoryApiService.updateInventoryItem(itemToEdit.value!.id!, updates);
+      final updatedItem = await _inventoryApiService.updateInventoryItem(
+        itemToEdit.value!.id!,
+        updates,
+      );
 
       if (updatedItem != null) {
         Get.back(result: true);
-        Get.snackbar('Success', 'Inventory item updated successfully');
+        DialogUtils.showSuccess('Inventory item updated successfully');
       } else {
-        Get.snackbar('Error', 'Failed to update inventory item');
+        DialogUtils.showError('Failed to update inventory item');
       }
     } catch (e) {
-      Get.snackbar('Error', e.toString());
+      DialogUtils.showError(e.toString());
     } finally {
       isLoading.value = false;
     }

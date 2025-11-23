@@ -5,13 +5,17 @@ class ApiConstants {
   // For local development with Android Emulator, use 10.0.2.2 for localhost on your machine.
   // For local development with iOS Simulator, Web, or Desktop, use localhost or 127.0.0.1.
   // If testing on a physical device, use your machine's local network IP address.
-  static const String _androidEmulatorBaseUrl = "http://10.0.2.2:5000"; // Android Emulator only
-  static const String _localHostBaseUrl = "http://localhost:5000"; // Web, Desktop, iOS Simulator
-  static const String _productionBaseUrl = "https://smart-retail-backend-6ogv.onrender.com"; // Replace with your production URL
+  static const String _androidEmulatorBaseUrl =
+      "http://10.0.2.2:5000"; // Android Emulator only
+  static const String _localHostBaseUrl =
+      "http://localhost:5000"; // Web, Desktop, iOS Simulator
+  static const String _productionBaseUrl =
+      "https://smart-retail-backend-6ogv.onrender.com"; // Replace with your production URL
 
   // Determine base URL based on platform and environment
   static String get baseUrl {
-    return _productionBaseUrl; // Default to localhost for development
+    // Backend routes are registered under /api/v1 on the server; include that here
+    return "$_localHostBaseUrl/api/v1";
 
     // For production builds
     // const bool isProduction = bool.fromEnvironment('dart.vm.product');
@@ -30,7 +34,7 @@ class ApiConstants {
     // On iOS Simulator, macOS, Windows, Linux: use localhost
     // This is a simple approach - you might want to add device detection
     // return "$_androidEmulatorBaseUrl/api/v1";
-    
+
     // Advanced: Use device IP for physical devices
     // String deviceIp = "192.168.x.x"; // Replace with your machine's IP
     // return "http://$deviceIp:5000/api/v1";

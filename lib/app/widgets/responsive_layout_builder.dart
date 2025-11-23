@@ -9,7 +9,8 @@ class ResponsiveLayoutBuilder extends StatelessWidget {
   // Define your breakpoints
   // These are common values but can be adjusted to your needs.
   static const double _kTabletBreakpoint = 600.0;
-  static const double _kDesktopBreakpoint = 900.0; // Adjusted from 1200 for more general use
+  static const double _kDesktopBreakpoint =
+      900.0; // Adjusted from 1200 for more general use
 
   const ResponsiveLayoutBuilder({
     Key? key,

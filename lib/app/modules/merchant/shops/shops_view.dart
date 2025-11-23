@@ -6,6 +6,7 @@ import 'package:smart_retail/app/modules/merchant/shops/shops_controller.dart';
 import 'package:smart_retail/app/modules/merchant/widgets/merchant_main_scaffold.dart';
 import 'package:smart_retail/app/routes/app_pages.dart';
 import 'package:smart_retail/app/widgets/app_colors.dart';
+import 'package:smart_retail/app/utils/dialog_utils.dart';
 
 class ShopsView extends GetView<MerchantShopsController> {
   const ShopsView({Key? key}) : super(key: key);
@@ -14,7 +15,7 @@ class ShopsView extends GetView<MerchantShopsController> {
   Widget build(BuildContext context) {
     return MerchantMainScaffold(
       title: 'My Shops',
-       floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () => controller.goToAddShop(),
         label: const Text('Create Shop'),
         icon: const Icon(Icons.add),
@@ -25,10 +26,7 @@ class ShopsView extends GetView<MerchantShopsController> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              AppColors.merchant.shade50.withOpacity(0.3),
-              Colors.white,
-            ],
+            colors: [AppColors.merchant.shade50.withOpacity(0.3), Colors.white],
           ),
         ),
         child: Obx(() {
@@ -36,7 +34,9 @@ class ShopsView extends GetView<MerchantShopsController> {
             return const Center(child: CircularProgressIndicator());
           }
           if (controller.errorMessage.value != null) {
-            return Center(child: Text('Error: ${controller.errorMessage.value}'));
+            return Center(
+              child: Text('Error: ${controller.errorMessage.value}'),
+            );
           }
           return _buildShopList();
         }),
@@ -60,7 +60,8 @@ class ShopsView extends GetView<MerchantShopsController> {
           clipBehavior: Clip.antiAlias,
           elevation: 4.0,
           child: InkWell(
-            onTap: () => Get.toNamed(Routes.MERCHANT_SHOP_INVENTORY, arguments: shop.id),
+            onTap: () =>
+                Get.toNamed(Routes.MERCHANT_SHOP_INVENTORY, arguments: shop.id),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -68,7 +69,11 @@ class ShopsView extends GetView<MerchantShopsController> {
                   flex: 2,
                   child: Container(
                     color: Theme.of(context).colorScheme.secondaryContainer,
-                    child: Icon(Icons.store_mall_directory_outlined, size: 50, color: Theme.of(context).colorScheme.onSecondaryContainer),
+                    child: Icon(
+                      Icons.store_mall_directory_outlined,
+                      size: 50,
+                      color: Theme.of(context).colorScheme.onSecondaryContainer,
+                    ),
                   ),
                 ),
                 Expanded(
@@ -78,30 +83,44 @@ class ShopsView extends GetView<MerchantShopsController> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(shop.name, style: Get.textTheme.titleLarge, maxLines: 1, overflow: TextOverflow.ellipsis),
+                        Text(
+                          shop.name,
+                          style: Get.textTheme.titleLarge,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                         Row(
                           children: [
                             Expanded(
-                              child: Text('ID: ${shop.id}', style: Get.textTheme.bodySmall?.copyWith(color: Colors.grey[600]), maxLines: 1, overflow: TextOverflow.ellipsis),
+                              child: Text(
+                                'ID: ${shop.id}',
+                                style: Get.textTheme.bodySmall?.copyWith(
+                                  color: Colors.grey[600],
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                             IconButton(
                               icon: const Icon(Icons.copy, size: 16),
                               padding: EdgeInsets.zero,
                               constraints: const BoxConstraints(),
                               onPressed: () {
-                                Clipboard.setData(ClipboardData(text: shop.id ?? ''));
-                                Get.snackbar(
-                                  'Copied',
-                                  'Shop ID copied to clipboard',
-                                  snackPosition: SnackPosition.BOTTOM,
-                                  duration: const Duration(seconds: 2),
+                                Clipboard.setData(
+                                  ClipboardData(text: shop.id ?? ''),
                                 );
+                                DialogUtils.showInfo('Shop ID copied to clipboard');
                               },
                               tooltip: 'Copy Shop ID',
                             ),
                           ],
                         ),
-                        Text(shop.address ?? 'No address', style: Get.textTheme.bodyMedium, maxLines: 2, overflow: TextOverflow.ellipsis),
+                        Text(
+                          shop.address ?? 'No address',
+                          style: Get.textTheme.bodyMedium,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ],
                     ),
                   ),

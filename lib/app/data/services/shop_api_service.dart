@@ -1,7 +1,9 @@
 import 'package:flutter/foundation.dart'; // For kDebugMode
-import 'package:flutter/material.dart'; // For Get.snackbar
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:smart_retail/app/utils/dialog_utils.dart';
 import 'package:smart_retail/app/core/config/app_config.dart';
+import 'package:smart_retail/app/utils/response_utils.dart';
 import 'package:smart_retail/app/data/models/receipt_model.dart';
 import 'package:smart_retail/app/data/models/shop_model.dart';
 import 'package:smart_retail/app/data/models/shop_stock_model.dart';
@@ -27,20 +29,18 @@ class ShopApiService extends GetxService {
   final String _merchantSalesBaseUrl = "${ApiConstants.baseUrl}/merchant/sales";
 
   void _handleError(Response response, String operation) {
-    String errorMessage = response.body?['message'] ?? "Unknown error occurred during $operation.";
+    String errorMessage =
+        response.body?['message'] ??
+        "Unknown error occurred during $operation.";
     if (response.body?['data'] != null && response.body?['data'] is String) {
       errorMessage += " (${response.body?['data']})";
     }
     if (kDebugMode) {
-      print('Error $operation: ${response.statusCode} - ${response.bodyString}');
+      print(
+        'Error $operation: ${response.statusCode} - ${response.bodyString}',
+      );
     }
-    Get.snackbar(
-      "${operation[0].toUpperCase()}${operation.substring(1)} Error",
-      errorMessage,
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.redAccent,
-      colorText: Colors.white,
-    );
+    DialogUtils.showError(errorMessage);
   }
 
   // --- Shop Management (Merchant) ---
@@ -79,7 +79,7 @@ class ShopApiService extends GetxService {
     );
     print('after create ${response.body}');
     if (response.statusCode! < 300) {
-      return Shop.fromJson(response.body['data']);
+      return Shop.fromJson(asMap(response.body['data']));
     } else {
       _handleError(response, "shop creation");
       return null;
@@ -101,8 +101,23 @@ class ShopApiService extends GetxService {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
       return [
-        Shop(id: '1', merchantId: '1', name: 'Main Street Branch', address: '123 Main St, Anytown', isPrimary: true, createdAt: DateTime.now(), updatedAt: DateTime.now()),
-        Shop(id: '2', merchantId: '1', name: 'City Center Outlet', address: '456 Central Ave, Metroville', createdAt: DateTime.now(), updatedAt: DateTime.now()),
+        Shop(
+          id: '1',
+          merchantId: '1',
+          name: 'Main Street Branch',
+          address: '123 Main St, Anytown',
+          isPrimary: true,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+        Shop(
+          id: '2',
+          merchantId: '1',
+          name: 'City Center Outlet',
+          address: '456 Central Ave, Metroville',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
       ];
     }
     final token = await _getAuthToken();
@@ -113,8 +128,8 @@ class ShopApiService extends GetxService {
     );
     print('check merchant shop list ${response.body}');
     if (response.statusCode == 200 && response.body['status'] == 'success') {
-      List<dynamic> shopListJson = response.body['data'];
-      return shopListJson.map((json) => Shop.fromJson(json)).toList();
+      List<dynamic> shopListJson = asList(response.body['data']);
+      return shopListJson.map((json) => Shop.fromJson(Map<String, dynamic>.from(json))).toList();
     } else {
       _handleError(response, "listing shops");
       return [];
@@ -135,7 +150,14 @@ class ShopApiService extends GetxService {
   Future<Shop?> getShopById(String shopId) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
-      return Shop(id: shopId, merchantId: '1', name: 'Shop $shopId', address: 'Address $shopId', createdAt: DateTime.now(), updatedAt: DateTime.now());
+      return Shop(
+        id: shopId,
+        merchantId: '1',
+        name: 'Shop $shopId',
+        address: 'Address $shopId',
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
     }
     final token = await _getAuthToken();
     if (token == null) return null;
@@ -144,7 +166,7 @@ class ShopApiService extends GetxService {
       headers: {'Authorization': 'Bearer $token'},
     );
     if (response.statusCode == 200 && response.body['status'] == 'success') {
-      return Shop.fromJson(response.body['data']);
+      return Shop.fromJson(asMap(response.body['data']));
     } else {
       _handleError(response, "fetching shop $shopId");
       return null;
@@ -166,7 +188,14 @@ class ShopApiService extends GetxService {
   Future<Shop?> updateShop(String shopId, Map<String, dynamic> updates) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
-      return Shop(id: shopId, merchantId: '1', name: updates['name'], address: updates['address'], createdAt: DateTime.now(), updatedAt: DateTime.now());
+      return Shop(
+        id: shopId,
+        merchantId: '1',
+        name: updates['name'],
+        address: updates['address'],
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
     }
     final token = await _getAuthToken();
     if (token == null) return null;
@@ -176,7 +205,7 @@ class ShopApiService extends GetxService {
       headers: {'Authorization': 'Bearer $token'},
     );
     if (response.statusCode == 200 && response.body['status'] == 'success') {
-      return Shop.fromJson(response.body['data']);
+      return Shop.fromJson(asMap(response.body['data']));
     } else {
       _handleError(response, "updating shop $shopId");
       return null;
@@ -197,7 +226,15 @@ class ShopApiService extends GetxService {
   Future<Shop?> setPrimaryShop(String shopId) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
-      return Shop(id: shopId, merchantId: '1', name: 'Primary Shop', address: 'Primary Address', isPrimary: true, createdAt: DateTime.now(), updatedAt: DateTime.now());
+      return Shop(
+        id: shopId,
+        merchantId: '1',
+        name: 'Primary Shop',
+        address: 'Primary Address',
+        isPrimary: true,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
     }
     final token = await _getAuthToken();
     if (token == null) return null;
@@ -207,7 +244,7 @@ class ShopApiService extends GetxService {
       headers: {'Authorization': 'Bearer $token'},
     );
     if (response.statusCode == 200 && response.body['status'] == 'success') {
-      return Shop.fromJson(response.body['data']);
+      return Shop.fromJson(asMap(response.body['data']));
     } else {
       _handleError(response, "setting shop $shopId as primary");
       return null;
@@ -272,10 +309,34 @@ class ShopApiService extends GetxService {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
       final shops = [
-        Shop(id: '1', merchantId: '1', name: 'Mock Shop 1', address: '123 Mock St', isActive: true, createdAt: DateTime.now(), updatedAt: DateTime.now()),
-        Shop(id: '2', merchantId: '2', name: 'Mock Shop 2', address: '456 Mock St', isActive: false, createdAt: DateTime.now(), updatedAt: DateTime.now()),
+        Shop(
+          id: '1',
+          merchantId: '1',
+          name: 'Mock Shop 1',
+          address: '123 Mock St',
+          isActive: true,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+        Shop(
+          id: '2',
+          merchantId: '2',
+          name: 'Mock Shop 2',
+          address: '456 Mock St',
+          isActive: false,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
       ];
-      return PaginatedAdminShopsResponse(shops: shops, pagination: PaginationInfo(totalItems: 2, currentPage: 1, pageSize: 10, totalPages: 1));
+      return PaginatedAdminShopsResponse(
+        shops: shops,
+        pagination: PaginationInfo(
+          totalItems: 2,
+          currentPage: 1,
+          pageSize: 10,
+          totalPages: 1,
+        ),
+      );
     }
 
     final token = await _getAuthToken();
@@ -302,13 +363,24 @@ class ShopApiService extends GetxService {
     );
 
     if (response.statusCode == 200 && response.body['status'] == 'success') {
-      if (response.body['data'] is Map<String, dynamic>) {
-        return PaginatedAdminShopsResponse.fromJson(response.body['data'] as Map<String, dynamic>);
+      if (response.body['data'] is Map<String, dynamic> || response.body['data'] != null) {
+        return PaginatedAdminShopsResponse.fromJson(
+          asMap(response.body['data']),
+        );
       } else {
-         if (kDebugMode) {
-          print('Error admin listing shops: response.body[\'data\'] is not a Map.');
+        if (kDebugMode) {
+          print(
+            'Error admin listing shops: response.body[\'data\'] is not a Map.',
+          );
         }
-        _handleError(Response(statusCode: 500, statusText: 'Invalid response format from server', body: {'message': 'Invalid data structure in response.'}), "admin listing shops");
+        _handleError(
+          Response(
+            statusCode: 500,
+            statusText: 'Invalid response format from server',
+            body: {'message': 'Invalid data structure in response.'},
+          ),
+          "admin listing shops",
+        );
         return null;
       }
     } else {
@@ -342,7 +414,7 @@ class ShopApiService extends GetxService {
       headers: {'Authorization': 'Bearer $token'},
     );
     if (response.statusCode == 201 && response.body['status'] == 'success') {
-      return Shop.fromJson(response.body['data']);
+      return Shop.fromJson(asMap(response.body['data']));
     } else {
       _handleError(response, "admin creating shop");
       return null;
@@ -363,7 +435,14 @@ class ShopApiService extends GetxService {
   Future<Shop?> adminGetShopById(String shopId) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
-      return Shop(id: shopId, merchantId: '1', name: 'Admin Shop $shopId', address: 'Admin Address $shopId', createdAt: DateTime.now(), updatedAt: DateTime.now());
+      return Shop(
+        id: shopId,
+        merchantId: '1',
+        name: 'Admin Shop $shopId',
+        address: 'Admin Address $shopId',
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
     }
     final token = await _getAuthToken();
     if (token == null) return null;
@@ -372,7 +451,7 @@ class ShopApiService extends GetxService {
       headers: {'Authorization': 'Bearer $token'},
     );
     if (response.statusCode == 200 && response.body['status'] == 'success') {
-      return Shop.fromJson(response.body['data']);
+      return Shop.fromJson(asMap(response.body['data']));
     } else {
       _handleError(response, "admin fetching shop $shopId");
       return null;
@@ -391,10 +470,20 @@ class ShopApiService extends GetxService {
   /// __Expected Response (Success):__
   /// - __Status Code:__ 200
   /// - __Body (JSON):__ (The updated shop object)
-  Future<Shop?> adminUpdateShop(String shopId, Map<String, dynamic> updates) async {
+  Future<Shop?> adminUpdateShop(
+    String shopId,
+    Map<String, dynamic> updates,
+  ) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
-      return Shop(id: shopId, merchantId: '1', name: updates['name'], address: updates['address'], createdAt: DateTime.now(), updatedAt: DateTime.now());
+      return Shop(
+        id: shopId,
+        merchantId: '1',
+        name: updates['name'],
+        address: updates['address'],
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
     }
     final token = await _getAuthToken();
     if (token == null) return null;
@@ -404,7 +493,7 @@ class ShopApiService extends GetxService {
       headers: {'Authorization': 'Bearer $token'},
     );
     if (response.statusCode == 200 && response.body['status'] == 'success') {
-      return Shop.fromJson(response.body['data']);
+      return Shop.fromJson(asMap(response.body['data']));
     } else {
       _handleError(response, "admin updating shop $shopId");
       return null;
@@ -502,21 +591,143 @@ class ShopApiService extends GetxService {
       // Corrected Mock data for shop stock with pagination
       if (page > 1) {
         // If the page is not the first one, return an empty list to stop pagination.
-        return PaginatedShopStockResponse(items: [], totalItems: 15, currentPage: page, pageSize: pageSize, totalPages: 2); // Assuming 2 pages total
+        return PaginatedShopStockResponse(
+          items: [],
+          totalItems: 15,
+          currentPage: page,
+          pageSize: pageSize,
+          totalPages: 2,
+        ); // Assuming 2 pages total
       }
       final items = [
-        ShopStockItem(id: 'ss1', shopId: shopId, inventoryItemId: 'item1', itemName: 'Laptop', itemSku: 'LP123', itemUnitPrice: 1200.0, quantity: 15, lastStockedInAt: DateTime.now(), createdAt: DateTime.now(), updatedAt: DateTime.now()),
-        ShopStockItem(id: 'ss2', shopId: shopId, inventoryItemId: 'item2', itemName: 'Wireless Mouse', itemSku: 'MO456', itemUnitPrice: 25.0, quantity: 50, lastStockedInAt: DateTime.now(), createdAt: DateTime.now(), updatedAt: DateTime.now()),
-        ShopStockItem(id: 'ss3', shopId: shopId, inventoryItemId: 'item3', itemName: 'USB-C Hub', itemSku: 'HUB789', itemUnitPrice: 45.0, quantity: 30, lastStockedInAt: DateTime.now(), createdAt: DateTime.now(), updatedAt: DateTime.now()),
-        ShopStockItem(id: 'ss4', shopId: shopId, inventoryItemId: 'item4', itemName: 'Gaming Keyboard', itemSku: 'GK101', itemUnitPrice: 75.0, quantity: 20, lastStockedInAt: DateTime.now(), createdAt: DateTime.now(), updatedAt: DateTime.now()),
-        ShopStockItem(id: 'ss5', shopId: shopId, inventoryItemId: 'item5', itemName: '4K Webcam', itemSku: 'WC4K', itemUnitPrice: 99.0, quantity: 25, lastStockedInAt: DateTime.now(), createdAt: DateTime.now(), updatedAt: DateTime.now()),
-        ShopStockItem(id: 'ss6', shopId: shopId, inventoryItemId: 'item6', itemName: 'Bluetooth Speaker', itemSku: 'BS-500', itemUnitPrice: 60.0, quantity: 40, lastStockedInAt: DateTime.now(), createdAt: DateTime.now(), updatedAt: DateTime.now()),
-        ShopStockItem(id: 'ss7', shopId: shopId, inventoryItemId: 'item7', itemName: 'External SSD 1TB', itemSku: 'SSD1T', itemUnitPrice: 110.0, quantity: 18, lastStockedInAt: DateTime.now(), createdAt: DateTime.now(), updatedAt: DateTime.now()),
-        ShopStockItem(id: 'ss8', shopId: shopId, inventoryItemId: 'item8', itemName: 'Noise-Cancelling Headphones', itemSku: 'NCH-800', itemUnitPrice: 150.0, quantity: 22, lastStockedInAt: DateTime.now(), createdAt: DateTime.now(), updatedAt: DateTime.now()),
-        ShopStockItem(id: 'ss9', shopId: shopId, inventoryItemId: 'item9', itemName: 'Smartwatch', itemSku: 'SW-2023', itemUnitPrice: 250.0, quantity: 12, lastStockedInAt: DateTime.now(), createdAt: DateTime.now(), updatedAt: DateTime.now()),
-        ShopStockItem(id: 'ss10', shopId: shopId, inventoryItemId: 'item10', itemName: 'Tablet', itemSku: 'TB-10', itemUnitPrice: 450.0, quantity: 10, lastStockedInAt: DateTime.now(), createdAt: DateTime.now(), updatedAt: DateTime.now()),
+        ShopStockItem(
+          id: 'ss1',
+          shopId: shopId,
+          inventoryItemId: 'item1',
+          itemName: 'Laptop',
+          itemSku: 'LP123',
+          itemUnitPrice: 1200.0,
+          quantity: 15,
+          lastStockedInAt: DateTime.now(),
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+        ShopStockItem(
+          id: 'ss2',
+          shopId: shopId,
+          inventoryItemId: 'item2',
+          itemName: 'Wireless Mouse',
+          itemSku: 'MO456',
+          itemUnitPrice: 25.0,
+          quantity: 50,
+          lastStockedInAt: DateTime.now(),
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+        ShopStockItem(
+          id: 'ss3',
+          shopId: shopId,
+          inventoryItemId: 'item3',
+          itemName: 'USB-C Hub',
+          itemSku: 'HUB789',
+          itemUnitPrice: 45.0,
+          quantity: 30,
+          lastStockedInAt: DateTime.now(),
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+        ShopStockItem(
+          id: 'ss4',
+          shopId: shopId,
+          inventoryItemId: 'item4',
+          itemName: 'Gaming Keyboard',
+          itemSku: 'GK101',
+          itemUnitPrice: 75.0,
+          quantity: 20,
+          lastStockedInAt: DateTime.now(),
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+        ShopStockItem(
+          id: 'ss5',
+          shopId: shopId,
+          inventoryItemId: 'item5',
+          itemName: '4K Webcam',
+          itemSku: 'WC4K',
+          itemUnitPrice: 99.0,
+          quantity: 25,
+          lastStockedInAt: DateTime.now(),
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+        ShopStockItem(
+          id: 'ss6',
+          shopId: shopId,
+          inventoryItemId: 'item6',
+          itemName: 'Bluetooth Speaker',
+          itemSku: 'BS-500',
+          itemUnitPrice: 60.0,
+          quantity: 40,
+          lastStockedInAt: DateTime.now(),
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+        ShopStockItem(
+          id: 'ss7',
+          shopId: shopId,
+          inventoryItemId: 'item7',
+          itemName: 'External SSD 1TB',
+          itemSku: 'SSD1T',
+          itemUnitPrice: 110.0,
+          quantity: 18,
+          lastStockedInAt: DateTime.now(),
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+        ShopStockItem(
+          id: 'ss8',
+          shopId: shopId,
+          inventoryItemId: 'item8',
+          itemName: 'Noise-Cancelling Headphones',
+          itemSku: 'NCH-800',
+          itemUnitPrice: 150.0,
+          quantity: 22,
+          lastStockedInAt: DateTime.now(),
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+        ShopStockItem(
+          id: 'ss9',
+          shopId: shopId,
+          inventoryItemId: 'item9',
+          itemName: 'Smartwatch',
+          itemSku: 'SW-2023',
+          itemUnitPrice: 250.0,
+          quantity: 12,
+          lastStockedInAt: DateTime.now(),
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+        ShopStockItem(
+          id: 'ss10',
+          shopId: shopId,
+          inventoryItemId: 'item10',
+          itemName: 'Tablet',
+          itemSku: 'TB-10',
+          itemUnitPrice: 450.0,
+          quantity: 10,
+          lastStockedInAt: DateTime.now(),
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
       ];
-      return PaginatedShopStockResponse(items: items, totalItems: 15, currentPage: 1, pageSize: 10, totalPages: 2);
+      return PaginatedShopStockResponse(
+        items: items,
+        totalItems: 15,
+        currentPage: 1,
+        pageSize: 10,
+        totalPages: 2,
+      );
     }
     final token = await _getAuthToken();
     if (token == null) return null;
@@ -530,7 +741,7 @@ class ShopApiService extends GetxService {
       query: queryParameters,
     );
     if (response.statusCode == 200 && response.body['status'] == 'success') {
-      return PaginatedShopStockResponse.fromJson(response.body['data']);
+      return PaginatedShopStockResponse.fromJson(asMap(response.body['data']));
     } else {
       _handleError(response, "listing inventory for shop $shopId");
       return null;
@@ -555,25 +766,39 @@ class ShopApiService extends GetxService {
   /// - __Status Code:__ 200
   /// - __Body (JSON):__ (The updated shop stock item)
   Future<ShopStockItem?> stockInItem(
-      String shopId, String inventoryItemId, int quantityAdded) async {
+    String shopId,
+    String inventoryItemId,
+    int quantityAdded,
+  ) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
-      return ShopStockItem(id: '1', shopId: shopId, inventoryItemId: inventoryItemId, quantity: quantityAdded, lastStockedInAt: DateTime.now(), createdAt: DateTime.now(), updatedAt: DateTime.now(), itemName: 'Item Name', itemUnitPrice: 10.0);
+      return ShopStockItem(
+        id: '1',
+        shopId: shopId,
+        inventoryItemId: inventoryItemId,
+        quantity: quantityAdded,
+        lastStockedInAt: DateTime.now(),
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        itemName: 'Item Name',
+        itemUnitPrice: 10.0,
+      );
     }
     final token = await _getAuthToken();
     if (token == null) return null;
-    final body = {
-      'quantityAdded': quantityAdded,
-    };
+    final body = {'quantityAdded': quantityAdded};
     final response = await _connect.post(
       '$_merchantShopsBaseUrl/$shopId/inventory/$inventoryItemId/stock-in',
       body,
       headers: {'Authorization': 'Bearer $token'},
     );
     if (response.statusCode == 200 && response.body['status'] == 'success') {
-      return ShopStockItem.fromJson(response.body['data']);
+      return ShopStockItem.fromJson(asMap(response.body['data']));
     } else {
-      _handleError(response, "stocking in item $inventoryItemId for shop $shopId");
+      _handleError(
+        response,
+        "stocking in item $inventoryItemId for shop $shopId",
+      );
       return null;
     }
   }
@@ -606,7 +831,17 @@ class ShopApiService extends GetxService {
   }) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
-      return ShopStockItem(id: '1', shopId: shopId, inventoryItemId: inventoryItemId, quantity: 100 - quantityChange, lastStockedInAt: DateTime.now(), createdAt: DateTime.now(), updatedAt: DateTime.now(), itemName: 'Item Name', itemUnitPrice: 10.0);
+      return ShopStockItem(
+        id: '1',
+        shopId: shopId,
+        inventoryItemId: inventoryItemId,
+        quantity: 100 - quantityChange,
+        lastStockedInAt: DateTime.now(),
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        itemName: 'Item Name',
+        itemUnitPrice: 10.0,
+      );
     }
     final token = await _getAuthToken();
     if (token == null) return null;
@@ -623,9 +858,9 @@ class ShopApiService extends GetxService {
       headers: {'Authorization': 'Bearer $token'},
     );
     if (response.statusCode == 200 && response.body['status'] == 'success') {
-      return ShopStockItem.fromJson(response.body['data']);
+      return ShopStockItem.fromJson(asMap(response.body['data']));
     } else {
-       _handleError(response, "adjusting stock for item $inventoryItemId");
+      _handleError(response, "adjusting stock for item $inventoryItemId");
       return null;
     }
   }
@@ -647,7 +882,18 @@ class ShopApiService extends GetxService {
   Future<Sale?> createSale(CreateSaleInput saleData) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
-      return Sale(id: 'new-sale-id', shopId: saleData.shopId, merchantId: '1', saleDate: DateTime.now(), totalAmount: 100.0, paymentType: saleData.paymentType, paymentStatus: 'succeeded', createdAt: DateTime.now(), updatedAt: DateTime.now(), items: []);
+      return Sale(
+        id: 'new-sale-id',
+        shopId: saleData.shopId,
+        merchantId: '1',
+        saleDate: DateTime.now(),
+        totalAmount: 100.0,
+        paymentType: saleData.paymentType,
+        paymentStatus: 'succeeded',
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        items: [],
+      );
     }
 
     final token = await _getAuthToken();
@@ -660,13 +906,12 @@ class ShopApiService extends GetxService {
     );
 
     if (response.statusCode == 201 && response.body['status'] == 'success') {
-      return Sale.fromJson(response.body['data']);
+      return Sale.fromJson(asMap(response.body['data']));
     } else {
       _handleError(response, "creating sale");
       return null;
     }
   }
-
 
   /// Fetches a paginated list of sales for a specific shop.
   ///
@@ -689,7 +934,13 @@ class ShopApiService extends GetxService {
   }) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
-      return PaginatedSalesResponse(items: [], totalItems: 0, currentPage: 1, pageSize: 10, totalPages: 0);
+      return PaginatedSalesResponse(
+        items: [],
+        totalItems: 0,
+        currentPage: 1,
+        pageSize: 10,
+        totalPages: 0,
+      );
     }
     final token = await _getAuthToken();
     if (token == null) return null;
@@ -706,7 +957,7 @@ class ShopApiService extends GetxService {
     );
 
     if (response.statusCode == 200 && response.body['status'] == 'success') {
-      return PaginatedSalesResponse.fromJson(response.body['data']);
+      return PaginatedSalesResponse.fromJson(asMap(response.body['data']));
     } else {
       _handleError(response, "listing sales for shop $shopId");
       return null;
@@ -727,7 +978,18 @@ class ShopApiService extends GetxService {
   Future<Sale?> getSaleById(String saleId) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
-      return Sale(id: saleId, shopId: '1', merchantId: '1', saleDate: DateTime.now(), totalAmount: 100.0, paymentType: 'card', paymentStatus: 'succeeded', createdAt: DateTime.now(), updatedAt: DateTime.now(), items: []);
+      return Sale(
+        id: saleId,
+        shopId: '1',
+        merchantId: '1',
+        saleDate: DateTime.now(),
+        totalAmount: 100.0,
+        paymentType: 'card',
+        paymentStatus: 'succeeded',
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        items: [],
+      );
     }
     final token = await _getAuthToken();
     if (token == null) return null;
@@ -738,13 +1000,13 @@ class ShopApiService extends GetxService {
     );
 
     if (response.statusCode == 200 && response.body['status'] == 'success') {
-      return Sale.fromJson(response.body['data']);
+      return Sale.fromJson(asMap(response.body['data']));
     } else {
       _handleError(response, "fetching sale $saleId");
       return null;
     }
   }
-  
+
   /// Fetches a receipt for a specific sale.
   ///
   /// __Request:__
@@ -759,7 +1021,19 @@ class ShopApiService extends GetxService {
   Future<Receipt?> getReceipt(String saleId) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
-      return Receipt(saleId: saleId, saleDate: DateTime.now(), shopName: 'Mock Shop', shopAddress: 'Mock Address', merchantName: 'Mock Merchant', originalTotal: 100.0, discountAmount: 10.0, finalTotal: 90.0, paymentType: 'card', paymentStatus: 'succeeded', items: []);
+      return Receipt(
+        saleId: saleId,
+        saleDate: DateTime.now(),
+        shopName: 'Mock Shop',
+        shopAddress: 'Mock Address',
+        merchantName: 'Mock Merchant',
+        originalTotal: 100.0,
+        discountAmount: 10.0,
+        finalTotal: 90.0,
+        paymentType: 'card',
+        paymentStatus: 'succeeded',
+        items: [],
+      );
     }
     final token = await _getAuthToken();
     if (token == null) return null;
@@ -768,7 +1042,7 @@ class ShopApiService extends GetxService {
       headers: {'Authorization': 'Bearer $token'},
     );
     if (response.isOk && response.body['data'] != null) {
-      return Receipt.fromJson(response.body['data']);
+      return Receipt.fromJson(asMap(response.body['data']));
     } else {
       _handleError(response, "fetching receipt");
       return null;
@@ -806,16 +1080,17 @@ class ShopApiService extends GetxService {
   Future<StaffDashboardSummaryResponse?> getStaffDashboardSummary() async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
-      return StaffDashboardSummaryResponse(assignedShopName: 'Mock Shop', salesToday: 1234.56, transactionsToday: 15, recentActivities: []);
+      return StaffDashboardSummaryResponse(
+        assignedShopName: 'Mock Shop',
+        salesToday: 1234.56,
+        transactionsToday: 15,
+        recentActivities: [],
+      );
     }
     final token = await _getAuthToken();
     if (token == null) {
-      Get.snackbar(
-        "Authentication Error",
+      DialogUtils.showError(
         "You are not logged in or your session has expired.",
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.redAccent,
-        colorText: Colors.white,
       );
       return null;
     }
@@ -832,27 +1107,34 @@ class ShopApiService extends GetxService {
 
     if (response.statusCode == 200 && response.body != null) {
       try {
-        return StaffDashboardSummaryResponse.fromJson(response.body as Map<String, dynamic>);
+        return StaffDashboardSummaryResponse.fromJson(
+          response.body as Map<String, dynamic>,
+        );
       } catch (e) {
         if (kDebugMode) {
           print('Error parsing staff dashboard summary: $e');
         }
-        _handleError(Response(statusCode: 500, statusText: 'Invalid response format', body: {'message': 'Error parsing dashboard data from server.'}), "fetching staff dashboard summary");
+        _handleError(
+          Response(
+            statusCode: 500,
+            statusText: 'Invalid response format',
+            body: {'message': 'Error parsing dashboard data from server.'},
+          ),
+          "fetching staff dashboard summary",
+        );
         return null;
       }
     } else {
       String errorMessage = "Failed to fetch staff dashboard summary.";
       if (response.body is Map && response.body['message'] != null) {
-          errorMessage = response.body['message'];
-      } else if (response.statusText != null && response.statusText!.isNotEmpty) {
-          errorMessage = response.statusText!;
+        errorMessage = response.body['message'];
+      } else if (response.statusText != null &&
+          response.statusText!.isNotEmpty) {
+        errorMessage = response.statusText!;
       }
-       Get.snackbar( // Fallback snackbar
-        "Dashboard Error",
+      DialogUtils.showError(
+        // Fallback error dialog
         errorMessage,
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.redAccent,
-        colorText: Colors.white,
       );
       return null;
     }

@@ -33,7 +33,9 @@ class ModernCard extends StatelessWidget {
         borderRadius: borderRadius ?? BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(elevation != null ? elevation! * 0.02 : 0.05),
+            color: Colors.black.withOpacity(
+              elevation != null ? elevation! * 0.02 : 0.05,
+            ),
             blurRadius: 20,
             offset: const Offset(0, 4),
           ),
@@ -53,9 +55,6 @@ class ModernCard extends StatelessWidget {
       );
     }
 
-    return Container(
-      margin: margin,
-      child: content,
-    );
+    return Container(margin: margin, child: content);
   }
 }

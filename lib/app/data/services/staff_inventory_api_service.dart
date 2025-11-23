@@ -3,6 +3,7 @@ import 'package:smart_retail/app/core/config/app_config.dart';
 import 'package:smart_retail/app/data/models/shop_inventory_item.dart';
 import 'package:smart_retail/app/data/providers/api_constants.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
+import 'package:smart_retail/app/utils/response_utils.dart';
 
 // This service handles inventory operations from the STAFF'S perspective for their assigned shop.
 class StaffInventoryApiService extends GetxService {
@@ -34,21 +35,29 @@ class StaffInventoryApiService extends GetxService {
   Future<List<ShopInventoryItem>> getInventoryItems() async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
-      return List.generate(15, (i) => ShopInventoryItem(
-        id: 'shop-item-$i',
-        productId: 'prod-$i',
-        name: 'Product for Staff $i',
-        sku: 'SKU-STAFF-$i',
-        quantity: 30 + i * 2,
-        sellingPrice: 12.0 + i,
-      ));
+      return List.generate(
+        15,
+        (i) => ShopInventoryItem(
+          id: 'shop-item-$i',
+          productId: 'prod-$i',
+          name: 'Product for Staff $i',
+          sku: 'SKU-STAFF-$i',
+          quantity: 30 + i * 2,
+          sellingPrice: 12.0 + i,
+        ),
+      );
     }
 
     final response = await _connect.get(_baseUrl, headers: await _getHeaders());
     if (response.isOk && response.body['data'] != null) {
-      return (response.body['data'] as List).map((i) => ShopInventoryItem.fromJson(i)).toList();
+      final rawList = asList(response.body['data']);
+      return rawList
+          .map((i) => ShopInventoryItem.fromJson(Map<String, dynamic>.from(i)))
+          .toList();
     } else {
-      throw Exception(response.body?['message'] ?? 'Failed to load shop inventory');
+      throw Exception(
+        response.body?['message'] ?? 'Failed to load shop inventory',
+      );
     }
   }
 
@@ -73,7 +82,9 @@ class StaffInventoryApiService extends GetxService {
       return;
     }
 
-    final response = await _connect.post('$_baseUrl/stock-in', {'items': items}, headers: await _getHeaders());
+    final response = await _connect.post('$_baseUrl/stock-in', {
+      'items': items,
+    }, headers: await _getHeaders());
     if (!response.isOk) {
       throw Exception(response.body?['message'] ?? 'Failed to update stock');
     }

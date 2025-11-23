@@ -10,6 +10,6 @@ class GlobalThemeToggleWrapper extends StatelessWidget {
   Widget build(BuildContext context) {
     // If a child is provided, return it, otherwise return an empty widget.
     // The Stack and Positioned FAB are removed.
-    return child ?? const SizedBox.shrink(); 
+    return child ?? const SizedBox.shrink();
   }
 }

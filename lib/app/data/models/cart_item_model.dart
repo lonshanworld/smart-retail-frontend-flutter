@@ -6,7 +6,8 @@ class CartItem {
   // CORRECTED: Made quantity observable to allow for granular updates in the UI.
   final RxInt quantity;
 
-  CartItem({required this.product, int initialQuantity = 1}) : quantity = initialQuantity.obs;
+  CartItem({required this.product, int initialQuantity = 1})
+    : quantity = initialQuantity.obs;
 
   // The subtotal is now calculated based on the observable quantity's value.
   double get subtotal => product.sellingPrice * quantity.value;

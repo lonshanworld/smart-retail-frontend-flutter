@@ -47,17 +47,28 @@ class Receipt {
 
     return Receipt(
       saleId: json['saleId'] as String? ?? json['sale_id'] as String,
-      saleDate: DateTime.parse(json['saleDate'] as String? ?? json['sale_date'] as String),
+      saleDate: DateTime.parse(
+        json['saleDate'] as String? ?? json['sale_date'] as String,
+      ),
       shopName: json['shopName'] as String? ?? json['shop_name'] as String,
-      shopAddress: json['shopAddress'] as String? ?? json['shop_address'] as String? ?? '',
-      merchantName: json['merchantName'] as String? ?? json['merchant_name'] as String,
+      shopAddress:
+          json['shopAddress'] as String? ??
+          json['shop_address'] as String? ??
+          '',
+      merchantName:
+          json['merchantName'] as String? ?? json['merchant_name'] as String,
       staffName: json['staffName'] as String? ?? json['staff_name'] as String?,
       originalTotal: originalTotal, // Calculated value
       discountAmount: discount,
       finalTotal: finalAmount,
-      paymentType: json['paymentType'] as String? ?? json['payment_type'] as String,
-      paymentStatus: json['paymentStatus'] as String? ?? json['payment_status'] as String? ?? 'succeeded', // This field is now included
-      appliedPromotionName: json['promotionName'] as String? ?? json['promotion_name'] as String?,
+      paymentType:
+          json['paymentType'] as String? ?? json['payment_type'] as String,
+      paymentStatus:
+          json['paymentStatus'] as String? ??
+          json['payment_status'] as String? ??
+          'succeeded', // This field is now included
+      appliedPromotionName:
+          json['promotionName'] as String? ?? json['promotion_name'] as String?,
       notes: json['notes'] as String?,
       items: (json['items'] as List<dynamic>)
           .map((item) => ReceiptItem.fromJson(item as Map<String, dynamic>))

@@ -26,30 +26,34 @@ class Supplier {
   });
 
   factory Supplier.fromJson(Map<String, dynamic> json) => Supplier(
-        id: json["id"],
-        merchantId: json["merchantId"],
-        name: json["name"],
-        contactName: json["contactName"],
-        contactEmail: json["contactEmail"],
-        contactPhone: json["contactPhone"],
-        address: json["address"],
-        notes: json["notes"],
-        createdAt: json["createdAt"] == null ? null : DateTime.parse(json["createdAt"]),
-        updatedAt: json["updatedAt"] == null ? null : DateTime.parse(json["updatedAt"]),
-      );
+    id: json["id"],
+    merchantId: json["merchantId"],
+    name: json["name"],
+    contactName: json["contactName"],
+    contactEmail: json["contactEmail"],
+    contactPhone: json["contactPhone"],
+    address: json["address"],
+    notes: json["notes"],
+    createdAt: json["createdAt"] == null
+        ? null
+        : DateTime.parse(json["createdAt"]),
+    updatedAt: json["updatedAt"] == null
+        ? null
+        : DateTime.parse(json["updatedAt"]),
+  );
 
   Map<String, dynamic> toJson() => {
-        "id": id,
-        "merchantId": merchantId,
-        "name": name,
-        "contactName": contactName,
-        "contactEmail": contactEmail,
-        "contactPhone": contactPhone,
-        "address": address,
-        "notes": notes,
-        "createdAt": createdAt?.toIso8601String(),
-        "updatedAt": updatedAt?.toIso8601String(),
-      };
+    "id": id,
+    "merchantId": merchantId,
+    "name": name,
+    "contactName": contactName,
+    "contactEmail": contactEmail,
+    "contactPhone": contactPhone,
+    "address": address,
+    "notes": notes,
+    "createdAt": createdAt?.toIso8601String(),
+    "updatedAt": updatedAt?.toIso8601String(),
+  };
 }
 
 class PaginatedSuppliersResponse {
@@ -69,7 +73,9 @@ class PaginatedSuppliersResponse {
 
   factory PaginatedSuppliersResponse.fromJson(Map<String, dynamic> json) {
     return PaginatedSuppliersResponse(
-      suppliers: (json['data'] as List).map((i) => Supplier.fromJson(i)).toList(),
+      suppliers: (json['data'] as List)
+          .map((i) => Supplier.fromJson(i))
+          .toList(),
       totalItems: json['pagination']['totalItems'],
       currentPage: json['pagination']['currentPage'],
       pageSize: json['pagination']['pageSize'],

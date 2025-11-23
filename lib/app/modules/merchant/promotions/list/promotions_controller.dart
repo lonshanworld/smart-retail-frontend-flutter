@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:smart_retail/app/data/models/promotion_model.dart';
 import 'package:smart_retail/app/data/services/promotion_api_service.dart';
 import 'package:smart_retail/app/routes/app_pages.dart';
+import 'package:smart_retail/app/utils/dialog_utils.dart';
 
 class PromotionsController extends GetxController {
   final PromotionApiService _apiService = Get.find<PromotionApiService>();
@@ -25,7 +26,7 @@ class PromotionsController extends GetxController {
       promotions.assignAll(response.items);
     } catch (e) {
       error.value = e.toString();
-      Get.snackbar('Error', 'Failed to fetch promotions: ${e.toString()}');
+      DialogUtils.showError('Failed to fetch promotions: ${e.toString()}');
     } finally {
       isLoading.value = false;
     }
@@ -41,32 +42,28 @@ class PromotionsController extends GetxController {
 
   void goToEditPromotion(Promotion promotion) async {
     // Corrected Route
-    final result = await Get.toNamed(Routes.MERCHANT_PROMOTIONS_EDIT, arguments: promotion);
+    final result = await Get.toNamed(
+      Routes.MERCHANT_PROMOTIONS_EDIT,
+      arguments: promotion,
+    );
     if (result == true) {
       fetchPromotions(); // Refresh list
     }
   }
 
-  void deletePromotion(Promotion promotion, {bool skipConfirmation = false}) async {
+  void deletePromotion(
+    Promotion promotion, {
+    bool skipConfirmation = false,
+  }) async {
     bool? confirm = true;
-    
+
     if (!skipConfirmation) {
-      confirm = await Get.dialog<bool>(
-        AlertDialog(
-          title: const Text('Delete Promotion'),
-          content: Text('Are you sure you want to delete "${promotion.name}"?'),
-          actions: [
-            TextButton(
-              onPressed: () => Get.back(result: false),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () => Get.back(result: true),
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: const Text('Delete'),
-            ),
-          ],
-        ),
+      confirm = await DialogUtils.showConfirmDialog(
+        title: 'Delete Promotion',
+        message: 'Are you sure you want to delete "${promotion.name}"?',
+        confirmText: 'Delete',
+        cancelText: 'Cancel',
+        isDanger: true,
       );
     }
 
@@ -75,9 +72,9 @@ class PromotionsController extends GetxController {
     try {
       await _apiService.deletePromotion(promotion.id);
       promotions.remove(promotion);
-      Get.snackbar('Success', 'Promotion deleted successfully');
+      DialogUtils.showSuccess('Promotion deleted successfully');
     } catch (e) {
-      Get.snackbar('Error', 'Failed to delete promotion: ${e.toString()}');
+      DialogUtils.showError('Failed to delete promotion: ${e.toString()}');
       // Re-fetch to restore the list if delete failed
       fetchPromotions();
     }
@@ -85,24 +82,27 @@ class PromotionsController extends GetxController {
 
   void togglePromotionStatus(Promotion promotion) async {
     final newStatus = !promotion.isActive;
-    
+
     try {
-      final updatedPromotion = await _apiService.togglePromotionStatus(promotion.id, newStatus);
-      
+      final updatedPromotion = await _apiService.togglePromotionStatus(
+        promotion.id,
+        newStatus,
+      );
+
       // Update the promotion in the list
       final index = promotions.indexWhere((p) => p.id == promotion.id);
       if (index != -1) {
         promotions[index] = updatedPromotion;
         promotions.refresh();
       }
-      
-      Get.snackbar(
-        'Success', 
+
+      DialogUtils.showSuccess(
         'Promotion ${newStatus ? 'activated' : 'deactivated'} successfully',
-        snackPosition: SnackPosition.BOTTOM,
       );
     } catch (e) {
-      Get.snackbar('Error', 'Failed to update promotion status: ${e.toString()}');
+      DialogUtils.showError(
+        'Failed to update promotion status: ${e.toString()}',
+      );
     }
   }
 }

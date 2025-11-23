@@ -9,9 +9,7 @@ class AdminShopsBinding extends Bindings {
     // Assuming ShopApiService is globally registered (e.g., in main.dart or a global AppBinding)
     // If not, and it's needed by AdminShopsController directly via Get.find() in constructor,
     // ensure it's available. For now, AdminShopsController doesn't auto-find it in constructor.
-    
-    Get.lazyPut<AdminShopsController>(
-      () => AdminShopsController(),
-    );
+
+    Get.lazyPut<AdminShopsController>(() => AdminShopsController());
   }
 }

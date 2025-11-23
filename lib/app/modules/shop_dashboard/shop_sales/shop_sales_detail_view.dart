@@ -8,10 +8,7 @@ import 'package:smart_retail/app/widgets/app_colors.dart';
 class ShopSalesDetailView extends StatelessWidget {
   final Sale sale;
 
-  const ShopSalesDetailView({
-    Key? key,
-    required this.sale,
-  }) : super(key: key);
+  const ShopSalesDetailView({Key? key, required this.sale}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -19,10 +16,14 @@ class ShopSalesDetailView extends StatelessWidget {
     final dateFormat = DateFormat.yMd().add_jm();
 
     // Calculate totals
-    double totalSellingPrice = sale.items.fold(0, (sum, item) => sum + item.subtotal);
+    double totalSellingPrice = sale.items.fold(
+      0,
+      (sum, item) => sum + item.subtotal,
+    );
     double totalOriginalPrice = sale.items.fold(
       0,
-      (sum, item) => sum + ((item.originalPriceAtSale ?? 0.0) * item.quantitySold),
+      (sum, item) =>
+          sum + ((item.originalPriceAtSale ?? 0.0) * item.quantitySold),
     );
     double totalProfit = sale.items.fold(0, (sum, item) => sum + item.profit);
 
@@ -61,12 +62,18 @@ class ShopSalesDetailView extends StatelessWidget {
                           ),
                           Text(
                             sale.id,
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ],
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
                           color: _getPaymentStatusColor(sale.paymentStatus),
                           borderRadius: BorderRadius.circular(20),
@@ -95,7 +102,10 @@ class ShopSalesDetailView extends StatelessWidget {
                           ),
                           Text(
                             dateFormat.format(sale.saleDate),
-                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ],
                       ),
@@ -108,7 +118,10 @@ class ShopSalesDetailView extends StatelessWidget {
                           ),
                           Text(
                             sale.paymentType,
-                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ],
                       ),
@@ -170,7 +183,10 @@ class ShopSalesDetailView extends StatelessWidget {
                             ),
                           ),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 5,
+                            ),
                             decoration: BoxDecoration(
                               color: AppColors.info.shade100,
                               borderRadius: BorderRadius.circular(4),
@@ -197,7 +213,10 @@ class ShopSalesDetailView extends StatelessWidget {
                             children: [
                               const Text(
                                 'Selling Price',
-                                style: TextStyle(fontSize: 11, color: Colors.grey),
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.grey,
+                                ),
                               ),
                               Text(
                                 currencyFormat.format(item.sellingPriceAtSale),
@@ -209,16 +228,22 @@ class ShopSalesDetailView extends StatelessWidget {
                             ],
                           ),
                           // Show Original Price only for merchants
-                          if (Get.find<AuthService>().user.value?.role == 'merchant')
+                          if (Get.find<AuthService>().user.value?.role ==
+                              'merchant')
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 const Text(
                                   'Original Price',
-                                  style: TextStyle(fontSize: 11, color: Colors.grey),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.grey,
+                                  ),
                                 ),
                                 Text(
-                                  currencyFormat.format(item.originalPriceAtSale ?? 0),
+                                  currencyFormat.format(
+                                    item.originalPriceAtSale ?? 0,
+                                  ),
                                   style: const TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600,
@@ -231,7 +256,10 @@ class ShopSalesDetailView extends StatelessWidget {
                             children: [
                               const Text(
                                 'Subtotal',
-                                style: TextStyle(fontSize: 11, color: Colors.grey),
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.grey,
+                                ),
                               ),
                               Text(
                                 currencyFormat.format(item.subtotal),
@@ -247,7 +275,8 @@ class ShopSalesDetailView extends StatelessWidget {
                       const SizedBox(height: 8),
 
                       // Profit row (only for merchants)
-                      if (Get.find<AuthService>().user.value?.role == 'merchant')
+                      if (Get.find<AuthService>().user.value?.role ==
+                          'merchant')
                         Container(
                           padding: const EdgeInsets.only(top: 8),
                           decoration: BoxDecoration(
@@ -260,10 +289,15 @@ class ShopSalesDetailView extends StatelessWidget {
                             children: [
                               const Text(
                                 'Profit per item',
-                                style: TextStyle(fontSize: 12, color: Colors.grey),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey,
+                                ),
                               ),
                               Text(
-                                currencyFormat.format(item.profit / item.quantitySold),
+                                currencyFormat.format(
+                                  item.profit / item.quantitySold,
+                                ),
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
@@ -296,7 +330,8 @@ class ShopSalesDetailView extends StatelessWidget {
                     'Total Selling Price',
                     currencyFormat.format(totalSellingPrice),
                   ),
-                  if (Get.find<AuthService>().user.value?.role == 'merchant') ...[
+                  if (Get.find<AuthService>().user.value?.role ==
+                      'merchant') ...[
                     const Divider(),
                     _buildSummaryRow(
                       'Total Original Price',

@@ -17,14 +17,22 @@ class AdminPaginatedUsersResponse {
 
   factory AdminPaginatedUsersResponse.fromJson(Map<String, dynamic> json) {
     var usersList = json['users'] as List? ?? [];
-    List<User> users = usersList.map((i) => User.fromJson(i as Map<String, dynamic>)).toList();
+    List<User> users = usersList
+        .map((i) => User.fromJson(i as Map<String, dynamic>))
+        .toList();
 
     return AdminPaginatedUsersResponse(
       users: users,
-      currentPage: json['currentPage'] as int? ?? json['current_page'] as int? ?? 1,
-      totalPages: json['totalPages'] as int? ?? json['total_pages'] as int? ?? 1,
-      pageSize: json['pageSize'] as int? ?? json['page_size'] as int? ?? users.length,
-      totalCount: json['totalCount'] as int? ?? json['total_count'] as int? ?? users.length,
+      currentPage:
+          json['currentPage'] as int? ?? json['current_page'] as int? ?? 1,
+      totalPages:
+          json['totalPages'] as int? ?? json['total_pages'] as int? ?? 1,
+      pageSize:
+          json['pageSize'] as int? ?? json['page_size'] as int? ?? users.length,
+      totalCount:
+          json['totalCount'] as int? ??
+          json['total_count'] as int? ??
+          users.length,
     );
   }
 

@@ -56,9 +56,9 @@ class SaleForSync extends Equatable {
       localId: map['id'] ?? '',
       shopId: map['shop_id'] ?? '',
       items: List<Map<String, dynamic>>.from(
-        (map['items'] is String) 
-          ? _parseJsonString(map['items']) 
-          : (map['items'] as List? ?? [])
+        (map['items'] is String)
+            ? _parseJsonString(map['items'])
+            : (map['items'] as List? ?? []),
       ),
       totalAmount: (map['total_amount'] as num?)?.toDouble() ?? 0.0,
       discountAmount: (map['discount_amount'] as num?)?.toDouble() ?? 0.0,
@@ -66,9 +66,9 @@ class SaleForSync extends Equatable {
       customerId: map['customer_id'],
       customerName: map['customer_name'],
       notes: map['notes'],
-      createdAt: map['created_at'] is String 
-        ? DateTime.parse(map['created_at'])
-        : DateTime.now(),
+      createdAt: map['created_at'] is String
+          ? DateTime.parse(map['created_at'])
+          : DateTime.now(),
     );
   }
 
@@ -123,8 +123,8 @@ class SyncResult extends Equatable {
       status: json['status'] ?? 'failed',
       error: json['error'],
       serverTimestamp: json['server_timestamp'] is String
-        ? DateTime.parse(json['server_timestamp'])
-        : null,
+          ? DateTime.parse(json['server_timestamp'])
+          : null,
     );
   }
 
@@ -132,7 +132,13 @@ class SyncResult extends Equatable {
   bool get isFailed => status == 'failed';
 
   @override
-  List<Object?> get props => [localId, serverId, status, error, serverTimestamp];
+  List<Object?> get props => [
+    localId,
+    serverId,
+    status,
+    error,
+    serverTimestamp,
+  ];
 }
 
 // ============ BATCH SYNC RESPONSE ============
@@ -153,8 +159,8 @@ class BatchSyncResponse extends Equatable {
 
   factory BatchSyncResponse.fromJson(Map<String, dynamic> json) {
     final results = (json['results'] as List? ?? [])
-      .map((r) => SyncResult.fromJson(r as Map<String, dynamic>))
-      .toList();
+        .map((r) => SyncResult.fromJson(r as Map<String, dynamic>))
+        .toList();
 
     return BatchSyncResponse(
       status: json['status'] ?? 'failed',
@@ -169,7 +175,13 @@ class BatchSyncResponse extends Equatable {
   bool get isPartial => failedCount > 0 && syncedCount > 0;
 
   @override
-  List<Object?> get props => [status, syncBatchId, results, syncedCount, failedCount];
+  List<Object?> get props => [
+    status,
+    syncBatchId,
+    results,
+    syncedCount,
+    failedCount,
+  ];
 }
 
 // ============ SYNC LOG ============
@@ -204,8 +216,8 @@ class SyncLog extends Equatable {
       errorMessage: map['error_message'],
       syncBatchId: map['sync_batch_id'],
       createdAt: map['created_at'] is String
-        ? DateTime.parse(map['created_at'])
-        : DateTime.now(),
+          ? DateTime.parse(map['created_at'])
+          : DateTime.now(),
     );
   }
 

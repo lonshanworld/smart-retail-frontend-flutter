@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:smart_retail/app/utils/dialog_utils.dart';
 import 'package:smart_retail/app/data/models/inventory_item_model.dart';
 import 'package:smart_retail/app/data/services/staff_items_api_service.dart';
 
@@ -36,7 +37,7 @@ class StaffItemsController extends GetxController {
       filteredItems.assignAll(result);
     } catch (e) {
       errorMessage.value = "Failed to load items: ${e.toString()}";
-      Get.snackbar('Error', errorMessage.value);
+      DialogUtils.showError(errorMessage.value);
     } finally {
       isLoading.value = false;
     }
@@ -47,11 +48,14 @@ class StaffItemsController extends GetxController {
     if (searchTerm.isEmpty) {
       filteredItems.assignAll(items);
     } else {
-      filteredItems.assignAll(items.where((item) {
-        final nameMatch = item.name.toLowerCase().contains(searchTerm);
-        final skuMatch = item.sku?.toLowerCase().contains(searchTerm) ?? false;
-        return nameMatch || skuMatch;
-      }).toList());
+      filteredItems.assignAll(
+        items.where((item) {
+          final nameMatch = item.name.toLowerCase().contains(searchTerm);
+          final skuMatch =
+              item.sku?.toLowerCase().contains(searchTerm) ?? false;
+          return nameMatch || skuMatch;
+        }).toList(),
+      );
     }
   }
 

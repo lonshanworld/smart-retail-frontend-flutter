@@ -20,7 +20,8 @@ class SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: padding ?? const EdgeInsets.symmetric(vertical: 16, horizontal: 4),
+      padding:
+          padding ?? const EdgeInsets.symmetric(vertical: 16, horizontal: 4),
       child: Row(
         children: [
           if (icon != null) ...[
@@ -43,10 +44,7 @@ class SectionHeader extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     subtitle!,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade600,
-                    ),
+                    style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                   ),
                 ],
               ],

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:smart_retail/app/utils/dialog_utils.dart';
 import 'package:smart_retail/app/data/models/report_model.dart';
 import 'package:smart_retail/app/data/models/sale_model.dart';
 import 'package:smart_retail/app/data/models/shop_model.dart';
@@ -12,7 +13,8 @@ enum ReportPeriod { daily, weekly, monthly, yearly, custom }
 class SalesAnalysisController extends GetxController {
   // CORRECTED: Changed to the correct API service for reports
   final ReportApiService _apiService = Get.find<ReportApiService>();
-  final MerchantShopsApiService _shopsApiService = Get.find<MerchantShopsApiService>();
+  final MerchantShopsApiService _shopsApiService =
+      Get.find<MerchantShopsApiService>();
 
   // --- State ---
   final RxList<Sale> sales = <Sale>[].obs;
@@ -43,7 +45,7 @@ class SalesAnalysisController extends GetxController {
       final result = await _shopsApiService.listShops();
       shops.assignAll(result);
     } catch (e) {
-      Get.snackbar('Error', 'Could not load shops: $e');
+      DialogUtils.showError('Could not load shops: $e');
     }
   }
 
@@ -53,7 +55,7 @@ class SalesAnalysisController extends GetxController {
       errorMessage.value = null;
 
       var (start, end) = _calculateDateRange();
-      
+
       print('📊 [SALES REPORT] Fetching report...');
       print('   Period: ${selectedPeriod.value}');
       print('   Start: $start');
@@ -68,19 +70,14 @@ class SalesAnalysisController extends GetxController {
         shopId: selectedShop.value?.id,
         groupBy: selectedGroupBy.value,
       );
-      
+
       print('✅ [SALES REPORT] Received ${response.sales.length} sales');
       sales.assignAll(response.sales);
     } catch (e, stackTrace) {
       print('❌ [SALES REPORT] Error: $e');
       print('   Stack trace: $stackTrace');
       errorMessage.value = e.toString();
-      Get.snackbar(
-        'Report Error',
-        'Failed to load sales report: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        duration: const Duration(seconds: 5),
-      );
+      DialogUtils.showInfo('Failed to load sales report: $e');
     } finally {
       isLoading.value = false;
     }
@@ -124,14 +121,19 @@ class SalesAnalysisController extends GetxController {
         return (DateTime(now.year - 1, now.month, now.day), now);
       case ReportPeriod.custom:
         // Ensure custom dates are not null before returning
-        return (customStartDate.value ?? now.subtract(const Duration(days: 1)), customEndDate.value ?? now);
+        return (
+          customStartDate.value ?? now.subtract(const Duration(days: 1)),
+          customEndDate.value ?? now,
+        );
     }
   }
 
   Future<void> selectCustomDate(BuildContext context, bool isStart) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: (isStart ? customStartDate.value : customEndDate.value) ?? DateTime.now(),
+      initialDate:
+          (isStart ? customStartDate.value : customEndDate.value) ??
+          DateTime.now(),
       firstDate: DateTime(2020),
       lastDate: DateTime(2030),
     );

@@ -8,8 +8,6 @@ class StockInBinding extends Bindings {
   void dependencies() {
     Get.lazyPut<InventoryApiService>(() => InventoryApiService());
     Get.lazyPut<ShopInventoryApiService>(() => ShopInventoryApiService());
-    Get.lazyPut<StockInController>(
-      () => StockInController(),
-    );
+    Get.lazyPut<StockInController>(() => StockInController());
   }
 }

@@ -31,7 +31,10 @@ class ShopProfileView extends GetView<ShopProfileController> {
               children: [
                 CircleAvatar(
                   radius: 50,
-                  child: Text(user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U', style: Get.textTheme.headlineLarge),
+                  child: Text(
+                    user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
+                    style: Get.textTheme.headlineLarge,
+                  ),
                 ),
                 const SizedBox(height: 24),
                 _buildProfileCard(user, shop),
@@ -52,12 +55,20 @@ class ShopProfileView extends GetView<ShopProfileController> {
           children: [
             if (shop != null) ...[
               _buildInfoRow(Icons.store, 'Shop Name', shop.name),
-              _buildInfoRow(Icons.location_on, 'Shop Address', shop.address ?? 'N/A'),
+              _buildInfoRow(
+                Icons.location_on,
+                'Shop Address',
+                shop.address ?? 'N/A',
+              ),
               const Divider(),
             ],
             _buildInfoRow(Icons.person, 'Name', user.name),
             _buildInfoRow(Icons.email, 'Email', user.email),
-            _buildInfoRow(Icons.work, 'Role', user.role.capitalizeFirst ?? user.role),
+            _buildInfoRow(
+              Icons.work,
+              'Role',
+              user.role.capitalizeFirst ?? user.role,
+            ),
           ],
         ),
       ),

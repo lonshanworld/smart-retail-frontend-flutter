@@ -8,7 +8,8 @@ class StaffDashboardController extends GetxController {
   final RxBool isLoading = true.obs;
   final RxBool hasError = false.obs;
   final RxString errorMessage = ''.obs;
-  final Rx<StaffDashboardSummaryResponse?> dashboardSummary = Rx<StaffDashboardSummaryResponse?>(null);
+  final Rx<StaffDashboardSummaryResponse?> dashboardSummary =
+      Rx<StaffDashboardSummaryResponse?>(null);
 
   @override
   void onInit() {

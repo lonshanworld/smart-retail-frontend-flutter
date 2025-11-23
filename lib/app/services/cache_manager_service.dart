@@ -18,17 +18,25 @@ class CacheManagerService extends GetxService {
   ) async {
     try {
       await _localDatabaseService.cacheProducts(products, merchantId);
-      print('[CacheManager] Cached ${products.length} products for merchant $merchantId');
+      print(
+        '[CacheManager] Cached ${products.length} products for merchant $merchantId',
+      );
     } catch (e) {
       print('[CacheManager] Error caching products: $e');
     }
   }
 
-  Future<List<Map<String, dynamic>>?> getCachedProducts(String merchantId) async {
+  Future<List<Map<String, dynamic>>?> getCachedProducts(
+    String merchantId,
+  ) async {
     try {
-      final products = await _localDatabaseService.getCachedProducts(merchantId);
+      final products = await _localDatabaseService.getCachedProducts(
+        merchantId,
+      );
       if (products != null) {
-        print('[CacheManager] Retrieved ${products.length} cached products for merchant $merchantId');
+        print(
+          '[CacheManager] Retrieved ${products.length} cached products for merchant $merchantId',
+        );
       }
       return products;
     } catch (e) {
@@ -45,17 +53,25 @@ class CacheManagerService extends GetxService {
   ) async {
     try {
       await _localDatabaseService.cachePromotions(promotions, merchantId);
-      print('[CacheManager] Cached ${promotions.length} promotions for merchant $merchantId');
+      print(
+        '[CacheManager] Cached ${promotions.length} promotions for merchant $merchantId',
+      );
     } catch (e) {
       print('[CacheManager] Error caching promotions: $e');
     }
   }
 
-  Future<List<Map<String, dynamic>>?> getCachedPromotions(String merchantId) async {
+  Future<List<Map<String, dynamic>>?> getCachedPromotions(
+    String merchantId,
+  ) async {
     try {
-      final promotions = await _localDatabaseService.getCachedPromotions(merchantId);
+      final promotions = await _localDatabaseService.getCachedPromotions(
+        merchantId,
+      );
       if (promotions != null) {
-        print('[CacheManager] Retrieved ${promotions.length} cached promotions for merchant $merchantId');
+        print(
+          '[CacheManager] Retrieved ${promotions.length} cached promotions for merchant $merchantId',
+        );
       }
       return promotions;
     } catch (e) {
@@ -154,8 +170,12 @@ class CacheManagerService extends GetxService {
       final size = await getCacheSize();
       return {
         'size': size,
-        'lastCleared': await _localDatabaseService.getSetting('last_cache_clear'),
-        'lastUpdated': await _localDatabaseService.getSetting('last_cache_update'),
+        'lastCleared': await _localDatabaseService.getSetting(
+          'last_cache_clear',
+        ),
+        'lastUpdated': await _localDatabaseService.getSetting(
+          'last_cache_update',
+        ),
       };
     } catch (e) {
       print('[CacheManager] Error getting cache info: $e');

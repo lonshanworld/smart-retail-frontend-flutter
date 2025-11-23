@@ -42,7 +42,12 @@ class AdminMerchantsView extends GetView<AdminMerchantsController> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Filters", style: Get.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+          Text(
+            "Filters",
+            style: Get.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           const SizedBox(height: 10),
           Row(
             children: [
@@ -53,7 +58,9 @@ class AdminMerchantsView extends GetView<AdminMerchantsController> {
                     labelText: "Name",
                     hintText: "Filter by name...",
                     isDense: true,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                   onFieldSubmitted: (_) => controller.applyFilters(),
                 ),
@@ -66,7 +73,9 @@ class AdminMerchantsView extends GetView<AdminMerchantsController> {
                     labelText: "Email",
                     hintText: "Filter by email...",
                     isDense: true,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                   keyboardType: TextInputType.emailAddress,
                   onFieldSubmitted: (_) => controller.applyFilters(),
@@ -75,21 +84,25 @@ class AdminMerchantsView extends GetView<AdminMerchantsController> {
             ],
           ),
           const SizedBox(height: 12),
-          Obx(() => DropdownButtonFormField<bool?>(
-                decoration: InputDecoration(
-                  labelText: 'Status',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                  isDense: true,
+          Obx(
+            () => DropdownButtonFormField<bool?>(
+              decoration: InputDecoration(
+                labelText: 'Status',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                value: controller.isActiveFilter.value,
-                hint: const Text("Any Status"),
-                items: const [
-                  DropdownMenuItem(value: null, child: Text("Any Status")),
-                  DropdownMenuItem(value: true, child: Text("Active")),
-                  DropdownMenuItem(value: false, child: Text("Inactive")),
-                ],
-                onChanged: controller.applyIsActiveFilter,
-              )),
+                isDense: true,
+              ),
+              value: controller.isActiveFilter.value,
+              hint: const Text("Any Status"),
+              items: const [
+                DropdownMenuItem(value: null, child: Text("Any Status")),
+                DropdownMenuItem(value: true, child: Text("Active")),
+                DropdownMenuItem(value: false, child: Text("Inactive")),
+              ],
+              onChanged: controller.applyIsActiveFilter,
+            ),
+          ),
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
@@ -114,10 +127,13 @@ class AdminMerchantsView extends GetView<AdminMerchantsController> {
 
   Widget _buildMerchantList() {
     return Obx(() {
-      if (controller.isLoading.value && controller.merchants.isEmpty && controller.currentPage.value == 1) {
+      if (controller.isLoading.value &&
+          controller.merchants.isEmpty &&
+          controller.currentPage.value == 1) {
         return const LoadingIndicator(message: 'Fetching merchant users...');
       }
-      if (controller.errorMessage.value != null && controller.merchants.isEmpty) {
+      if (controller.errorMessage.value != null &&
+          controller.merchants.isEmpty) {
         return CenteredMessage(
           message: controller.errorMessage.value!,
           icon: Icons.error_outline,
@@ -138,20 +154,35 @@ class AdminMerchantsView extends GetView<AdminMerchantsController> {
           items: controller.merchants,
           columns: [
             DataColumn(
-              label: const Text('Merchant', style: TextStyle(fontWeight: FontWeight.bold)),
+              label: const Text(
+                'Merchant',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               onSort: (columnIndex, ascending) {},
             ),
             DataColumn(
-              label: const Text('Shop', style: TextStyle(fontWeight: FontWeight.bold)),
+              label: const Text(
+                'Shop',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
             DataColumn(
-              label: const Text('Email', style: TextStyle(fontWeight: FontWeight.bold)),
+              label: const Text(
+                'Email',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
             DataColumn(
-              label: const Text('Status', style: TextStyle(fontWeight: FontWeight.bold)),
+              label: const Text(
+                'Status',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
             DataColumn(
-              label: const Text('Actions', style: TextStyle(fontWeight: FontWeight.bold)),
+              label: const Text(
+                'Actions',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           ],
           buildCells: (merchant) {
@@ -161,14 +192,14 @@ class AdminMerchantsView extends GetView<AdminMerchantsController> {
                 Row(
                   children: [
                     CircleAvatar(
-                      backgroundColor: isActive 
-                          ? AppColors.merchant.shade100 
+                      backgroundColor: isActive
+                          ? AppColors.merchant.shade100
                           : Colors.grey.shade200,
                       child: Text(
                         merchant.initial,
                         style: TextStyle(
-                          color: isActive 
-                              ? AppColors.merchant.shade700 
+                          color: isActive
+                              ? AppColors.merchant.shade700
                               : Colors.grey.shade600,
                           fontWeight: FontWeight.bold,
                         ),
@@ -199,28 +230,30 @@ class AdminMerchantsView extends GetView<AdminMerchantsController> {
                 Text(
                   merchant.shopName ?? '-',
                   style: TextStyle(
-                    fontStyle: merchant.shopName == null ? FontStyle.italic : null,
+                    fontStyle: merchant.shopName == null
+                        ? FontStyle.italic
+                        : null,
                     color: merchant.shopName == null ? Colors.grey : null,
                   ),
                 ),
               ),
               DataCell(
-                Text(
-                  merchant.email,
-                  style: const TextStyle(fontSize: 13),
-                ),
+                Text(merchant.email, style: const TextStyle(fontSize: 13)),
               ),
               DataCell(
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
-                    color: isActive 
-                        ? AppColors.success.shade50 
+                    color: isActive
+                        ? AppColors.success.shade50
                         : AppColors.error.shade50,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: isActive 
-                          ? AppColors.success.shade300 
+                      color: isActive
+                          ? AppColors.success.shade300
                           : AppColors.error.shade300,
                     ),
                   ),
@@ -229,30 +262,28 @@ class AdminMerchantsView extends GetView<AdminMerchantsController> {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: isActive 
-                          ? AppColors.success.shade700 
+                      color: isActive
+                          ? AppColors.success.shade700
                           : AppColors.error.shade700,
                     ),
                   ),
                 ),
               ),
-              DataCell(
-                _buildActionsMenu(merchant),
-              ),
+              DataCell(_buildActionsMenu(merchant)),
             ];
           },
           buildMobileCard: (merchant) {
             final isActive = merchant.isActive;
             return DataRowCard(
               leading: CircleAvatar(
-                backgroundColor: isActive 
-                    ? AppColors.merchant.shade100 
+                backgroundColor: isActive
+                    ? AppColors.merchant.shade100
                     : Colors.grey.shade200,
                 child: Text(
                   merchant.initial,
                   style: TextStyle(
-                    color: isActive 
-                        ? AppColors.merchant.shade700 
+                    color: isActive
+                        ? AppColors.merchant.shade700
                         : Colors.grey.shade600,
                     fontWeight: FontWeight.bold,
                   ),
@@ -335,8 +366,15 @@ class AdminMerchantsView extends GetView<AdminMerchantsController> {
         const PopupMenuItem<String>(
           value: 'delete',
           child: ListTile(
-            leading: Icon(Icons.delete_forever_outlined, color: Colors.red, size: 20),
-            title: Text('Delete User', style: TextStyle(color: Colors.red, fontSize: 14)),
+            leading: Icon(
+              Icons.delete_forever_outlined,
+              color: Colors.red,
+              size: 20,
+            ),
+            title: Text(
+              'Delete User',
+              style: TextStyle(color: Colors.red, fontSize: 14),
+            ),
             contentPadding: EdgeInsets.zero,
           ),
         ),
@@ -346,11 +384,15 @@ class AdminMerchantsView extends GetView<AdminMerchantsController> {
 
   Widget _buildPaginationControls() {
     return Obx(() {
-      if (controller.totalPages.value <= 1 && !controller.isLoading.value) return const SizedBox.shrink();
-       if (controller.isLoading.value && controller.merchants.isEmpty) return const Center(child: Padding(
-         padding: EdgeInsets.all(8.0),
-         child: Text("Loading pagination..."),
-       ));
+      if (controller.totalPages.value <= 1 && !controller.isLoading.value)
+        return const SizedBox.shrink();
+      if (controller.isLoading.value && controller.merchants.isEmpty)
+        return const Center(
+          child: Padding(
+            padding: EdgeInsets.all(8.0),
+            child: Text("Loading pagination..."),
+          ),
+        );
 
       return Card(
         elevation: 2,
@@ -361,7 +403,9 @@ class AdminMerchantsView extends GetView<AdminMerchantsController> {
             children: [
               IconButton(
                 icon: const Icon(Icons.chevron_left),
-                onPressed: controller.currentPage.value > 1 ? controller.previousPage : null,
+                onPressed: controller.currentPage.value > 1
+                    ? controller.previousPage
+                    : null,
                 tooltip: "Previous Page",
               ),
               Flexible(
@@ -373,7 +417,10 @@ class AdminMerchantsView extends GetView<AdminMerchantsController> {
               ),
               IconButton(
                 icon: const Icon(Icons.chevron_right),
-                onPressed: controller.currentPage.value < controller.totalPages.value ? controller.nextPage : null,
+                onPressed:
+                    controller.currentPage.value < controller.totalPages.value
+                    ? controller.nextPage
+                    : null,
                 tooltip: "Next Page",
               ),
             ],

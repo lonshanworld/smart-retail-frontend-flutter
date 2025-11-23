@@ -3,6 +3,7 @@ import 'package:smart_retail/app/core/config/app_config.dart';
 import 'package:smart_retail/app/data/models/shop_model.dart';
 import 'package:smart_retail/app/data/providers/api_constants.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
+import 'package:smart_retail/app/utils/response_utils.dart';
 
 class MerchantShopsApiService extends GetxService {
   final GetConnect _connect = Get.find<GetConnect>();
@@ -52,25 +53,30 @@ class MerchantShopsApiService extends GetxService {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
       if (_mockShops.isEmpty) {
-        _mockShops.addAll(List.generate(
-          5,
-          (index) => Shop(
-            id: 'shop-$index',
-            name: 'Shop Branch $index',
-            address: '$index Branch Street, City',
-            merchantId: 'mock-merchant-id',
-            createdAt: DateTime.now().subtract(Duration(days: index * 10)),
-            updatedAt: DateTime.now().subtract(Duration(days: index * 10)),
+        _mockShops.addAll(
+          List.generate(
+            5,
+            (index) => Shop(
+              id: 'shop-$index',
+              name: 'Shop Branch $index',
+              address: '$index Branch Street, City',
+              merchantId: 'mock-merchant-id',
+              createdAt: DateTime.now().subtract(Duration(days: index * 10)),
+              updatedAt: DateTime.now().subtract(Duration(days: index * 10)),
+            ),
           ),
-        ));
+        );
       }
       return _mockShops;
     }
 
     final response = await _connect.get(_baseUrl, headers: await _getHeaders());
-    
+
     if (response.isOk && response.body['data'] != null) {
-      return (response.body['data'] as List).map((i) => Shop.fromJson(i)).toList();
+      final rawList = asList(response.body['data']);
+      return rawList
+          .map((i) => Shop.fromJson(Map<String, dynamic>.from(i)))
+          .toList();
     } else {
       throw Exception(response.body?['message'] ?? 'Failed to load shops');
     }
@@ -103,14 +109,13 @@ class MerchantShopsApiService extends GetxService {
       return newShop;
     }
 
-    final response = await _connect.post(
-      _baseUrl,
-      {'name': name, 'address': address},
-      headers: await _getHeaders(),
-    );
+    final response = await _connect.post(_baseUrl, {
+      'name': name,
+      'address': address,
+    }, headers: await _getHeaders());
 
     if (response.isOk && response.body['data'] != null) {
-      return Shop.fromJson(response.body['data']);
+      return Shop.fromJson(asMap(response.body['data']));
     } else {
       throw Exception(response.body?['message'] ?? 'Failed to create shop');
     }
@@ -147,14 +152,13 @@ class MerchantShopsApiService extends GetxService {
       throw Exception('Mock shop not found');
     }
 
-    final response = await _connect.put(
-      '$_baseUrl/$shopId',
-      {'name': name, 'address': address},
-      headers: await _getHeaders(),
-    );
+    final response = await _connect.put('$_baseUrl/$shopId', {
+      'name': name,
+      'address': address,
+    }, headers: await _getHeaders());
 
     if (response.isOk && response.body['data'] != null) {
-      return Shop.fromJson(response.body['data']);
+      return Shop.fromJson(asMap(response.body['data']));
     } else {
       throw Exception(response.body?['message'] ?? 'Failed to update shop');
     }
@@ -172,7 +176,10 @@ class MerchantShopsApiService extends GetxService {
       return;
     }
 
-    final response = await _connect.delete('$_baseUrl/$shopId', headers: await _getHeaders());
+    final response = await _connect.delete(
+      '$_baseUrl/$shopId',
+      headers: await _getHeaders(),
+    );
 
     if (!response.isOk) {
       throw Exception(response.body?['message'] ?? 'Failed to delete shop');

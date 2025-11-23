@@ -23,21 +23,32 @@ class AdminStaffView extends GetView<AdminStaffController> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.error_outline, size: 64, color: AppColors.error.shade400),
+                  Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: AppColors.error.shade400,
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     'Error loading staff',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.error.shade700),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.error.shade700,
+                    ),
                   ),
                   const SizedBox(height: 8),
-                  Text(controller.errorMessage.value!, textAlign: TextAlign.center),
+                  Text(
+                    controller.errorMessage.value!,
+                    textAlign: TextAlign.center,
+                  ),
                 ],
               ),
             ),
           );
         }
 
-        if(controller.staff.isNotEmpty){
+        if (controller.staff.isNotEmpty) {
           return ListView.builder(
             itemCount: controller.staff.length,
             itemBuilder: (context, index) {
@@ -50,19 +61,31 @@ class AdminStaffView extends GetView<AdminStaffController> {
                     backgroundColor: AppColors.staff.shade100,
                     child: Icon(Icons.badge, color: AppColors.staff),
                   ),
-                  title: Text(staffMember.name, style: const TextStyle(fontWeight: FontWeight.w600)),
-                  subtitle: Text('${staffMember.email}\n${staffMember.merchantName ?? 'No Merchant'}'),
+                  title: Text(
+                    staffMember.name,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: Text(
+                    '${staffMember.email}\n${staffMember.merchantName ?? 'No Merchant'}',
+                  ),
                   isThreeLine: true,
                   trailing: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
-                      color: staffMember.isActive ? AppColors.success.shade50 : AppColors.error.shade50,
+                      color: staffMember.isActive
+                          ? AppColors.success.shade50
+                          : AppColors.error.shade50,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
                       staffMember.isActive ? 'Active' : 'Inactive',
                       style: TextStyle(
-                        color: staffMember.isActive ? AppColors.success.shade700 : AppColors.error.shade700,
+                        color: staffMember.isActive
+                            ? AppColors.success.shade700
+                            : AppColors.error.shade700,
                         fontWeight: FontWeight.w600,
                         fontSize: 12,
                       ),
@@ -79,9 +102,16 @@ class AdminStaffView extends GetView<AdminStaffController> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.people_outline, size: 64, color: Colors.grey.shade400),
+                Icon(
+                  Icons.people_outline,
+                  size: 64,
+                  color: Colors.grey.shade400,
+                ),
                 const SizedBox(height: 16),
-                const Text('No staff members found.', style: TextStyle(fontSize: 16)),
+                const Text(
+                  'No staff members found.',
+                  style: TextStyle(fontSize: 16),
+                ),
               ],
             ),
           ),

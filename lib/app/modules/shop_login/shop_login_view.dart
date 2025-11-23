@@ -24,17 +24,14 @@ class ShopLoginView extends GetView<ShopLoginController> {
   Widget build(BuildContext context) {
     return Obx(() {
       final color = _getColorForRole(controller.selectedRole.value);
-      
+
       return Scaffold(
         body: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                color.shade50,
-                Colors.white,
-              ],
+              colors: [color.shade50, Colors.white],
             ),
           ),
           child: SafeArea(
@@ -55,7 +52,8 @@ class ShopLoginView extends GetView<ShopLoginController> {
                             alignment: Alignment.centerLeft,
                             child: IconButton(
                               icon: const Icon(Icons.arrow_back),
-                              onPressed: () => Get.offAllNamed(Routes.CUSTOMER_INTRO),
+                              onPressed: () =>
+                                  Get.offAllNamed(Routes.CUSTOMER_INTRO),
                             ),
                           ),
                           const SizedBox(height: 20),
@@ -134,21 +132,31 @@ class ShopLoginView extends GetView<ShopLoginController> {
                                     ),
                                     enabledBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide(color: Colors.grey.shade300),
+                                      borderSide: BorderSide(
+                                        color: Colors.grey.shade300,
+                                      ),
                                     ),
                                     focusedBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide(color: color, width: 2),
+                                      borderSide: BorderSide(
+                                        color: color,
+                                        width: 2,
+                                      ),
                                     ),
-                                    prefixIcon: Icon(Icons.person_outline, color: color),
+                                    prefixIcon: Icon(
+                                      Icons.person_outline,
+                                      color: color,
+                                    ),
                                     filled: true,
                                     fillColor: Colors.grey.shade50,
                                   ),
                                   items: ['Merchant', 'Staff']
-                                      .map((role) => DropdownMenuItem(
-                                            value: role,
-                                            child: Text(role),
-                                          ))
+                                      .map(
+                                        (role) => DropdownMenuItem(
+                                          value: role,
+                                          child: Text(role),
+                                        ),
+                                      )
                                       .toList(),
                                   onChanged: (value) {
                                     if (value != null) {
@@ -169,18 +177,27 @@ class ShopLoginView extends GetView<ShopLoginController> {
                                     ),
                                     enabledBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide(color: Colors.grey.shade300),
+                                      borderSide: BorderSide(
+                                        color: Colors.grey.shade300,
+                                      ),
                                     ),
                                     focusedBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide(color: color, width: 2),
+                                      borderSide: BorderSide(
+                                        color: color,
+                                        width: 2,
+                                      ),
                                     ),
-                                    prefixIcon: Icon(Icons.store_outlined, color: color),
+                                    prefixIcon: Icon(
+                                      Icons.store_outlined,
+                                      color: color,
+                                    ),
                                     filled: true,
                                     fillColor: Colors.grey.shade50,
                                   ),
-                                  validator: (value) =>
-                                      value!.isEmpty ? 'Please enter Shop ID' : null,
+                                  validator: (value) => value!.isEmpty
+                                      ? 'Please enter Shop ID'
+                                      : null,
                                 ),
                                 const SizedBox(height: 20),
 
@@ -195,13 +212,21 @@ class ShopLoginView extends GetView<ShopLoginController> {
                                     ),
                                     enabledBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide(color: Colors.grey.shade300),
+                                      borderSide: BorderSide(
+                                        color: Colors.grey.shade300,
+                                      ),
                                     ),
                                     focusedBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide(color: color, width: 2),
+                                      borderSide: BorderSide(
+                                        color: color,
+                                        width: 2,
+                                      ),
                                     ),
-                                    prefixIcon: Icon(Icons.email_outlined, color: color),
+                                    prefixIcon: Icon(
+                                      Icons.email_outlined,
+                                      color: color,
+                                    ),
                                     filled: true,
                                     fillColor: Colors.grey.shade50,
                                   ),
@@ -229,13 +254,21 @@ class ShopLoginView extends GetView<ShopLoginController> {
                                     ),
                                     enabledBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide(color: Colors.grey.shade300),
+                                      borderSide: BorderSide(
+                                        color: Colors.grey.shade300,
+                                      ),
                                     ),
                                     focusedBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide(color: color, width: 2),
+                                      borderSide: BorderSide(
+                                        color: color,
+                                        width: 2,
+                                      ),
                                     ),
-                                    prefixIcon: Icon(Icons.lock_outline, color: color),
+                                    prefixIcon: Icon(
+                                      Icons.lock_outline,
+                                      color: color,
+                                    ),
                                     filled: true,
                                     fillColor: Colors.grey.shade50,
                                   ),
@@ -250,40 +283,49 @@ class ShopLoginView extends GetView<ShopLoginController> {
                                 const SizedBox(height: 32),
 
                                 // Login Button
-                                Obx(() => ElevatedButton(
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: color,
-                                        foregroundColor: Colors.white,
-                                        padding: const EdgeInsets.symmetric(vertical: 18),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                        elevation: 3,
-                                        textStyle: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                        ),
+                                Obx(
+                                  () => ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: color,
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 18,
                                       ),
-                                      onPressed: controller.isLoading.value
-                                          ? null
-                                          : controller.login,
-                                      child: controller.isLoading.value
-                                          ? const SizedBox(
-                                              width: 24,
-                                              height: 24,
-                                              child: CircularProgressIndicator(
-                                                color: Colors.white,
-                                                strokeWidth: 3.0,
-                                              ))
-                                          : Row(
-                                              mainAxisAlignment: MainAxisAlignment.center,
-                                              children: const [
-                                                Text('Login'),
-                                                SizedBox(width: 8),
-                                                Icon(Icons.arrow_forward, size: 20),
-                                              ],
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      elevation: 3,
+                                      textStyle: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    onPressed: controller.isLoading.value
+                                        ? null
+                                        : controller.login,
+                                    child: controller.isLoading.value
+                                        ? const SizedBox(
+                                            width: 24,
+                                            height: 24,
+                                            child: CircularProgressIndicator(
+                                              color: Colors.white,
+                                              strokeWidth: 3.0,
                                             ),
-                                    )),
+                                          )
+                                        : Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: const [
+                                              Text('Login'),
+                                              SizedBox(width: 8),
+                                              Icon(
+                                                Icons.arrow_forward,
+                                                size: 20,
+                                              ),
+                                            ],
+                                          ),
+                                  ),
+                                ),
                               ],
                             ),
                           ),

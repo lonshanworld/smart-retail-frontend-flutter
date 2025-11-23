@@ -5,6 +5,7 @@ import 'package:smart_retail/app/data/models/inventory_item_model.dart';
 import 'package:smart_retail/app/data/models/supplier_model.dart';
 import 'package:smart_retail/app/data/providers/api_constants.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
+import 'package:smart_retail/app/utils/response_utils.dart';
 
 class InventoryApiService extends GetxService {
   final GetConnect _connect = GetConnect(timeout: const Duration(seconds: 30));
@@ -62,11 +63,21 @@ class InventoryApiService extends GetxService {
   ///     }
   ///   }
   ///   ```
-  Future<PaginatedSuppliersResponse?> listMerchantSuppliers(
-      {int page = 1, int pageSize = 10, String? nameQuery}) async { // Added nameQuery
+  Future<PaginatedSuppliersResponse?> listMerchantSuppliers({
+    int page = 1,
+    int pageSize = 10,
+    String? nameQuery,
+  }) async {
+    // Added nameQuery
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
-      return PaginatedSuppliersResponse(suppliers: [], totalItems: 0, currentPage: 1, pageSize: 10, totalPages: 0);
+      return PaginatedSuppliersResponse(
+        suppliers: [],
+        totalItems: 0,
+        currentPage: 1,
+        pageSize: 10,
+        totalPages: 0,
+      );
     }
     final token = await _getAuthToken();
     if (token == null) {
@@ -89,10 +100,12 @@ class InventoryApiService extends GetxService {
 
     if (response.statusCode == 200 && response.body['status'] == 'success') {
       if (response.body['data'] != null) {
-        return PaginatedSuppliersResponse.fromJson(response.body['data']);
+        return PaginatedSuppliersResponse.fromJson(asMap(response.body['data']));
       }
     }
-    print('Error listing suppliers: ${response.statusCode} - ${response.bodyString}');
+    print(
+      'Error listing suppliers: ${response.statusCode} - ${response.bodyString}',
+    );
     return null;
   }
 
@@ -110,7 +123,13 @@ class InventoryApiService extends GetxService {
   Future<Supplier?> getSupplierDetails(String supplierId) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
-      return Supplier(id: supplierId, merchantId: '1', name: 'Supplier $supplierId', createdAt: DateTime.now(), updatedAt: DateTime.now());
+      return Supplier(
+        id: supplierId,
+        merchantId: '1',
+        name: 'Supplier $supplierId',
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
     }
     final token = await _getAuthToken();
     if (token == null) {
@@ -124,10 +143,12 @@ class InventoryApiService extends GetxService {
 
     if (response.statusCode == 200 && response.body['status'] == 'success') {
       if (response.body['data'] != null) {
-        return Supplier.fromJson(response.body['data']);
+        return Supplier.fromJson(asMap(response.body['data']));
       }
     }
-    print('Error getting supplier details for $supplierId: ${response.statusCode} - ${response.bodyString}');
+    print(
+      'Error getting supplier details for $supplierId: ${response.statusCode} - ${response.bodyString}',
+    );
     return null;
   }
 
@@ -139,7 +160,10 @@ class InventoryApiService extends GetxService {
       await Future.delayed(const Duration(seconds: 1));
       return [];
     }
-    PaginatedSuppliersResponse? paginatedResponse = await listMerchantSuppliers(nameQuery: name, pageSize: 20);
+    PaginatedSuppliersResponse? paginatedResponse = await listMerchantSuppliers(
+      nameQuery: name,
+      pageSize: 20,
+    );
     return paginatedResponse?.suppliers ?? [];
   }
 
@@ -165,16 +189,23 @@ class InventoryApiService extends GetxService {
   Future<Supplier?> createNewSupplier(Map<String, dynamic> supplierData) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
-      return Supplier.fromJson(supplierData..['id'] = 'new-supplier-id'..['merchantId'] = '1'..['createdAt'] = DateTime.now().toIso8601String()..['updatedAt'] = DateTime.now().toIso8601String());
+      return Supplier.fromJson(
+        supplierData
+          ..['id'] = 'new-supplier-id'
+          ..['merchantId'] = '1'
+          ..['createdAt'] = DateTime.now().toIso8601String()
+          ..['updatedAt'] = DateTime.now().toIso8601String(),
+      );
     }
     final token = await _getAuthToken();
     if (token == null) {
       print("Auth token is null, cannot create supplier.");
       return null;
     }
-    if (!supplierData.containsKey('name') || (supplierData['name'] as String).isEmpty) {
-        print("Supplier name is required to create a new supplier.");
-        return null;
+    if (!supplierData.containsKey('name') ||
+        (supplierData['name'] as String).isEmpty) {
+      print("Supplier name is required to create a new supplier.");
+      return null;
     }
     final response = await _connect.post(
       _suppliersBaseUrl,
@@ -184,10 +215,12 @@ class InventoryApiService extends GetxService {
 
     if (response.statusCode == 201 && response.body['status'] == 'success') {
       if (response.body['data'] != null) {
-        return Supplier.fromJson(response.body['data']);
+        return Supplier.fromJson(asMap(response.body['data']));
       }
     }
-    print('Error creating new supplier: ${response.statusCode} - ${response.bodyString}');
+    print(
+      'Error creating new supplier: ${response.statusCode} - ${response.bodyString}',
+    );
     return null;
   }
 
@@ -208,19 +241,29 @@ class InventoryApiService extends GetxService {
   /// __Expected Response (Success):__
   /// - __Status Code:__ 200
   /// - __Body (JSON):__ (The updated supplier object)
-  Future<Supplier?> updateExistingSupplier(String supplierId, Map<String, dynamic> supplierData) async {
+  Future<Supplier?> updateExistingSupplier(
+    String supplierId,
+    Map<String, dynamic> supplierData,
+  ) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
-      return Supplier.fromJson(supplierData..['id'] = supplierId..['merchantId'] = '1'..['createdAt'] = DateTime.now().toIso8601String()..['updatedAt'] = DateTime.now().toIso8601String());
+      return Supplier.fromJson(
+        supplierData
+          ..['id'] = supplierId
+          ..['merchantId'] = '1'
+          ..['createdAt'] = DateTime.now().toIso8601String()
+          ..['updatedAt'] = DateTime.now().toIso8601String(),
+      );
     }
     final token = await _getAuthToken();
     if (token == null) {
       print("Auth token is null, cannot update supplier.");
       return null;
     }
-    if (supplierData.containsKey('name') && (supplierData['name'] as String).isEmpty) {
-        print("Supplier name cannot be empty if provided for update.");
-        return null; 
+    if (supplierData.containsKey('name') &&
+        (supplierData['name'] as String).isEmpty) {
+      print("Supplier name cannot be empty if provided for update.");
+      return null;
     }
     final response = await _connect.put(
       '$_suppliersBaseUrl/$supplierId',
@@ -230,10 +273,12 @@ class InventoryApiService extends GetxService {
 
     if (response.statusCode == 200 && response.body['status'] == 'success') {
       if (response.body['data'] != null) {
-        return Supplier.fromJson(response.body['data']);
+        return Supplier.fromJson(asMap(response.body['data']));
       }
     }
-    print('Error updating supplier $supplierId: ${response.statusCode} - ${response.bodyString}');
+    print(
+      'Error updating supplier $supplierId: ${response.statusCode} - ${response.bodyString}',
+    );
     return null;
   }
 
@@ -265,7 +310,9 @@ class InventoryApiService extends GetxService {
     if (response.statusCode == 200 && response.body['status'] == 'success') {
       return true;
     }
-    print('Error deleting supplier $supplierId: ${response.statusCode} - ${response.bodyString}');
+    print(
+      'Error deleting supplier $supplierId: ${response.statusCode} - ${response.bodyString}',
+    );
     return false;
   }
 
@@ -280,14 +327,19 @@ class InventoryApiService extends GetxService {
       return null;
     }
     try {
-      List<Supplier> existingSuppliers = await findSuppliersByName(supplierName);
+      List<Supplier> existingSuppliers = await findSuppliersByName(
+        supplierName,
+      );
       Supplier? matchedSupplier = existingSuppliers.firstWhereOrNull(
-          (s) => s.name.toLowerCase() == supplierName.toLowerCase());
+        (s) => s.name.toLowerCase() == supplierName.toLowerCase(),
+      );
 
       if (matchedSupplier != null) {
         return matchedSupplier.id;
       } else {
-        print("Supplier '$supplierName' not found, creating new one for product association.");
+        print(
+          "Supplier '$supplierName' not found, creating new one for product association.",
+        );
         Supplier? newSupplier = await createNewSupplier({'name': supplierName});
         return newSupplier?.id;
       }
@@ -342,15 +394,47 @@ class InventoryApiService extends GetxService {
   ///     }
   ///   }
   ///   ```
-  Future<PaginatedInventoryResponse?> listInventoryItems(
-      {int page = 1, int pageSize = 10, String? nameFilter}) async {
+  Future<PaginatedInventoryResponse?> listInventoryItems({
+    int page = 1,
+    int pageSize = 10,
+    String? nameFilter,
+  }) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
       final items = [
-        InventoryItem(id: '1', merchantId: '1', name: 'Mock Item 1 (Laptop)', sellingPrice: 1200.0, originalPrice: 800.0, createdAt: DateTime.now(), updatedAt: DateTime.now(), stockInfo: [StockInfo(shopId: 'shop-1', quantity: 10, shopName: 'Downtown'), StockInfo(shopId: 'shop-2', quantity: 5, shopName: 'Uptown')]),
-        InventoryItem(id: '2', merchantId: '1', name: 'Mock Item 2 (Mouse)', sellingPrice: 25.0, originalPrice: 10.0, createdAt: DateTime.now(), updatedAt: DateTime.now(), stockInfo: [StockInfo(shopId: 'shop-1', quantity: 50, shopName: 'Downtown')]),
+        InventoryItem(
+          id: '1',
+          merchantId: '1',
+          name: 'Mock Item 1 (Laptop)',
+          sellingPrice: 1200.0,
+          originalPrice: 800.0,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          stockInfo: [
+            StockInfo(shopId: 'shop-1', quantity: 10, shopName: 'Downtown'),
+            StockInfo(shopId: 'shop-2', quantity: 5, shopName: 'Uptown'),
+          ],
+        ),
+        InventoryItem(
+          id: '2',
+          merchantId: '1',
+          name: 'Mock Item 2 (Mouse)',
+          sellingPrice: 25.0,
+          originalPrice: 10.0,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          stockInfo: [
+            StockInfo(shopId: 'shop-1', quantity: 50, shopName: 'Downtown'),
+          ],
+        ),
       ];
-      return PaginatedInventoryResponse(items: items, totalItems: 2, currentPage: 1, pageSize: 10, totalPages: 1);
+      return PaginatedInventoryResponse(
+        items: items,
+        totalItems: 2,
+        currentPage: 1,
+        pageSize: 10,
+        totalPages: 1,
+      );
     }
     final token = await _getAuthToken();
     if (token == null) {
@@ -372,9 +456,11 @@ class InventoryApiService extends GetxService {
     if (response.statusCode == 200 && response.body['status'] == 'success') {
       // Backend returns a list directly in 'data', not a paginated object
       final data = response.body['data'];
-      if (data is List) {
-        // Convert list directly to items
-        final items = data.map((i) => InventoryItem.fromJson(i as Map<String, dynamic>)).toList();
+      final rawList = asList(data);
+      if (rawList.isNotEmpty) {
+        final items = rawList
+            .map((i) => InventoryItem.fromJson(Map<String, dynamic>.from(i)))
+            .toList();
         return PaginatedInventoryResponse(
           items: items,
           totalItems: items.length,
@@ -384,11 +470,13 @@ class InventoryApiService extends GetxService {
         );
       } else if (data is Map<String, dynamic>) {
         // If it's a paginated response object
-        return PaginatedInventoryResponse.fromJson(data);
+        return PaginatedInventoryResponse.fromJson(asMap(data));
       }
     }
-    
-    print('Error fetching inventory: ${response.statusCode} - ${response.bodyString}');
+
+    print(
+      'Error fetching inventory: ${response.statusCode} - ${response.bodyString}',
+    );
     return null;
   }
 
@@ -433,9 +521,11 @@ class InventoryApiService extends GetxService {
     );
 
     if (response.statusCode! < 300) {
-      return InventoryItem.fromJson(response.body['data']);
+      return InventoryItem.fromJson(asMap(response.body['data']));
     } else {
-      print('Error creating inventory item: ${response.statusCode} - ${response.bodyString}');
+      print(
+        'Error creating inventory item: ${response.statusCode} - ${response.bodyString}',
+      );
       return null;
     }
   }
@@ -454,7 +544,15 @@ class InventoryApiService extends GetxService {
   Future<InventoryItem?> getInventoryItemById(String itemId) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
-      return InventoryItem(id: itemId, merchantId: '1', name: 'Item $itemId', sellingPrice: 10.0, originalPrice: 7.0, createdAt: DateTime.now(), updatedAt: DateTime.now());
+      return InventoryItem(
+        id: itemId,
+        merchantId: '1',
+        name: 'Item $itemId',
+        sellingPrice: 10.0,
+        originalPrice: 7.0,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
     }
     final token = await _getAuthToken();
     if (token == null) return null;
@@ -463,9 +561,11 @@ class InventoryApiService extends GetxService {
       headers: {'Authorization': 'Bearer $token'},
     );
     if (response.statusCode == 200 && response.body['status'] == 'success') {
-      return InventoryItem.fromJson(response.body['data']);
+      return InventoryItem.fromJson(asMap(response.body['data']));
     } else {
-      print('Error fetching item $itemId: ${response.statusCode} - ${response.bodyString}');
+      print(
+        'Error fetching item $itemId: ${response.statusCode} - ${response.bodyString}',
+      );
       return null;
     }
   }
@@ -482,18 +582,21 @@ class InventoryApiService extends GetxService {
   /// __Expected Response (Success):__
   /// - __Status Code:__ 200
   /// - __Body (JSON):__ (Returns the updated inventory item object)
-  Future<InventoryItem?> updateInventoryItem(String itemId, Map<String, dynamic> updates) async {
+  Future<InventoryItem?> updateInventoryItem(
+    String itemId,
+    Map<String, dynamic> updates,
+  ) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
       // Use a more realistic mock update
       final updatedItem = InventoryItem(
-          id: itemId, 
-          merchantId: '1', 
-          name: updates['name'] ?? 'Updated Name', 
-          sellingPrice: updates['sellingPrice'] ?? 10.0,
-          originalPrice: updates['originalPrice'] ?? 7.0,
-          createdAt: DateTime.now().subtract(const Duration(days: 1)), 
-          updatedAt: DateTime.now()
+        id: itemId,
+        merchantId: '1',
+        name: updates['name'] ?? 'Updated Name',
+        sellingPrice: updates['sellingPrice'] ?? 10.0,
+        originalPrice: updates['originalPrice'] ?? 7.0,
+        createdAt: DateTime.now().subtract(const Duration(days: 1)),
+        updatedAt: DateTime.now(),
       );
       return updatedItem;
     }
@@ -512,10 +615,12 @@ class InventoryApiService extends GetxService {
       }
       payload.remove('supplier');
     } else {
-       payload.remove('supplier');
+      payload.remove('supplier');
     }
 
-    print("Updating inventory item $itemId with payload: ${jsonEncode(payload)}");
+    print(
+      "Updating inventory item $itemId with payload: ${jsonEncode(payload)}",
+    );
 
     final response = await _connect.put(
       '$_inventoryBaseUrl/$itemId',
@@ -524,9 +629,11 @@ class InventoryApiService extends GetxService {
     );
 
     if (response.statusCode == 200 && response.body['status'] == 'success') {
-      return InventoryItem.fromJson(response.body['data']);
+      return InventoryItem.fromJson(asMap(response.body['data']));
     } else {
-      print('Error updating item $itemId: ${response.statusCode} - ${response.bodyString}');
+      print(
+        'Error updating item $itemId: ${response.statusCode} - ${response.bodyString}',
+      );
       return null;
     }
   }
@@ -545,7 +652,16 @@ class InventoryApiService extends GetxService {
   Future<InventoryItem?> archiveInventoryItem(String itemId) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
-      return InventoryItem(id: itemId, merchantId: '1', name: 'Item $itemId', sellingPrice: 10.0, originalPrice: 7.0, createdAt: DateTime.now(), updatedAt: DateTime.now(), isArchived: true);
+      return InventoryItem(
+        id: itemId,
+        merchantId: '1',
+        name: 'Item $itemId',
+        sellingPrice: 10.0,
+        originalPrice: 7.0,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        isArchived: true,
+      );
     }
     final token = await _getAuthToken();
     if (token == null) return null;
@@ -555,9 +671,11 @@ class InventoryApiService extends GetxService {
       headers: {'Authorization': 'Bearer $token'},
     );
     if (response.statusCode == 200 && response.body['status'] == 'success') {
-      return InventoryItem.fromJson(response.body['data']);
+      return InventoryItem.fromJson(asMap(response.body['data']));
     } else {
-      print('Error archiving item $itemId: ${response.statusCode} - ${response.bodyString}');
+      print(
+        'Error archiving item $itemId: ${response.statusCode} - ${response.bodyString}',
+      );
       return null;
     }
   }
@@ -576,7 +694,16 @@ class InventoryApiService extends GetxService {
   Future<InventoryItem?> unarchiveInventoryItem(String itemId) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
-      return InventoryItem(id: itemId, merchantId: '1', name: 'Item $itemId', sellingPrice: 10.0, originalPrice: 7.0, createdAt: DateTime.now(), updatedAt: DateTime.now(), isArchived: false);
+      return InventoryItem(
+        id: itemId,
+        merchantId: '1',
+        name: 'Item $itemId',
+        sellingPrice: 10.0,
+        originalPrice: 7.0,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        isArchived: false,
+      );
     }
     final token = await _getAuthToken();
     if (token == null) return null;
@@ -585,10 +712,12 @@ class InventoryApiService extends GetxService {
       {},
       headers: {'Authorization': 'Bearer $token'},
     );
-     if (response.statusCode == 200 && response.body['status'] == 'success') {
-      return InventoryItem.fromJson(response.body['data']);
+    if (response.statusCode == 200 && response.body['status'] == 'success') {
+      return InventoryItem.fromJson(asMap(response.body['data']));
     } else {
-      print('Error unarchiving item $itemId: ${response.statusCode} - ${response.bodyString}');
+      print(
+        'Error unarchiving item $itemId: ${response.statusCode} - ${response.bodyString}',
+      );
       return null;
     }
   }
@@ -614,10 +743,13 @@ class InventoryApiService extends GetxService {
       '$_inventoryBaseUrl/$itemId',
       headers: {'Authorization': 'Bearer $token'},
     );
-    if (response.statusCode == 200 && response.body['status'] == 'success') { // Backend uses 200 for successful delete
+    if (response.statusCode == 200 && response.body['status'] == 'success') {
+      // Backend uses 200 for successful delete
       return true;
     } else {
-      print('Error deleting item $itemId: ${response.statusCode} - ${response.bodyString}');
+      print(
+        'Error deleting item $itemId: ${response.statusCode} - ${response.bodyString}',
+      );
       return false;
     }
   }
@@ -642,7 +774,7 @@ class InventoryApiService extends GetxService {
   ///
   /// __Expected Response (Success):__
   /// - __Status Code:__ 200
-  /// - __Body (JSON):__ 
+  /// - __Body (JSON):__
   ///   ```json
   ///   {
   ///     "status": "success",
@@ -657,7 +789,9 @@ class InventoryApiService extends GetxService {
   }) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 2));
-      print('Mock: Moved $quantity of item $itemId from shop $fromShopId to $toShopId');
+      print(
+        'Mock: Moved $quantity of item $itemId from shop $fromShopId to $toShopId',
+      );
       return true;
     }
 
@@ -680,7 +814,9 @@ class InventoryApiService extends GetxService {
     if (response.statusCode == 200 && response.body['status'] == 'success') {
       return true;
     } else {
-      print('Error moving stock: ${response.statusCode} - ${response.bodyString}');
+      print(
+        'Error moving stock: ${response.statusCode} - ${response.bodyString}',
+      );
       return false;
     }
   }

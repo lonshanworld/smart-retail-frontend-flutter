@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:smart_retail/app/utils/dialog_utils.dart';
 import 'package:smart_retail/app/data/models/inventory_item_model.dart';
 import 'package:smart_retail/app/data/services/inventory_api_service.dart';
 import 'package:smart_retail/app/data/services/shop_inventory_api_service.dart';
 
 class StockInController extends GetxController {
-  final InventoryApiService _inventoryApiService = Get.find<InventoryApiService>();
-  final ShopInventoryApiService _shopInventoryApiService = Get.find<ShopInventoryApiService>();
+  final InventoryApiService _inventoryApiService =
+      Get.find<InventoryApiService>();
+  final ShopInventoryApiService _shopInventoryApiService =
+      Get.find<ShopInventoryApiService>();
 
   final RxList<InventoryItem> masterItems = <InventoryItem>[].obs;
   final Rxn<InventoryItem> selectedItem = Rxn<InventoryItem>();
@@ -41,13 +44,13 @@ class StockInController extends GetxController {
 
   Future<void> addStockToShop() async {
     if (selectedItem.value == null || quantityController.text.isEmpty) {
-      Get.snackbar('Error', 'Please select an item and enter a quantity.');
+      DialogUtils.showError('Please select an item and enter a quantity.');
       return;
     }
 
     final quantity = int.tryParse(quantityController.text);
     if (quantity == null || quantity <= 0) {
-      Get.snackbar('Error', 'Please enter a valid quantity.');
+      DialogUtils.showError('Please enter a valid quantity.');
       return;
     }
 
@@ -61,12 +64,12 @@ class StockInController extends GetxController {
       print('check stock in succes or not $success');
       if (success) {
         Get.back(result: true);
-        Get.snackbar('Success', 'Stock added successfully.');
+        DialogUtils.showSuccess('Stock added successfully.');
       } else {
-        Get.snackbar('Error', 'Failed to add stock.');
+        DialogUtils.showError('Failed to add stock.');
       }
     } catch (e) {
-      Get.snackbar('Error', e.toString());
+      DialogUtils.showError(e.toString());
     } finally {
       isSaving.value = false;
     }

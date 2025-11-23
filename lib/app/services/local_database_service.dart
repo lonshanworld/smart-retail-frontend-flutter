@@ -1,7 +1,6 @@
-import 'dart:io';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
-import 'package:path_provider/path_provider.dart';
+import 'platform_paths.dart';
 
 class LocalDatabaseService {
   static const String DB_NAME = 'smart_retail.db';
@@ -57,15 +56,12 @@ class LocalDatabaseService {
   }
 
   Future<String> _getDbPath() async {
-    try {
-      // For mobile platforms
-      final directory = await getApplicationDocumentsDirectory();
-      return join(directory.path, DB_NAME);
-    } catch (e) {
-      // Fallback for platforms that don't support getApplicationDocumentsDirectory
-      final dir = Directory.systemTemp;
-      return join(dir.path, DB_NAME);
+    final basePath = await getPreferredDatabaseDirectory();
+    if (basePath.isEmpty) {
+      // On web, return name-only (sqflite_web or similar will handle storage)
+      return DB_NAME;
     }
+    return join(basePath, DB_NAME);
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -93,13 +89,13 @@ class LocalDatabaseService {
 
     // Create indexes for offline_sales
     await db.execute(
-      'CREATE INDEX idx_offline_sales_status ON $TABLE_OFFLINE_SALES($COL_STATUS)'
+      'CREATE INDEX idx_offline_sales_status ON $TABLE_OFFLINE_SALES($COL_STATUS)',
     );
     await db.execute(
-      'CREATE INDEX idx_offline_sales_shop_id ON $TABLE_OFFLINE_SALES($COL_SHOP_ID)'
+      'CREATE INDEX idx_offline_sales_shop_id ON $TABLE_OFFLINE_SALES($COL_SHOP_ID)',
     );
     await db.execute(
-      'CREATE INDEX idx_offline_sales_synced_at ON $TABLE_OFFLINE_SALES($COL_SYNCED_AT)'
+      'CREATE INDEX idx_offline_sales_synced_at ON $TABLE_OFFLINE_SALES($COL_SYNCED_AT)',
     );
 
     // Create cached_products table
@@ -120,10 +116,10 @@ class LocalDatabaseService {
     ''');
 
     await db.execute(
-      'CREATE INDEX idx_cached_products_merchant_id ON $TABLE_CACHED_PRODUCTS(merchant_id)'
+      'CREATE INDEX idx_cached_products_merchant_id ON $TABLE_CACHED_PRODUCTS(merchant_id)',
     );
     await db.execute(
-      'CREATE INDEX idx_cached_products_expires_at ON $TABLE_CACHED_PRODUCTS(expires_at)'
+      'CREATE INDEX idx_cached_products_expires_at ON $TABLE_CACHED_PRODUCTS(expires_at)',
     );
 
     // Create cached_promotions table
@@ -143,13 +139,13 @@ class LocalDatabaseService {
     ''');
 
     await db.execute(
-      'CREATE INDEX idx_cached_promotions_merchant_id ON $TABLE_CACHED_PROMOTIONS(merchant_id)'
+      'CREATE INDEX idx_cached_promotions_merchant_id ON $TABLE_CACHED_PROMOTIONS(merchant_id)',
     );
     await db.execute(
-      'CREATE INDEX idx_cached_promotions_shop_id ON $TABLE_CACHED_PROMOTIONS(shop_id)'
+      'CREATE INDEX idx_cached_promotions_shop_id ON $TABLE_CACHED_PROMOTIONS(shop_id)',
     );
     await db.execute(
-      'CREATE INDEX idx_cached_promotions_expires_at ON $TABLE_CACHED_PROMOTIONS(expires_at)'
+      'CREATE INDEX idx_cached_promotions_expires_at ON $TABLE_CACHED_PROMOTIONS(expires_at)',
     );
 
     // Create cached_shop_info table
@@ -167,7 +163,7 @@ class LocalDatabaseService {
     ''');
 
     await db.execute(
-      'CREATE INDEX idx_cached_shop_merchant_id ON $TABLE_CACHED_SHOP_INFO(merchant_id)'
+      'CREATE INDEX idx_cached_shop_merchant_id ON $TABLE_CACHED_SHOP_INFO(merchant_id)',
     );
 
     // Create sync_log table
@@ -186,13 +182,13 @@ class LocalDatabaseService {
     ''');
 
     await db.execute(
-      'CREATE INDEX idx_sync_log_created_at ON $TABLE_SYNC_LOG(created_at)'
+      'CREATE INDEX idx_sync_log_created_at ON $TABLE_SYNC_LOG(created_at)',
     );
     await db.execute(
-      'CREATE INDEX idx_sync_log_status ON $TABLE_SYNC_LOG(status)'
+      'CREATE INDEX idx_sync_log_status ON $TABLE_SYNC_LOG(status)',
     );
     await db.execute(
-      'CREATE INDEX idx_sync_log_batch_id ON $TABLE_SYNC_LOG(sync_batch_id)'
+      'CREATE INDEX idx_sync_log_batch_id ON $TABLE_SYNC_LOG(sync_batch_id)',
     );
 
     // Create app_settings table
@@ -214,7 +210,7 @@ class LocalDatabaseService {
   Future<void> queueSale(Map<String, dynamic> saleData) async {
     final db = await database;
     final now = DateTime.now().toIso8601String();
-    
+
     final sale = {
       ...saleData,
       COL_STATUS: STATUS_PENDING,
@@ -275,10 +271,7 @@ class LocalDatabaseService {
 
     await db.update(
       TABLE_OFFLINE_SALES,
-      {
-        COL_STATUS: STATUS_SYNCING,
-        COL_UPDATED_AT: now,
-      },
+      {COL_STATUS: STATUS_SYNCING, COL_UPDATED_AT: now},
       where: '$COL_ID = ?',
       whereArgs: [saleId],
     );
@@ -336,33 +329,34 @@ class LocalDatabaseService {
 
   // ============ CACHE METHODS ============
 
-  Future<void> cacheProducts(List<Map<String, dynamic>> products, String merchantId) async {
+  Future<void> cacheProducts(
+    List<Map<String, dynamic>> products,
+    String merchantId,
+  ) async {
     final db = await database;
     final now = DateTime.now();
     final expiresAt = now.add(Duration(hours: 24));
 
     for (var product in products) {
-      await db.insert(
-        TABLE_CACHED_PRODUCTS,
-        {
-          'id': product['id'],
-          'merchant_id': merchantId,
-          'name': product['name'] ?? '',
-          'sku': product['sku'],
-          'category': product['category'],
-          'selling_price': product['selling_price'] ?? 0.0,
-          'original_price': product['original_price'],
-          'data': _jsonEncode(product),
-          'cached_at': now.toIso8601String(),
-          'expires_at': expiresAt.toIso8601String(),
-          'updated_at': now.toIso8601String(),
-        },
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
+      await db.insert(TABLE_CACHED_PRODUCTS, {
+        'id': product['id'],
+        'merchant_id': merchantId,
+        'name': product['name'] ?? '',
+        'sku': product['sku'],
+        'category': product['category'],
+        'selling_price': product['selling_price'] ?? 0.0,
+        'original_price': product['original_price'],
+        'data': _jsonEncode(product),
+        'cached_at': now.toIso8601String(),
+        'expires_at': expiresAt.toIso8601String(),
+        'updated_at': now.toIso8601String(),
+      }, conflictAlgorithm: ConflictAlgorithm.replace);
     }
   }
 
-  Future<List<Map<String, dynamic>>?> getCachedProducts(String merchantId) async {
+  Future<List<Map<String, dynamic>>?> getCachedProducts(
+    String merchantId,
+  ) async {
     final db = await database;
     final now = DateTime.now();
 
@@ -393,32 +387,33 @@ class LocalDatabaseService {
     return products.isEmpty ? null : products;
   }
 
-  Future<void> cachePromotions(List<Map<String, dynamic>> promotions, String merchantId) async {
+  Future<void> cachePromotions(
+    List<Map<String, dynamic>> promotions,
+    String merchantId,
+  ) async {
     final db = await database;
     final now = DateTime.now();
     final expiresAt = now.add(Duration(hours: 24));
 
     for (var promo in promotions) {
-      await db.insert(
-        TABLE_CACHED_PROMOTIONS,
-        {
-          'id': promo['id'],
-          'merchant_id': merchantId,
-          'shop_id': promo['shop_id'],
-          'name': promo['name'] ?? '',
-          'promo_type': promo['promo_type'] ?? '',
-          'promo_value': promo['promo_value'] ?? 0.0,
-          'data': _jsonEncode(promo),
-          'cached_at': now.toIso8601String(),
-          'expires_at': expiresAt.toIso8601String(),
-          'updated_at': now.toIso8601String(),
-        },
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
+      await db.insert(TABLE_CACHED_PROMOTIONS, {
+        'id': promo['id'],
+        'merchant_id': merchantId,
+        'shop_id': promo['shop_id'],
+        'name': promo['name'] ?? '',
+        'promo_type': promo['promo_type'] ?? '',
+        'promo_value': promo['promo_value'] ?? 0.0,
+        'data': _jsonEncode(promo),
+        'cached_at': now.toIso8601String(),
+        'expires_at': expiresAt.toIso8601String(),
+        'updated_at': now.toIso8601String(),
+      }, conflictAlgorithm: ConflictAlgorithm.replace);
     }
   }
 
-  Future<List<Map<String, dynamic>>?> getCachedPromotions(String merchantId) async {
+  Future<List<Map<String, dynamic>>?> getCachedPromotions(
+    String merchantId,
+  ) async {
     final db = await database;
     final now = DateTime.now();
 
@@ -438,25 +433,24 @@ class LocalDatabaseService {
     return promotions.isEmpty ? null : promotions;
   }
 
-  Future<void> cacheShopInfo(Map<String, dynamic> shopInfo, String merchantId) async {
+  Future<void> cacheShopInfo(
+    Map<String, dynamic> shopInfo,
+    String merchantId,
+  ) async {
     final db = await database;
     final now = DateTime.now();
     final expiresAt = now.add(Duration(days: 7));
 
-    await db.insert(
-      TABLE_CACHED_SHOP_INFO,
-      {
-        'id': shopInfo['id'],
-        'merchant_id': merchantId,
-        'name': shopInfo['name'] ?? '',
-        'address': shopInfo['address'],
-        'data': _jsonEncode(shopInfo),
-        'cached_at': now.toIso8601String(),
-        'expires_at': expiresAt.toIso8601String(),
-        'updated_at': now.toIso8601String(),
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+    await db.insert(TABLE_CACHED_SHOP_INFO, {
+      'id': shopInfo['id'],
+      'merchant_id': merchantId,
+      'name': shopInfo['name'] ?? '',
+      'address': shopInfo['address'],
+      'data': _jsonEncode(shopInfo),
+      'cached_at': now.toIso8601String(),
+      'expires_at': expiresAt.toIso8601String(),
+      'updated_at': now.toIso8601String(),
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   Future<Map<String, dynamic>?> getCachedShopInfo(String shopId) async {
@@ -540,15 +534,11 @@ class LocalDatabaseService {
     final db = await database;
     final now = DateTime.now().toIso8601String();
 
-    await db.insert(
-      TABLE_SYNC_LOG,
-      {
-        ...log,
-        'created_at': now,
-        'updated_at': now,
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+    await db.insert(TABLE_SYNC_LOG, {
+      ...log,
+      'created_at': now,
+      'updated_at': now,
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   Future<List<Map<String, dynamic>>> getSyncHistory({int limit = 50}) async {
@@ -575,15 +565,11 @@ class LocalDatabaseService {
     final db = await database;
     final now = DateTime.now().toIso8601String();
 
-    await db.insert(
-      TABLE_APP_SETTINGS,
-      {
-        'key': key,
-        'value': value,
-        'updated_at': now,
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+    await db.insert(TABLE_APP_SETTINGS, {
+      'key': key,
+      'value': value,
+      'updated_at': now,
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   Future<String?> getSetting(String key) async {
@@ -610,14 +596,14 @@ class LocalDatabaseService {
 
   Future<String> calculateCacheSize() async {
     final db = await database;
-    
+
     final productsSize = await _getTableSize(db, TABLE_CACHED_PRODUCTS);
     final promotionsSize = await _getTableSize(db, TABLE_CACHED_PROMOTIONS);
     final shopSize = await _getTableSize(db, TABLE_CACHED_SHOP_INFO);
     final salesSize = await _getTableSize(db, TABLE_OFFLINE_SALES);
 
     final totalBytes = productsSize + promotionsSize + shopSize + salesSize;
-    
+
     if (totalBytes < 1024) {
       return '${totalBytes} B';
     } else if (totalBytes < 1024 * 1024) {
@@ -629,7 +615,9 @@ class LocalDatabaseService {
 
   Future<int> _getTableSize(Database db, String table) async {
     try {
-      final result = await db.rawQuery('SELECT page_count * page_size as size FROM pragma_page_count, pragma_page_size');
+      final result = await db.rawQuery(
+        'SELECT page_count * page_size as size FROM pragma_page_count, pragma_page_size',
+      );
       return result.isNotEmpty ? (result.first['size'] as int?) ?? 0 : 0;
     } catch (e) {
       return 0;

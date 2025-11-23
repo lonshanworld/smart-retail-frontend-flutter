@@ -3,6 +3,7 @@ import 'package:smart_retail/app/core/config/app_config.dart';
 import 'package:smart_retail/app/data/models/customer_model.dart';
 import 'package:smart_retail/app/data/providers/api_constants.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
+import 'package:smart_retail/app/utils/response_utils.dart';
 
 class CustomerApiService extends GetxService {
   final GetConnect _connect = Get.find<GetConnect>();
@@ -61,7 +62,10 @@ class CustomerApiService extends GetxService {
   ///   )
   /// ];
   /// ```
-  Future<List<Customer>> searchCustomers(String query, {required String shopId}) async {
+  Future<List<Customer>> searchCustomers(
+    String query, {
+    required String shopId,
+  }) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
       if (query.isEmpty) return [];
@@ -73,20 +77,25 @@ class CustomerApiService extends GetxService {
           phone: '1234567890',
           email: 'john.doe@example.com',
           createdAt: DateTime.parse("2023-01-15T10:00:00Z"),
-        )
+        ),
       ];
     }
     final response = await _connect.get(
       '$_baseUrl/search',
       headers: await _getHeaders(),
-      query: {'query': query, 'shopId': shopId}, // CORRECTED: Added shopId to query
+      query: {
+        'query': query,
+        'shopId': shopId,
+      }, // CORRECTED: Added shopId to query
     );
 
     if (response.statusCode == 200 && response.body['success'] == true) {
-      final List<dynamic> data = response.body['data'];
-      return data.map((json) => Customer.fromJson(json)).toList();
+      final List<dynamic> data = asList(response.body['data']);
+      return data.map((json) => Customer.fromJson(Map<String, dynamic>.from(json))).toList();
     } else {
-      throw Exception(response.body?['message'] ?? 'Failed to search customers');
+      throw Exception(
+        response.body?['message'] ?? 'Failed to search customers',
+      );
     }
   }
 
@@ -136,7 +145,12 @@ class CustomerApiService extends GetxService {
   ///   createdAt: DateTime.parse("2023-10-28T10:00:00Z"),
   /// );
   /// ```
-  Future<Customer> createCustomer({required String shopId, required String name, String? phone, String? email}) async {
+  Future<Customer> createCustomer({
+    required String shopId,
+    required String name,
+    String? phone,
+    String? email,
+  }) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
       return Customer(
@@ -148,19 +162,15 @@ class CustomerApiService extends GetxService {
         createdAt: DateTime.now(),
       );
     }
-    final response = await _connect.post(
-      _baseUrl,
-      {
-        'shopId': shopId, // CORRECTED: Added shopId to body
-        'name': name,
-        'phone': phone,
-        'email': email,
-      },
-      headers: await _getHeaders(),
-    );
+    final response = await _connect.post(_baseUrl, {
+      'shopId': shopId, // CORRECTED: Added shopId to body
+      'name': name,
+      'phone': phone,
+      'email': email,
+    }, headers: await _getHeaders());
 
     if (response.statusCode == 201 && response.body['success'] == true) {
-      return Customer.fromJson(response.body['data']);
+      return Customer.fromJson(asMap(response.body['data']));
     } else {
       throw Exception(response.body?['message'] ?? 'Failed to create customer');
     }

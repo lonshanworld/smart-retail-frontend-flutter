@@ -8,7 +8,7 @@ class PosBinding extends Bindings {
   void dependencies() {
     // UPDATED: To provide the correctly named service
     Get.lazyPut<MerchantPosApiService>(() => MerchantPosApiService());
-    
+
     Get.lazyPut<MerchantShopsApiService>(() => MerchantShopsApiService());
     Get.lazyPut<PosController>(() => PosController());
   }

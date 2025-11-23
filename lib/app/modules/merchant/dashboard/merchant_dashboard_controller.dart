@@ -4,9 +4,12 @@ import 'package:smart_retail/app/data/models/shop_model.dart';
 import 'package:smart_retail/app/data/services/admin_dashboard_service.dart';
 import 'package:smart_retail/app/data/services/shop_api_service.dart';
 
+import 'package:smart_retail/app/utils/dialog_utils.dart';
+
 class MerchantDashboardController extends GetxController {
   final ShopApiService _shopApiService = Get.find<ShopApiService>();
-  final AdminDashboardApiService _dashboardApiService = Get.find<AdminDashboardApiService>();
+  final AdminDashboardApiService _dashboardApiService =
+      Get.find<AdminDashboardApiService>();
 
   // Observable for Shop List
   var shopList = <Shop>[].obs;
@@ -33,12 +36,15 @@ class MerchantDashboardController extends GetxController {
 
       shopList.assignAll(shops);
       if (shops.isNotEmpty) {
-        selectedShop.value = shops.firstWhere((s) => s.isPrimary == true, orElse: () => shops.first);
+        selectedShop.value = shops.firstWhere(
+          (s) => s.isPrimary == true,
+          orElse: () => shops.first,
+        );
       }
       await fetchDashboardData(); // Fetch data after shops are loaded and selection is made
     } catch (e) {
       shopError.value = "Failed to load shops: ${e.toString()}";
-      Get.snackbar("Error", shopError.value!);
+      DialogUtils.showError(shopError.value!);
       print("Error fetching shops: $e");
     } finally {
       isLoadingShops.value = false;
@@ -54,15 +60,21 @@ class MerchantDashboardController extends GetxController {
     try {
       isLoadingDashboard.value = true;
       dashboardError.value = null;
+      print('[MerchantDashboardController] Fetching dashboard data for shop: ${selectedShop.value?.id}');
+
+      // Directly await the service and populate the summary. No delayed
+      // slow-warning is shown on slow machines to avoid noisy popups.
       final summary = await _dashboardApiService.getMerchantDashboardSummary(
         shopId: selectedShop.value?.id,
       );
+      print('[MerchantDashboardController] Dashboard service returned: ${summary != null}');
       dashboardSummary.value = summary;
       // Service handles snackbars for API errors.
-    } catch (e) {
+    } catch (e, st) {
       dashboardError.value = "Failed to load dashboard data: ${e.toString()}";
-      Get.snackbar("Error", dashboardError.value!);
+      DialogUtils.showError(dashboardError.value!);
       print("Error fetching dashboard data: $e");
+      print(st);
     } finally {
       isLoadingDashboard.value = false;
     }

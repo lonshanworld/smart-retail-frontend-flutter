@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:smart_retail/app/modules/login/login_controller.dart';
 import 'package:smart_retail/app/routes/app_pages.dart';
+import 'package:smart_retail/app/utils/dialog_utils.dart';
 
 class LoginView extends GetView<LoginController> {
   final String? loginType; // 'admin', 'staff', or null (default to merchant)
@@ -44,17 +45,14 @@ class LoginView extends GetView<LoginController> {
   @override
   Widget build(BuildContext context) {
     final color = _getColor();
-    
+
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              color.shade50,
-              Colors.white,
-            ],
+            colors: [color.shade50, Colors.white],
           ),
         ),
         child: SafeArea(
@@ -75,7 +73,8 @@ class LoginView extends GetView<LoginController> {
                           alignment: Alignment.centerLeft,
                           child: IconButton(
                             icon: const Icon(Icons.arrow_back),
-                            onPressed: () => Get.offAllNamed(Routes.CUSTOMER_INTRO),
+                            onPressed: () =>
+                                Get.offAllNamed(Routes.CUSTOMER_INTRO),
                           ),
                         ),
                         const SizedBox(height: 20),
@@ -146,21 +145,33 @@ class LoginView extends GetView<LoginController> {
                               // Email Field
                               TextFormField(
                                 controller: controller.emailController,
+                                style: const TextStyle(color: Colors.black),
                                 decoration: InputDecoration(
                                   labelText: 'Email',
+                                  labelStyle: TextStyle(
+                                    color: Colors.grey.shade800,
+                                  ),
                                   hintText: 'Enter your email',
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   enabledBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(color: Colors.grey.shade300),
+                                    borderSide: BorderSide(
+                                      color: Colors.grey.shade300,
+                                    ),
                                   ),
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(color: color, width: 2),
+                                    borderSide: BorderSide(
+                                      color: color,
+                                      width: 2,
+                                    ),
                                   ),
-                                  prefixIcon: Icon(Icons.email_outlined, color: color),
+                                  prefixIcon: Icon(
+                                    Icons.email_outlined,
+                                    color: color,
+                                  ),
                                   filled: true,
                                   fillColor: Colors.grey.shade50,
                                 ),
@@ -178,84 +189,110 @@ class LoginView extends GetView<LoginController> {
                               const SizedBox(height: 20),
 
                               // Password Field
-                              Obx(() => TextFormField(
-                                    controller: controller.passwordController,
-                                    decoration: InputDecoration(
-                                      labelText: 'Password',
-                                      hintText: 'Enter your password',
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide(color: Colors.grey.shade300),
-                                      ),
-                                      focusedBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide(color: color, width: 2),
-                                      ),
-                                      prefixIcon: Icon(Icons.lock_outline, color: color),
-                                      suffixIcon: IconButton(
-                                        icon: Icon(
-                                          controller.isPasswordHidden.value
-                                              ? Icons.visibility_off_outlined
-                                              : Icons.visibility_outlined,
-                                          color: Colors.grey.shade600,
-                                        ),
-                                        onPressed: controller.togglePasswordVisibility,
-                                      ),
-                                      filled: true,
-                                      fillColor: Colors.grey.shade50,
+                              Obx(
+                                () => TextFormField(
+                                  controller: controller.passwordController,
+                                  style: const TextStyle(color: Colors.black),
+                                  decoration: InputDecoration(
+                                    labelText: 'Password',
+                                    labelStyle: TextStyle(
+                                      color: Colors.grey.shade800,
                                     ),
-                                    obscureText: controller.isPasswordHidden.value,
-                                    validator: (value) {
-                                      if (value == null || value.isEmpty) {
-                                        return 'Please enter your password';
-                                      }
-                                      return null;
-                                    },
-                                  )),
+                                    hintText: 'Enter your password',
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide(
+                                        color: Colors.grey.shade300,
+                                      ),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide(
+                                        color: color,
+                                        width: 2,
+                                      ),
+                                    ),
+                                    prefixIcon: Icon(
+                                      Icons.lock_outline,
+                                      color: color,
+                                    ),
+                                    suffixIcon: IconButton(
+                                      icon: Icon(
+                                        controller.isPasswordHidden.value
+                                            ? Icons.visibility_off_outlined
+                                            : Icons.visibility_outlined,
+                                        color: Colors.grey.shade600,
+                                      ),
+                                      onPressed:
+                                          controller.togglePasswordVisibility,
+                                    ),
+                                    filled: true,
+                                    fillColor: Colors.grey.shade50,
+                                  ),
+                                  obscureText:
+                                      controller.isPasswordHidden.value,
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Please enter your password';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                              ),
                               const SizedBox(height: 32),
 
                               // Login Button
-                              Obx(() => ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: color,
-                                      foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(vertical: 18),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      elevation: 3,
-                                      textStyle: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                              Obx(
+                                () => ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: color,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 18,
                                     ),
-                                    onPressed: controller.isLoading.value
-                                        ? null
-                                        : () {
-                                            if (_formKey.currentState?.validate() ?? false) {
-                                              controller.login(loginType: loginType);
-                                            }
-                                          },
-                                    child: controller.isLoading.value
-                                        ? const SizedBox(
-                                            width: 24,
-                                            height: 24,
-                                            child: CircularProgressIndicator(
-                                              color: Colors.white,
-                                              strokeWidth: 3.0,
-                                            ))
-                                        : Row(
-                                            mainAxisAlignment: MainAxisAlignment.center,
-                                            children: const [
-                                              Text('Login'),
-                                              SizedBox(width: 8),
-                                              Icon(Icons.arrow_forward, size: 20),
-                                            ],
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    elevation: 3,
+                                    textStyle: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  onPressed: controller.isLoading.value
+                                      ? null
+                                      : () {
+                                          if (_formKey.currentState
+                                                  ?.validate() ??
+                                              false) {
+                                            controller.login(
+                                              loginType: loginType,
+                                            );
+                                          }
+                                        },
+                                  child: controller.isLoading.value
+                                      ? const SizedBox(
+                                          width: 24,
+                                          height: 24,
+                                          child: CircularProgressIndicator(
+                                            color: Colors.white,
+                                            strokeWidth: 3.0,
                                           ),
-                                  )),
+                                        )
+                                      : Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: const [
+                                            Text('Login'),
+                                            SizedBox(width: 8),
+                                            Icon(Icons.arrow_forward, size: 20),
+                                          ],
+                                        ),
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -275,11 +312,7 @@ class LoginView extends GetView<LoginController> {
                               ),
                               TextButton(
                                 onPressed: () {
-                                  Get.snackbar(
-                                    'Coming Soon',
-                                    'Merchant sign-up is not yet implemented.',
-                                    snackPosition: SnackPosition.BOTTOM,
-                                  );
+                                  DialogUtils.showInfo('Merchant sign-up is not yet implemented.');
                                 },
                                 child: Text(
                                   'Sign Up',

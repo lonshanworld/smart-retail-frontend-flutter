@@ -65,10 +65,16 @@ class StockInApiService extends GetxService {
       'items': items.map((item) => item.toJson()).toList(),
     };
 
-    final response = await _connect.post(_baseUrl, body, headers: await _getHeaders());
+    final response = await _connect.post(
+      _baseUrl,
+      body,
+      headers: await _getHeaders(),
+    );
 
     if (!response.isOk) {
-      throw Exception(response.body?['message'] ?? 'Failed to perform stock-in');
+      throw Exception(
+        response.body?['message'] ?? 'Failed to perform stock-in',
+      );
     }
   }
 }

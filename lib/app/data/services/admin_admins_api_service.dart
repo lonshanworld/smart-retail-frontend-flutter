@@ -3,6 +3,7 @@ import 'package:smart_retail/app/core/config/app_config.dart';
 import 'package:smart_retail/app/data/models/user_model.dart';
 import 'package:smart_retail/app/data/providers/api_constants.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
+import 'package:smart_retail/app/utils/response_utils.dart';
 
 /// AdminAdminsApiService - Service for managing admin users.
 ///
@@ -52,13 +53,17 @@ class AdminAdminsApiService extends GetConnect {
     if (_appConfig.isDevelopment) {
       return Future.delayed(const Duration(seconds: 1), () => _mockAdmins);
     }
-    
-    final response = await get('$_baseUrl?page=$page&limit=$limit', headers: await _getHeaders());
+
+    final response = await get(
+      '$_baseUrl?page=$page&limit=$limit',
+      headers: await _getHeaders(),
+    );
     print('check response for admin list ${response}');
-    if (response.isOk && response.body != null && response.body['data'] != null) {
-      return (response.body['data'] as List)
-          .map((adminJson) => User.fromJson(adminJson))
-          .toList();
+    if (response.isOk &&
+        response.body != null &&
+        response.body['data'] != null) {
+      final rawList = asList(response.body['data']);
+      return rawList.map((adminJson) => User.fromJson(Map<String, dynamic>.from(adminJson))).toList();
     } else {
       throw Exception('Failed to load admins: ${response.statusText}');
     }

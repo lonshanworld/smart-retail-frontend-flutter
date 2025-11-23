@@ -6,8 +6,11 @@ import 'package:smart_retail/app/modules/admin/users/users_admin_controller.dart
 import 'package:smart_retail/app/data/enums/user_role.dart';
 import 'package:smart_retail/app/data/models/user_selection_item.dart';
 
+import 'package:smart_retail/app/utils/dialog_utils.dart';
+
 class AddEditUserAdminController extends GetxController {
-  final AdminUserService _adminUserService = Get.find<AdminUserService>(); // <<< CORRECTED SERVICE
+  final AdminUserService _adminUserService =
+      Get.find<AdminUserService>(); // <<< CORRECTED SERVICE
 
   // Form
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
@@ -20,7 +23,8 @@ class AddEditUserAdminController extends GetxController {
   final RxBool isEditMode = false.obs;
   final Rx<UserRole> selectedRole = UserRole.staff.obs; // Default role
   final RxBool isPasswordObscured = true.obs;
-  final RxList<UserSelectionItem> merchantsForSelection = <UserSelectionItem>[].obs;
+  final RxList<UserSelectionItem> merchantsForSelection =
+      <UserSelectionItem>[].obs;
   final RxnString selectedMerchantId = RxnString(); // For staff role
   final RxBool isFetchingMerchants = false.obs;
   final RxBool isSaving = false.obs;
@@ -46,7 +50,7 @@ class AddEditUserAdminController extends GetxController {
     } else {
       isEditMode.value = false;
     }
-    
+
     // Add a listener to the role dropdown to react to changes
     selectedRole.listen((role) {
       _handleRoleChange(role);
@@ -60,17 +64,21 @@ class AddEditUserAdminController extends GetxController {
   void _handleRoleChange(UserRole role) {
     formError.value = null; // Clear previous errors
     // If the role is changed to Staff and the merchants list is empty, fetch it.
-    if (role == UserRole.staff && merchantsForSelection.isEmpty && !isFetchingMerchants.value) {
+    if (role == UserRole.staff &&
+        merchantsForSelection.isEmpty &&
+        !isFetchingMerchants.value) {
       fetchMerchantsForSelection();
     }
   }
 
   // Fetches the list of merchants from the API service to populate the dropdown.
   Future<void> fetchMerchantsForSelection() async {
-    if (isFetchingMerchants.value) return; // Prevent multiple simultaneous calls
+    if (isFetchingMerchants.value)
+      return; // Prevent multiple simultaneous calls
     isFetchingMerchants.value = true;
     try {
-      final merchants = await _adminUserService.getMerchantsForSelection(); // <<< CORRECTED CALL
+      final merchants = await _adminUserService
+          .getMerchantsForSelection(); // <<< CORRECTED CALL
       if (merchants != null) {
         merchantsForSelection.assignAll(merchants);
       } else {
@@ -78,7 +86,7 @@ class AddEditUserAdminController extends GetxController {
       }
     } catch (e) {
       printError(info: "Error fetching merchants: $e");
-      Get.snackbar('Error', 'Could not load merchants: ${e.toString()}', snackPosition: SnackPosition.BOTTOM);
+      DialogUtils.showError('Could not load merchants: ${e.toString()}');
       merchantsForSelection.clear();
     } finally {
       isFetchingMerchants.value = false;
@@ -127,9 +135,10 @@ class AddEditUserAdminController extends GetxController {
           return;
         }
         userData['shopName'] = shopNameController.text.trim();
-        userData['merchantId'] = null; 
+        userData['merchantId'] = null;
       } else if (selectedRole.value == UserRole.staff) {
-        if (selectedMerchantId.value == null || selectedMerchantId.value!.isEmpty) {
+        if (selectedMerchantId.value == null ||
+            selectedMerchantId.value!.isEmpty) {
           formError.value = "Associated Merchant is required for Staff role.";
           isSaving.value = false;
           return;
@@ -143,9 +152,14 @@ class AddEditUserAdminController extends GetxController {
 
       User? savedUser;
       if (isEditMode.value && _editingUser != null) {
-        savedUser = await _adminUserService.updateUser(_editingUser!.id, userData); // <<< CORRECTED CALL
+        savedUser = await _adminUserService.updateUser(
+          _editingUser!.id,
+          userData,
+        ); // <<< CORRECTED CALL
       } else {
-        savedUser = await _adminUserService.createUser(userData); // <<< CORRECTED CALL
+        savedUser = await _adminUserService.createUser(
+          userData,
+        ); // <<< CORRECTED CALL
       }
 
       if (savedUser != null) {
@@ -153,13 +167,15 @@ class AddEditUserAdminController extends GetxController {
         try {
           Get.find<UsersAdminController>().fetchUsers();
         } catch (e) {
-          print("AddEditUserAdminController: Could not find UsersAdminController to refresh: $e");
+          print(
+            "AddEditUserAdminController: Could not find UsersAdminController to refresh: $e",
+          );
         }
         Get.back(); // Go back to the previous screen
-        Get.snackbar('Success', 'User "${savedUser.name}" ${isEditMode.value ? "updated" : "created"} successfully!',
-            snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.green, colorText: Colors.white);
+        DialogUtils.showSuccess('User "${savedUser.name}" ${isEditMode.value ? "updated" : "created"} successfully!');
       } else {
-        formError.value = "Failed to save user. The operation returned no result.";
+        formError.value =
+            "Failed to save user. The operation returned no result.";
       }
     } catch (e) {
       printError(info: "Error saving user: $e");

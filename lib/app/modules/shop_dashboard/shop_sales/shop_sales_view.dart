@@ -22,13 +22,15 @@ class ShopSalesView extends GetView<ShopSalesController> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Obx(() => Text(
-                  'Total Sales: ${controller.totalItems.value}',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                Obx(
+                  () => Text(
+                    'Total Sales: ${controller.totalItems.value}',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                )),
+                ),
               ],
             ),
           ),
@@ -50,7 +52,9 @@ class ShopSalesView extends GetView<ShopSalesController> {
                 );
               }
               if (controller.sales.isEmpty) {
-                return const Center(child: Text('No sales found for this shop.'));
+                return const Center(
+                  child: Text('No sales found for this shop.'),
+                );
               }
               return _buildSalesTable();
             }),
@@ -76,16 +80,56 @@ class ShopSalesView extends GetView<ShopSalesController> {
     final isMerchant = controller.isMerchant;
 
     return [
-      DataColumn(label: const Text('Date', style: TextStyle(fontWeight: FontWeight.bold))),
-      DataColumn(label: const Text('Items', style: TextStyle(fontWeight: FontWeight.bold))),
-      DataColumn(label: const Text('Sell Price', style: TextStyle(fontWeight: FontWeight.bold))),
+      DataColumn(
+        label: const Text(
+          'Date',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+      ),
+      DataColumn(
+        label: const Text(
+          'Items',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+      ),
+      DataColumn(
+        label: const Text(
+          'Sell Price',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+      ),
       if (isMerchant)
-        DataColumn(label: const Text('Org Price', style: TextStyle(fontWeight: FontWeight.bold))),
+        DataColumn(
+          label: const Text(
+            'Org Price',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ),
       if (isMerchant)
-        DataColumn(label: const Text('Profit', style: TextStyle(fontWeight: FontWeight.bold))),
-      DataColumn(label: const Text('Discount', style: TextStyle(fontWeight: FontWeight.bold))),
-      DataColumn(label: const Text('Total', style: TextStyle(fontWeight: FontWeight.bold))),
-      DataColumn(label: const Text('Payment', style: TextStyle(fontWeight: FontWeight.bold))),
+        DataColumn(
+          label: const Text(
+            'Profit',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ),
+      DataColumn(
+        label: const Text(
+          'Discount',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+      ),
+      DataColumn(
+        label: const Text(
+          'Total',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+      ),
+      DataColumn(
+        label: const Text(
+          'Payment',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+      ),
     ];
   }
 
@@ -94,19 +138,20 @@ class ShopSalesView extends GetView<ShopSalesController> {
     final currencyFormat = NumberFormat.currency(symbol: '\$');
 
     // Calculate total selling price
-    double totalSellingPrice = sale.items.fold(0, (sum, item) => sum + item.subtotal);
+    double totalSellingPrice = sale.items.fold(
+      0,
+      (sum, item) => sum + item.subtotal,
+    );
 
     // Calculate total original price
     double totalOriginalPrice = sale.items.fold(
       0,
-      (sum, item) => sum + ((item.originalPriceAtSale ?? 0.0) * item.quantitySold),
+      (sum, item) =>
+          sum + ((item.originalPriceAtSale ?? 0.0) * item.quantitySold),
     );
 
     // Calculate total profit
-    double totalProfit = sale.items.fold(
-      0,
-      (sum, item) => sum + item.profit,
-    );
+    double totalProfit = sale.items.fold(0, (sum, item) => sum + item.profit);
 
     List<DataCell> cells = [
       // Date
@@ -149,10 +194,7 @@ class ShopSalesView extends GetView<ShopSalesController> {
         DataCell(
           Text(
             currencyFormat.format(totalOriginalPrice),
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.grey.shade600,
-            ),
+            style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
           ),
         ),
       );
@@ -167,7 +209,9 @@ class ShopSalesView extends GetView<ShopSalesController> {
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: totalProfit >= 0 ? AppColors.success.shade700 : AppColors.error.shade700,
+              color: totalProfit >= 0
+                  ? AppColors.success.shade700
+                  : AppColors.error.shade700,
             ),
           ),
         ),
@@ -183,7 +227,9 @@ class ShopSalesView extends GetView<ShopSalesController> {
               : '-',
           style: TextStyle(
             fontSize: 13,
-            color: (sale.discountAmount != null && sale.discountAmount! > 0) ? AppColors.warning.shade700 : Colors.grey,
+            color: (sale.discountAmount != null && sale.discountAmount! > 0)
+                ? AppColors.warning.shade700
+                : Colors.grey,
           ),
         ),
       ),
@@ -232,10 +278,14 @@ class ShopSalesView extends GetView<ShopSalesController> {
     final currencyFormat = NumberFormat.currency(symbol: '\$');
 
     // Calculate totals
-    double totalSellingPrice = sale.items.fold(0, (sum, item) => sum + item.subtotal);
+    double totalSellingPrice = sale.items.fold(
+      0,
+      (sum, item) => sum + item.subtotal,
+    );
     double totalOriginalPrice = sale.items.fold(
       0,
-      (sum, item) => sum + ((item.originalPriceAtSale ?? 0.0) * item.quantitySold),
+      (sum, item) =>
+          sum + ((item.originalPriceAtSale ?? 0.0) * item.quantitySold),
     );
     double totalProfit = sale.items.fold(0, (sum, item) => sum + item.profit);
 
@@ -287,7 +337,9 @@ class ShopSalesView extends GetView<ShopSalesController> {
           icon: Icons.check_circle,
           label: 'Payment',
           value: sale.paymentStatus.toUpperCase(),
-          valueColor: sale.paymentStatus == 'succeeded' ? AppColors.success : AppColors.warning,
+          valueColor: sale.paymentStatus == 'succeeded'
+              ? AppColors.success
+              : AppColors.warning,
         ),
       ],
     );
@@ -306,7 +358,9 @@ class ShopSalesView extends GetView<ShopSalesController> {
           children: [
             IconButton(
               icon: const Icon(Icons.chevron_left),
-              onPressed: controller.currentPage.value > 1 ? controller.previousPage : null,
+              onPressed: controller.currentPage.value > 1
+                  ? controller.previousPage
+                  : null,
             ),
             Text(
               'Page ${controller.currentPage.value} of ${controller.totalPages.value}',
@@ -314,7 +368,8 @@ class ShopSalesView extends GetView<ShopSalesController> {
             ),
             IconButton(
               icon: const Icon(Icons.chevron_right),
-              onPressed: controller.currentPage.value < controller.totalPages.value
+              onPressed:
+                  controller.currentPage.value < controller.totalPages.value
                   ? controller.nextPage
                   : null,
             ),
@@ -325,7 +380,9 @@ class ShopSalesView extends GetView<ShopSalesController> {
   }
 
   void _showSaleDetails(Sale sale) {
-    print('📄 [SHOP SALES VIEW] Navigating to sale details for sale ID: ${sale.id}');
+    print(
+      '📄 [SHOP SALES VIEW] Navigating to sale details for sale ID: ${sale.id}',
+    );
     Get.to(
       () => ShopSalesDetailView(sale: sale),
       transition: Transition.rightToLeft,

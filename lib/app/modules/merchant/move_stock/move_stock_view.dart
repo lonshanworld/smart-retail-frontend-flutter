@@ -26,7 +26,11 @@ class MoveStockView extends GetView<MoveStockController> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.error_outline, size: 64, color: Colors.red.shade300),
+                  Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: Colors.red.shade300,
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     controller.errorMessage.value!,
@@ -76,71 +80,79 @@ class MoveStockView extends GetView<MoveStockController> {
                 // Select Item
                 _buildSectionTitle('1. Select Item'),
                 const SizedBox(height: 8),
-                Obx(() => DropdownButtonFormField<InventoryItem>(
-                  value: controller.selectedItem.value,
-                  decoration: InputDecoration(
-                    labelText: 'Inventory Item',
-                    prefixIcon: const Icon(Icons.inventory_2),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    filled: true,
-                  ),
-                  isExpanded: true,
-                  hint: const Text('Choose an item to move'),
-                  items: controller.inventoryItems.map((item) {
-                    return DropdownMenuItem<InventoryItem>(
-                      value: item,
-                      child: Text(
-                        '${item.name} ${item.sku != null ? "(${item.sku})" : ""}',
-                        overflow: TextOverflow.ellipsis,
+                Obx(
+                  () => DropdownButtonFormField<InventoryItem>(
+                    value: controller.selectedItem.value,
+                    decoration: InputDecoration(
+                      labelText: 'Inventory Item',
+                      prefixIcon: const Icon(Icons.inventory_2),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                    );
-                  }).toList(),
-                  onChanged: controller.selectInventoryItem,
-                  validator: (value) => value == null ? 'Please select an item' : null,
-                )),
+                      filled: true,
+                    ),
+                    isExpanded: true,
+                    hint: const Text('Choose an item to move'),
+                    items: controller.inventoryItems.map((item) {
+                      return DropdownMenuItem<InventoryItem>(
+                        value: item,
+                        child: Text(
+                          '${item.name} ${item.sku != null ? "(${item.sku})" : ""}',
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: controller.selectInventoryItem,
+                    validator: (value) =>
+                        value == null ? 'Please select an item' : null,
+                  ),
+                ),
                 const SizedBox(height: 24),
 
                 // From Shop
                 _buildSectionTitle('2. From Shop (Source)'),
                 const SizedBox(height: 8),
-                Obx(() => DropdownButtonFormField<Shop>(
-                  value: controller.fromShop.value,
-                  decoration: InputDecoration(
-                    labelText: 'Source Shop',
-                    prefixIcon: const Icon(Icons.store_outlined),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    filled: true,
-                  ),
-                  isExpanded: true,
-                  hint: const Text('Select source shop'),
-                  items: controller.getAvailableFromShops().map((shop) {
-                    // Find stock for this shop
-                    final stockInfo = controller.selectedItem.value?.stockInfo?.firstWhereOrNull(
-                      (stock) => stock.shopId == shop.id,
-                    );
-                    final qty = stockInfo?.quantity ?? 0;
-                    
-                    return DropdownMenuItem<Shop>(
-                      value: shop,
-                      child: Text(
-                        '${shop.name} (Stock: $qty)',
-                        overflow: TextOverflow.ellipsis,
+                Obx(
+                  () => DropdownButtonFormField<Shop>(
+                    value: controller.fromShop.value,
+                    decoration: InputDecoration(
+                      labelText: 'Source Shop',
+                      prefixIcon: const Icon(Icons.store_outlined),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                    );
-                  }).toList(),
-                  onChanged: controller.selectedItem.value == null 
-                      ? null 
-                      : controller.selectFromShop,
-                  validator: (value) => value == null ? 'Please select source shop' : null,
-                )),
-                
+                      filled: true,
+                    ),
+                    isExpanded: true,
+                    hint: const Text('Select source shop'),
+                    items: controller.getAvailableFromShops().map((shop) {
+                      // Find stock for this shop
+                      final stockInfo = controller.selectedItem.value?.stockInfo
+                          ?.firstWhereOrNull(
+                            (stock) => stock.shopId == shop.id,
+                          );
+                      final qty = stockInfo?.quantity ?? 0;
+
+                      return DropdownMenuItem<Shop>(
+                        value: shop,
+                        child: Text(
+                          '${shop.name} (Stock: $qty)',
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: controller.selectedItem.value == null
+                        ? null
+                        : controller.selectFromShop,
+                    validator: (value) =>
+                        value == null ? 'Please select source shop' : null,
+                  ),
+                ),
+
                 // Show available stock
                 Obx(() {
-                  if (controller.fromShop.value != null && controller.availableStock.value > 0) {
+                  if (controller.fromShop.value != null &&
+                      controller.availableStock.value > 0) {
                     return Padding(
                       padding: const EdgeInsets.only(top: 8.0, left: 12),
                       child: Text(
@@ -159,29 +171,32 @@ class MoveStockView extends GetView<MoveStockController> {
                 // To Shop
                 _buildSectionTitle('3. To Shop (Destination)'),
                 const SizedBox(height: 8),
-                Obx(() => DropdownButtonFormField<Shop>(
-                  value: controller.toShop.value,
-                  decoration: InputDecoration(
-                    labelText: 'Destination Shop',
-                    prefixIcon: const Icon(Icons.store),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
+                Obx(
+                  () => DropdownButtonFormField<Shop>(
+                    value: controller.toShop.value,
+                    decoration: InputDecoration(
+                      labelText: 'Destination Shop',
+                      prefixIcon: const Icon(Icons.store),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      filled: true,
                     ),
-                    filled: true,
+                    isExpanded: true,
+                    hint: const Text('Select destination shop'),
+                    items: controller.getAvailableToShops().map((shop) {
+                      return DropdownMenuItem<Shop>(
+                        value: shop,
+                        child: Text(shop.name, overflow: TextOverflow.ellipsis),
+                      );
+                    }).toList(),
+                    onChanged: controller.fromShop.value == null
+                        ? null
+                        : controller.selectToShop,
+                    validator: (value) =>
+                        value == null ? 'Please select destination shop' : null,
                   ),
-                  isExpanded: true,
-                  hint: const Text('Select destination shop'),
-                  items: controller.getAvailableToShops().map((shop) {
-                    return DropdownMenuItem<Shop>(
-                      value: shop,
-                      child: Text(shop.name, overflow: TextOverflow.ellipsis),
-                    );
-                  }).toList(),
-                  onChanged: controller.fromShop.value == null 
-                      ? null 
-                      : controller.selectToShop,
-                  validator: (value) => value == null ? 'Please select destination shop' : null,
-                )),
+                ),
                 const SizedBox(height: 24),
 
                 // Quantity
@@ -204,28 +219,35 @@ class MoveStockView extends GetView<MoveStockController> {
                 const SizedBox(height: 32),
 
                 // Move Stock Button
-                Obx(() => ElevatedButton.icon(
-                  onPressed: controller.isLoading.value 
-                      ? null 
-                      : controller.moveStock,
-                  icon: controller.isLoading.value
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                        )
-                      : const Icon(Icons.swap_horiz),
-                  label: Text(
-                    controller.isLoading.value ? 'Moving Stock...' : 'Move Stock',
-                    style: const TextStyle(fontSize: 16),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                Obx(
+                  () => ElevatedButton.icon(
+                    onPressed: controller.isLoading.value
+                        ? null
+                        : controller.moveStock,
+                    icon: controller.isLoading.value
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.swap_horiz),
+                    label: Text(
+                      controller.isLoading.value
+                          ? 'Moving Stock...'
+                          : 'Move Stock',
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                   ),
-                )),
+                ),
               ],
             ),
           ),
@@ -237,10 +259,7 @@ class MoveStockView extends GetView<MoveStockController> {
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
-      style: const TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-      ),
+      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
     );
   }
 }

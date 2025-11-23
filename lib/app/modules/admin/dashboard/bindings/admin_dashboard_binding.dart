@@ -5,9 +5,7 @@ import 'package:smart_retail/app/modules/admin/dashboard/controllers/admin_dashb
 class AdminDashboardBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut<AdminDashboardController>(
-      () => AdminDashboardController(),
-    );
+    Get.lazyPut<AdminDashboardController>(() => AdminDashboardController());
     // AdminDashboardApiService is already registered globally in main.dart
     // So, we don't need to put it here again.
     // The controller will find it using Get.find().

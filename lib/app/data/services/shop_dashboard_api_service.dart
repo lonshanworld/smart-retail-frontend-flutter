@@ -1,8 +1,8 @@
-
 import 'package:get/get.dart';
 import 'package:smart_retail/app/core/config/app_config.dart';
 import 'package:smart_retail/app/data/providers/api_constants.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
+import 'package:smart_retail/app/utils/response_utils.dart';
 
 // Model for the dashboard summary data
 class ShopDashboardSummary {
@@ -90,23 +90,26 @@ class ShopDashboardApiService extends GetxService {
       url += '?shopId=$shopId';
     }
 
-    final response = await _connect.get(
-      url,
-      headers: await _getHeaders(),
-    );
+    final response = await _connect.get(url, headers: await _getHeaders());
 
     print('📥 [SHOP DASHBOARD] Response status: ${response.statusCode}');
     print('📥 [SHOP DASHBOARD] Response body: ${response.body}');
 
     if (response.statusCode == null) {
-      throw Exception('Network error: Unable to connect to server. Please check your connection and ensure the backend is running.');
+      throw Exception(
+        'Network error: Unable to connect to server. Please check your connection and ensure the backend is running.',
+      );
     }
 
-    if (response.statusCode! < 300 && response.body != null && response.body['success'] == true) {
+    if (response.statusCode! < 300 &&
+        response.body != null &&
+        response.body['success'] == true) {
       print('✅ [SHOP DASHBOARD] Parsing dashboard data...');
-      return ShopDashboardSummary.fromJson(response.body['data']);
+      return ShopDashboardSummary.fromJson(asMap(response.body['data']));
     } else {
-      throw Exception(response.body?['message'] ?? 'Failed to load dashboard summary');
+      throw Exception(
+        response.body?['message'] ?? 'Failed to load dashboard summary',
+      );
     }
   }
 }

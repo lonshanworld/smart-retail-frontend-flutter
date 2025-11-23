@@ -22,10 +22,7 @@ class AdminDashboardView extends GetView<AdminDashboardController> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              AppColors.admin.shade50.withOpacity(0.3),
-              Colors.white,
-            ],
+            colors: [AppColors.admin.shade50.withOpacity(0.3), Colors.white],
           ),
         ),
         child: Obx(() {
@@ -70,7 +67,10 @@ class AdminDashboardView extends GetView<AdminDashboardController> {
           }
 
           final summary = controller.summary.value!;
-          final currencyFormatter = NumberFormat.currency(locale: 'en_US', symbol: '\$');
+          final currencyFormatter = NumberFormat.currency(
+            locale: 'en_US',
+            symbol: '\$',
+          );
 
           return RefreshIndicator(
             onRefresh: () => controller.refreshDashboard(),
@@ -130,7 +130,9 @@ class AdminDashboardView extends GetView<AdminDashboardController> {
                         gradient: AppColors.successGradientColors,
                         icon: Icons.monetization_on_outlined,
                         title: 'Total Sales Value',
-                        value: currencyFormatter.format(summary.totalSalesValue),
+                        value: currencyFormatter.format(
+                          summary.totalSalesValue,
+                        ),
                         subtitle: 'All-time revenue',
                       ),
                       StatCard(

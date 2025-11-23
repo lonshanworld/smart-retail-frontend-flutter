@@ -11,7 +11,11 @@ class UsersAdminView extends GetView<UsersAdminController> {
   const UsersAdminView({super.key});
 
   // --- HELPER FOR ACTIONS POPUP MENU ---
-  Widget _buildActionsMenu(BuildContext context, User user, UsersAdminController controller) {
+  Widget _buildActionsMenu(
+    BuildContext context,
+    User user,
+    UsersAdminController controller,
+  ) {
     return PopupMenuButton<String>(
       icon: const Icon(Icons.more_vert),
       onSelected: (String value) {
@@ -33,23 +37,36 @@ class UsersAdminView extends GetView<UsersAdminController> {
       itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
         const PopupMenuItem<String>(
           value: 'view',
-          child: ListTile(leading: Icon(Icons.visibility_outlined), title: Text('View Detail')),
+          child: ListTile(
+            leading: Icon(Icons.visibility_outlined),
+            title: Text('View Detail'),
+          ),
         ),
         const PopupMenuItem<String>(
           value: 'edit',
-          child: ListTile(leading: Icon(Icons.edit_outlined), title: Text('Edit')),
+          child: ListTile(
+            leading: Icon(Icons.edit_outlined),
+            title: Text('Edit'),
+          ),
         ),
         PopupMenuItem<String>(
           value: 'toggle_status',
           child: ListTile(
-            leading: Icon(user.isActive ? Icons.toggle_off_outlined : Icons.toggle_on_outlined),
+            leading: Icon(
+              user.isActive
+                  ? Icons.toggle_off_outlined
+                  : Icons.toggle_on_outlined,
+            ),
             title: Text(user.isActive ? 'Deactivate' : 'Activate'),
           ),
         ),
         const PopupMenuDivider(),
         const PopupMenuItem<String>(
           value: 'delete',
-          child: ListTile(leading: Icon(Icons.delete_outline, color: Colors.red), title: Text('Delete', style: TextStyle(color: Colors.red))),
+          child: ListTile(
+            leading: Icon(Icons.delete_outline, color: Colors.red),
+            title: Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
         ),
       ],
     );
@@ -77,7 +94,11 @@ class UsersAdminView extends GetView<UsersAdminController> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.error_outline, size: 64, color: Colors.red.shade300),
+                  Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: Colors.red.shade300,
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     controller.errorMessage.value!,
@@ -89,7 +110,7 @@ class UsersAdminView extends GetView<UsersAdminController> {
                     onPressed: () => controller.fetchUsers(),
                     icon: const Icon(Icons.refresh),
                     label: const Text('Retry'),
-                  )
+                  ),
                 ],
               ),
             ),
@@ -101,16 +122,26 @@ class UsersAdminView extends GetView<UsersAdminController> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.people_outline, size: 64, color: Colors.grey.shade300),
+                Icon(
+                  Icons.people_outline,
+                  size: 64,
+                  color: Colors.grey.shade300,
+                ),
                 const SizedBox(height: 16),
-                const Text('No users found.', style: TextStyle(fontSize: 18, color: Colors.grey)),
+                const Text(
+                  'No users found.',
+                  style: TextStyle(fontSize: 18, color: Colors.grey),
+                ),
                 const SizedBox(height: 20),
                 ElevatedButton.icon(
                   icon: const Icon(Icons.add),
                   label: const Text('Add First User'),
                   onPressed: controller.goToAddUserPage,
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
                     backgroundColor: AppColors.admin,
                   ),
                 ),
@@ -125,25 +156,40 @@ class UsersAdminView extends GetView<UsersAdminController> {
             items: controller.users,
             columns: [
               DataColumn(
-                label: const Text('User', style: TextStyle(fontWeight: FontWeight.bold)),
+                label: const Text(
+                  'User',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
               ),
               DataColumn(
-                label: const Text('Email', style: TextStyle(fontWeight: FontWeight.bold)),
+                label: const Text(
+                  'Email',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
               ),
               DataColumn(
-                label: const Text('Role', style: TextStyle(fontWeight: FontWeight.bold)),
+                label: const Text(
+                  'Role',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
               ),
               DataColumn(
-                label: const Text('Status', style: TextStyle(fontWeight: FontWeight.bold)),
+                label: const Text(
+                  'Status',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
               ),
               DataColumn(
-                label: const Text('Actions', style: TextStyle(fontWeight: FontWeight.bold)),
+                label: const Text(
+                  'Actions',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
               ),
             ],
             buildCells: (user) {
               final isActive = user.isActive;
               final roleColor = _getRoleColor(user.role);
-              
+
               return [
                 DataCell(
                   Row(
@@ -151,7 +197,9 @@ class UsersAdminView extends GetView<UsersAdminController> {
                       CircleAvatar(
                         backgroundColor: roleColor.shade100,
                         child: Text(
-                          user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
+                          user.name.isNotEmpty
+                              ? user.name[0].toUpperCase()
+                              : 'U',
                           style: TextStyle(
                             color: roleColor.shade700,
                             fontWeight: FontWeight.bold,
@@ -166,10 +214,13 @@ class UsersAdminView extends GetView<UsersAdminController> {
                           children: [
                             Text(
                               user.name,
-                              style: const TextStyle(fontWeight: FontWeight.w600),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
                               overflow: TextOverflow.ellipsis,
                             ),
-                            if (user.roleAsEnum == UserRole.staff && user.merchantName != null)
+                            if (user.roleAsEnum == UserRole.staff &&
+                                user.merchantName != null)
                               Text(
                                 user.merchantName!,
                                 style: TextStyle(
@@ -186,15 +237,15 @@ class UsersAdminView extends GetView<UsersAdminController> {
                   onTap: () => controller.goToUserDetailsPage(user),
                 ),
                 DataCell(
-                  Text(
-                    user.email,
-                    style: const TextStyle(fontSize: 13),
-                  ),
+                  Text(user.email, style: const TextStyle(fontSize: 13)),
                   onTap: () => controller.goToUserDetailsPage(user),
                 ),
                 DataCell(
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: roleColor.shade50,
                       borderRadius: BorderRadius.circular(12),
@@ -213,15 +264,18 @@ class UsersAdminView extends GetView<UsersAdminController> {
                 ),
                 DataCell(
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
-                      color: isActive 
-                          ? AppColors.success.shade50 
+                      color: isActive
+                          ? AppColors.success.shade50
                           : AppColors.error.shade50,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: isActive 
-                            ? AppColors.success.shade300 
+                        color: isActive
+                            ? AppColors.success.shade300
                             : AppColors.error.shade300,
                       ),
                     ),
@@ -230,8 +284,8 @@ class UsersAdminView extends GetView<UsersAdminController> {
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: isActive 
-                            ? AppColors.success.shade700 
+                        color: isActive
+                            ? AppColors.success.shade700
                             : AppColors.error.shade700,
                       ),
                     ),
@@ -252,7 +306,7 @@ class UsersAdminView extends GetView<UsersAdminController> {
             buildMobileCard: (user) {
               final isActive = user.isActive;
               final roleColor = _getRoleColor(user.role);
-              
+
               return DataRowCard(
                 leading: CircleAvatar(
                   backgroundColor: roleColor.shade100,
@@ -276,7 +330,8 @@ class UsersAdminView extends GetView<UsersAdminController> {
                     valueColor: roleColor.shade700,
                     valueFontWeight: FontWeight.w600,
                   ),
-                  if (user.roleAsEnum == UserRole.staff && user.merchantName != null)
+                  if (user.roleAsEnum == UserRole.staff &&
+                      user.merchantName != null)
                     DetailRow(
                       icon: Icons.business,
                       label: 'Merchant',

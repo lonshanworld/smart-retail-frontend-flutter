@@ -3,6 +3,7 @@ import 'package:smart_retail/app/core/config/app_config.dart';
 import 'package:smart_retail/app/data/models/staff_profile_model.dart';
 import 'package:smart_retail/app/data/providers/api_constants.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
+import 'package:smart_retail/app/utils/response_utils.dart';
 
 class StaffProfileApiService extends GetxService {
   final AppConfig _appConfig = Get.find<AppConfig>();
@@ -54,9 +55,11 @@ class StaffProfileApiService extends GetxService {
     );
 
     if (response.isOk && response.body['data'] != null) {
-      return StaffProfile.fromJson(response.body['data']);
+      return StaffProfile.fromJson(asMap(response.body['data']));
     } else {
-      throw Exception('Failed to load staff profile: ${response.body?['message'] ?? response.statusText}');
+      throw Exception(
+        'Failed to load staff profile: ${response.body?['message'] ?? response.statusText}',
+      );
     }
   }
 }

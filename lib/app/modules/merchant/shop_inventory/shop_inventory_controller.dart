@@ -4,9 +4,11 @@ import 'package:smart_retail/app/data/models/inventory_item_model.dart';
 import 'package:smart_retail/app/data/models/shop_model.dart';
 import 'package:smart_retail/app/data/models/stock_movement_model.dart';
 import 'package:smart_retail/app/data/services/shop_inventory_api_service.dart';
+import 'package:smart_retail/app/utils/dialog_utils.dart';
 
 class ShopInventoryController extends GetxController {
-  final ShopInventoryApiService _apiService = Get.find<ShopInventoryApiService>();
+  final ShopInventoryApiService _apiService =
+      Get.find<ShopInventoryApiService>();
 
   var shops = <Shop>[].obs;
   var shopInventoryList = <InventoryItem>[].obs;
@@ -26,10 +28,10 @@ class ShopInventoryController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    
+
     // Check if shop ID was passed as argument
     final String? shopIdArg = Get.arguments as String?;
-    
+
     if (shopIdArg != null) {
       // Shop ID was passed, fetch shops and select the specific one
       fetchShopsAndSelectById(shopIdArg);
@@ -37,7 +39,7 @@ class ShopInventoryController extends GetxController {
       // No shop ID, fetch all shops and select first
       fetchShops();
     }
-    
+
     searchController.addListener(() {
       onSearchChanged(searchController.text);
     });
@@ -52,7 +54,7 @@ class ShopInventoryController extends GetxController {
       isLoadingShops.value = true;
       final result = await _apiService.getShops();
       shops.assignAll(result);
-      
+
       // Find and select the specific shop
       final shop = shops.firstWhereOrNull((s) => s.id == shopId);
       if (shop != null) {
@@ -61,7 +63,7 @@ class ShopInventoryController extends GetxController {
         onShopSelected(shops.first);
       }
     } catch (e) {
-      Get.snackbar('Error', 'Failed to load shops: $e');
+      DialogUtils.showError('Failed to load shops: $e');
     } finally {
       isLoadingShops.value = false;
     }
@@ -76,7 +78,7 @@ class ShopInventoryController extends GetxController {
         onShopSelected(shops.first);
       }
     } catch (e) {
-      Get.snackbar('Error', 'Failed to load shops: $e');
+      DialogUtils.showError('Failed to load shops: $e');
     } finally {
       isLoadingShops.value = false;
     }
@@ -91,13 +93,17 @@ class ShopInventoryController extends GetxController {
   Future<void> fetchShopInventory({bool showLoading = true}) async {
     if (selectedShop.value?.id == null) return;
     try {
-      if(showLoading) isLoadingInventory.value = true;
-      final result = await _apiService.getInventoryForShop(selectedShop.value!.id!);
+      if (showLoading) isLoadingInventory.value = true;
+      final result = await _apiService.getInventoryForShop(
+        selectedShop.value!.id!,
+      );
       shopInventoryList.assignAll(result);
     } catch (e) {
-      Get.snackbar('Error', 'Failed to load inventory for ${selectedShop.value?.name}: $e');
+      DialogUtils.showError(
+        'Failed to load inventory for ${selectedShop.value?.name}: $e',
+      );
     } finally {
-      if(showLoading) isLoadingInventory.value = false;
+      if (showLoading) isLoadingInventory.value = false;
     }
   }
 
@@ -106,21 +112,31 @@ class ShopInventoryController extends GetxController {
     selectedItemForHistory.value = item;
     try {
       isLoadingStockMovements.value = true;
-      final result = await _apiService.getMovementHistory(selectedShop.value!.id!, item.id!);
+      final result = await _apiService.getMovementHistory(
+        selectedShop.value!.id!,
+        item.id!,
+      );
       stockMovements.assignAll(result);
     } catch (e) {
-      Get.snackbar('Error', 'Failed to load history: $e');
+      DialogUtils.showError('Failed to load history: $e');
     } finally {
       isLoadingStockMovements.value = false;
     }
   }
 
-  Future<void> adjustStock(InventoryItem item, int quantityChanged, String movementType, String? reason) async {
+  Future<void> adjustStock(
+    InventoryItem item,
+    int quantityChanged,
+    String movementType,
+    String? reason,
+  ) async {
     if (selectedShop.value?.id == null || item.id == null) {
-      Get.snackbar('Error', 'Cannot adjust stock without a selected shop and item.');
+      DialogUtils.showError(
+        'Cannot adjust stock without a selected shop and item.',
+      );
       return;
     }
-    
+
     isSubmitting.value = true;
     try {
       await _apiService.adjustStock(
@@ -129,15 +145,15 @@ class ShopInventoryController extends GetxController {
         quantity: quantityChanged,
         reason: reason ?? movementType,
       );
-      Get.snackbar('Success', 'Stock for ${item.name} adjusted successfully.');
+      DialogUtils.showSuccess('Stock for ${item.name} adjusted successfully.');
       await fetchShopInventory(showLoading: false);
     } catch (e) {
-      Get.snackbar('Error', 'Failed to adjust stock: $e');
+      DialogUtils.showError('Failed to adjust stock: $e');
     } finally {
       isSubmitting.value = false;
     }
   }
-  
+
   @override
   void onClose() {
     searchController.dispose();

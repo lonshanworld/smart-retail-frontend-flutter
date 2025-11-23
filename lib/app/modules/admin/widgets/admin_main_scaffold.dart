@@ -27,19 +27,61 @@ class _AdminMainScaffoldState extends State<AdminMainScaffold> {
   final AuthService _authService = Get.find<AuthService>();
 
   final List<Map<String, dynamic>> _adminNavItems = [
-    {'route': Routes.ADMIN_DASHBOARD, 'label': 'Dashboard', 'icon': Icons.dashboard_outlined, 'selectedIcon': Icons.dashboard},
-    {'route': Routes.ADMIN_USERS, 'label': 'Users', 'icon': Icons.people_outline, 'selectedIcon': Icons.people},
-    {'route': Routes.ADMIN_MERCHANTS, 'label': 'Merchants', 'icon': Icons.storefront_outlined, 'selectedIcon': Icons.storefront},
-    {'route': Routes.ADMIN_STAFF, 'label': 'Staff', 'icon': Icons.badge_outlined, 'selectedIcon': Icons.badge},
-    {'route': Routes.ADMIN_SHOPS, 'label': 'Shops', 'icon': Icons.store_mall_directory_outlined, 'selectedIcon': Icons.store_mall_directory},
-    {'route': Routes.ADMIN_ADMINS, 'label': 'Admins', 'icon': Icons.admin_panel_settings_outlined, 'selectedIcon': Icons.admin_panel_settings},
-    {'route': Routes.ADMIN_PROFILE, 'label': 'Profile', 'icon': Icons.person_outline, 'selectedIcon': Icons.person},
-    {'route': Routes.ADMIN_SETTINGS, 'label': 'Settings', 'icon': Icons.settings_outlined, 'selectedIcon': Icons.settings},
+    {
+      'route': Routes.ADMIN_DASHBOARD,
+      'label': 'Dashboard',
+      'icon': Icons.dashboard_outlined,
+      'selectedIcon': Icons.dashboard,
+    },
+    {
+      'route': Routes.ADMIN_USERS,
+      'label': 'Users',
+      'icon': Icons.people_outline,
+      'selectedIcon': Icons.people,
+    },
+    {
+      'route': Routes.ADMIN_MERCHANTS,
+      'label': 'Merchants',
+      'icon': Icons.storefront_outlined,
+      'selectedIcon': Icons.storefront,
+    },
+    {
+      'route': Routes.ADMIN_STAFF,
+      'label': 'Staff',
+      'icon': Icons.badge_outlined,
+      'selectedIcon': Icons.badge,
+    },
+    {
+      'route': Routes.ADMIN_SHOPS,
+      'label': 'Shops',
+      'icon': Icons.store_mall_directory_outlined,
+      'selectedIcon': Icons.store_mall_directory,
+    },
+    {
+      'route': Routes.ADMIN_ADMINS,
+      'label': 'Admins',
+      'icon': Icons.admin_panel_settings_outlined,
+      'selectedIcon': Icons.admin_panel_settings,
+    },
+    {
+      'route': Routes.ADMIN_PROFILE,
+      'label': 'Profile',
+      'icon': Icons.person_outline,
+      'selectedIcon': Icons.person,
+    },
+    {
+      'route': Routes.ADMIN_SETTINGS,
+      'label': 'Settings',
+      'icon': Icons.settings_outlined,
+      'selectedIcon': Icons.settings,
+    },
   ];
 
   int _calculateSelectedIndex() {
     final String currentRoute = Get.currentRoute;
-    int index = _adminNavItems.indexWhere((item) => currentRoute.startsWith(item['route']!));
+    int index = _adminNavItems.indexWhere(
+      (item) => currentRoute.startsWith(item['route']!),
+    );
     return index > -1 ? index : 0;
   }
 
@@ -68,12 +110,14 @@ class _AdminMainScaffoldState extends State<AdminMainScaffold> {
       builder: (context, constraints) {
         final bool isMobile = constraints.maxWidth < webBreakpoint;
         return Scaffold(
-          appBar: isMobile ? AppBar(
-            title: Text(widget.title),
-            backgroundColor: AppColors.admin,
-            foregroundColor: Colors.white,
-            elevation: 0,
-          ) : null,
+          appBar: isMobile
+              ? AppBar(
+                  title: Text(widget.title),
+                  backgroundColor: AppColors.admin,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                )
+              : null,
           drawer: isMobile ? _buildModernDrawer() : null,
           floatingActionButton: widget.floatingActionButton,
           floatingActionButtonLocation: widget.floatingActionButtonLocation,
@@ -87,7 +131,10 @@ class _AdminMainScaffoldState extends State<AdminMainScaffold> {
                         children: [
                           // Modern app bar for desktop
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 16,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.white,
                               boxShadow: [
@@ -112,9 +159,13 @@ class _AdminMainScaffoldState extends State<AdminMainScaffold> {
                                 // User profile badge
                                 Obx(() {
                                   final User? user = _authService.user.value;
-                                  if (user == null) return const SizedBox.shrink();
+                                  if (user == null)
+                                    return const SizedBox.shrink();
                                   return Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 8,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: AppColors.admin.shade50,
                                       borderRadius: BorderRadius.circular(20),
@@ -125,8 +176,13 @@ class _AdminMainScaffoldState extends State<AdminMainScaffold> {
                                           radius: 16,
                                           backgroundColor: AppColors.admin,
                                           child: Text(
-                                            user.name.isNotEmpty ? user.name[0].toUpperCase() : 'A',
-                                            style: const TextStyle(color: Colors.white, fontSize: 14),
+                                            user.name.isNotEmpty
+                                                ? user.name[0].toUpperCase()
+                                                : 'A',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 14,
+                                            ),
                                           ),
                                         ),
                                         const SizedBox(width: 8),
@@ -171,10 +227,7 @@ class _AdminMainScaffoldState extends State<AdminMainScaffold> {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            AppColors.admin.shade700,
-            AppColors.admin.shade900,
-          ],
+          colors: [AppColors.admin.shade700, AppColors.admin.shade900],
         ),
       ),
       child: Column(
@@ -242,12 +295,19 @@ class _AdminMainScaffoldState extends State<AdminMainScaffold> {
                       onTap: () => _onDestinationSelected(index),
                       borderRadius: BorderRadius.circular(12),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
                         decoration: BoxDecoration(
-                          color: isSelected ? Colors.white.withOpacity(0.15) : Colors.transparent,
+                          color: isSelected
+                              ? Colors.white.withOpacity(0.15)
+                              : Colors.transparent,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: isSelected ? Colors.white.withOpacity(0.3) : Colors.transparent,
+                            color: isSelected
+                                ? Colors.white.withOpacity(0.3)
+                                : Colors.transparent,
                             width: 1,
                           ),
                         ),
@@ -265,7 +325,9 @@ class _AdminMainScaffoldState extends State<AdminMainScaffold> {
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 15,
-                                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                                  fontWeight: isSelected
+                                      ? FontWeight.w600
+                                      : FontWeight.w400,
                                 ),
                               ),
                             ),
@@ -299,7 +361,7 @@ class _AdminMainScaffoldState extends State<AdminMainScaffold> {
     return Obx(() {
       final User? user = _authService.user.value;
       if (user == null) return const SizedBox.shrink();
-      
+
       return Container(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -377,10 +439,7 @@ class _AdminMainScaffoldState extends State<AdminMainScaffold> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              AppColors.admin.shade700,
-              AppColors.admin.shade900,
-            ],
+            colors: [AppColors.admin.shade700, AppColors.admin.shade900],
           ),
         ),
         child: SafeArea(
@@ -434,7 +493,9 @@ class _AdminMainScaffoldState extends State<AdminMainScaffold> {
                         item['label'],
                         style: TextStyle(
                           color: Colors.white,
-                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                          fontWeight: isSelected
+                              ? FontWeight.w600
+                              : FontWeight.w400,
                         ),
                       ),
                       selected: isSelected,
@@ -442,7 +503,8 @@ class _AdminMainScaffoldState extends State<AdminMainScaffold> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      onTap: () => _onDestinationSelected(index, fromDrawer: true),
+                      onTap: () =>
+                          _onDestinationSelected(index, fromDrawer: true),
                     );
                   },
                 ),

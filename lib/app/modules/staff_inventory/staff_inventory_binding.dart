@@ -6,8 +6,6 @@ class StaffInventoryBinding extends Bindings {
   @override
   void dependencies() {
     Get.lazyPut<StaffInventoryApiService>(() => StaffInventoryApiService());
-    Get.lazyPut<StaffInventoryController>(
-      () => StaffInventoryController(),
-    );
+    Get.lazyPut<StaffInventoryController>(() => StaffInventoryController());
   }
 }

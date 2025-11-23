@@ -12,7 +12,9 @@ class ShopAddEditView extends GetView<ShopAddEditController> {
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        title: Obx(() => Text(controller.isEditing.value ? 'Edit Shop' : 'Add New Shop')),
+        title: Obx(
+          () => Text(controller.isEditing.value ? 'Edit Shop' : 'Add New Shop'),
+        ),
         backgroundColor: AppColors.merchant,
         foregroundColor: Colors.white,
         actions: [
@@ -20,7 +22,7 @@ class ShopAddEditView extends GetView<ShopAddEditController> {
             icon: const Icon(Icons.save),
             onPressed: () => controller.saveShop(),
             tooltip: 'Save Shop',
-          )
+          ),
         ],
       ),
       body: SingleChildScrollView(
@@ -33,7 +35,10 @@ class ShopAddEditView extends GetView<ShopAddEditController> {
               // Header Card
               ModernCard(
                 gradient: LinearGradient(
-                  colors: [AppColors.merchant.shade400, AppColors.merchant.shade700],
+                  colors: [
+                    AppColors.merchant.shade400,
+                    AppColors.merchant.shade700,
+                  ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -56,14 +61,18 @@ class ShopAddEditView extends GetView<ShopAddEditController> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Obx(() => Text(
-                            controller.isEditing.value ? 'Edit Shop Details' : 'Create New Shop',
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                          Obx(
+                            () => Text(
+                              controller.isEditing.value
+                                  ? 'Edit Shop Details'
+                                  : 'Create New Shop',
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
                             ),
-                          )),
+                          ),
                           const SizedBox(height: 4),
                           const Text(
                             'Manage shop information',
@@ -93,7 +102,11 @@ class ShopAddEditView extends GetView<ShopAddEditController> {
                             color: AppColors.merchant.shade100,
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Icon(Icons.info_outline, color: AppColors.merchant, size: 20),
+                          child: Icon(
+                            Icons.info_outline,
+                            color: AppColors.merchant,
+                            size: 20,
+                          ),
                         ),
                         const SizedBox(width: 12),
                         const Text(
@@ -120,7 +133,10 @@ class ShopAddEditView extends GetView<ShopAddEditController> {
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: AppColors.merchant, width: 2),
+                          borderSide: BorderSide(
+                            color: AppColors.merchant,
+                            width: 2,
+                          ),
                         ),
                         errorBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -128,11 +144,17 @@ class ShopAddEditView extends GetView<ShopAddEditController> {
                         ),
                         focusedErrorBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Colors.red, width: 2),
+                          borderSide: const BorderSide(
+                            color: Colors.red,
+                            width: 2,
+                          ),
                         ),
                         filled: true,
                         fillColor: Colors.white,
-                        prefixIcon: Icon(Icons.storefront, color: AppColors.merchant),
+                        prefixIcon: Icon(
+                          Icons.storefront,
+                          color: AppColors.merchant,
+                        ),
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
@@ -159,11 +181,17 @@ class ShopAddEditView extends GetView<ShopAddEditController> {
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: AppColors.merchant, width: 2),
+                          borderSide: BorderSide(
+                            color: AppColors.merchant,
+                            width: 2,
+                          ),
                         ),
                         filled: true,
                         fillColor: Colors.white,
-                        prefixIcon: Icon(Icons.location_on_outlined, color: AppColors.merchant),
+                        prefixIcon: Icon(
+                          Icons.location_on_outlined,
+                          color: AppColors.merchant,
+                        ),
                       ),
                       maxLines: 3,
                       minLines: 2,
@@ -174,35 +202,42 @@ class ShopAddEditView extends GetView<ShopAddEditController> {
 
               // Save Button
               const SizedBox(height: 24),
-              Obx(() => SizedBox(
-                height: 50,
-                child: ElevatedButton.icon(
-                  icon: controller.isSaving.value 
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2.0,
-                          ),
-                        )
-                      : const Icon(Icons.save),
-                  label: Text(
-                    controller.isSaving.value ? 'Saving...' : 'Save Shop',
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
-                  onPressed: controller.isSaving.value ? null : () => controller.saveShop(),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.merchant,
-                    foregroundColor: Colors.white,
-                    disabledBackgroundColor: Colors.grey.shade400,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+              Obx(
+                () => SizedBox(
+                  height: 50,
+                  child: ElevatedButton.icon(
+                    icon: controller.isSaving.value
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2.0,
+                            ),
+                          )
+                        : const Icon(Icons.save),
+                    label: Text(
+                      controller.isSaving.value ? 'Saving...' : 'Save Shop',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                    elevation: 2,
+                    onPressed: controller.isSaving.value
+                        ? null
+                        : () => controller.saveShop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.merchant,
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: Colors.grey.shade400,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 2,
+                    ),
                   ),
                 ),
-              )),
+              ),
             ],
           ),
         ),

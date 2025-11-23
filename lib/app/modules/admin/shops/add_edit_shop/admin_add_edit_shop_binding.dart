@@ -5,8 +5,6 @@ import 'package:smart_retail/app/modules/admin/shops/add_edit_shop/admin_add_edi
 class AdminAddEditShopBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut<AdminAddEditShopController>(
-      () => AdminAddEditShopController(),
-    );
+    Get.lazyPut<AdminAddEditShopController>(() => AdminAddEditShopController());
   }
 }

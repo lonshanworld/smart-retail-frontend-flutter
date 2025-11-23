@@ -13,57 +13,37 @@ class CustomerLandingView extends StatelessWidget {
           CustomScrollView(
             slivers: [
               // Hero Section with Navigation
-              SliverToBoxAdapter(
-                child: _HeroSection(),
-              ),
+              SliverToBoxAdapter(child: _HeroSection()),
 
               // Value Proposition
-              SliverToBoxAdapter(
-                child: _ValuePropositionSection(),
-              ),
+              SliverToBoxAdapter(child: _ValuePropositionSection()),
 
               // Core Features - POS & Inventory
-              SliverToBoxAdapter(
-                child: _CoreFeaturesSection(),
-              ),
+              SliverToBoxAdapter(child: _CoreFeaturesSection()),
 
               // Advanced Features Grid
-              SliverToBoxAdapter(
-                child: _AdvancedFeaturesSection(),
-              ),
+              SliverToBoxAdapter(child: _AdvancedFeaturesSection()),
 
               // Multi-Role Support
-              SliverToBoxAdapter(
-                child: _MultiRoleSupportSection(),
-              ),
+              SliverToBoxAdapter(child: _MultiRoleSupportSection()),
 
               // Analytics & Reporting
-              SliverToBoxAdapter(
-                child: _AnalyticsSection(),
-              ),
+              SliverToBoxAdapter(child: _AnalyticsSection()),
 
               // Login Options Section
-              SliverToBoxAdapter(
-                child: _LoginOptionsSection(),
-              ),
+              SliverToBoxAdapter(child: _LoginOptionsSection()),
 
               // Stats
-              SliverToBoxAdapter(
-                child: _StatsSection(),
-              ),
+              SliverToBoxAdapter(child: _StatsSection()),
 
               // CTA Section
-              SliverToBoxAdapter(
-                child: _CTASection(),
-              ),
+              SliverToBoxAdapter(child: _CTASection()),
 
               // Footer
-              SliverToBoxAdapter(
-                child: _Footer(),
-              ),
+              SliverToBoxAdapter(child: _Footer()),
             ],
           ),
-          
+
           // Floating Admin Button
           Positioned(
             top: 50,
@@ -76,13 +56,13 @@ class CustomerLandingView extends StatelessWidget {
                   onTap: () => Get.toNamed(Routes.ADMIN_LOGIN),
                   borderRadius: BorderRadius.circular(30),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [
-                          Color(0xFF5E72E4),
-                          Color(0xFF825EE4),
-                        ],
+                        colors: [Color(0xFF5E72E4), Color(0xFF825EE4)],
                       ),
                       borderRadius: BorderRadius.circular(30),
                       boxShadow: [
@@ -133,10 +113,7 @@ class _HeroSection extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF667eea),
-            Color(0xFF764ba2),
-          ],
+          colors: [Color(0xFF667eea), Color(0xFF764ba2)],
         ),
       ),
       child: SafeArea(
@@ -214,7 +191,10 @@ class _HeroSection extends StatelessWidget {
 
                     // Subtitle
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(20),
@@ -250,8 +230,14 @@ class _HeroSection extends StatelessWidget {
                       runSpacing: 12,
                       alignment: WrapAlignment.center,
                       children: [
-                        _FeaturePill(icon: Icons.point_of_sale, label: 'POS System'),
-                        _FeaturePill(icon: Icons.inventory_2, label: 'Inventory'),
+                        _FeaturePill(
+                          icon: Icons.point_of_sale,
+                          label: 'POS System',
+                        ),
+                        _FeaturePill(
+                          icon: Icons.inventory_2,
+                          label: 'Inventory',
+                        ),
                         _FeaturePill(icon: Icons.analytics, label: 'Analytics'),
                         _FeaturePill(icon: Icons.people, label: 'Customers'),
                         _FeaturePill(icon: Icons.cloud, label: 'Cloud-Based'),
@@ -274,7 +260,10 @@ class _HeroSection extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            border: Border.all(color: Colors.white.withOpacity(0.3), width: 2),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.3),
+                              width: 2,
+                            ),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Icon(
@@ -351,10 +340,7 @@ class _ValuePropositionSection extends StatelessWidget {
           Text(
             'Everything you need to manage and grow your retail business',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 18,
-              color: Colors.grey.shade600,
-            ),
+            style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
           ),
           const SizedBox(height: 70),
 
@@ -367,25 +353,29 @@ class _ValuePropositionSection extends StatelessWidget {
               _ValueProp(
                 icon: Icons.speed,
                 title: 'Lightning Fast',
-                description: 'Process transactions in seconds with our optimized POS system',
+                description:
+                    'Process transactions in seconds with our optimized POS system',
                 color: Colors.blue,
               ),
               _ValueProp(
                 icon: Icons.security,
                 title: 'Secure & Reliable',
-                description: 'Bank-level security with offline mode, automatic cloud sync, and data protection',
+                description:
+                    'Bank-level security with offline mode, automatic cloud sync, and data protection',
                 color: Colors.green,
               ),
               _ValueProp(
                 icon: Icons.trending_up,
                 title: 'Grow Your Business',
-                description: 'Powerful analytics and insights to make data-driven decisions',
+                description:
+                    'Powerful analytics and insights to make data-driven decisions',
                 color: Colors.orange,
               ),
               _ValueProp(
                 icon: Icons.support_agent,
                 title: '24/7 Support',
-                description: 'Always here to help you succeed with dedicated support team',
+                description:
+                    'Always here to help you succeed with dedicated support team',
                 color: Colors.purple,
               ),
             ],
@@ -420,9 +410,7 @@ class _ValueProp extends StatelessWidget {
             width: 80,
             height: 80,
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [color, color.withOpacity(0.7)],
-              ),
+              gradient: LinearGradient(colors: [color, color.withOpacity(0.7)]),
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
@@ -470,10 +458,7 @@ class _CoreFeaturesSection extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Colors.grey.shade50,
-            Colors.blue.shade50,
-          ],
+          colors: [Colors.grey.shade50, Colors.blue.shade50],
         ),
       ),
       child: Column(
@@ -490,17 +475,15 @@ class _CoreFeaturesSection extends StatelessWidget {
           Text(
             'Powerful tools to run your retail business efficiently',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 18,
-              color: Colors.grey.shade600,
-            ),
+            style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
           ),
           const SizedBox(height: 70),
 
           _BigFeatureCard(
             icon: Icons.point_of_sale_rounded,
             title: 'Point of Sale (POS)',
-            description: 'Fast, intuitive checkout system with offline support, multiple payment methods, promotions, and automatic cloud sync',
+            description:
+                'Fast, intuitive checkout system with offline support, multiple payment methods, promotions, and automatic cloud sync',
             features: [
               'Quick product search & barcode scanning',
               'Offline mode with automatic sync',
@@ -518,7 +501,8 @@ class _CoreFeaturesSection extends StatelessWidget {
           _BigFeatureCard(
             icon: Icons.inventory_2_rounded,
             title: 'Inventory Management',
-            description: 'Complete control over your stock with real-time tracking, automated alerts, and multi-location support',
+            description:
+                'Complete control over your stock with real-time tracking, automated alerts, and multi-location support',
             features: [
               'Real-time stock level monitoring',
               'Low stock alerts & notifications',
@@ -636,32 +620,31 @@ class _BigFeatureCard extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 24),
-        ...features.map((feature) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Row(
-                children: [
-                  Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      color: color.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(Icons.check, size: 16, color: color),
+        ...features.map(
+          (feature) => Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Row(
+              children: [
+                Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    shape: BoxShape.circle,
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      feature,
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: Colors.grey.shade800,
-                      ),
-                    ),
+                  child: Icon(Icons.check, size: 16, color: color),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    feature,
+                    style: TextStyle(fontSize: 15, color: Colors.grey.shade800),
                   ),
-                ],
-              ),
-            )),
+                ),
+              ],
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -688,10 +671,7 @@ class _AdvancedFeaturesSection extends StatelessWidget {
           Text(
             'Sophisticated features to give you the competitive edge',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 18,
-              color: Colors.grey.shade600,
-            ),
+            style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
           ),
           const SizedBox(height: 70),
 
@@ -703,43 +683,50 @@ class _AdvancedFeaturesSection extends StatelessWidget {
               _FeatureCard(
                 icon: Icons.people_rounded,
                 title: 'Customer Management',
-                description: 'Build customer database, track purchase history, and create loyalty programs',
+                description:
+                    'Build customer database, track purchase history, and create loyalty programs',
                 color: Colors.purple,
               ),
               _FeatureCard(
                 icon: Icons.discount_rounded,
                 title: 'Promotions & Discounts',
-                description: 'Create flexible promotions with percentage or fixed discounts for any product',
+                description:
+                    'Create flexible promotions with percentage or fixed discounts for any product',
                 color: Colors.pink,
               ),
               _FeatureCard(
                 icon: Icons.local_shipping_rounded,
                 title: 'Supplier Management',
-                description: 'Manage supplier relationships, track orders, and streamline procurement',
+                description:
+                    'Manage supplier relationships, track orders, and streamline procurement',
                 color: Colors.orange,
               ),
               _FeatureCard(
                 icon: Icons.store_rounded,
                 title: 'Multi-Shop Support',
-                description: 'Manage multiple locations from a single platform with centralized control',
+                description:
+                    'Manage multiple locations from a single platform with centralized control',
                 color: Colors.teal,
               ),
               _FeatureCard(
                 icon: Icons.sync_rounded,
                 title: 'Stock Transfer',
-                description: 'Easily transfer inventory between shops with complete tracking',
+                description:
+                    'Easily transfer inventory between shops with complete tracking',
                 color: Colors.indigo,
               ),
               _FeatureCard(
                 icon: Icons.notifications_active_rounded,
                 title: 'Smart Notifications',
-                description: 'Get alerts for low stock, sales milestones, and important events',
+                description:
+                    'Get alerts for low stock, sales milestones, and important events',
                 color: Colors.red,
               ),
               _FeatureCard(
                 icon: Icons.cloud_sync_rounded,
                 title: 'Data Synchronization',
-                description: 'Work offline seamlessly with automatic cloud sync - never lose a sale even without internet connection',
+                description:
+                    'Work offline seamlessly with automatic cloud sync - never lose a sale even without internet connection',
                 color: Colors.blue,
               ),
             ],
@@ -787,9 +774,7 @@ class _FeatureCard extends StatelessWidget {
             width: 60,
             height: 60,
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [color, color.withOpacity(0.7)],
-              ),
+              gradient: LinearGradient(colors: [color, color.withOpacity(0.7)]),
               borderRadius: BorderRadius.circular(15),
             ),
             child: Icon(icon, size: 30, color: Colors.white),
@@ -828,10 +813,7 @@ class _MultiRoleSupportSection extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Colors.indigo.shade900,
-            Colors.purple.shade900,
-          ],
+          colors: [Colors.indigo.shade900, Colors.purple.shade900],
         ),
       ),
       child: Column(
@@ -848,10 +830,7 @@ class _MultiRoleSupportSection extends StatelessWidget {
           const Text(
             'Role-based access and features tailored for your entire team',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 18,
-              color: Colors.white70,
-            ),
+            style: TextStyle(fontSize: 18, color: Colors.white70),
           ),
           const SizedBox(height: 70),
 
@@ -944,9 +923,7 @@ class _RoleCard extends StatelessWidget {
             width: 80,
             height: 80,
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [color, color.withOpacity(0.7)],
-              ),
+              gradient: LinearGradient(colors: [color, color.withOpacity(0.7)]),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Icon(icon, size: 40, color: Colors.white),
@@ -963,35 +940,31 @@ class _RoleCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             description,
-            style: TextStyle(
-              fontSize: 15,
-              color: Colors.grey.shade600,
-            ),
+            style: TextStyle(fontSize: 15, color: Colors.grey.shade600),
           ),
           const SizedBox(height: 24),
-          Container(
-            height: 1,
-            color: Colors.grey.shade200,
-          ),
+          Container(height: 1, color: Colors.grey.shade200),
           const SizedBox(height: 20),
-          ...features.map((feature) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: Row(
-                  children: [
-                    Icon(Icons.check_circle, size: 18, color: color),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        feature,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade700,
-                        ),
+          ...features.map(
+            (feature) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Row(
+                children: [
+                  Icon(Icons.check_circle, size: 18, color: color),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      feature,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade700,
                       ),
                     ),
-                  ],
-                ),
-              )),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -1019,10 +992,7 @@ class _AnalyticsSection extends StatelessWidget {
           Text(
             'Make informed decisions with powerful analytics and reporting',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 18,
-              color: Colors.grey.shade600,
-            ),
+            style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
           ),
           const SizedBox(height: 70),
 
@@ -1034,22 +1004,37 @@ class _AnalyticsSection extends StatelessWidget {
               _AnalyticsCard(
                 icon: Icons.assessment_rounded,
                 title: 'Sales Reports',
-                description: 'Detailed sales analysis by date, product, shop, and staff',
-                metrics: ['Daily/Weekly/Monthly', 'Product Performance', 'Revenue Tracking'],
+                description:
+                    'Detailed sales analysis by date, product, shop, and staff',
+                metrics: [
+                  'Daily/Weekly/Monthly',
+                  'Product Performance',
+                  'Revenue Tracking',
+                ],
                 color: Colors.blue,
               ),
               _AnalyticsCard(
                 icon: Icons.inventory_rounded,
                 title: 'Inventory Reports',
-                description: 'Track stock levels, movement, and valuation across all locations',
-                metrics: ['Stock Levels', 'Turnover Rate', 'Dead Stock Analysis'],
+                description:
+                    'Track stock levels, movement, and valuation across all locations',
+                metrics: [
+                  'Stock Levels',
+                  'Turnover Rate',
+                  'Dead Stock Analysis',
+                ],
                 color: Colors.green,
               ),
               _AnalyticsCard(
                 icon: Icons.psychology_rounded,
                 title: 'AI Analysis',
-                description: 'Gemini-powered insights for smarter business decisions',
-                metrics: ['Sales Predictions', 'Trend Analysis', 'Recommendations'],
+                description:
+                    'Gemini-powered insights for smarter business decisions',
+                metrics: [
+                  'Sales Predictions',
+                  'Trend Analysis',
+                  'Recommendations',
+                ],
                 color: Colors.purple,
               ),
             ],
@@ -1123,23 +1108,22 @@ class _AnalyticsCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          ...metrics.map((metric) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.arrow_right, size: 18, color: color),
-                    const SizedBox(width: 8),
-                    Text(
-                      metric,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey.shade700,
-                      ),
-                    ),
-                  ],
-                ),
-              )),
+          ...metrics.map(
+            (metric) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.arrow_right, size: 18, color: color),
+                  const SizedBox(width: 8),
+                  Text(
+                    metric,
+                    style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -1156,10 +1140,7 @@ class _LoginOptionsSection extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Colors.blue.shade50,
-            Colors.purple.shade50,
-          ],
+          colors: [Colors.blue.shade50, Colors.purple.shade50],
         ),
       ),
       child: Column(
@@ -1176,10 +1157,7 @@ class _LoginOptionsSection extends StatelessWidget {
           Text(
             'Choose your role and start managing your retail business',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 18,
-              color: Colors.grey.shade600,
-            ),
+            style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
           ),
           const SizedBox(height: 70),
 
@@ -1270,7 +1248,7 @@ class _LoginCard extends StatelessWidget {
                 ),
               ),
             ),
-            
+
             // Content
             Padding(
               padding: const EdgeInsets.all(32),
@@ -1320,11 +1298,7 @@ class _LoginCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      Icon(
-                        Icons.arrow_forward,
-                        color: Colors.white,
-                        size: 20,
-                      ),
+                      Icon(Icons.arrow_forward, color: Colors.white, size: 20),
                     ],
                   ),
                 ],
@@ -1369,11 +1343,7 @@ class _StatsSection extends StatelessWidget {
             label: 'Capable',
             icon: Icons.cloud_sync_rounded,
           ),
-          _StatItem(
-            number: 'Cloud',
-            label: 'Based',
-            icon: Icons.cloud_rounded,
-          ),
+          _StatItem(number: 'Cloud', label: 'Based', icon: Icons.cloud_rounded),
         ],
       ),
     );
@@ -1429,10 +1399,7 @@ class _CTASection extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF667eea),
-            Color(0xFF764ba2),
-          ],
+          colors: [Color(0xFF667eea), Color(0xFF764ba2)],
         ),
       ),
       child: Column(
@@ -1472,7 +1439,10 @@ class _CTASection extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
                   foregroundColor: Color(0xFF667eea),
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 40,
+                    vertical: 20,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30),
                   ),
@@ -1498,7 +1468,10 @@ class _CTASection extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
                   foregroundColor: Color(0xFF11998e),
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 40,
+                    vertical: 20,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30),
                   ),
@@ -1524,7 +1497,10 @@ class _CTASection extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
                   foregroundColor: Color(0xFFf46b45),
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 40,
+                    vertical: 20,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30),
                   ),
@@ -1584,10 +1560,7 @@ class _Footer extends StatelessWidget {
           const SizedBox(height: 24),
           Text(
             'Complete Retail Management Solution',
-            style: TextStyle(
-              color: Colors.grey.shade400,
-              fontSize: 16,
-            ),
+            style: TextStyle(color: Colors.grey.shade400, fontSize: 16),
           ),
           const SizedBox(height: 32),
           Wrap(
@@ -1609,18 +1582,11 @@ class _Footer extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 32),
-          Container(
-            height: 1,
-            width: 200,
-            color: Colors.grey.shade700,
-          ),
+          Container(height: 1, width: 200, color: Colors.grey.shade700),
           const SizedBox(height: 24),
           Text(
             '© 2025 Smart Retail. All rights reserved.',
-            style: TextStyle(
-              color: Colors.grey.shade500,
-              fontSize: 14,
-            ),
+            style: TextStyle(color: Colors.grey.shade500, fontSize: 14),
           ),
         ],
       ),

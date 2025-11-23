@@ -6,6 +6,7 @@ import 'package:smart_retail/app/services/connectivity_service.dart';
 import 'package:smart_retail/app/services/cache_manager_service.dart';
 import 'package:smart_retail/app/widgets/dialogs/sync_progress_dialog.dart';
 import 'package:smart_retail/app/widgets/dialogs/sync_history_dialog.dart';
+import 'package:smart_retail/app/utils/dialog_utils.dart';
 
 class DataSyncCard extends StatelessWidget {
   const DataSyncCard({Key? key}) : super(key: key);
@@ -48,15 +49,16 @@ class DataSyncCard extends StatelessWidget {
                       Text(
                         'Data & Sync',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       Obx(() {
                         return Text(
                           connectivityService.isOnline.value
                               ? 'Online • Ready to sync'
                               : 'Offline • Changes saved locally',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
                                 color: connectivityService.isOnline.value
                                     ? Colors.green
                                     : Colors.orange,
@@ -94,8 +96,9 @@ class DataSyncCard extends StatelessWidget {
                   children: [
                     Icon(
                       hasOfflineSales ? Icons.schedule : Icons.check_circle,
-                      color:
-                          hasOfflineSales ? Colors.orange[600] : Colors.green[600],
+                      color: hasOfflineSales
+                          ? Colors.orange[600]
+                          : Colors.green[600],
                       size: 20,
                     ),
                     SizedBox(width: 12),
@@ -137,7 +140,8 @@ class DataSyncCard extends StatelessWidget {
                 Expanded(
                   child: Obx(() {
                     final isOnline = connectivityService.isOnline.value;
-                    final isSyncing = syncService.syncStatus.value.toString() ==
+                    final isSyncing =
+                        syncService.syncStatus.value.toString() ==
                         'SyncStatus.syncing';
 
                     return ElevatedButton.icon(
@@ -236,7 +240,8 @@ class DataSyncCard extends StatelessWidget {
                               ),
                               actions: [
                                 TextButton(
-                                  onPressed: () => Navigator.pop(context, false),
+                                  onPressed: () =>
+                                      Navigator.pop(context, false),
                                   child: Text('Cancel'),
                                 ),
                                 TextButton(
@@ -252,18 +257,11 @@ class DataSyncCard extends StatelessWidget {
 
                           if (confirmed ?? false) {
                             await cacheManagerService.clearAllCache();
-                            Get.snackbar(
-                              'Cache Cleared',
-                              'Cache has been cleared successfully',
-                              duration: Duration(seconds: 2),
-                            );
+                            DialogUtils.showInfo('Cache has been cleared successfully');
                           }
                         },
                         icon: Icon(Icons.delete_outline, size: 16),
-                        label: Text(
-                          'Clear',
-                          style: TextStyle(fontSize: 12),
-                        ),
+                        label: Text('Clear', style: TextStyle(fontSize: 12)),
                         style: TextButton.styleFrom(
                           foregroundColor: Colors.red[600],
                         ),
@@ -286,11 +284,7 @@ class DataSyncCard extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
-                    Icons.info_outline,
-                    color: Colors.blue,
-                    size: 18,
-                  ),
+                  Icon(Icons.info_outline, color: Colors.blue, size: 18),
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(

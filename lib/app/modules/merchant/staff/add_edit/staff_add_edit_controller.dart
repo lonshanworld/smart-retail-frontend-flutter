@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:smart_retail/app/utils/dialog_utils.dart';
 import 'package:smart_retail/app/data/models/user_model.dart';
 import 'package:smart_retail/app/data/models/shop_model.dart';
 import 'package:smart_retail/app/data/services/merchant_staff_api_service.dart';
 
 class StaffAddEditController extends GetxController {
-  final MerchantStaffApiService _apiService = Get.find<MerchantStaffApiService>();
+  final MerchantStaffApiService _apiService =
+      Get.find<MerchantStaffApiService>();
 
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
   final nameController = TextEditingController();
@@ -45,7 +47,7 @@ class StaffAddEditController extends GetxController {
       final shops = await _apiService.getShopsForSelection();
       shopList.assignAll(shops);
     } catch (e) {
-      Get.snackbar('Error', 'Could not load shops for assignment: $e');
+      DialogUtils.showError('Could not load shops for assignment: $e');
     } finally {
       isLoadingShops.value = false;
     }
@@ -79,7 +81,6 @@ class StaffAddEditController extends GetxController {
       }
       print('reach here 3 staff');
       if (isEditMode.value) {
-
         await _apiService.updateStaff(_editingStaff.value!.id, data);
       } else {
         print('reach here 4 staff');
@@ -87,8 +88,7 @@ class StaffAddEditController extends GetxController {
       }
       print('reach here 5 staff');
       Get.back(result: true); // Return true to signal a refresh is needed
-      Get.snackbar('Success', 'Staff member saved successfully.');
-
+      DialogUtils.showSuccess('Staff member saved successfully.');
     } catch (e) {
       formError.value = e.toString();
     } finally {

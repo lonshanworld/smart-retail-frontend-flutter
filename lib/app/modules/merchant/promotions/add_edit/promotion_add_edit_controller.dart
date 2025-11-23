@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:smart_retail/app/utils/dialog_utils.dart';
 import 'package:intl/intl.dart';
 import 'package:smart_retail/app/data/models/promotion_model.dart';
 import 'package:smart_retail/app/data/models/shop_model.dart';
@@ -37,8 +38,12 @@ class PromotionAddEditController extends GetxController {
   final valueController = TextEditingController();
   final minSpendController = TextEditingController();
 
-  String get formattedStartDate => startDate.value != null ? DateFormat('yyyy-MM-dd').format(startDate.value!) : 'Select Date';
-  String get formattedEndDate => endDate.value != null ? DateFormat('yyyy-MM-dd').format(endDate.value!) : 'Select Date';
+  String get formattedStartDate => startDate.value != null
+      ? DateFormat('yyyy-MM-dd').format(startDate.value!)
+      : 'Select Date';
+  String get formattedEndDate => endDate.value != null
+      ? DateFormat('yyyy-MM-dd').format(endDate.value!)
+      : 'Select Date';
 
   @override
   void onInit() {
@@ -57,7 +62,7 @@ class PromotionAddEditController extends GetxController {
       isLoadingShops.value = true;
       shopList.value = await _apiService.getShops();
     } catch (e) {
-      Get.snackbar('Error', 'Failed to load shops: $e');
+      DialogUtils.showError('Failed to load shops: $e');
     } finally {
       isLoadingShops.value = false;
     }
@@ -76,7 +81,7 @@ class PromotionAddEditController extends GetxController {
       isLoadingProducts.value = true;
       productList.value = await _apiService.getProductsForShop(shopId);
     } catch (e) {
-      Get.snackbar('Error', 'Failed to load products: $e');
+      DialogUtils.showError('Failed to load products: $e');
     } finally {
       isLoadingProducts.value = false;
     }
@@ -97,17 +102,23 @@ class PromotionAddEditController extends GetxController {
 
     if (promo.shopId != null) {
       await until(() => !isLoadingShops.value);
-      selectedShop.value = shopList.firstWhereOrNull((s) => s.id == promo.shopId);
+      selectedShop.value = shopList.firstWhereOrNull(
+        (s) => s.id == promo.shopId,
+      );
       if (selectedShop.value != null && selectedShop.value!.id != null) {
         await fetchProductsForShop(selectedShop.value!.id!);
       }
     }
   }
 
-  Future<void> selectDate(BuildContext context, {required bool isStartDate}) async {
+  Future<void> selectDate(
+    BuildContext context, {
+    required bool isStartDate,
+  }) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: (isStartDate ? startDate.value : endDate.value) ?? DateTime.now(),
+      initialDate:
+          (isStartDate ? startDate.value : endDate.value) ?? DateTime.now(),
       firstDate: DateTime(2020),
       lastDate: DateTime(2030),
     );
@@ -122,13 +133,16 @@ class PromotionAddEditController extends GetxController {
 
   void savePromotion() async {
     if (!formKey.currentState!.validate()) {
-      Get.snackbar('Invalid Input', 'Please correct the errors in the form.');
+      DialogUtils.showError('Please correct the errors in the form.');
       return;
     }
 
     // Validate specific product selection if needed
-    if (promotionAppliesTo.value == 'specific' && selectedProduct.value == null) {
-      Get.snackbar('Invalid Input', 'Please select at least one product for this promotion.');
+    if (promotionAppliesTo.value == 'specific' &&
+        selectedProduct.value == null) {
+      DialogUtils.showError(
+        'Please select at least one product for this promotion.',
+      );
       return;
     }
 
@@ -139,7 +153,11 @@ class PromotionAddEditController extends GetxController {
       'description': descriptionController.text,
       'type': selectedPromotionType.value,
       'value': double.tryParse(valueController.text) ?? 0,
-      'minSpend': double.tryParse(minSpendController.text.isEmpty ? '0' : minSpendController.text) ?? 0,
+      'minSpend':
+          double.tryParse(
+            minSpendController.text.isEmpty ? '0' : minSpendController.text,
+          ) ??
+          0,
       'shopId': selectedShop.value?.id,
       'isActive': true,
       'conditions': {},
@@ -154,7 +172,8 @@ class PromotionAddEditController extends GetxController {
     }
 
     // Product-specific promotion support
-    if (promotionAppliesTo.value == 'specific' && selectedProduct.value != null) {
+    if (promotionAppliesTo.value == 'specific' &&
+        selectedProduct.value != null) {
       promotionData['productIds'] = [selectedProduct.value!.id];
     }
 
@@ -162,14 +181,14 @@ class PromotionAddEditController extends GetxController {
       if (isEditing.value) {
         await _apiService.updatePromotion(existingPromotion!.id, promotionData);
         Get.back(result: true);
-        Get.snackbar('Success', 'Promotion updated successfully!');
+        DialogUtils.showSuccess('Promotion updated successfully!');
       } else {
         await _apiService.createPromotion(promotionData);
         Get.back(result: true);
-        Get.snackbar('Success', 'Promotion created successfully!');
+        DialogUtils.showSuccess('Promotion created successfully!');
       }
     } catch (e) {
-      Get.snackbar('Save Failed', e.toString());
+      DialogUtils.showError(e.toString());
     } finally {
       isSaving.value = false;
     }

@@ -41,10 +41,7 @@ class AdminShopDetailView extends GetView<AdminShopDetailController> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              AppColors.admin.shade50.withOpacity(0.3),
-              Colors.white,
-            ],
+            colors: [AppColors.admin.shade50.withOpacity(0.3), Colors.white],
           ),
         ),
         child: Obx(() {
@@ -98,7 +95,10 @@ class AdminShopDetailView extends GetView<AdminShopDetailController> {
                             ),
                             const SizedBox(height: 8),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
                               decoration: BoxDecoration(
                                 color: (shop.isActive ?? false)
                                     ? Colors.green.shade50
@@ -124,7 +124,9 @@ class AdminShopDetailView extends GetView<AdminShopDetailController> {
                                   ),
                                   const SizedBox(width: 6),
                                   Text(
-                                    (shop.isActive ?? false) ? 'Active' : 'Inactive',
+                                    (shop.isActive ?? false)
+                                        ? 'Active'
+                                        : 'Inactive',
                                     style: TextStyle(
                                       color: (shop.isActive ?? false)
                                           ? Colors.green.shade700
@@ -191,13 +193,17 @@ class AdminShopDetailView extends GetView<AdminShopDetailController> {
                       _buildDetailRow(
                         icon: Icons.calendar_today_outlined,
                         label: 'Created At',
-                        value: dateTimeFormatter.format(shop.createdAt.toLocal()),
+                        value: dateTimeFormatter.format(
+                          shop.createdAt.toLocal(),
+                        ),
                       ),
                       const Divider(height: 24),
                       _buildDetailRow(
                         icon: Icons.update_outlined,
                         label: 'Last Updated At',
-                        value: dateTimeFormatter.format(shop.updatedAt.toLocal()),
+                        value: dateTimeFormatter.format(
+                          shop.updatedAt.toLocal(),
+                        ),
                       ),
                     ],
                   ),
@@ -224,10 +230,7 @@ class AdminShopDetailView extends GetView<AdminShopDetailController> {
         const SizedBox(width: 12),
         Text(
           title,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
       ],
     );

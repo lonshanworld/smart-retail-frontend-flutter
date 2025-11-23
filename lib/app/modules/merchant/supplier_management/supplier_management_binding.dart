@@ -6,6 +6,8 @@ class SupplierManagementBinding extends Bindings {
   @override
   void dependencies() {
     Get.lazyPut<SupplierApiService>(() => SupplierApiService());
-    Get.lazyPut<SupplierManagementController>(() => SupplierManagementController());
+    Get.lazyPut<SupplierManagementController>(
+      () => SupplierManagementController(),
+    );
   }
 }

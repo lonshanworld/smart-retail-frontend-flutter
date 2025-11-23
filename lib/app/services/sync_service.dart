@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:smart_retail/app/utils/response_utils.dart';
 import 'package:uuid/uuid.dart';
 import '../models/sync_models.dart';
 import 'connectivity_service.dart';
@@ -33,7 +34,9 @@ class SyncService extends GetxService {
         Future.delayed(Duration(seconds: 2), () async {
           final count = await _localDatabaseService.getPendingSalesCount();
           if (count > 0) {
-            print('[SyncService] Connection restored. Pending sales: $count. Triggering auto-sync...');
+            print(
+              '[SyncService] Connection restored. Pending sales: $count. Triggering auto-sync...',
+            );
             // Don't auto-sync by default, let user manually trigger
             // await syncPendingSales();
           }
@@ -76,8 +79,10 @@ class SyncService extends GetxService {
 
       // Create batch request
       final syncBatchId = const Uuid().v4();
-      final salesForSync = pendingSales.map((s) => SaleForSync.fromMap(s)).toList();
-      
+      final salesForSync = pendingSales
+          .map((s) => SaleForSync.fromMap(s))
+          .toList();
+
       final request = SyncRequest(
         syncBatchId: syncBatchId,
         syncTimestamp: DateTime.now(),
@@ -114,7 +119,8 @@ class SyncService extends GetxService {
             syncBatchId: syncBatchId,
           );
 
-          lastSyncMessage.value = 'Synced ${syncedCount.value} / ${salesForSync.length}';
+          lastSyncMessage.value =
+              'Synced ${syncedCount.value} / ${salesForSync.length}';
         } else {
           await _localDatabaseService.markSaleFailed(
             result.localId,
@@ -144,13 +150,19 @@ class SyncService extends GetxService {
 
       if (response.isSuccess) {
         syncStatus.value = SyncStatus.success;
-        lastSyncMessage.value = 'All ${syncedCount.value} sales synced successfully!';
-        print('[SyncService] Sync completed successfully: ${syncedCount.value} synced');
+        lastSyncMessage.value =
+            'All ${syncedCount.value} sales synced successfully!';
+        print(
+          '[SyncService] Sync completed successfully: ${syncedCount.value} synced',
+        );
         return true;
       } else {
         syncStatus.value = SyncStatus.error;
-        lastSyncMessage.value = 'Sync completed with ${failedCount.value} errors';
-        print('[SyncService] Sync completed with errors: ${failedCount.value} failed');
+        lastSyncMessage.value =
+            'Sync completed with ${failedCount.value} errors';
+        print(
+          '[SyncService] Sync completed with errors: ${failedCount.value} failed',
+        );
         return false;
       }
     } catch (e) {
@@ -164,34 +176,47 @@ class SyncService extends GetxService {
 
   Future<BatchSyncResponse?> _sendBatchToBackend(SyncRequest request) async {
     try {
-      print('[SyncService] Sending batch ${request.syncBatchId} with ${request.sales.length} sales');
+      print(
+        '[SyncService] Sending batch ${request.syncBatchId} with ${request.sales.length} sales',
+      );
 
       final connect = Get.find<GetConnect>();
-      
+
       // Prepare sync request with all sale data
       final syncPayload = {
         'batchId': request.syncBatchId,
         'timestamp': DateTime.now().toIso8601String(),
-        'sales': request.sales.map((sale) => {
-          'id': sale.localId,
-          'shopId': sale.shopId,
-          'totalAmount': sale.totalAmount,
-          'items': sale.items.map((item) => {
-            'productId': item['product_id'] ?? item['id'],
-            'quantity': item['quantity'] ?? item['quantity_sold'],
-            'sellingPriceAtSale': item['selling_price'] ?? item['sellingPriceAtSale'],
-            'originalPriceAtSale': item['original_price'],
-            'discountAmount': item['discount_amount'],
-          }).toList(),
-          'paymentType': sale.paymentType,
-          'timestamp': sale.createdAt.toIso8601String(),
-          'notes': sale.notes,
-        }).toList(),
+        'sales': request.sales
+            .map(
+              (sale) => {
+                'id': sale.localId,
+                'shopId': sale.shopId,
+                'totalAmount': sale.totalAmount,
+                'items': sale.items
+                    .map(
+                      (item) => {
+                        'productId': item['product_id'] ?? item['id'],
+                        'quantity': item['quantity'] ?? item['quantity_sold'],
+                        'sellingPriceAtSale':
+                            item['selling_price'] ?? item['sellingPriceAtSale'],
+                        'originalPriceAtSale': item['original_price'],
+                        'discountAmount': item['discount_amount'],
+                      },
+                    )
+                    .toList(),
+                'paymentType': sale.paymentType,
+                'timestamp': sale.createdAt.toIso8601String(),
+                'notes': sale.notes,
+              },
+            )
+            .toList(),
         'deviceId': 'flutter-app',
-        'userId': 'user-id-from-auth',  // This should come from AuthService
+        'userId': 'user-id-from-auth', // This should come from AuthService
       };
 
-      print('[SyncService] Sync payload prepared: ${request.sales.length} sales');
+      print(
+        '[SyncService] Sync payload prepared: ${request.sales.length} sales',
+      );
 
       // Send to backend
       final response = await connect.post(
@@ -202,29 +227,35 @@ class SyncService extends GetxService {
       print('[SyncService] Backend response status: ${response.statusCode}');
 
       if (response.statusCode == 200 && response.body['data'] != null) {
-        final data = response.body['data'];
-        
+        final data = asMap(response.body['data']);
+
         // Parse results from backend response
         final results = <SyncResult>[];
         if (data['results'] is List) {
           for (var r in data['results']) {
-            results.add(SyncResult(
-              localId: r['saleId'] ?? '',
-              serverId: r['serverId'],
-              status: (r['success'] ?? false) ? 'synced' : 'failed',
-              error: r['errorMessage'],
-              serverTimestamp: DateTime.now(),
-            ));
+            results.add(
+              SyncResult(
+                localId: r['saleId'] ?? '',
+                serverId: r['serverId'],
+                status: (r['success'] ?? false) ? 'synced' : 'failed',
+                error: r['errorMessage'],
+                serverTimestamp: DateTime.now(),
+              ),
+            );
           }
         }
 
         final successCount = results.where((r) => r.isSuccess).length;
         final failureCount = results.where((r) => r.isFailed).length;
 
-        print('[SyncService] Backend sync response: $successCount success, $failureCount failed');
+        print(
+          '[SyncService] Backend sync response: $successCount success, $failureCount failed',
+        );
 
         return BatchSyncResponse(
-          status: failureCount == 0 ? 'success' : (successCount > 0 ? 'partial' : 'failed'),
+          status: failureCount == 0
+              ? 'success'
+              : (successCount > 0 ? 'partial' : 'failed'),
           syncBatchId: request.syncBatchId,
           results: results,
           syncedCount: successCount,
@@ -260,7 +291,7 @@ class SyncService extends GetxService {
     }
 
     final success = await syncPendingSales();
-    
+
     if (success) {
       await _loadSyncHistory();
     }

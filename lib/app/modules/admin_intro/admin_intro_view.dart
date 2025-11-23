@@ -13,10 +13,7 @@ class AdminIntroView extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Colors.blue.shade700,
-              Colors.blue.shade900,
-            ],
+            colors: [Colors.blue.shade700, Colors.blue.shade900],
           ),
         ),
         child: SafeArea(
@@ -90,10 +87,7 @@ class AdminIntroView extends StatelessWidget {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(
-                              Icons.login,
-                              color: Colors.blue.shade700,
-                            ),
+                            Icon(Icons.login, color: Colors.blue.shade700),
                             const SizedBox(width: 12),
                             const Text(
                               'Admin Login',

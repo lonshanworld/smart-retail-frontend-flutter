@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:smart_retail/app/data/enums/user_role.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
 import 'package:smart_retail/app/routes/app_pages.dart';
+import 'package:smart_retail/app/utils/dialog_utils.dart';
 
 class AuthMiddleware extends GetMiddleware {
   final List<UserRole>? requiredRoles; // UPDATED: To accept a list of roles
@@ -21,7 +22,9 @@ class AuthMiddleware extends GetMiddleware {
       return const RouteSettings(name: Routes.LOGIN);
     }
 
-    final UserRole? currentRole = userRoleFromString(authService.userRole.value);
+    final UserRole? currentRole = userRoleFromString(
+      authService.userRole.value,
+    );
     bool isAuthorized = false;
 
     if (requiredRoles != null && requiredRoles!.isNotEmpty) {
@@ -40,11 +43,7 @@ class AuthMiddleware extends GetMiddleware {
     }
 
     if (!isAuthorized) {
-      Get.snackbar(
-        'Access Denied',
-        'You do not have permission to access this page.',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      DialogUtils.showInfo('You do not have permission to access this page.');
       // Redirect to a default page if not authorized
       return const RouteSettings(name: Routes.LOGIN);
     }

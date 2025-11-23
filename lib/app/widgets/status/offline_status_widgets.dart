@@ -41,7 +41,9 @@ class OfflineStatusBadge extends StatelessWidget {
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: (isOnline ? Colors.green : Colors.orange).withOpacity(0.3),
+                color: (isOnline ? Colors.green : Colors.orange).withOpacity(
+                  0.3,
+                ),
                 blurRadius: 8,
                 offset: Offset(0, 2),
               ),
@@ -95,10 +97,8 @@ class OfflineStatusBadge extends StatelessWidget {
 class OfflineStatusBanner extends StatelessWidget {
   final bool showAtTop;
 
-  const OfflineStatusBanner({
-    Key? key,
-    this.showAtTop = true,
-  }) : super(key: key);
+  const OfflineStatusBanner({Key? key, this.showAtTop = true})
+    : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -159,10 +159,7 @@ class OfflineStatusBanner extends StatelessWidget {
                       padding: EdgeInsets.only(top: 4),
                       child: Text(
                         'Sync queue is at ${offlineSalesService.getQueuePressure().toStringAsFixed(0)}% capacity',
-                        style: TextStyle(
-                          color: Colors.red[600],
-                          fontSize: 11,
-                        ),
+                        style: TextStyle(color: Colors.red[600], fontSize: 11),
                       ),
                     ),
                 ],
@@ -179,10 +176,7 @@ class OfflineStatusBanner extends StatelessWidget {
 class OfflineStatusChip extends StatelessWidget {
   final bool compact;
 
-  const OfflineStatusChip({
-    Key? key,
-    this.compact = false,
-  }) : super(key: key);
+  const OfflineStatusChip({Key? key, this.compact = false}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

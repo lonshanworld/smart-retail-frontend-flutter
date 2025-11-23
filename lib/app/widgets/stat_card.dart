@@ -80,10 +80,7 @@ class StatCard extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 subtitle!,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey.shade500,
-                ),
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
               ),
             ],
           ],
@@ -168,10 +165,7 @@ class GradientStatCard extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 subtitle!,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Colors.white60,
-                ),
+                style: const TextStyle(fontSize: 12, color: Colors.white60),
               ),
             ],
           ],

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:smart_retail/app/utils/dialog_utils.dart';
 import 'package:smart_retail/app/data/models/inventory_item_model.dart';
 import 'package:smart_retail/app/data/services/database_service.dart';
 import 'package:smart_retail/app/data/services/inventory_api_service.dart';
@@ -27,7 +28,8 @@ class InventoryController extends GetxController {
   final TextEditingController skuController = TextEditingController();
   final TextEditingController sellingPriceController = TextEditingController();
   final TextEditingController originalPriceController = TextEditingController();
-  final TextEditingController lowStockThresholdController = TextEditingController();
+  final TextEditingController lowStockThresholdController =
+      TextEditingController();
   final TextEditingController categoryController = TextEditingController();
   final TextEditingController supplierNameController = TextEditingController();
 
@@ -39,9 +41,11 @@ class InventoryController extends GetxController {
     super.onInit();
     _authService.userRole.listen((role) {
       if (role == 'merchant' && _authService.isAuthenticated) {
-        print("Merchant role detected and authenticated, initializing inventory.");
+        print(
+          "Merchant role detected and authenticated, initializing inventory.",
+        );
         initializeInventory();
-      } else if (role != 'merchant'){
+      } else if (role != 'merchant') {
         inventoryItems.clear();
         currentPage.value = 1;
         totalPagesFromApi.value = 1;
@@ -49,7 +53,8 @@ class InventoryController extends GetxController {
         print("Not a merchant, or not authenticated. Inventory cleared.");
       }
     });
-    if (_authService.isAuthenticated && _authService.userRole.value == 'merchant') {
+    if (_authService.isAuthenticated &&
+        _authService.userRole.value == 'merchant') {
       print("Already authenticated as merchant, initializing inventory.");
       initializeInventory();
     }
@@ -84,7 +89,7 @@ class InventoryController extends GetxController {
   Future<void> initializeInventory() async {
     isLoading.value = true;
     errorMessage.value = null;
-    currentPage.value = 1; 
+    currentPage.value = 1;
     String? currentUserId = await _authService.getUserId();
     String? role = await _authService.getUserRole();
 
@@ -93,17 +98,23 @@ class InventoryController extends GetxController {
       isLoading.value = false;
       return;
     }
-    print("Initializing inventory: Fetching page 1 from API for User ID (Merchant): $currentUserId");
-    await _fetchFromApiAndCache(currentUserId, loadNextPage: false, clearLocalPageData: false); 
-    _backgroundSyncAndFetchLatest(currentUserId); 
-    isLoading.value = false; 
+    print(
+      "Initializing inventory: Fetching page 1 from API for User ID (Merchant): $currentUserId",
+    );
+    await _fetchFromApiAndCache(
+      currentUserId,
+      loadNextPage: false,
+      clearLocalPageData: false,
+    );
+    _backgroundSyncAndFetchLatest(currentUserId);
+    isLoading.value = false;
   }
-  
+
   Future<void> _backgroundSyncAndFetchLatest(String currentUserId) async {
-    if(isSyncing.value) return;
+    if (isSyncing.value) return;
     isSyncing.value = true;
     try {
-      await syncPendingChanges(); 
+      await syncPendingChanges();
     } catch (e) {
       print("Error during background sync/fetch: $e");
     } finally {
@@ -111,8 +122,11 @@ class InventoryController extends GetxController {
     }
   }
 
-  Future<void> performFullSyncWithBackend({String? merchantIdParam, bool isInitialLoad = false}) async {
-    if (!isInitialLoad) isLoading.value = true; 
+  Future<void> performFullSyncWithBackend({
+    String? merchantIdParam,
+    bool isInitialLoad = false,
+  }) async {
+    if (!isInitialLoad) isLoading.value = true;
     isSyncing.value = true;
     errorMessage.value = null;
     String? currentUserId = merchantIdParam ?? await _authService.getUserId();
@@ -127,20 +141,25 @@ class InventoryController extends GetxController {
 
     try {
       print("Performing full sync for User ID (Merchant): $currentUserId");
-      await _dbService.clearAllInventoryForMerchant(currentUserId); 
-      inventoryItems.clear(); 
+      await _dbService.clearAllInventoryForMerchant(currentUserId);
+      inventoryItems.clear();
       currentPage.value = 1;
-      totalPagesFromApi.value = 1; 
-      
-      await _fetchFromApiAndCache(currentUserId, loadNextPage: false, clearLocalPageData: true); 
-      
-      Get.snackbar("Sync Complete", "Inventory has been synchronized with the server. Displaying first page.");
-      print("Full sync complete. First page items loaded and synced.");
+      totalPagesFromApi.value = 1;
 
+      await _fetchFromApiAndCache(
+        currentUserId,
+        loadNextPage: false,
+        clearLocalPageData: true,
+      );
+
+      DialogUtils.showSuccess(
+        "Inventory has been synchronized with the server. Displaying first page.",
+      );
+      print("Full sync complete. First page items loaded and synced.");
     } catch (e) {
       print("Error during full sync: $e");
       errorMessage.value = "Full sync failed: $e";
-      Get.snackbar("Sync Error", "Could not fully synchronize inventory.");
+      DialogUtils.showError("Could not fully synchronize inventory.");
     } finally {
       if (!isInitialLoad) isLoading.value = false;
       isSyncing.value = false;
@@ -162,7 +181,9 @@ class InventoryController extends GetxController {
   }
 
   Future<void> jumpToPage(int pageNumber) async {
-    if (pageNumber >= 1 && pageNumber <= totalPagesFromApi.value && pageNumber != currentPage.value) {
+    if (pageNumber >= 1 &&
+        pageNumber <= totalPagesFromApi.value &&
+        pageNumber != currentPage.value) {
       currentPage.value = pageNumber;
       await _fetchPageData();
     }
@@ -170,7 +191,7 @@ class InventoryController extends GetxController {
 
   Future<void> _fetchPageData() async {
     isFetchingPage.value = true;
-    errorMessage.value = null; 
+    errorMessage.value = null;
     String? currentUserId = await _authService.getUserId();
     String? role = await _authService.getUserRole();
 
@@ -179,59 +200,72 @@ class InventoryController extends GetxController {
       isFetchingPage.value = false;
       return;
     }
-    await _fetchFromApiAndCache(currentUserId, loadNextPage: false); 
+    await _fetchFromApiAndCache(currentUserId, loadNextPage: false);
     isFetchingPage.value = false;
   }
 
-  Future<void> _fetchFromApiAndCache(String currentUserId, {required bool loadNextPage, bool clearLocalPageData = false}) async {
+  Future<void> _fetchFromApiAndCache(
+    String currentUserId, {
+    required bool loadNextPage,
+    bool clearLocalPageData = false,
+  }) async {
     if (!loadNextPage) {
-        isFetchingPage.value = true; 
+      isFetchingPage.value = true;
     }
 
     if (clearLocalPageData) {
-        await _dbService.clearAllInventoryForMerchant(currentUserId);
-        inventoryItems.clear();
+      await _dbService.clearAllInventoryForMerchant(currentUserId);
+      inventoryItems.clear();
     }
 
-    PaginatedInventoryResponse? apiResponse = await _apiService.listInventoryItems(
-        page: currentPage.value, pageSize: _pageSize);
+    PaginatedInventoryResponse? apiResponse = await _apiService
+        .listInventoryItems(page: currentPage.value, pageSize: _pageSize);
 
     if (apiResponse != null) {
       List<InventoryItem> fetchedItems = [];
       for (var item in apiResponse.items) {
-        final syncedItem = item.copyWith(merchantId: currentUserId, isSynced: true, needsCreate: false, needsUpdate: false);
-        await _dbService.insertInventoryItem(syncedItem); 
+        final syncedItem = item.copyWith(
+          merchantId: currentUserId,
+          isSynced: true,
+          needsCreate: false,
+          needsUpdate: false,
+        );
+        await _dbService.insertInventoryItem(syncedItem);
         fetchedItems.add(syncedItem);
       }
-      
-      inventoryItems.assignAll(fetchedItems); 
-      
+
+      inventoryItems.assignAll(fetchedItems);
+
       totalPagesFromApi.value = apiResponse.totalPages;
-      currentPage.value = apiResponse.currentPage; 
-      print("Fetched and cached page ${currentPage.value} from API. Total API pages: ${totalPagesFromApi.value}");
+      currentPage.value = apiResponse.currentPage;
+      print(
+        "Fetched and cached page ${currentPage.value} from API. Total API pages: ${totalPagesFromApi.value}",
+      );
     } else {
-      errorMessage.value = "Failed to load inventory page ${currentPage.value} from server.";
+      errorMessage.value =
+          "Failed to load inventory page ${currentPage.value} from server.";
     }
     if (!loadNextPage) {
-        isFetchingPage.value = false;
+      isFetchingPage.value = false;
     }
   }
 
-  Future<void> addInventoryItem() async { 
+  Future<void> addInventoryItem() async {
     String? currentUserId = await _authService.getUserId();
     String? role = await _authService.getUserRole();
 
     if (role != 'merchant' || currentUserId == null) {
-      Get.snackbar("Error", "Merchant ID not found.");
+      DialogUtils.showError("Merchant ID not found.");
       return;
     }
 
     if (nameController.text.isEmpty) {
-      Get.snackbar("Validation Error", "Item name cannot be empty.");
+      DialogUtils.showError("Item name cannot be empty.");
       return;
     }
-    if (sellingPriceController.text.isEmpty || double.tryParse(sellingPriceController.text) == null) {
-      Get.snackbar("Validation Error", "Valid selling price is required.");
+    if (sellingPriceController.text.isEmpty ||
+        double.tryParse(sellingPriceController.text) == null) {
+      DialogUtils.showError("Valid selling price is required.");
       return;
     }
 
@@ -240,13 +274,23 @@ class InventoryController extends GetxController {
       id: localId,
       merchantId: currentUserId,
       name: nameController.text,
-      description: descriptionController.text.isNotEmpty ? descriptionController.text : null,
+      description: descriptionController.text.isNotEmpty
+          ? descriptionController.text
+          : null,
       sku: skuController.text.isNotEmpty ? skuController.text : null,
       sellingPrice: double.parse(sellingPriceController.text),
-      originalPrice: originalPriceController.text.isNotEmpty ? double.tryParse(originalPriceController.text) : null,
-      lowStockThreshold: lowStockThresholdController.text.isNotEmpty ? int.tryParse(lowStockThresholdController.text) : null,
-      category: categoryController.text.isNotEmpty ? categoryController.text : null,
-      supplier: supplierNameController.text.isNotEmpty ? supplierNameController.text : null,
+      originalPrice: originalPriceController.text.isNotEmpty
+          ? double.tryParse(originalPriceController.text)
+          : null,
+      lowStockThreshold: lowStockThresholdController.text.isNotEmpty
+          ? int.tryParse(lowStockThresholdController.text)
+          : null,
+      category: categoryController.text.isNotEmpty
+          ? categoryController.text
+          : null,
+      supplier: supplierNameController.text.isNotEmpty
+          ? supplierNameController.text
+          : null,
       isArchived: false,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
@@ -257,183 +301,271 @@ class InventoryController extends GetxController {
 
     await _dbService.insertInventoryItem(newItem);
     inventoryItems.insert(0, newItem);
-    Get.snackbar("Item Added Locally", "'${newItem.name}' added. Sync to upload.");
+    DialogUtils.showSuccess("'${newItem.name}' added. Sync to upload.");
     print("Item added to local DB: ${newItem.name}");
-    
+
     clearFormFields();
 
     try {
       isSyncing.value = true;
-      InventoryItem? createdItem = await _apiService.createInventoryItem(newItem);
+      InventoryItem? createdItem = await _apiService.createInventoryItem(
+        newItem,
+      );
       if (createdItem != null) {
-        await _dbService.markItemAsSynced(localId, createdItem.id!, createdItem.updatedAt);
+        await _dbService.markItemAsSynced(
+          localId,
+          createdItem.id!,
+          createdItem.updatedAt,
+        );
         int index = inventoryItems.indexWhere((i) => i.id == localId);
         if (index != -1) {
-          inventoryItems[index] = createdItem.copyWith(isSynced: true, needsCreate: false, needsUpdate: false);
+          inventoryItems[index] = createdItem.copyWith(
+            isSynced: true,
+            needsCreate: false,
+            needsUpdate: false,
+          );
         }
-        Get.snackbar("Success", "Item '${createdItem.name}' created and synced.");
-        await _fetchPageData(); 
+        DialogUtils.showSuccess(
+          "Item '${createdItem.name}' created and synced.",
+        );
+        await _fetchPageData();
       } else {
-        Get.snackbar("Sync Pending", "Item '${newItem.name}' saved locally. Will sync later.");
+        DialogUtils.showWarning(
+          "Item '${newItem.name}' saved locally. Will sync later.",
+        );
       }
     } catch (e) {
-        print("Error syncing new item: $e");
-        Get.snackbar("Sync Error", "Item '${newItem.name}' saved locally. Sync failed. Will retry.");
+      print("Error syncing new item: $e");
+      DialogUtils.showError(
+        "Item '${newItem.name}' saved locally. Sync failed. Will retry.",
+      );
     } finally {
-        isSyncing.value = false;
+      isSyncing.value = false;
     }
   }
 
-  Future<void> updateInventoryItem() async { 
+  Future<void> updateInventoryItem() async {
     String? role = await _authService.getUserRole();
     if (role != 'merchant') {
-      Get.snackbar("Error", "Operation not allowed for current user role.");
+      DialogUtils.showError("Operation not allowed for current user role.");
       return;
     }
 
     if (_editingItemId == null) {
-      Get.snackbar("Error", "No item selected for update.");
-      return;
-    }
-    
-    if (nameController.text.isEmpty) {
-      Get.snackbar("Validation Error", "Item name cannot be empty.");
-      return;
-    }
-    if (sellingPriceController.text.isEmpty || double.tryParse(sellingPriceController.text) == null) {
-      Get.snackbar("Validation Error", "Valid selling price is required.");
+      DialogUtils.showError("No item selected for update.");
       return;
     }
 
-    int itemIndex = inventoryItems.indexWhere((item) => item.id == _editingItemId);
-    InventoryItem? originalItem = await _dbService.getInventoryItemById(_editingItemId!); 
+    if (nameController.text.isEmpty) {
+      DialogUtils.showError("Item name cannot be empty.");
+      return;
+    }
+    if (sellingPriceController.text.isEmpty ||
+        double.tryParse(sellingPriceController.text) == null) {
+      DialogUtils.showError("Valid selling price is required.");
+      return;
+    }
+
+    int itemIndex = inventoryItems.indexWhere(
+      (item) => item.id == _editingItemId,
+    );
+    InventoryItem? originalItem = await _dbService.getInventoryItemById(
+      _editingItemId!,
+    );
     if (originalItem == null) {
-       Get.snackbar("Error", "Item not found in local DB for update."); return;
+      DialogUtils.showError("Item not found in local DB for update.");
+      return;
     }
 
     InventoryItem itemWithChanges = originalItem.copyWith(
       name: nameController.text,
-      description: descriptionController.text.isNotEmpty ? descriptionController.text : null,
+      description: descriptionController.text.isNotEmpty
+          ? descriptionController.text
+          : null,
       sku: skuController.text.isNotEmpty ? skuController.text : null,
       sellingPrice: double.parse(sellingPriceController.text),
-      originalPrice: originalPriceController.text.isNotEmpty ? double.tryParse(originalPriceController.text) : null,
-      lowStockThreshold: lowStockThresholdController.text.isNotEmpty ? int.tryParse(lowStockThresholdController.text) : null,
-      category: categoryController.text.isNotEmpty ? categoryController.text : null,
-      supplier: supplierNameController.text.isNotEmpty ? supplierNameController.text : null,
+      originalPrice: originalPriceController.text.isNotEmpty
+          ? double.tryParse(originalPriceController.text)
+          : null,
+      lowStockThreshold: lowStockThresholdController.text.isNotEmpty
+          ? int.tryParse(lowStockThresholdController.text)
+          : null,
+      category: categoryController.text.isNotEmpty
+          ? categoryController.text
+          : null,
+      supplier: supplierNameController.text.isNotEmpty
+          ? supplierNameController.text
+          : null,
       updatedAt: DateTime.now(),
-      needsUpdate: true, 
+      needsUpdate: true,
       isSynced: false,
-      needsCreate: originalItem.needsCreate, 
+      needsCreate: originalItem.needsCreate,
     );
 
     Map<String, dynamic> changesForApi = {};
-    if (itemWithChanges.name != originalItem.name) changesForApi['name'] = itemWithChanges.name;
-    if (itemWithChanges.description != originalItem.description) changesForApi['description'] = itemWithChanges.description;
-    if (itemWithChanges.sku != originalItem.sku) changesForApi['sku'] = itemWithChanges.sku;
-    if (itemWithChanges.sellingPrice != originalItem.sellingPrice) changesForApi['sellingPrice'] = itemWithChanges.sellingPrice;
-    if (itemWithChanges.originalPrice != originalItem.originalPrice) changesForApi['originalPrice'] = itemWithChanges.originalPrice;
-    if (itemWithChanges.lowStockThreshold != originalItem.lowStockThreshold) changesForApi['lowStockThreshold'] = itemWithChanges.lowStockThreshold;
-    if (itemWithChanges.category != originalItem.category) changesForApi['category'] = itemWithChanges.category;
-    if (itemWithChanges.supplier != originalItem.supplier) changesForApi['supplier'] = itemWithChanges.supplier;
+    if (itemWithChanges.name != originalItem.name)
+      changesForApi['name'] = itemWithChanges.name;
+    if (itemWithChanges.description != originalItem.description)
+      changesForApi['description'] = itemWithChanges.description;
+    if (itemWithChanges.sku != originalItem.sku)
+      changesForApi['sku'] = itemWithChanges.sku;
+    if (itemWithChanges.sellingPrice != originalItem.sellingPrice)
+      changesForApi['sellingPrice'] = itemWithChanges.sellingPrice;
+    if (itemWithChanges.originalPrice != originalItem.originalPrice)
+      changesForApi['originalPrice'] = itemWithChanges.originalPrice;
+    if (itemWithChanges.lowStockThreshold != originalItem.lowStockThreshold)
+      changesForApi['lowStockThreshold'] = itemWithChanges.lowStockThreshold;
+    if (itemWithChanges.category != originalItem.category)
+      changesForApi['category'] = itemWithChanges.category;
+    if (itemWithChanges.supplier != originalItem.supplier)
+      changesForApi['supplier'] = itemWithChanges.supplier;
 
     if (changesForApi.isEmpty) {
-       Get.snackbar("Info", "No changes detected to update."); return;
+      DialogUtils.showInfo("No changes detected to update.");
+      return;
     }
-    
+
     await _dbService.updateInventoryItem(itemWithChanges);
-    if (itemIndex != -1) { 
-        inventoryItems[itemIndex] = itemWithChanges;
-    } else { 
-        print("Item updated in DB but not in current view: ${itemWithChanges.name}");
+    if (itemIndex != -1) {
+      inventoryItems[itemIndex] = itemWithChanges;
+    } else {
+      print(
+        "Item updated in DB but not in current view: ${itemWithChanges.name}",
+      );
     }
-    Get.snackbar("Item Updated Locally", "'${itemWithChanges.name}' updated. Sync to save changes to cloud.");
+    DialogUtils.showSuccess(
+      "'${itemWithChanges.name}' updated. Sync to save changes to cloud.",
+    );
 
     clearFormFields();
 
     try {
-        isSyncing.value = true;
-        if (!itemWithChanges.needsCreate && itemWithChanges.id != null && itemWithChanges.id!.isNotEmpty) { 
-            InventoryItem? syncedItem = await _apiService.updateInventoryItem(itemWithChanges.id!, changesForApi);
-            if (syncedItem != null) {
-              final finalItem = syncedItem.copyWith(isSynced: true, needsUpdate: false, needsCreate: false);
-              await _dbService.updateInventoryItem(finalItem);
-              if (itemIndex != -1) inventoryItems[itemIndex] = finalItem;
-              Get.snackbar("Success", "Item '${finalItem.name}' updated and synced.");
-              await _fetchPageData();
-            } else {
-              Get.snackbar("Sync Pending", "Item '${itemWithChanges.name}' updated locally. Will sync later.");
-            }
-        } else if (itemWithChanges.needsCreate) {
-             Get.snackbar("Sync Pending", "Item '${itemWithChanges.name}' updated locally (pending creation). Will sync later.");
+      isSyncing.value = true;
+      if (!itemWithChanges.needsCreate &&
+          itemWithChanges.id != null &&
+          itemWithChanges.id!.isNotEmpty) {
+        InventoryItem? syncedItem = await _apiService.updateInventoryItem(
+          itemWithChanges.id!,
+          changesForApi,
+        );
+        if (syncedItem != null) {
+          final finalItem = syncedItem.copyWith(
+            isSynced: true,
+            needsUpdate: false,
+            needsCreate: false,
+          );
+          await _dbService.updateInventoryItem(finalItem);
+          if (itemIndex != -1) inventoryItems[itemIndex] = finalItem;
+          DialogUtils.showSuccess(
+            "Item '${finalItem.name}' updated and synced.",
+          );
+          await _fetchPageData();
         } else {
-             Get.snackbar("Error", "Cannot sync update for item '${itemWithChanges.name}' due to missing ID or trying to update an item that needs creation first.");
+          DialogUtils.showWarning(
+            "Item '${itemWithChanges.name}' updated locally. Will sync later.",
+          );
         }
+      } else if (itemWithChanges.needsCreate) {
+        DialogUtils.showWarning(
+          "Item '${itemWithChanges.name}' updated locally (pending creation). Will sync later.",
+        );
+      } else {
+        DialogUtils.showError(
+          "Cannot sync update for item '${itemWithChanges.name}' due to missing ID or trying to update an item that needs creation first.",
+        );
+      }
     } catch (e) {
-        print("Error syncing updated item: $e");
-        Get.snackbar("Sync Error", "Item '${itemWithChanges.name}' updated locally. Sync failed. Will retry.");
+      print("Error syncing updated item: $e");
+      DialogUtils.showError(
+        "Item '${itemWithChanges.name}' updated locally. Sync failed. Will retry.",
+      );
     } finally {
-        isSyncing.value = false;
+      isSyncing.value = false;
     }
   }
-
 
   Future<void> _toggleArchiveStatus(String itemId, bool archive) async {
     String? role = await _authService.getUserRole();
     if (role != 'merchant') {
-      Get.snackbar("Error", "Operation not allowed for current user role.");
+      DialogUtils.showError("Operation not allowed for current user role.");
       return;
     }
 
     int itemIndex = inventoryItems.indexWhere((item) => item.id == itemId);
     InventoryItem? item = await _dbService.getInventoryItemById(itemId);
-    if (item == null) { Get.snackbar("Error", "Item not found."); return; }
+    if (item == null) {
+      DialogUtils.showError("Item not found.");
+      return;
+    }
 
     InventoryItem changedItem = item.copyWith(
-        isArchived: archive, 
-        updatedAt: DateTime.now(), 
-        needsUpdate: true, 
-        isSynced: false, 
-        needsCreate: item.needsCreate 
+      isArchived: archive,
+      updatedAt: DateTime.now(),
+      needsUpdate: true,
+      isSynced: false,
+      needsCreate: item.needsCreate,
     );
 
     await _dbService.updateInventoryItem(changedItem);
     if (itemIndex != -1) inventoryItems[itemIndex] = changedItem;
-    Get.snackbar("Item Status Changed Locally", "'${changedItem.name}' ${archive ? 'archived' : 'unarchived'}. Sync to update cloud.");
+    DialogUtils.showSuccess(
+      "'${changedItem.name}' ${archive ? 'archived' : 'unarchived'}. Sync to update cloud.",
+    );
 
     try {
-        isSyncing.value = true;
-        if (!changedItem.needsCreate && changedItem.id != null && changedItem.id!.isNotEmpty) {
-          bool success = (archive
-              ? await _apiService.archiveInventoryItem(changedItem.id!)
-              : await _apiService.unarchiveInventoryItem(changedItem.id!)) as bool;
+      isSyncing.value = true;
+      if (!changedItem.needsCreate &&
+          changedItem.id != null &&
+          changedItem.id!.isNotEmpty) {
+        bool success =
+            (archive
+                    ? await _apiService.archiveInventoryItem(changedItem.id!)
+                    : await _apiService.unarchiveInventoryItem(changedItem.id!))
+                as bool;
 
-          if (success) {
-              final finalItem = changedItem.copyWith(isSynced: true, needsUpdate: false, isArchived: archive);
-              await _dbService.updateInventoryItem(finalItem);
-              if (itemIndex != -1) inventoryItems[itemIndex] = finalItem;
-              Get.snackbar("Success", "Item ${archive ? 'archived' : 'unarchived'} and synced.");
-              await _fetchPageData(); 
-          } else {
-               Get.snackbar("Sync Pending", "Item status changed locally. Will sync later.");
-          }
-        } else if (changedItem.needsCreate) {
-            Get.snackbar("Sync Pending", "Item status changed locally (pending creation). Will sync later.");
+        if (success) {
+          final finalItem = changedItem.copyWith(
+            isSynced: true,
+            needsUpdate: false,
+            isArchived: archive,
+          );
+          await _dbService.updateInventoryItem(finalItem);
+          if (itemIndex != -1) inventoryItems[itemIndex] = finalItem;
+          DialogUtils.showSuccess(
+            "Item ${archive ? 'archived' : 'unarchived'} and synced.",
+          );
+          await _fetchPageData();
         } else {
-            Get.snackbar("Error", "Cannot sync archive status for item '${changedItem.name}' due to missing ID or trying to update an item that needs creation first.");
+          DialogUtils.showWarning(
+            "Item status changed locally. Will sync later.",
+          );
         }
+      } else if (changedItem.needsCreate) {
+        DialogUtils.showWarning(
+          "Item status changed locally (pending creation). Will sync later.",
+        );
+      } else {
+        DialogUtils.showError(
+          "Cannot sync archive status for item '${changedItem.name}' due to missing ID or trying to update an item that needs creation first.",
+        );
+      }
     } catch (e) {
-        print("Error syncing archive status: $e");
-        Get.snackbar("SyncError", "Item status changed locally. Sync failed. Will retry.");
+      print("Error syncing archive status: $e");
+      DialogUtils.showError(
+        "Item status changed locally. Sync failed. Will retry.",
+      );
     } finally {
-        isSyncing.value = false;
+      isSyncing.value = false;
     }
   }
 
-  Future<void> archiveInventoryItem(String itemId) => _toggleArchiveStatus(itemId, true);
-  Future<void> unarchiveInventoryItem(String itemId) => _toggleArchiveStatus(itemId, false);
+  Future<void> archiveInventoryItem(String itemId) =>
+      _toggleArchiveStatus(itemId, true);
+  Future<void> unarchiveInventoryItem(String itemId) =>
+      _toggleArchiveStatus(itemId, false);
 
   Future<void> syncPendingChanges() async {
-    if (isSyncing.value) return; 
+    if (isSyncing.value) return;
     isSyncing.value = true;
     print("Starting sync of pending changes...");
     int createdCount = 0;
@@ -443,39 +575,56 @@ class InventoryController extends GetxController {
 
     if (role != 'merchant' || currentUserId == null) {
       isSyncing.value = false;
-      Get.snackbar("Error", "Cannot sync without valid Merchant ID.");
+      DialogUtils.showError("Cannot sync without valid Merchant ID.");
       return;
     }
 
-    final itemsToCreate = await _dbService.getItemsToCreate(merchantId: currentUserId);
+    final itemsToCreate = await _dbService.getItemsToCreate(
+      merchantId: currentUserId,
+    );
     for (var item in itemsToCreate) {
-      if (item.id == null || item.id!.isEmpty) continue; 
+      if (item.id == null || item.id!.isEmpty) continue;
       print("Syncing (create): ${item.name}");
       InventoryItem? createdItem = await _apiService.createInventoryItem(item);
       if (createdItem != null) {
-        await _dbService.markItemAsSynced(item.id!, createdItem.id!, createdItem.updatedAt);
+        await _dbService.markItemAsSynced(
+          item.id!,
+          createdItem.id!,
+          createdItem.updatedAt,
+        );
         createdCount++;
       }
     }
 
-    final itemsToUpdate = await _dbService.getItemsToUpdate(merchantId: currentUserId);
+    final itemsToUpdate = await _dbService.getItemsToUpdate(
+      merchantId: currentUserId,
+    );
     for (var item in itemsToUpdate) {
-      if (item.id == null || item.id!.isEmpty || item.needsCreate) continue; 
+      if (item.id == null || item.id!.isEmpty || item.needsCreate) continue;
       print("Syncing (update): ${item.name}");
-      InventoryItem? updatedApiItem = await _apiService.updateInventoryItem(item.id!, item.toJsonForUpdate());
+      InventoryItem? updatedApiItem = await _apiService.updateInventoryItem(
+        item.id!,
+        item.toJsonForUpdate(),
+      );
       if (updatedApiItem != null) {
-        final finalItem = updatedApiItem.copyWith(isSynced: true, needsUpdate: false, needsCreate: false);
+        final finalItem = updatedApiItem.copyWith(
+          isSynced: true,
+          needsUpdate: false,
+          needsCreate: false,
+        );
         await _dbService.updateInventoryItem(finalItem);
         updatedCount++;
       }
     }
-    
+
     if (createdCount > 0 || updatedCount > 0) {
-        Get.snackbar("Sync Complete", "Synced $createdCount new and $updatedCount updated items.");
-        await _fetchPageData(); 
+      DialogUtils.showSuccess(
+        "Synced $createdCount new and $updatedCount updated items.",
+      );
+      await _fetchPageData();
     } else {
-        Get.snackbar("No Pending Changes", "Your local data is up to date.");
-        print("No pending changes to sync.");
+      DialogUtils.showInfo("Your local data is up to date.");
+      print("No pending changes to sync.");
     }
     print("Sync process completed.");
     isSyncing.value = false;
@@ -487,10 +636,10 @@ class InventoryController extends GetxController {
     String? role = await _authService.getUserRole();
 
     if (role != 'merchant' || currentUserId == null) {
-        inventoryItems.clear();
-        errorMessage.value = "Merchant not identified. Cannot refresh inventory.";
+      inventoryItems.clear();
+      errorMessage.value = "Merchant not identified. Cannot refresh inventory.";
     } else {
-        await _fetchPageData();
+      await _fetchPageData();
     }
     isLoading.value = false;
   }

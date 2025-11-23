@@ -37,7 +37,9 @@ class ShopSalesController extends GetxController {
       isLoading.value = true;
       errorMessage.value = null;
 
-      print('🔄 [SHOP SALES CONTROLLER] Fetching sales for shop: $shopId, page: $page');
+      print(
+        '🔄 [SHOP SALES CONTROLLER] Fetching sales for shop: $shopId, page: $page',
+      );
 
       final response = await _apiService.listShopSales(
         shopId,
@@ -60,10 +62,12 @@ class ShopSalesController extends GetxController {
         print('      Items count: ${sale.items.length}');
         print('      Discount: \$${sale.discountAmount}');
         print('      Payment Status: ${sale.paymentStatus}');
-        
+
         for (int j = 0; j < sale.items.length; j++) {
           final item = sale.items[j];
-          print('        Item #${j + 1}: Qty=${item.quantitySold}, SellingPrice=\$${item.sellingPriceAtSale}, OriginalPrice=\$${item.originalPriceAtSale}, Subtotal=\$${item.subtotal}');
+          print(
+            '        Item #${j + 1}: Qty=${item.quantitySold}, SellingPrice=\$${item.sellingPriceAtSale}, OriginalPrice=\$${item.originalPriceAtSale}, Subtotal=\$${item.subtotal}',
+          );
         }
       }
 

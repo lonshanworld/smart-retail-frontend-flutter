@@ -27,18 +27,55 @@ class _StaffMainScaffoldState extends State<StaffMainScaffold> {
   final AuthService _authService = Get.find<AuthService>();
 
   final List<Map<String, dynamic>> _staffNavItems = [
-    {'route': Routes.STAFF_DASHBOARD, 'label': 'Dashboard', 'icon': Icons.dashboard_outlined, 'selectedIcon': Icons.dashboard},
-    {'route': Routes.STAFF_SHOP, 'label': 'Shop', 'icon': Icons.store_outlined, 'selectedIcon': Icons.store},
-    {'route': Routes.STAFF_INVENTORY, 'label': 'Inventory', 'icon': Icons.inventory_2_outlined, 'selectedIcon': Icons.inventory_2},
-    {'route': Routes.STAFF_ITEMS, 'label': 'Items', 'icon': Icons.list_alt_outlined, 'selectedIcon': Icons.list_alt},
-    {'route': Routes.STAFF_POS, 'label': 'POS', 'icon': Icons.point_of_sale_outlined, 'selectedIcon': Icons.point_of_sale},
-    {'route': Routes.STAFF_PROFILE, 'label': 'Profile', 'icon': Icons.person_outline, 'selectedIcon': Icons.person},
-    {'route': Routes.STAFF_SETTINGS, 'label': 'Settings', 'icon': Icons.settings_outlined, 'selectedIcon': Icons.settings},
+    {
+      'route': Routes.STAFF_DASHBOARD,
+      'label': 'Dashboard',
+      'icon': Icons.dashboard_outlined,
+      'selectedIcon': Icons.dashboard,
+    },
+    {
+      'route': Routes.STAFF_SHOP,
+      'label': 'Shop',
+      'icon': Icons.store_outlined,
+      'selectedIcon': Icons.store,
+    },
+    {
+      'route': Routes.STAFF_INVENTORY,
+      'label': 'Inventory',
+      'icon': Icons.inventory_2_outlined,
+      'selectedIcon': Icons.inventory_2,
+    },
+    {
+      'route': Routes.STAFF_ITEMS,
+      'label': 'Items',
+      'icon': Icons.list_alt_outlined,
+      'selectedIcon': Icons.list_alt,
+    },
+    {
+      'route': Routes.STAFF_POS,
+      'label': 'POS',
+      'icon': Icons.point_of_sale_outlined,
+      'selectedIcon': Icons.point_of_sale,
+    },
+    {
+      'route': Routes.STAFF_PROFILE,
+      'label': 'Profile',
+      'icon': Icons.person_outline,
+      'selectedIcon': Icons.person,
+    },
+    {
+      'route': Routes.STAFF_SETTINGS,
+      'label': 'Settings',
+      'icon': Icons.settings_outlined,
+      'selectedIcon': Icons.settings,
+    },
   ];
 
   int _calculateSelectedIndex() {
     final String currentRoute = Get.currentRoute;
-    int index = _staffNavItems.indexWhere((item) => currentRoute.startsWith(item['route']!));
+    int index = _staffNavItems.indexWhere(
+      (item) => currentRoute.startsWith(item['route']!),
+    );
     return index > -1 ? index : 0;
   }
 
@@ -67,12 +104,14 @@ class _StaffMainScaffoldState extends State<StaffMainScaffold> {
       builder: (context, constraints) {
         final bool isMobile = constraints.maxWidth < webBreakpoint;
         return Scaffold(
-          appBar: isMobile ? AppBar(
-            title: Text(widget.title),
-            backgroundColor: AppColors.staff,
-            foregroundColor: Colors.white,
-            elevation: 0,
-          ) : null,
+          appBar: isMobile
+              ? AppBar(
+                  title: Text(widget.title),
+                  backgroundColor: AppColors.staff,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                )
+              : null,
           drawer: isMobile ? _buildModernDrawer() : null,
           floatingActionButton: widget.floatingActionButton,
           floatingActionButtonLocation: widget.floatingActionButtonLocation,
@@ -86,7 +125,10 @@ class _StaffMainScaffoldState extends State<StaffMainScaffold> {
                         children: [
                           // Modern app bar for desktop
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 16,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.white,
                               boxShadow: [
@@ -111,9 +153,13 @@ class _StaffMainScaffoldState extends State<StaffMainScaffold> {
                                 // User profile badge
                                 Obx(() {
                                   final User? user = _authService.user.value;
-                                  if (user == null) return const SizedBox.shrink();
+                                  if (user == null)
+                                    return const SizedBox.shrink();
                                   return Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 8,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: AppColors.staff.shade50,
                                       borderRadius: BorderRadius.circular(20),
@@ -124,8 +170,13 @@ class _StaffMainScaffoldState extends State<StaffMainScaffold> {
                                           radius: 16,
                                           backgroundColor: AppColors.staff,
                                           child: Text(
-                                            user.name.isNotEmpty ? user.name[0].toUpperCase() : 'S',
-                                            style: const TextStyle(color: Colors.white, fontSize: 14),
+                                            user.name.isNotEmpty
+                                                ? user.name[0].toUpperCase()
+                                                : 'S',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 14,
+                                            ),
                                           ),
                                         ),
                                         const SizedBox(width: 8),
@@ -170,10 +221,7 @@ class _StaffMainScaffoldState extends State<StaffMainScaffold> {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            AppColors.staff.shade700,
-            AppColors.staff.shade900,
-          ],
+          colors: [AppColors.staff.shade700, AppColors.staff.shade900],
         ),
       ),
       child: Column(
@@ -241,12 +289,19 @@ class _StaffMainScaffoldState extends State<StaffMainScaffold> {
                       onTap: () => _onDestinationSelected(index),
                       borderRadius: BorderRadius.circular(12),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
                         decoration: BoxDecoration(
-                          color: isSelected ? Colors.white.withOpacity(0.15) : Colors.transparent,
+                          color: isSelected
+                              ? Colors.white.withOpacity(0.15)
+                              : Colors.transparent,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: isSelected ? Colors.white.withOpacity(0.3) : Colors.transparent,
+                            color: isSelected
+                                ? Colors.white.withOpacity(0.3)
+                                : Colors.transparent,
                             width: 1,
                           ),
                         ),
@@ -264,7 +319,9 @@ class _StaffMainScaffoldState extends State<StaffMainScaffold> {
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 15,
-                                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                                  fontWeight: isSelected
+                                      ? FontWeight.w600
+                                      : FontWeight.w400,
                                 ),
                               ),
                             ),
@@ -298,7 +355,7 @@ class _StaffMainScaffoldState extends State<StaffMainScaffold> {
     return Obx(() {
       final User? user = _authService.user.value;
       if (user == null) return const SizedBox.shrink();
-      
+
       return Container(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -376,10 +433,7 @@ class _StaffMainScaffoldState extends State<StaffMainScaffold> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              AppColors.staff.shade700,
-              AppColors.staff.shade900,
-            ],
+            colors: [AppColors.staff.shade700, AppColors.staff.shade900],
           ),
         ),
         child: SafeArea(
@@ -433,7 +487,9 @@ class _StaffMainScaffoldState extends State<StaffMainScaffold> {
                         item['label'],
                         style: TextStyle(
                           color: Colors.white,
-                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                          fontWeight: isSelected
+                              ? FontWeight.w600
+                              : FontWeight.w400,
                         ),
                       ),
                       selected: isSelected,
@@ -441,7 +497,8 @@ class _StaffMainScaffoldState extends State<StaffMainScaffold> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      onTap: () => _onDestinationSelected(index, fromDrawer: true),
+                      onTap: () =>
+                          _onDestinationSelected(index, fromDrawer: true),
                     );
                   },
                 ),

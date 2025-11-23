@@ -8,7 +8,8 @@ class AdminMerchantDetailBinding extends Bindings {
   void dependencies() {
     Get.lazyPut<AdminMerchantDetailController>(
       () => AdminMerchantDetailController(
-        adminMerchantService: Get.find(), // Relies on AdminMerchantService being found
+        adminMerchantService:
+            Get.find(), // Relies on AdminMerchantService being found
       ),
     );
   }

@@ -68,7 +68,11 @@ class AuthService extends GetxService {
     }
   }
 
-  Future<void> _saveAuthData(String token, User userData, {Shop? shopData}) async {
+  Future<void> _saveAuthData(
+    String token,
+    User userData, {
+    Shop? shopData,
+  }) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_userKey, jsonEncode(userData.toJson()));
     await prefs.setString(_tokenKey, token);
@@ -86,7 +90,9 @@ class AuthService extends GetxService {
     userId.value = userData.id;
     shopId.value = userData.assignedShopId;
 
-    print("AuthService: Auth data SAVED. Role: ${userData.role}, Email: ${userData.email}");
+    print(
+      "AuthService: Auth data SAVED. Role: ${userData.role}, Email: ${userData.email}",
+    );
   }
 
   Future<String?> getToken() async => authToken.value;
@@ -145,20 +151,33 @@ class AuthService extends GetxService {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
       final mockShopId = dotenv.env['MOCK_SHOP_ID'] ?? '1';
-      if (shopId == mockShopId && email == dotenv.env['STAFF_EMAIL'] && password == dotenv.env['STAFF_PASSWORD']) {
-        final mockUser = User(id: 'mock_staff_id', name: 'Mock Staff', email: email, role: 'staff', assignedShopId: shopId);
-        final mockShop = Shop(id: mockShopId, name: 'Mock Central Shop', merchantId: 'mock-merchant', createdAt: DateTime.now(), updatedAt: DateTime.now());
+      if (shopId == mockShopId &&
+          email == dotenv.env['STAFF_EMAIL'] &&
+          password == dotenv.env['STAFF_PASSWORD']) {
+        final mockUser = User(
+          id: 'mock_staff_id',
+          name: 'Mock Staff',
+          email: email,
+          role: 'staff',
+          assignedShopId: shopId,
+        );
+        final mockShop = Shop(
+          id: mockShopId,
+          name: 'Mock Central Shop',
+          merchantId: 'mock-merchant',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
         await _saveAuthData('mock_staff_token', mockUser, shopData: mockShop);
         return true;
       }
       return false;
     }
 
-    final response = await _connect.post('${ApiConstants.baseUrl}/auth/shop-login', {
-      'shopId': shopId,
-      'email': email,
-      'password': password,
-    });
+    final response = await _connect.post(
+      '${ApiConstants.baseUrl}/auth/shop-login',
+      {'shopId': shopId, 'email': email, 'password': password},
+    );
 
     if (response.statusCode == 200 && response.body['accessToken'] != null) {
       final token = response.body['accessToken'];
@@ -199,7 +218,12 @@ class AuthService extends GetxService {
   ///     "user": { ...User object... }
   ///   }
   ///   ```
-  Future<bool> login(String email, String password, {String? role, String? onSuccessNavigateTo}) async {
+  Future<bool> login(
+    String email,
+    String password, {
+    String? role,
+    String? onSuccessNavigateTo,
+  }) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
       final adminEmail = dotenv.env['ADMIN_EMAIL'];
@@ -212,17 +236,36 @@ class AuthService extends GetxService {
       User? mockUser;
 
       if (role == 'admin' && email == adminEmail && password == adminPassword) {
-        mockUser = User(id: 'mock-admin-id', name: 'Mock Admin', email: email, role: 'admin');
+        mockUser = User(
+          id: 'mock-admin-id',
+          name: 'Mock Admin',
+          email: email,
+          role: 'admin',
+        );
         await _saveAuthData('mock_admin_token', mockUser);
         Get.offAllNamed(onSuccessNavigateTo ?? Routes.ADMIN_DASHBOARD);
         return true;
-      } else if ((role == null || role == 'merchant') && email == merchantEmail && password == merchantPassword) {
-        mockUser = User(id: 'mock-merchant-id', name: 'Mock Merchant', email: email, role: 'merchant');
+      } else if ((role == null || role == 'merchant') &&
+          email == merchantEmail &&
+          password == merchantPassword) {
+        mockUser = User(
+          id: 'mock-merchant-id',
+          name: 'Mock Merchant',
+          email: email,
+          role: 'merchant',
+        );
         await _saveAuthData('mock_merchant_token', mockUser);
         Get.offAllNamed(onSuccessNavigateTo ?? Routes.MERCHANT_DASHBOARD);
         return true;
-      } else if (role == 'staff' && email == staffEmail && password == staffPassword) {
-        mockUser = User(id: 'mock-staff-id', name: 'Mock Staff', email: email, role: 'staff');
+      } else if (role == 'staff' &&
+          email == staffEmail &&
+          password == staffPassword) {
+        mockUser = User(
+          id: 'mock-staff-id',
+          name: 'Mock Staff',
+          email: email,
+          role: 'staff',
+        );
         await _saveAuthData('mock_staff_token', mockUser);
         Get.offAllNamed(onSuccessNavigateTo ?? Routes.STAFF_DASHBOARD);
         return true;
@@ -233,11 +276,7 @@ class AuthService extends GetxService {
 
     errorMessage.value = '';
     final loginUrl = "${ApiConstants.baseUrl}/auth/login";
-    final payload = {
-      'email': email,
-      'password': password,
-      'userType': role,
-    };
+    final payload = {'email': email, 'password': password, 'userType': role};
 
     try {
       final response = await _connect.post(loginUrl, payload);
@@ -248,7 +287,9 @@ class AuthService extends GetxService {
         final token = responseData['accessToken'];
         final userData = responseData['user'];
         print('check response body in auth service ${response.body}');
-        if (token is String && token.isNotEmpty && userData is Map<String, dynamic>) {
+        if (token is String &&
+            token.isNotEmpty &&
+            userData is Map<String, dynamic>) {
           final loggedInUser = User.fromJson(userData);
           await _saveAuthData(token, loggedInUser);
 
@@ -264,7 +305,15 @@ class AuthService extends GetxService {
           return true;
         }
       }
-      String msg = response.body?['message'] ?? 'Login failed';
+      // Defensive parsing: response.body can be a Map (JSON) or a plain String (error HTML/text).
+      String msg;
+      if (response.body is Map && response.body['message'] != null) {
+        msg = response.body['message'].toString();
+      } else if (response.body != null) {
+        msg = response.body.toString();
+      } else {
+        msg = 'Login failed';
+      }
       errorMessage.value = '$msg (Status: ${response.statusCode})';
       return false;
     } catch (e, stackTrace) {
@@ -276,16 +325,20 @@ class AuthService extends GetxService {
 
   /// Logs in a merchant with shop verification.
   /// This method verifies that the merchant owns the specified shop during login.
-  /// 
+  ///
   /// __Parameters:__
   /// - `shopId`: The ID of the shop the merchant wants to access
   /// - `email`: Merchant's email
   /// - `password`: Merchant's password
-  /// 
+  ///
   /// __Returns:__
   /// - `true` if login is successful and merchant owns the shop
   /// - `false` if login fails or merchant doesn't own the shop
-  Future<bool> loginMerchantToShop(String shopId, String email, String password) async {
+  Future<bool> loginMerchantToShop(
+    String shopId,
+    String email,
+    String password,
+  ) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
       final merchantEmail = dotenv.env['MERCHANT_EMAIL'];
@@ -293,7 +346,12 @@ class AuthService extends GetxService {
 
       if (email == merchantEmail && password == merchantPassword) {
         // In development, assume merchant owns the shop
-        final mockUser = User(id: 'mock-merchant-id', name: 'Mock Merchant', email: email, role: 'merchant');
+        final mockUser = User(
+          id: 'mock-merchant-id',
+          name: 'Mock Merchant',
+          email: email,
+          role: 'merchant',
+        );
         await _saveAuthData('mock_merchant_token', mockUser);
         return true;
       }
@@ -318,22 +376,25 @@ class AuthService extends GetxService {
         final responseData = response.body;
         final token = responseData['accessToken'];
         final userData = responseData['user'];
-        
-        if (token is String && token.isNotEmpty && userData is Map<String, dynamic>) {
+
+        if (token is String &&
+            token.isNotEmpty &&
+            userData is Map<String, dynamic>) {
           final loggedInUser = User.fromJson(userData);
-          
+
           // Verify the user is actually a merchant
           if (loggedInUser.role != 'merchant') {
             errorMessage.value = 'User is not a merchant';
             return false;
           }
-          
+
           await _saveAuthData(token, loggedInUser);
           return true;
         }
       }
-      
-      String msg = response.body?['message'] ?? 'Login failed or shop access denied';
+
+      String msg =
+          response.body?['message'] ?? 'Login failed or shop access denied';
       errorMessage.value = '$msg (Status: ${response.statusCode})';
       return false;
     } catch (e, stackTrace) {
