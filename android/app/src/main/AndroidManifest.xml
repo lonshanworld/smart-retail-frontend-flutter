@@ -1,4 +1,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Bluetooth & location permissions required for scanning and RFCOMM printing -->
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <!-- Android 12+ runtime permissions -->
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:required="false" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" android:required="false" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" android:required="false" />
     <application
         android:label="smart_retail"
         android:name="${applicationName}"

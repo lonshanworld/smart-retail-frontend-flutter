@@ -45,5 +45,11 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- Bluetooth usage description required by iOS -->
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>This app uses Bluetooth to connect to receipt printers for printing vouchers.</string>
+	<!-- Location permission may be needed for nearby device scanning on some iOS versions -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>This app may use location to discover nearby Bluetooth devices.</string>
 </dict>
 </plist>

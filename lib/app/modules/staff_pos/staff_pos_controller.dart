@@ -193,6 +193,13 @@ class StaffPosController extends GetxController {
         actions: [
           TextButton(onPressed: () => Get.back(), child: const Text('Close')),
           TextButton(
+            onPressed: () => _printerService.downloadVoucherPdf(
+              _buildVoucherText(sale),
+              filename: 'voucher-${sale.id}.pdf',
+            ),
+            child: const Text('Download PDF'),
+          ),
+          TextButton(
             onPressed: () => _printVoucher(sale),
             child: const Text('Print Voucher'),
           ),
@@ -202,26 +209,18 @@ class StaffPosController extends GetxController {
     );
   }
 
-  void _printVoucher(Sale sale) {
+  String _buildVoucherText(Sale sale) {
     String voucherText =
-        '''
-      *** SALE VOUCHER ***
-      Sale ID: ${sale.id}
-      Date: ${sale.saleDate.toLocal().toString().substring(0, 16)}
-      --------------------------
-      Items:
-''';
+        '''Sale Voucher\nSale ID: ${sale.id}\nDate: ${sale.saleDate.toLocal().toString().substring(0, 16)}\n--------------------------\nItems:\n''';
     for (var item in sale.items) {
-      voucherText += '      - ${item.itemName} x${item.quantitySold}\n';
+      voucherText += ' - ${item.itemName} x${item.quantitySold}\n';
     }
-    voucherText +=
-        '''
-      --------------------------
-      Total: \$${sale.totalAmount.toStringAsFixed(2)}
+    voucherText += '\n--------------------------\nTotal: \$${sale.totalAmount.toStringAsFixed(2)}\n\nThank you for your purchase!';
+    return voucherText;
+  }
 
-      Thank you for your purchase!
-      ''';
-
+  void _printVoucher(Sale sale) {
+    final voucherText = _buildVoucherText(sale);
     _printerService.printVoucher(voucherText);
   }
 
