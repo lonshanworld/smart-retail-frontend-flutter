@@ -45,58 +45,58 @@ class CustomerLandingView extends StatelessWidget {
           ),
 
           // Floating Admin Button
-          Positioned(
-            top: 50,
-            right: 20,
-            child: SafeArea(
-              child: Material(
-                elevation: 8,
-                borderRadius: BorderRadius.circular(30),
-                child: InkWell(
-                  onTap: () => Get.toNamed(Routes.ADMIN_LOGIN),
-                  borderRadius: BorderRadius.circular(30),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Color(0xFF5E72E4), Color(0xFF825EE4)],
-                      ),
-                      borderRadius: BorderRadius.circular(30),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Color(0xFF5E72E4).withOpacity(0.4),
-                          blurRadius: 15,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.admin_panel_settings_rounded,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Admin Login',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
+          // Positioned(
+          //   top: 50,
+          //   right: 20,
+          //   child: SafeArea(
+          //     child: Material(
+          //       elevation: 8,
+          //       borderRadius: BorderRadius.circular(30),
+          //       child: InkWell(
+          //         onTap: () => Get.toNamed(Routes.ADMIN_LOGIN),
+          //         borderRadius: BorderRadius.circular(30),
+          //         child: Container(
+          //           padding: const EdgeInsets.symmetric(
+          //             horizontal: 20,
+          //             vertical: 12,
+          //           ),
+          //           decoration: BoxDecoration(
+          //             gradient: LinearGradient(
+          //               colors: [Color(0xFF5E72E4), Color(0xFF825EE4)],
+          //             ),
+          //             borderRadius: BorderRadius.circular(30),
+          //             boxShadow: [
+          //               BoxShadow(
+          //                 color: Color(0xFF5E72E4).withOpacity(0.4),
+          //                 blurRadius: 15,
+          //                 offset: const Offset(0, 5),
+          //               ),
+          //             ],
+          //           ),
+          //           child: Row(
+          //             mainAxisSize: MainAxisSize.min,
+          //             children: [
+          //               Icon(
+          //                 Icons.admin_panel_settings_rounded,
+          //                 color: Colors.white,
+          //                 size: 20,
+          //               ),
+          //               const SizedBox(width: 8),
+          //               Text(
+          //                 'Admin Login',
+          //                 style: TextStyle(
+          //                   color: Colors.white,
+          //                   fontSize: 14,
+          //                   fontWeight: FontWeight.w600,
+          //                 ),
+          //               ),
+          //             ],
+          //           ),
+          //         ),
+          //       ),
+          //     ),
+          //   ),
+          // ),
         ],
       ),
     );

@@ -125,6 +125,7 @@ import 'package:smart_retail/app/modules/staff_pos/staff_pos_binding.dart';
 
 import 'package:smart_retail/app/modules/admin/shops/add_edit_shop/admin_add_edit_shop_view.dart';
 import 'package:smart_retail/app/modules/admin/shops/add_edit_shop/admin_add_edit_shop_binding.dart';
+import 'package:smart_retail/app/modules/login/signup_view.dart';
 
 part 'app_routes.dart';
 
@@ -163,6 +164,11 @@ class AppPages {
       name: Routes.SHOP_LOGIN,
       page: () => const ShopLoginView(),
       binding: ShopLoginBinding(),
+    ),
+    GetPage(
+      name: Routes.MERCHANT_SIGNUP,
+      page: () => const SignupView(),
+      binding: LoginBinding(),
     ),
 
     // Merchant Routes

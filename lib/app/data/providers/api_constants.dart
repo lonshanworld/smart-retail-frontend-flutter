@@ -15,7 +15,7 @@ class ApiConstants {
   // Determine base URL based on platform and environment
   static String get baseUrl {
     // Backend routes are registered under /api/v1 on the server; include that here
-    return "$_productionBaseUrl/api/v1";
+    return "$_localHostBaseUrl/api/v1";
 
     // For production builds
     // const bool isProduction = bool.fromEnvironment('dart.vm.product');

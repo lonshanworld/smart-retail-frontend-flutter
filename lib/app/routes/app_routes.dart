@@ -38,6 +38,7 @@ abstract class Routes {
   static const MERCHANT_PROFILE = '/merchant/profile';
   static const MERCHANT_SETTINGS = '/merchant/settings';
   static const MERCHANT_PRINTER_SETTINGS = '/merchant/settings/printer';
+  static const MERCHANT_SIGNUP = '/merchant/signup';
   static const CHECKOUT_SUCCESS = '/checkout-success';
 
   // Staff Routes

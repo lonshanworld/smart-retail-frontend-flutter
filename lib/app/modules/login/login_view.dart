@@ -312,7 +312,7 @@ class LoginView extends GetView<LoginController> {
                               ),
                               TextButton(
                                 onPressed: () {
-                                  DialogUtils.showInfo('Merchant sign-up is not yet implemented.');
+                                  Get.toNamed(Routes.MERCHANT_SIGNUP);
                                 },
                                 child: Text(
                                   'Sign Up',

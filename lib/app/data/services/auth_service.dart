@@ -95,6 +95,22 @@ class AuthService extends GetxService {
     );
   }
 
+  /// Save authentication data directly from a token and user JSON payload.
+  /// Useful for signup or token-exchange flows where the backend returns an access token.
+  Future<void> saveAuthDataFromPayload(String token, Map<String, dynamic> userJson, {Map<String, dynamic>? shopJson}) async {
+    try {
+      final userData = User.fromJson(userJson);
+      Shop? shopData;
+      if (shopJson != null) {
+        shopData = Shop.fromJson(shopJson);
+      }
+      await _saveAuthData(token, userData, shopData: shopData);
+    } catch (e) {
+      print('[AuthService] Failed to save auth data from payload: $e');
+      rethrow;
+    }
+  }
+
   Future<String?> getToken() async => authToken.value;
   Future<String?> getUserId() async => userId.value;
   Future<String?> getUserRole() async => userRole.value;
