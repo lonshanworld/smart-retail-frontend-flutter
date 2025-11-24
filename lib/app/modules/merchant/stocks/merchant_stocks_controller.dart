@@ -30,8 +30,7 @@ class MerchantStocksController extends GetxController {
         inventoryItems.assignAll(response.items);
         print('[MerchantStocks] Items assigned: ${inventoryItems.length}');
       } else {
-        print('[MerchantStocks] Response was null');
-        errorMessage.value = 'Failed to load inventory items';
+        inventoryItems.assignAll([]);
       }
     } catch (e) {
       print('[MerchantStocks] Error: $e');

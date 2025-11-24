@@ -22,8 +22,8 @@ Map<String, dynamic> asMap(dynamic raw) {
     return <String, dynamic>{};
   }
   if (n is Map) {
-    print('[response_utils] asMap: normalized map keys=${(n as Map).keys.length}');
-    return Map<String, dynamic>.from(n as Map);
+    print('[response_utils] asMap: normalized map keys=${n.keys.length}');
+    return Map<String, dynamic>.from(n);
   }
   print('[response_utils] asMap: normalized is not Map (type=${n.runtimeType})');
   return <String, dynamic>{};
@@ -35,10 +35,24 @@ List<dynamic> asList(dynamic raw) {
     print('[response_utils] asList: normalized is null');
     return <dynamic>[];
   }
+  // If already a list, return it
   if (n is List) {
-    print('[response_utils] asList: normalized list length=${(n as List).length}');
-    return List<dynamic>.from(n as List);
+    print('[response_utils] asList: normalized list length=${n.length}');
+    return List<dynamic>.from(n);
   }
+
+  // If it's a Map wrapper, try common keys that hold lists
+  if (n is Map) {
+    const candidateKeys = ['data', 'items', 'results', 'rows', 'payload'];
+    for (final k in candidateKeys) {
+      if (n.containsKey(k) && n[k] is List) {
+        final list = List<dynamic>.from(n[k]);
+        print('[response_utils] asList: extracted list from Map key="$k", length=${list.length}');
+        return list;
+      }
+    }
+  }
+
   print('[response_utils] asList: normalized is not List (type=${n.runtimeType})');
   return <dynamic>[];
 }
