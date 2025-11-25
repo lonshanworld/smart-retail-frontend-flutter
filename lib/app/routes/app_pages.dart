@@ -126,6 +126,10 @@ import 'package:smart_retail/app/modules/staff_pos/staff_pos_binding.dart';
 import 'package:smart_retail/app/modules/admin/shops/add_edit_shop/admin_add_edit_shop_view.dart';
 import 'package:smart_retail/app/modules/admin/shops/add_edit_shop/admin_add_edit_shop_binding.dart';
 import 'package:smart_retail/app/modules/login/signup_view.dart';
+import 'package:smart_retail/app/modules/merchant/invoices/merchant_invoices_view.dart';
+import 'package:smart_retail/app/modules/merchant/invoices/merchant_invoices_controller.dart';
+import 'package:smart_retail/app/modules/merchant/invoices/invoice_detail_view.dart';
+import 'package:smart_retail/app/modules/merchant/invoices/invoice_detail_controller.dart';
 
 part 'app_routes.dart';
 
@@ -169,6 +173,22 @@ class AppPages {
       name: Routes.MERCHANT_SIGNUP,
       page: () => const SignupView(),
       binding: LoginBinding(),
+    ),
+    GetPage(
+      name: Routes.MERCHANT_INVOICES,
+      page: () => const MerchantInvoicesView(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut<MerchantInvoicesController>(() => MerchantInvoicesController());
+      }),
+      middlewares: [AuthMiddleware(requiredRole: UserRole.merchant)],
+    ),
+    GetPage(
+      name: Routes.MERCHANT_INVOICE_DETAIL,
+      page: () => const InvoiceDetailView(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut<InvoiceDetailController>(() => InvoiceDetailController());
+      }),
+      middlewares: [AuthMiddleware(requiredRole: UserRole.merchant)],
     ),
 
     // Merchant Routes

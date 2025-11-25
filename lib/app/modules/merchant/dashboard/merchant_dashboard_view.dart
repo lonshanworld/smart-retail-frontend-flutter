@@ -284,6 +284,16 @@ class MerchantDashboardView extends GetView<MerchantDashboardController> {
               onTap: () => Get.toNamed(Routes.MERCHANT_SHOPS),
             ),
             _buildActionCard(
+              icon: Icons.receipt_long_rounded,
+              title: 'Invoices',
+              subtitle: 'View and download invoices',
+              gradient: [
+                AppColors.primary.shade400,
+                AppColors.primary.shade600,
+              ],
+              onTap: () => Get.toNamed(Routes.MERCHANT_INVOICES),
+            ),
+            _buildActionCard(
               icon: Icons.people_alt_rounded,
               title: 'Suppliers',
               subtitle: 'Manage supplier relationships',

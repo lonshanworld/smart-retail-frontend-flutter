@@ -27,6 +27,7 @@ import 'package:smart_retail/app/data/services/shop_sales_api_service.dart';
 import 'package:smart_retail/app/data/services/shop_inventory_api_service.dart';
 import 'package:smart_retail/app/data/services/shop_items_api_service.dart';
 import 'package:smart_retail/app/data/services/shop_profile_api_service.dart';
+import 'package:smart_retail/app/data/services/invoice_api_service.dart';
 import 'package:smart_retail/app/services/theme_service.dart';
 import 'package:smart_retail/app/services/offline_bindings.dart';
 import 'package:smart_retail/app/data/services/user_api_service.dart';
@@ -102,6 +103,7 @@ Future<void> main() async {
   Get.lazyPut<ShopInventoryApiService>(() => ShopInventoryApiService());
   Get.lazyPut<ShopProfileApiService>(() => ShopProfileApiService());
   Get.lazyPut<ShopItemsApiService>(() => ShopItemsApiService());
+  Get.lazyPut<InvoiceApiService>(() => InvoiceApiService());
   Get.lazyPut<MerchantPosApiService>(() => MerchantPosApiService());
 
   // Initialize Offline-First Services
