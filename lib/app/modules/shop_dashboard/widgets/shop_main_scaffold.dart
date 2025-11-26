@@ -40,6 +40,12 @@ class _ShopMainScaffoldState extends State<ShopMainScaffold> {
       'icon': Icons.receipt_long_outlined,
       'selectedIcon': Icons.receipt_long,
     },
+      {
+        'route': Routes.SHOP_INVOICES,
+        'label': 'Invoices',
+        'icon': Icons.receipt_long_outlined,
+        'selectedIcon': Icons.receipt_long,
+      },
     {
       'route': Routes.SHOP_INVENTORY,
       'label': 'Inventory',

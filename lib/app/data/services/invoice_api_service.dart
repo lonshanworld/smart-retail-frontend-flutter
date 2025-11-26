@@ -11,7 +11,9 @@ class InvoiceApiService extends GetxService {
     return await _authService.getToken();
   }
 
-  final String _invoicesBaseUrl = "${ApiConstants.baseUrl}/merchant/invoices";
+  final String _merchantInvoicesBase = "${ApiConstants.baseUrl}/merchant/invoices";
+  final String _shopInvoicesBasePrefix = "${ApiConstants.baseUrl}/shop/shops"; // append /:shopId/invoices
+  final String _staffInvoicesBase = "${ApiConstants.baseUrl}/staff/invoices";
 
   /// Fetches a paginated list of invoices for the merchant.
   ///
@@ -56,12 +58,39 @@ class InvoiceApiService extends GetxService {
     final queryParams = {
       'page': page.toString(),
       'pageSize': pageSize.toString(),
-      if (shopId != null && shopId.isNotEmpty) 'shopId': shopId,
     };
+
+    // Determine endpoint based on user role
+    final role = await _authService.getUserRole();
+    final assignedShopId = await _authService.getShopId();
+    String endpoint;
+    if (role == 'merchant') {
+      endpoint = _merchantInvoicesBase;
+      if (shopId != null && shopId.isNotEmpty) {
+        queryParams['shopId'] = shopId;
+      }
+    } else if (role == 'staff') {
+      // Staff can use the staff-scoped endpoint which derives shop from their assigned_shop_id
+      endpoint = _staffInvoicesBase;
+    } else if (role == 'shop') {
+      // Shop-level login (could be merchant or shop role that requires shopId)
+      final sid = shopId ?? assignedShopId;
+      if (sid == null || sid.isEmpty) {
+        print('[InvoiceApiService] No shopId available for shop role when listing invoices');
+        return null;
+      }
+      endpoint = '$_shopInvoicesBasePrefix/$sid/invoices';
+    } else {
+      // fallback to merchant endpoint
+      endpoint = _merchantInvoicesBase;
+      if (shopId != null && shopId.isNotEmpty) {
+        queryParams['shopId'] = shopId;
+      }
+    }
 
     try {
       final response = await _connect.get(
-        _invoicesBaseUrl,
+        endpoint,
         headers: {'Authorization': 'Bearer $token'},
         query: queryParams,
       );
@@ -109,8 +138,27 @@ class InvoiceApiService extends GetxService {
     }
 
     try {
+      // choose endpoint based on role
+      final role = await _authService.getUserRole();
+      final assignedShopId = await _authService.getShopId();
+      String url;
+      if (role == 'merchant') {
+        url = '$_merchantInvoicesBase/$invoiceId';
+      } else if (role == 'staff') {
+        url = '$_staffInvoicesBase/$invoiceId';
+      } else if (role == 'shop') {
+        final sid = assignedShopId;
+        if (sid == null || sid.isEmpty) {
+          print('[InvoiceApiService] No shopId available for shop role when fetching invoice by ID');
+          return null;
+        }
+        url = '$_shopInvoicesBasePrefix/$sid/invoices/$invoiceId';
+      } else {
+        url = '$_merchantInvoicesBase/$invoiceId';
+      }
+
       final response = await _connect.get(
-        '$_invoicesBaseUrl/$invoiceId',
+        url,
         headers: {'Authorization': 'Bearer $token'},
       );
 
@@ -158,7 +206,7 @@ class InvoiceApiService extends GetxService {
 
     try {
       final response = await _connect.get(
-        '$_invoicesBaseUrl/sale/$saleId',
+        '$_merchantInvoicesBase/sale/$saleId',
         headers: {'Authorization': 'Bearer $token'},
       );
 

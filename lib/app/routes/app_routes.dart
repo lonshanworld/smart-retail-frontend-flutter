@@ -42,6 +42,8 @@ abstract class Routes {
   static const CHECKOUT_SUCCESS = '/checkout-success';
   static const MERCHANT_INVOICES = '/merchant/invoices';
   static const MERCHANT_INVOICE_DETAIL = '/merchant/invoices/:id';
+  static const SHOP_INVOICE_DETAIL = '/shop/invoices/:id';
+  static const STAFF_INVOICE_DETAIL = '/staff/invoices/:id';
 
   // Staff Routes
   static const STAFF_DASHBOARD = '/staff/dashboard';
@@ -54,6 +56,7 @@ abstract class Routes {
   static const STAFF_INVENTORY = '/staff/inventory'; // ADDED
   static const STAFF_ITEMS = '/staff/items'; // ADDED
   static const STAFF_POS = '/staff/pos'; // ADDED
+  static const STAFF_INVOICES = '/staff/invoices'; // ADDED
 
   // Shop Dashboard Routes
   static const SHOP_DASHBOARD = '/shop/dashboard';
@@ -62,6 +65,7 @@ abstract class Routes {
   static const SHOP_ITEMS = '/shop/items';
   static const SHOP_POS = '/shop/pos';
   static const SHOP_CUSTOMERS = '/shop/customers';
+  static const SHOP_INVOICES = '/shop/invoices';
   static const SHOP_PROFILE = '/shop/profile';
   static const SHOP_SETTINGS = '/shop/settings';
   static const SHOP_PRINTER_SETTINGS = '/shop/settings/printer';

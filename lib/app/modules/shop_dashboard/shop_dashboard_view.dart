@@ -177,6 +177,16 @@ class ShopDashboardView extends GetView<ShopDashboardController> {
               onTap: () => Get.toNamed(Routes.SHOP_INVENTORY),
             ),
             _buildActionCard(
+              icon: Icons.receipt_long_rounded,
+              title: 'Invoices',
+              subtitle: 'View shop invoices',
+              gradient: [
+                AppColors.primary.shade400,
+                AppColors.primary.shade600,
+              ],
+              onTap: () => Get.toNamed(Routes.SHOP_INVOICES),
+            ),
+            _buildActionCard(
               icon: Icons.people_rounded,
               title: 'Customers',
               subtitle: 'View customer list',

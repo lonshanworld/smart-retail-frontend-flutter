@@ -130,6 +130,12 @@ import 'package:smart_retail/app/modules/merchant/invoices/merchant_invoices_vie
 import 'package:smart_retail/app/modules/merchant/invoices/merchant_invoices_controller.dart';
 import 'package:smart_retail/app/modules/merchant/invoices/invoice_detail_view.dart';
 import 'package:smart_retail/app/modules/merchant/invoices/invoice_detail_controller.dart';
+import 'package:smart_retail/app/modules/shop/invoices/shop_invoice_detail_view.dart';
+import 'package:smart_retail/app/modules/staff/invoices/staff_invoice_detail_view.dart';
+import 'package:smart_retail/app/modules/shop/invoices/shop_invoices_view.dart';
+import 'package:smart_retail/app/modules/shop/invoices/shop_invoices_controller.dart';
+import 'package:smart_retail/app/modules/staff/invoices/staff_invoices_view.dart';
+import 'package:smart_retail/app/modules/staff/invoices/staff_invoices_controller.dart';
 
 part 'app_routes.dart';
 
@@ -435,6 +441,22 @@ class AppPages {
       binding: StaffPosBinding(),
       middlewares: [AuthMiddleware(requiredRole: UserRole.staff)],
     ),
+    GetPage(
+      name: Routes.STAFF_INVOICES,
+      page: () => const StaffInvoicesView(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut<StaffInvoicesController>(() => StaffInvoicesController());
+      }),
+      middlewares: [AuthMiddleware(requiredRole: UserRole.staff)],
+    ),
+    GetPage(
+      name: Routes.STAFF_INVOICE_DETAIL,
+      page: () => const StaffInvoiceDetailView(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut<InvoiceDetailController>(() => InvoiceDetailController());
+      }),
+      middlewares: [AuthMiddleware(requiredRole: UserRole.staff)],
+    ),
 
     // Shop Dashboard Routes
     GetPage(
@@ -506,6 +528,26 @@ class AppPages {
       name: Routes.SHOP_PRINTER_SETTINGS,
       page: () => const PrinterSettingsView(),
       binding: PrinterSettingsBinding(),
+      middlewares: [
+        AuthMiddleware(requiredRoles: [UserRole.staff, UserRole.merchant]),
+      ],
+    ),
+    GetPage(
+      name: Routes.SHOP_INVOICES,
+      page: () => const ShopInvoicesView(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut<ShopInvoicesController>(() => ShopInvoicesController());
+      }),
+      middlewares: [
+        AuthMiddleware(requiredRoles: [UserRole.staff, UserRole.merchant]),
+      ],
+    ),
+    GetPage(
+      name: Routes.SHOP_INVOICE_DETAIL,
+      page: () => const ShopInvoiceDetailView(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut<InvoiceDetailController>(() => InvoiceDetailController());
+      }),
       middlewares: [
         AuthMiddleware(requiredRoles: [UserRole.staff, UserRole.merchant]),
       ],

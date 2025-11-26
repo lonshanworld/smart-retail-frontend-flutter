@@ -58,6 +58,12 @@ class _StaffMainScaffoldState extends State<StaffMainScaffold> {
       'selectedIcon': Icons.point_of_sale,
     },
     {
+      'route': Routes.STAFF_INVOICES,
+      'label': 'Invoices',
+      'icon': Icons.receipt_long_outlined,
+      'selectedIcon': Icons.receipt_long,
+    },
+    {
       'route': Routes.STAFF_PROFILE,
       'label': 'Profile',
       'icon': Icons.person_outline,

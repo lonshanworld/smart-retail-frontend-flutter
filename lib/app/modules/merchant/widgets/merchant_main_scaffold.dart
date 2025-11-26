@@ -52,6 +52,12 @@ class _MerchantMainScaffoldState extends State<MerchantMainScaffold> {
       'selectedIcon': Icons.inventory_2,
     },
     {
+      'route': Routes.MERCHANT_INVOICES,
+      'label': 'Invoices',
+      'icon': Icons.receipt_long_outlined,
+      'selectedIcon': Icons.receipt_long,
+    },
+    {
       'route': Routes.MERCHANT_SUPPLIERS,
       'label': 'Suppliers',
       'icon': Icons.local_shipping_outlined,
