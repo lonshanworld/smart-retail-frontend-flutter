@@ -20,24 +20,24 @@ dependencies:
   flutter_dotenv: ^6.0.0
   equatable: ^2.0.7
   freezed_annotation: ^3.1.0
-  fl_chart: ^0.68.0 # Added
+  fl_chart: ^1.1.1 # Added
   flutter_stripe: ^12.0.2
   connectivity_plus: ^7.0.0
   path_provider: ^2.1.5
-  # Bluetooth ESC/POS printing (disabled for now due to dependency conflicts).
-  # esc_pos_bluetooth: ^0.4.1
-  # esc_pos_utils: ^1.1.0
-  # Use a null-safe fork if needed; add `flutter_esc_pos_utils` as an alternative.
   flutter_esc_pos_utils: ^1.0.1
   flutter_bluetooth_serial: ^0.4.0
-  permission_handler: ^10.4.0
+  permission_handler: ^12.0.1
+  flutter_reactive_ble: ^5.4.0
   printing: ^5.10.0
   pdf: ^3.10.1
+  # Bluetooth printing transport and ESC-POS utils
+  bluetooth_print:
+    path: ./third_party/bluetooth_print
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^5.0.0
+  flutter_lints: ^6.0.0
   build_runner: ^2.9.0
 
 flutter:

@@ -136,6 +136,7 @@ import 'package:smart_retail/app/modules/shop/invoices/shop_invoices_view.dart';
 import 'package:smart_retail/app/modules/shop/invoices/shop_invoices_controller.dart';
 import 'package:smart_retail/app/modules/staff/invoices/staff_invoices_view.dart';
 import 'package:smart_retail/app/modules/staff/invoices/staff_invoices_controller.dart';
+import 'package:smart_retail/app/modules/dev/printer_test_view.dart';
 
 part 'app_routes.dart';
 
@@ -383,6 +384,12 @@ class AppPages {
       page: () => const PrinterSettingsView(),
       binding: PrinterSettingsBinding(),
       middlewares: [AuthMiddleware(requiredRole: UserRole.merchant)],
+    ),
+
+    // Dev / testing routes
+    GetPage(
+      name: Routes.DEV_PRINTER_TEST,
+      page: () => const PrinterTestView(),
     ),
 
     // Staff Routes

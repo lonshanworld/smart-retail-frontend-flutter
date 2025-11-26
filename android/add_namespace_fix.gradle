@@ -1,0 +1,25 @@
+// This script helps set a namespace for Android library/application modules
+// when the module's build file doesn't specify one. It uses the project's
+// group as a fallback value.
+
+// Use projectsEvaluated to avoid calling afterEvaluate when projects are already evaluated
+gradle.projectsEvaluated {
+    subprojects.each { project ->
+        if (project.hasProperty('android')) {
+            try {
+                def androidExt = project.extensions.findByName('android')
+                if (androidExt != null) {
+                    try {
+                        if (!androidExt.hasProperty('namespace') || androidExt.namespace == null || androidExt.namespace.toString().trim() == '') {
+                            androidExt.namespace = project.group ?: 'com.example'
+                        }
+                    } catch (inner) {
+                        // ignore if android extension shape differs
+                    }
+                }
+            } catch (e) {
+                // ignore failures
+            }
+        }
+    }
+}

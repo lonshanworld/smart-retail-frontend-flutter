@@ -35,6 +35,12 @@ android {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+            // Disable code shrinking/minification temporarily to avoid R8
+            // failures during development. For production releases you
+            // should enable shrinking and add appropriate ProGuard rules
+            // (for example, to keep Stripe push provisioning classes).
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
 }

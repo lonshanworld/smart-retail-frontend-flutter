@@ -186,6 +186,16 @@ class ShopDashboardView extends GetView<ShopDashboardController> {
               ],
               onTap: () => Get.toNamed(Routes.SHOP_INVOICES),
             ),
+                _buildActionCard(
+                  icon: Icons.print_rounded,
+                  title: 'Printer Settings',
+                  subtitle: 'Configure receipt printer',
+                  gradient: [
+                    AppColors.secondary.shade400,
+                    AppColors.secondary.shade600,
+                  ],
+                  onTap: () => Get.toNamed(Routes.SHOP_PRINTER_SETTINGS),
+                ),
             _buildActionCard(
               icon: Icons.people_rounded,
               title: 'Customers',

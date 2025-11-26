@@ -57,6 +57,7 @@ abstract class Routes {
   static const STAFF_ITEMS = '/staff/items'; // ADDED
   static const STAFF_POS = '/staff/pos'; // ADDED
   static const STAFF_INVOICES = '/staff/invoices'; // ADDED
+  static const DEV_PRINTER_TEST = '/dev/printer-test';
 
   // Shop Dashboard Routes
   static const SHOP_DASHBOARD = '/shop/dashboard';

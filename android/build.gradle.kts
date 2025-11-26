@@ -19,3 +19,7 @@ subprojects {
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
 }
+
+// Apply a groovy script that assigns namespace to subprojects when missing.
+// This helps fix older plugins that don't specify `namespace` in their Gradle files.
+apply(from = "add_namespace_fix.gradle")
