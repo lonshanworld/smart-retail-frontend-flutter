@@ -144,7 +144,8 @@ class AppPages {
   // Always start with customer landing page
   static const String INITIAL = Routes.CUSTOMER_INTRO;
 
-  static final routes = [
+  // Build routes lazily to avoid running middleware constructors at import time
+  static List<GetPage> get routes => [
     GetPage(name: Routes.INTRO, page: () => const IntroView()),
     GetPage(name: Routes.ADMIN_INTRO, page: () => const AdminIntroView()),
     GetPage(
