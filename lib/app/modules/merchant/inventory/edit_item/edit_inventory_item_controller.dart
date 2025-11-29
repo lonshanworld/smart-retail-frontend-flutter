@@ -81,7 +81,7 @@ class EditInventoryItemController extends GetxController {
     }
   }
 
-  Future<void> checkAndDeleteItem() async {
+  Future<void> checkAndDeleteItem({bool skipFinalConfirm = false}) async {
     final item = itemToEdit.value;
     if (item == null || item.id == null) return;
     if (isCheckingDelete.value) return;
@@ -106,13 +106,17 @@ class EditInventoryItemController extends GetxController {
         return;
       }
 
-      final confirm = await DialogUtils.showConfirmDialog(
-        title: 'Delete Item',
-        message: 'Are you sure you want to permanently delete "${item.name}"? This action cannot be undone.',
-        confirmText: 'Delete',
-        cancelText: 'Cancel',
-        isDanger: true,
-      );
+      bool confirm = true;
+      if (!skipFinalConfirm) {
+        confirm = await DialogUtils.showConfirmDialog(
+          title: 'Delete Item',
+          message:
+              'Are you sure you want to permanently delete "${item.name}"? This action cannot be undone.',
+          confirmText: 'Delete',
+          cancelText: 'Cancel',
+          isDanger: true,
+        ) ?? false;
+      }
       if (confirm != true) return;
 
       final success = await _inventoryApiService.deleteInventoryItem(item.id!);

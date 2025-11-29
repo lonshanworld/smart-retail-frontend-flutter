@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import './edit_inventory_item_controller.dart';
+import 'package:smart_retail/app/utils/dialog_utils.dart';
 
 class EditInventoryItemView extends GetView<EditInventoryItemController> {
   const EditInventoryItemView({Key? key}) : super(key: key);
@@ -27,7 +28,21 @@ class EditInventoryItemView extends GetView<EditInventoryItemController> {
               tooltip: 'Delete Item',
               onPressed: controller.isCheckingDelete.value
                   ? null
-                  : () => controller.checkAndDeleteItem(),
+                  : () async {
+                      final item = controller.itemToEdit.value;
+                      if (item == null) return;
+                      final proceed = await DialogUtils.showConfirmDialog(
+                        title: 'Delete Item',
+                        message:
+                            'Are you sure you want to delete "${item.name}"? This will check for references and delete if allowed.',
+                        confirmText: 'Proceed',
+                        cancelText: 'Cancel',
+                        isDanger: true,
+                      );
+                      if (proceed == true) {
+                        await controller.checkAndDeleteItem(skipFinalConfirm: true);
+                      }
+                    },
             );
           }),
         ],
