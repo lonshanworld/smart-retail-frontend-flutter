@@ -11,6 +11,7 @@ import 'package:smart_retail/app/data/models/shop_model.dart';
 import 'package:smart_retail/app/data/services/bluetooth_printer_service.dart';
 import 'package:smart_retail/app/data/services/pos_api_service.dart';
 import 'package:smart_retail/app/data/services/merchant_shops_api_service.dart';
+import 'dart:convert';
 
 class PosController extends GetxController {
   final MerchantPosApiService _posApiService =
@@ -282,11 +283,20 @@ class PosController extends GetxController {
         'customerName': customerNameController.text,
     };
 
+    // Debug: log checkout payload
+    try {
+      final payloadJson = jsonEncode(saleData);
+      print('DEBUG: Merchant POS checkout payload: $payloadJson');
+    } catch (e) {
+      print('DEBUG: Failed to encode checkout payload: $e');
+    }
+
     try {
       final Sale result = await _posApiService.checkout(
         selectedShop.value!.id!,
         saleData,
       );
+      print('DEBUG: Merchant POS checkout response received: saleId=${result.id} total=${result.totalAmount}');
       _showSuccessDialog(result);
       clearCart();
       customerNameController.clear();

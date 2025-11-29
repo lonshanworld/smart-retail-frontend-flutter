@@ -22,15 +22,13 @@ class ShopSalesView extends GetView<ShopSalesController> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Obx(
-                  () => Text(
-                    'Total Sales: ${controller.totalItems.value}',
+                Text(
+                    'Sales',
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                ),
               ],
             ),
           ),
