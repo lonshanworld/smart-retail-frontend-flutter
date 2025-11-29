@@ -77,6 +77,34 @@ class SupplierManagementController extends GetxController {
     }
   }
 
+  /// Deletes a supplier after confirmation and refreshes the list.
+  Future<void> deleteSupplier(String supplierId) async {
+    final supplier = suppliers.firstWhereOrNull((s) => s.id == supplierId);
+    final confirm = await DialogUtils.showConfirmDialog(
+      title: 'Delete Supplier',
+      message: 'Are you sure you want to permanently delete "${supplier?.name ?? 'this supplier'}"? This action cannot be undone.',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      isDanger: true,
+    );
+    if (confirm != true) return;
+
+    try {
+      isLoading.value = true;
+      final success = await _apiService.deleteSupplier(supplierId);
+      if (success) {
+        suppliers.removeWhere((s) => s.id == supplierId);
+        DialogUtils.showSuccess('Supplier deleted');
+      } else {
+        DialogUtils.showError('Failed to delete supplier');
+      }
+    } catch (e) {
+      DialogUtils.showError('Error deleting supplier: ${e.toString()}');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
   @override
   void onClose() {
     nameController.dispose();

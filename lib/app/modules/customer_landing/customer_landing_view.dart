@@ -853,7 +853,7 @@ class _MultiRoleSupportSection extends StatelessWidget {
               ),
               _RoleCard(
                 icon: Icons.storefront_rounded,
-                title: 'Shop Manager',
+                title: 'Shop',
                 description: 'Shop-level control',
                 features: [
                   'Shop inventory management',

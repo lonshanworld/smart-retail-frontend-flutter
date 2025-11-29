@@ -188,6 +188,12 @@ class SupplierManagementView extends GetView<SupplierManagementController> {
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
+          DataColumn(
+            label: const Text(
+              'Actions',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
         ],
         buildCells: (supplier) {
           return [
@@ -258,6 +264,17 @@ class SupplierManagementView extends GetView<SupplierManagementController> {
                       : null,
                   color: supplier.contactEmail == null ? Colors.grey : null,
                 ),
+              ),
+            ),
+            DataCell(
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline, color: Colors.red),
+                    tooltip: 'Delete',
+                    onPressed: () => controller.deleteSupplier(supplier.id!),
+                  ),
+                ],
               ),
             ),
           ];

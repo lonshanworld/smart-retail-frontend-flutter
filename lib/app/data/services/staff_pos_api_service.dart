@@ -220,9 +220,16 @@ class StaffPosApiService extends GetxService {
       headers: await _getHeaders(),
     );
 
+    // Debug: log request and response for checkout
+    print('📤 [STAFF POS API] Request body: $saleData');
+    print('📥 [STAFF POS API] Response status: ${response.statusCode}');
+    print('📥 [STAFF POS API] Response body: ${response.bodyString}');
+
     if (response.statusCode == 201 && response.body['data'] != null) {
       return Sale.fromJson(asMap(response.body['data']));
     } else {
+      print('❌ [STAFF POS API] Checkout failed. Status: ${response.statusCode}');
+      print('❌ [STAFF POS API] Response body: ${response.bodyString}');
       throw Exception(response.body?['message'] ?? 'Checkout failed');
     }
   }

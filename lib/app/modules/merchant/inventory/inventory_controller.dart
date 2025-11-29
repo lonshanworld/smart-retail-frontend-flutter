@@ -564,6 +564,55 @@ class InventoryController extends GetxController {
   Future<void> unarchiveInventoryItem(String itemId) =>
       _toggleArchiveStatus(itemId, false);
 
+  /// Check whether the given item can be deleted and delete it if confirmed.
+  Future<void> checkAndDeleteItemFromList(InventoryItem item) async {
+    if (item.id == null || item.id!.isEmpty) return;
+    if (isSyncing.value) return;
+    isSyncing.value = true;
+    try {
+      final result = await _apiService.checkInventoryItemDeletable(item.id!);
+      if (result == null) {
+        DialogUtils.showError('Failed to check deletion status.');
+        return;
+      }
+      final bool deletable = result['deletable'] == true;
+      final Map<String, dynamic> blockers = result['blockers'] ?? {};
+      if (!deletable) {
+        final entries = blockers.entries.map((e) => '${e.key}: ${e.value}').join('\n');
+        DialogUtils.showError('Cannot delete item. References found:\n$entries');
+        return;
+      }
+
+      final confirm = await DialogUtils.showConfirmDialog(
+        title: 'Delete Item',
+        message:
+            'Are you sure you want to permanently delete "${item.name}"? This action cannot be undone.',
+        confirmText: 'Delete',
+        cancelText: 'Cancel',
+        isDanger: true,
+      );
+      if (confirm != true) return;
+
+      final success = await _apiService.deleteInventoryItem(item.id!);
+      if (success) {
+        // remove from local DB and UI
+        try {
+          await _dbService.deleteInventoryItem(item.id!);
+        } catch (e) {
+          print('Warning: failed to delete local DB record: $e');
+        }
+        inventoryItems.removeWhere((i) => i.id == item.id);
+        DialogUtils.showSuccess('Item deleted');
+      } else {
+        DialogUtils.showError('Failed to delete item');
+      }
+    } catch (e) {
+      DialogUtils.showError('Error: ${e.toString()}');
+    } finally {
+      isSyncing.value = false;
+    }
+  }
+
   Future<void> syncPendingChanges() async {
     if (isSyncing.value) return;
     isSyncing.value = true;

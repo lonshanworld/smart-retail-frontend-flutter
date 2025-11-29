@@ -18,11 +18,34 @@ class ShopAddEditView extends GetView<ShopAddEditController> {
         backgroundColor: AppColors.merchant,
         foregroundColor: Colors.white,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.save),
-            onPressed: () => controller.saveShop(),
-            tooltip: 'Save Shop',
-          ),
+          Obx(() {
+            return Row(
+              children: [
+                if (controller.isEditing.value)
+                  IconButton(
+                    icon: controller.isCheckingDelete.value
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2.0,
+                            ),
+                          )
+                        : const Icon(Icons.delete_outline),
+                    onPressed: controller.isCheckingDelete.value
+                        ? null
+                        : () => controller.checkAndDeleteShop(),
+                    tooltip: 'Delete Shop',
+                  ),
+                IconButton(
+                  icon: const Icon(Icons.save),
+                  onPressed: () => controller.saveShop(),
+                  tooltip: 'Save Shop',
+                ),
+              ],
+            );
+          }),
         ],
       ),
       body: SingleChildScrollView(

@@ -280,6 +280,27 @@ class ShopApiService extends GetxService {
     }
   }
 
+  /// Preflight check whether a shop can be safely deleted.
+  /// Returns a map like: { 'deletable': true/false, 'blockers': { 'sales': 3, ... } }
+  Future<Map<String, dynamic>?> checkShopDeletable(String shopId) async {
+    if (_appConfig.isDevelopment) {
+      await Future.delayed(const Duration(milliseconds: 200));
+      return {'deletable': true, 'blockers': {}};
+    }
+    final token = await _getAuthToken();
+    if (token == null) return null;
+    final response = await _connect.get(
+      '$_merchantShopsBaseUrl/$shopId/delete-check',
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    if (response.statusCode == 200 && response.body['status'] == 'success') {
+      return Map<String, dynamic>.from(asMap(response.body['data']));
+    } else {
+      _handleError(response, "checking deletable for shop $shopId");
+      return null;
+    }
+  }
+
   // --- Admin Shop Management ---
 
   /// Fetches a paginated list of all shops for admins.

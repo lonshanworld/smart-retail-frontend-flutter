@@ -297,4 +297,22 @@ class MerchantStaffApiService extends GetxService {
       );
     }
   }
+
+  /// Preflight check whether a staff member can be safely deleted.
+  /// Returns { 'deletable': bool, 'blockers': { 'stock_movements': 2, ... } }
+  Future<Map<String, dynamic>?> checkStaffDeletable(String staffId) async {
+    if (_appConfig.isDevelopment) {
+      await Future.delayed(const Duration(milliseconds: 200));
+      return {'deletable': true, 'blockers': {}};
+    }
+    final response = await _connect.get(
+      '$_baseUrl/$staffId/delete-check',
+      headers: await _getHeaders(),
+    );
+    if (response.isOk && response.body['status'] == 'success') {
+      return Map<String, dynamic>.from(asMap(response.body['data']));
+    } else {
+      throw Exception(response.body?['message'] ?? 'Failed to check deletable staff');
+    }
+  }
 }

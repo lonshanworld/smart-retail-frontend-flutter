@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
+import 'package:printing/printing.dart';
 import 'package:smart_retail/app/data/models/invoice_model.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -26,6 +27,9 @@ class InvoicePdfService {
               
               // Invoice details
               _buildInvoiceInfo(invoice),
+              pw.SizedBox(height: 20),
+              // Items table
+              if (invoice.items.isNotEmpty) _buildItemsTable(invoice),
               pw.SizedBox(height: 30),
               
               // Divider
@@ -47,11 +51,16 @@ class InvoicePdfService {
 
     // Save or download PDF
     if (kIsWeb) {
-      // For web, trigger download
-      await pdf.save();
-      // Use the printing package's sharing functionality
-      // or implement web download via js interop
-      return 'web-download-initiated';
+      // For web, share the PDF using the printing package (works in many browsers)
+      try {
+        final bytes = await pdf.save();
+        await Printing.sharePdf(bytes: bytes, filename: '${invoice.invoiceNumber}.pdf');
+        return 'web-shared';
+      } catch (e) {
+        // Fallback: still attempt to save bytes (some environments may not support share)
+        final bytes = await pdf.save();
+        return 'web-bytes:${bytes.length}';
+      }
     } else {
       // For mobile/desktop, save to file
       final output = await getTemporaryDirectory();
@@ -266,6 +275,37 @@ class InvoicePdfService {
             fontSize: 10,
             color: PdfColors.grey600,
           ),
+        ),
+      ],
+    );
+  }
+
+  static pw.Widget _buildItemsTable(Invoice invoice) {
+    final headers = ['Item', 'SKU', 'Qty', 'Unit', 'Total'];
+
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Text(
+          'Items',
+          style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+        ),
+        pw.SizedBox(height: 8),
+        pw.Table.fromTextArray(
+          headers: headers,
+          data: invoice.items.map((it) {
+            return [
+              it.itemName ?? '-',
+              it.itemSku ?? '-',
+              it.quantitySold.toString(),
+              '\$${it.sellingPriceAtSale.toStringAsFixed(2)}',
+              '\$${it.subtotal.toStringAsFixed(2)}',
+            ];
+          }).toList(),
+          headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+          cellAlignment: pw.Alignment.centerLeft,
+          headerDecoration: pw.BoxDecoration(color: PdfColors.grey300),
+          cellPadding: const pw.EdgeInsets.symmetric(vertical: 6, horizontal: 8),
         ),
       ],
     );

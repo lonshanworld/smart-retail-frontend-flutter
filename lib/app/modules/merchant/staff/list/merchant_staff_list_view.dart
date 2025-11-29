@@ -169,7 +169,15 @@ class MerchantStaffListView extends GetView<MerchantStaffListController> {
                   onPressed: () => controller.goToEditStaff(staff),
                   color: AppColors.merchant,
                 ),
-                // Delete button hidden due to foreign key constraints with stock_movements
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, size: 20),
+                  tooltip: 'Delete',
+                  color: Colors.redAccent,
+                  onPressed: () {
+                    // Controller handles confirmation dialog internally
+                    if (staff.id != null) controller.deleteStaff(staff.id!);
+                  },
+                ),
               ],
             ),
           ),
@@ -204,6 +212,7 @@ class MerchantStaffListView extends GetView<MerchantStaffListController> {
             onSelected: (value) {
               if (value == 'edit') controller.goToEditStaff(staff);
               if (value == 'view') controller.goToStaffDetails(staff);
+              if (value == 'delete' && staff.id != null) controller.deleteStaff(staff.id!);
             },
             itemBuilder: (context) => [
               const PopupMenuItem(
@@ -222,7 +231,14 @@ class MerchantStaffListView extends GetView<MerchantStaffListController> {
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
-              // Delete option removed due to foreign key constraints with stock_movements
+              const PopupMenuItem(
+                value: 'delete',
+                child: ListTile(
+                  leading: Icon(Icons.delete, color: Colors.redAccent),
+                  title: Text('Delete'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
             ],
           ),
           onTap: () => controller.goToStaffDetails(staff),

@@ -22,6 +22,9 @@ class StaffItemsApiService extends GetxService {
       originalPrice: 1.0,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
+      stockInfo: [
+        StockInfo(quantity: 12, shopId: '1', shopName: 'Mock Central Shop'),
+      ],
     ),
     InventoryItem(
       id: 'prod_002',
@@ -32,6 +35,9 @@ class StaffItemsApiService extends GetxService {
       originalPrice: 1.5,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
+      stockInfo: [
+        StockInfo(quantity: 7, shopId: '1', shopName: 'Mock Central Shop'),
+      ],
     ),
     InventoryItem(
       id: 'prod_101',
@@ -42,6 +48,9 @@ class StaffItemsApiService extends GetxService {
       originalPrice: 1.2,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
+      stockInfo: [
+        StockInfo(quantity: 20, shopId: '1', shopName: 'Mock Central Shop'),
+      ],
     ),
   ];
 

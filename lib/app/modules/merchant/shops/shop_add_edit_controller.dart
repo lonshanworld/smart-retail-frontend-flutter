@@ -19,6 +19,9 @@ class ShopAddEditController extends GetxController {
   var errorMessage = RxnString();
 
   Shop? _editingShop; // Store the shop being edited, if any
+  final RxBool isCheckingDelete = false.obs;
+  final RxBool isDeletable = false.obs;
+  final RxMap<String, int> deleteBlockers = <String, int>{}.obs;
 
   @override
   void onInit() {
@@ -98,6 +101,68 @@ class ShopAddEditController extends GetxController {
       DialogUtils.showError(errorMessage.value!);
     } finally {
       isSaving.value = false;
+    }
+  }
+
+  /// Performs a preflight check and attempts hard delete if safe.
+  Future<void> checkAndDeleteShop() async {
+    if (_editingShop == null || _editingShop!.id == null) return;
+    if (isCheckingDelete.value) return;
+
+    isCheckingDelete.value = true;
+    deleteBlockers.clear();
+    isDeletable.value = false;
+
+    try {
+      final result = await _shopApiService.checkShopDeletable(_editingShop!.id!);
+      if (result == null) {
+        DialogUtils.showError('Failed to check deletion status.');
+        return;
+      }
+      final bool deletable = result['deletable'] == true;
+      final Map<String, dynamic> blockers = result['blockers'] ?? {};
+      blockers.forEach((k, v) {
+        if (v is int) deleteBlockers[k] = v;
+        else if (v is String) {
+          final parsed = int.tryParse(v) ?? 0;
+          deleteBlockers[k] = parsed;
+        }
+      });
+      isDeletable.value = deletable;
+
+      if (!deletable) {
+        // Show blockers
+        final entries = deleteBlockers.entries.map((e) => '${e.key}: ${e.value}').join('\n');
+        DialogUtils.showError('Cannot delete shop. References found:\n$entries');
+        return;
+      }
+
+      // Confirm and delete
+      final confirm = await DialogUtils.showConfirmDialog(
+        title: 'Delete Shop',
+        message: 'Are you sure you want to permanently delete this shop? This action cannot be undone.',
+        confirmText: 'Delete',
+        cancelText: 'Cancel',
+        isDanger: true,
+      );
+      if (confirm != true) return;
+
+      final success = await _shopApiService.deleteShop(_editingShop!.id!);
+      if (success) {
+        // Refresh list and pop
+        if (Get.isRegistered<MerchantShopsController>()) {
+          final shopsCtrl = Get.find<MerchantShopsController>();
+          await shopsCtrl.fetchShops();
+        }
+        DialogUtils.showSuccess('Shop deleted successfully');
+        Get.back(result: true);
+      } else {
+        DialogUtils.showError('Failed to delete shop.');
+      }
+    } catch (e) {
+      DialogUtils.showError('Error: ${e.toString()}');
+    } finally {
+      isCheckingDelete.value = false;
     }
   }
 

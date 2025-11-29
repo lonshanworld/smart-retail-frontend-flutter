@@ -47,7 +47,7 @@ class _MerchantMainScaffoldState extends State<MerchantMainScaffold> {
     },
     {
       'route': Routes.MERCHANT_INVENTORY,
-      'label': 'Stocks',
+      'label': 'Mater Inventory',
       'icon': Icons.inventory_2_outlined,
       'selectedIcon': Icons.inventory_2,
     },

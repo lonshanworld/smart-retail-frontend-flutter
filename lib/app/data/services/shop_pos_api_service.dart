@@ -514,6 +514,7 @@ class ShopPosApiService extends GetxService {
     }
 
     print('📡 [SHOP POS API] Calling: $endpoint');
+    print('📤 [SHOP POS API] Request body: $requestBody');
 
     final response = await _connect.post(
       endpoint,
@@ -521,15 +522,15 @@ class ShopPosApiService extends GetxService {
       headers: await _getHeaders(),
     );
 
+    print('📥 [SHOP POS API] Response status: ${response.statusCode}');
+    print('📥 [SHOP POS API] Response body: ${response.bodyString}');
+
     if (response.statusCode == 201 && response.body['data'] != null) {
-      print(
-        '📥 [SHOP POS API] Checkout response status: ${response.statusCode}',
-      );
+      print('✅ [SHOP POS API] Checkout succeeded');
       return Sale.fromJson(asMap(response.body['data']));
     } else {
-      print(
-        '❌ [SHOP POS API] Error: ${response.body?['message']} (status: ${response.statusCode})',
-      );
+      print('❌ [SHOP POS API] Checkout failed. Status: ${response.statusCode}');
+      print('❌ [SHOP POS API] Response body: ${response.bodyString}');
       throw Exception(response.body?['message'] ?? 'Checkout failed');
     }
   }

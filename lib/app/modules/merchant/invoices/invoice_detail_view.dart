@@ -187,6 +187,48 @@ class InvoiceDetailView extends GetView<InvoiceDetailController> {
 
               const SizedBox(height: 24),
 
+              // Items Card
+              if (invoice.items.isNotEmpty) Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Items',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const Divider(height: 24),
+                      ...invoice.items.map((it) => Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 6.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(it.itemName ?? it.inventoryItemId, style: const TextStyle(fontWeight: FontWeight.w600)),
+                                  if (it.itemSku != null) Text('SKU: ${it.itemSku}', style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                                ],
+                              ),
+                            ),
+                            Text('x${it.quantitySold}', style: const TextStyle(fontWeight: FontWeight.w600)),
+                            const SizedBox(width: 12),
+                            Text('\$${it.sellingPriceAtSale.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.w600)),
+                            const SizedBox(width: 12),
+                            Text('\$${it.subtotal.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                      )).toList(),
+                    ],
+                  ),
+                ),
+              ),
+
               // Download PDF Button
               Obx(() {
                 final isGenerating = controller.isGeneratingPdf.value;

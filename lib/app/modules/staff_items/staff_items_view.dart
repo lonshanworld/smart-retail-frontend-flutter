@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:smart_retail/app/modules/staff_dashboard/widgets/staff_main_scaffold.dart';
 import 'package:smart_retail/app/modules/staff_items/staff_items_controller.dart';
+import 'package:smart_retail/app/data/services/auth_service.dart';
 import 'package:smart_retail/app/widgets/app_colors.dart';
 import 'package:smart_retail/app/widgets/responsive_data_table.dart';
 
@@ -70,6 +71,12 @@ class StaffItemsView extends GetView<StaffItemsController> {
                   ),
                   DataColumn(
                     label: Text(
+                      'Qty',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  DataColumn(
+                    label: Text(
                       'SKU',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
@@ -109,6 +116,24 @@ class StaffItemsView extends GetView<StaffItemsController> {
                       ],
                     ),
                   ),
+                    DataCell(
+                      Builder(builder: (context) {
+                        try {
+                          final auth = Get.find<AuthService>();
+                          final shopId = auth.shopId.value;
+                          int? qty;
+                          if (item.stockInfo != null && item.stockInfo!.isNotEmpty) {
+                            final match = item.stockInfo!.firstWhere(
+                                (s) => s.shopId == shopId,
+                                orElse: () => item.stockInfo!.first);
+                            qty = match.quantity;
+                          }
+                          return qty != null ? Text(qty.toString()) : const Text('-');
+                        } catch (e) {
+                          return const Text('-');
+                        }
+                      }),
+                    ),
                   DataCell(Text(item.sku ?? 'N/A')),
                   DataCell(Text(item.category ?? 'Uncategorized')),
                   DataCell(
@@ -133,6 +158,25 @@ class StaffItemsView extends GetView<StaffItemsController> {
                   title: item.name,
                   subtitle: item.sku ?? 'N/A',
                   details: [
+                    DetailRow(
+                      icon: Icons.inventory_2,
+                      label: 'Qty',
+                      value: () {
+                        try {
+                          final auth = Get.find<AuthService>();
+                          final shopId = auth.shopId.value;
+                          if (item.stockInfo != null && item.stockInfo!.isNotEmpty) {
+                            final match = item.stockInfo!.firstWhere(
+                                (s) => s.shopId == shopId,
+                                orElse: () => item.stockInfo!.first);
+                            return match.quantity.toString();
+                          }
+                          return '-';
+                        } catch (e) {
+                          return '-';
+                        }
+                      }(),
+                    ),
                     DetailRow(
                       icon: Icons.category,
                       label: 'Category',

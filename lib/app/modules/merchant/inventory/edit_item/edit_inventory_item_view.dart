@@ -8,7 +8,30 @@ class EditInventoryItemView extends GetView<EditInventoryItemController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Edit Inventory Item')),
+      appBar: AppBar(
+        title: const Text('Edit Inventory Item'),
+        actions: [
+          Obx(() {
+            if (controller.itemToEdit.value == null) return const SizedBox.shrink();
+            return IconButton(
+              icon: controller.isCheckingDelete.value
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2.0,
+                      ),
+                    )
+                  : const Icon(Icons.delete_outline),
+              tooltip: 'Delete Item',
+              onPressed: controller.isCheckingDelete.value
+                  ? null
+                  : () => controller.checkAndDeleteItem(),
+            );
+          }),
+        ],
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Form(

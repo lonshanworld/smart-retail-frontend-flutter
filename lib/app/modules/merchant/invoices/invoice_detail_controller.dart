@@ -40,6 +40,22 @@ class InvoiceDetailController extends GetxController {
       if (result != null) {
         invoice.value = result;
         print('[InvoiceDetail] Invoice loaded: ${result.invoiceNumber}');
+        print('[InvoiceDetail] Invoice items count: ${result.items.length}');
+        // Fallback: if items are empty, try fetching invoice by sale ID which may include items
+        if (result.items.isEmpty && result.saleId.isNotEmpty) {
+          try {
+            print('[InvoiceDetail] Items empty; attempting fallback fetch by saleId: ${result.saleId}');
+            final bySale = await _invoiceApiService.getInvoiceBySaleId(result.saleId);
+            if (bySale != null && bySale.items.isNotEmpty) {
+              invoice.value = bySale;
+              print('[InvoiceDetail] Fallback fetch succeeded, items count: ${bySale.items.length}');
+            } else {
+              print('[InvoiceDetail] Fallback fetch returned no items');
+            }
+          } catch (e) {
+            print('[InvoiceDetail] Fallback fetch error: $e');
+          }
+        }
       } else {
         errorMessage.value = 'Invoice not found';
       }
@@ -67,6 +83,7 @@ class InvoiceDetailController extends GetxController {
       isGeneratingPdf.value = true;
       
       final filePath = await InvoicePdfService.generateInvoicePdf(invoice.value!);
+      print('[InvoiceDetail] PDF generated at: $filePath');
       
       if (kIsWeb) {
         Get.snackbar(
@@ -84,7 +101,7 @@ class InvoiceDetailController extends GetxController {
           );
           Get.snackbar(
             'Success',
-            'PDF generated successfully',
+            'PDF generated successfully: $filePath',
             snackPosition: SnackPosition.BOTTOM,
           );
         }

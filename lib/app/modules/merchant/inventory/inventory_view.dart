@@ -266,6 +266,15 @@ class InventoryView extends GetView<InventoryController> {
                                 arguments: item,
                               ),
                             ),
+                            IconButton(
+                              icon: const Icon(
+                                Icons.delete_outline,
+                                color: Colors.redAccent,
+                                size: 20,
+                              ),
+                              tooltip: 'Delete',
+                              onPressed: () => controller.checkAndDeleteItemFromList(item),
+                            ),
                           ],
                         ),
                       ),
@@ -339,6 +348,14 @@ class InventoryView extends GetView<InventoryController> {
                               Routes.MERCHANT_INVENTORY_EDIT,
                               arguments: item,
                             ),
+                          ),
+                          IconButton(
+                            icon: const Icon(
+                              Icons.delete_outline,
+                              color: Colors.redAccent,
+                              size: 24,
+                            ),
+                            onPressed: () => controller.checkAndDeleteItemFromList(item),
                           ),
                         ],
                       ),

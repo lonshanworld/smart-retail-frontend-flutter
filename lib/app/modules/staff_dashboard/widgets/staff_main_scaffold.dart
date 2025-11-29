@@ -39,12 +39,12 @@ class _StaffMainScaffoldState extends State<StaffMainScaffold> {
       'icon': Icons.store_outlined,
       'selectedIcon': Icons.store,
     },
-    {
-      'route': Routes.STAFF_INVENTORY,
-      'label': 'Inventory',
-      'icon': Icons.inventory_2_outlined,
-      'selectedIcon': Icons.inventory_2,
-    },
+    // {
+    //   'route': Routes.STAFF_INVENTORY,
+    //   'label': 'Inventory',
+    //   'icon': Icons.inventory_2_outlined,
+    //   'selectedIcon': Icons.inventory_2,
+    // },
     {
       'route': Routes.STAFF_ITEMS,
       'label': 'Items',

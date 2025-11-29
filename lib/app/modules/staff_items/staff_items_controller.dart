@@ -33,6 +33,14 @@ class StaffItemsController extends GetxController {
       isLoading.value = true;
       errorMessage.value = '';
       final result = await _apiService.getItems();
+      // DEBUG: print stockInfo for each item in development to help diagnose missing quantities
+      for (var it in result) {
+        try {
+          print('[StaffItems] item ${it.id ?? it.name} stockInfo: ${it.stockInfo}');
+        } catch (e) {
+          print('[StaffItems] failed to print stockInfo: $e');
+        }
+      }
       items.assignAll(result);
       filteredItems.assignAll(result);
     } catch (e) {

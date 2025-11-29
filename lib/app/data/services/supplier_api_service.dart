@@ -96,4 +96,22 @@ class SupplierApiService extends GetxService {
       throw Exception(response.body?['message'] ?? 'Failed to create supplier');
     }
   }
+
+  /// Deletes a supplier by ID.
+  ///
+  /// __Request:__ DELETE `/api/v1/merchant/suppliers/{supplierId}`
+  /// Returns true on success.
+  Future<bool> deleteSupplier(String supplierId) async {
+    if (_appConfig.isDevelopment) {
+      await Future.delayed(const Duration(seconds: 1));
+      return true;
+    }
+
+    final response = await _connect.delete('$_baseUrl/$supplierId', headers: await _getHeaders());
+    if ((response.statusCode == 200 || response.statusCode == 204) && (response.body == null || response.body['status'] == 'success')) {
+      return true;
+    }
+    print('Error deleting supplier $supplierId: ${response.statusCode} - ${response.bodyString}');
+    return false;
+  }
 }

@@ -242,16 +242,16 @@ class StaffDashboardView extends GetView<StaffDashboardController> {
               ],
               onTap: () => Get.toNamed(Routes.STAFF_POS),
             ),
-            _buildActionCard(
-              icon: Icons.inventory_2_rounded,
-              title: 'Inventory',
-              subtitle: 'View stock levels',
-              gradient: [
-                AppColors.success.shade400,
-                AppColors.success.shade600,
-              ],
-              onTap: () => Get.toNamed(Routes.STAFF_INVENTORY),
-            ),
+            // _buildActionCard(
+            //   icon: Icons.inventory_2_rounded,
+            //   title: 'Inventory',
+            //   subtitle: 'View stock levels',
+            //   gradient: [
+            //     AppColors.success.shade400,
+            //     AppColors.success.shade600,
+            //   ],
+            //   onTap: () => Get.toNamed(Routes.STAFF_INVENTORY),
+            // ),
             _buildActionCard(
               icon: Icons.receipt_long_rounded,
               title: 'Invoices',

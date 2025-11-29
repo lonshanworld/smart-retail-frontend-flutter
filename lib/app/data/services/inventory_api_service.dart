@@ -754,6 +754,27 @@ class InventoryApiService extends GetxService {
     }
   }
 
+  /// Preflight check whether an inventory item can be safely deleted.
+  /// Returns { 'deletable': bool, 'blockers': { 'shop_stock': 2, ... } }
+  Future<Map<String, dynamic>?> checkInventoryItemDeletable(String itemId) async {
+    if (_appConfig.isDevelopment) {
+      await Future.delayed(const Duration(milliseconds: 200));
+      return {'deletable': true, 'blockers': {}};
+    }
+    final token = await _getAuthToken();
+    if (token == null) return null;
+    final response = await _connect.get(
+      '$_inventoryBaseUrl/$itemId/delete-check',
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    if (response.statusCode == 200 && response.body['status'] == 'success') {
+      return Map<String, dynamic>.from(asMap(response.body['data']));
+    } else {
+      print('Error checking item deletable: ${response.statusCode} - ${response.bodyString}');
+      return null;
+    }
+  }
+
   /// ADDED: New method for moving stock between shops.
   /// Moves a specified quantity of an item from one shop to another.
   ///

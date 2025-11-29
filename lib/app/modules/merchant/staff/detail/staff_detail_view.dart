@@ -19,10 +19,30 @@ class StaffDetailView extends GetView<StaffDetailController> {
         actions: [
           Obx(() {
             if (controller.staff.value == null) return const SizedBox.shrink();
-            return IconButton(
-              icon: const Icon(Icons.edit),
-              tooltip: 'Edit Staff',
-              onPressed: () => controller.goToEditStaff(),
+            return Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.edit),
+                  tooltip: 'Edit Staff',
+                  onPressed: () => controller.goToEditStaff(),
+                ),
+                IconButton(
+                  icon: controller.isCheckingDelete.value
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.0,
+                          ),
+                        )
+                      : const Icon(Icons.delete_outline),
+                  tooltip: 'Delete Staff',
+                  onPressed: controller.isCheckingDelete.value
+                      ? null
+                      : () => controller.checkAndDeleteStaff(),
+                ),
+              ],
             );
           }),
         ],

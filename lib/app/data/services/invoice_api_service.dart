@@ -163,6 +163,12 @@ class InvoiceApiService extends GetxService {
       );
 
       print('[InvoiceApiService] getInvoiceById response status: ${response.statusCode}');
+      // Debug: print response body to help diagnose missing items
+      try {
+        print('[InvoiceApiService] response body: ${response.body}');
+      } catch (e) {
+        print('[InvoiceApiService] failed to print response body: $e');
+      }
 
       if (response.statusCode == 200 && response.body != null) {
         final bodyMap = response.body as Map<String, dynamic>;

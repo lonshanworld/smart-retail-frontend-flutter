@@ -113,6 +113,26 @@ class ShopsView extends GetView<MerchantShopsController> {
                               },
                               tooltip: 'Copy Shop ID',
                             ),
+                            IconButton(
+                              icon: const Icon(Icons.delete_outline, size: 16),
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                              color: Colors.redAccent,
+                              tooltip: 'Delete Shop',
+                              onPressed: () async {
+                                final confirmed = await DialogUtils.showConfirmDialog(
+                                  title: 'Delete Shop',
+                                  message:
+                                      'Are you sure you want to permanently delete shop "${shop.name}"? This cannot be undone.',
+                                  confirmText: 'Delete',
+                                  cancelText: 'Cancel',
+                                  isDanger: true,
+                                );
+                                if (confirmed == true && shop.id != null) {
+                                  await controller.deleteShop(shop.id!);
+                                }
+                              },
+                            ),
                           ],
                         ),
                         Text(
