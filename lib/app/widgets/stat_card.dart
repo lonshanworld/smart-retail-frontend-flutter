@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smart_retail/app/widgets/app_colors.dart';
 
 /// Stats card for displaying metrics on dashboard
 class StatCard extends StatelessWidget {
@@ -11,7 +12,7 @@ class StatCard extends StatelessWidget {
   final Widget? trailing;
 
   const StatCard({
-    Key? key,
+    super.key,
     required this.title,
     required this.value,
     required this.icon,
@@ -19,7 +20,7 @@ class StatCard extends StatelessWidget {
     this.subtitle,
     this.onTap,
     this.trailing,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -29,12 +30,12 @@ class StatCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.cardBackground,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withOpacity(0.2), width: 1.5),
+          border: Border.all(color: color.withValues(alpha: 0.2), width: 1.5),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 15,
               offset: const Offset(0, 4),
             ),
@@ -49,7 +50,7 @@ class StatCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
+                    color: color.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(icon, color: color, size: 24),
@@ -63,7 +64,7 @@ class StatCard extends StatelessWidget {
               title,
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.grey.shade600,
+                color: AppColors.textSecondary,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -73,14 +74,14 @@ class StatCard extends StatelessWidget {
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
-                color: Colors.grey.shade900,
+                color: AppColors.textPrimary,
               ),
             ),
             if (subtitle != null) ...[
               const SizedBox(height: 4),
               Text(
                 subtitle!,
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                style: const TextStyle(fontSize: 12, color: AppColors.textHint),
               ),
             ],
           ],
@@ -100,14 +101,14 @@ class GradientStatCard extends StatelessWidget {
   final VoidCallback? onTap;
 
   const GradientStatCard({
-    Key? key,
+    super.key,
     required this.title,
     required this.value,
     required this.icon,
     required this.gradient,
     this.subtitle,
     this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -125,7 +126,7 @@ class GradientStatCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: gradient[0].withOpacity(0.3),
+              color: gradient[0].withValues(alpha: 0.3),
               blurRadius: 20,
               offset: const Offset(0, 8),
             ),
@@ -138,7 +139,7 @@ class GradientStatCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: Colors.white, size: 24),

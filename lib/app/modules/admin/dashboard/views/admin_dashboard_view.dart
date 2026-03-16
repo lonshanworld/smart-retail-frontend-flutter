@@ -6,7 +6,7 @@ import 'package:smart_retail/app/widgets/responsive_layout_builder.dart';
 import 'package:smart_retail/app/modules/admin/dashboard/models/admin_dashboard_summary_model.dart';
 
 class AdminDashboardView extends GetView<AdminDashboardController> {
-  const AdminDashboardView({Key? key}) : super(key: key);
+  const AdminDashboardView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -170,7 +170,7 @@ class _KpiItemData {
 class _KpiCard extends StatelessWidget {
   final _KpiItemData data;
 
-  const _KpiCard({Key? key, required this.data}) : super(key: key);
+  const _KpiCard({super.key, required this.data});
 
   @override
   Widget build(BuildContext context) {

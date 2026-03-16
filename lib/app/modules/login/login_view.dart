@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:smart_retail/app/modules/login/login_controller.dart';
 import 'package:smart_retail/app/routes/app_pages.dart';
-import 'package:smart_retail/app/utils/dialog_utils.dart';
 
 class LoginView extends GetView<LoginController> {
   final String? loginType; // 'admin', 'staff', or null (default to merchant)
@@ -90,7 +89,7 @@ class LoginView extends GetView<LoginController> {
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: color.withOpacity(0.3),
+                                color: color.withValues(alpha: 0.3),
                                 blurRadius: 20,
                                 offset: const Offset(0, 10),
                               ),
@@ -133,7 +132,7 @@ class LoginView extends GetView<LoginController> {
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.08),
+                                color: Colors.black.withValues(alpha: 0.08),
                                 blurRadius: 30,
                                 offset: const Offset(0, 10),
                               ),

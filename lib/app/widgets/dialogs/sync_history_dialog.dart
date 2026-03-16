@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:smart_retail/app/models/sync_models.dart';
 import 'package:smart_retail/app/services/sync_service.dart';
 import 'package:intl/intl.dart';
 
 class SyncHistoryDialog extends StatelessWidget {
   final SyncService syncService;
 
-  const SyncHistoryDialog({Key? key, required this.syncService})
-    : super(key: key);
+  const SyncHistoryDialog({super.key, required this.syncService});
 
   @override
   Widget build(BuildContext context) {

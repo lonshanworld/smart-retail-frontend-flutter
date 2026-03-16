@@ -4,7 +4,7 @@ import 'package:smart_retail/app/data/models/inventory_item_model.dart';
 import './stock_in_controller.dart';
 
 class StockInView extends GetView<StockInController> {
-  const StockInView({Key? key}) : super(key: key);
+  const StockInView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +41,7 @@ class StockInView extends GetView<StockInController> {
               const SizedBox(height: 24),
 
               DropdownButtonFormField<InventoryItem>(
-                value: controller.selectedItem.value,
+                initialValue: controller.selectedItem.value,
                 hint: const Text('Select an item'),
                 isExpanded: true,
                 decoration: InputDecoration(

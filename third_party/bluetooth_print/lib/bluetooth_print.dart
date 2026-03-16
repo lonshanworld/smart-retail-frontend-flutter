@@ -1,4 +1,3 @@
-library bluetooth_print;
 
 import 'dart:async';
 import 'bluetooth_print_model.dart';

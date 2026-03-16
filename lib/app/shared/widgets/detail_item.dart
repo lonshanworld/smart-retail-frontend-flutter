@@ -11,14 +11,14 @@ class DetailItem extends StatelessWidget {
   final bool isSelectable;
 
   const DetailItem({
-    Key? key,
+    super.key,
     this.icon,
     required this.label,
     required this.value,
     this.valueColor,
     this.valueMaxLines = 2,
     this.isSelectable = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

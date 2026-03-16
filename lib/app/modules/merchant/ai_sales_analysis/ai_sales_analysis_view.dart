@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:smart_retail/app/modules/merchant/ai_sales_analysis/ai_sales_analysis_controller.dart';
 import 'package:smart_retail/app/modules/merchant/widgets/merchant_main_scaffold.dart';
+import 'package:smart_retail/app/widgets/ai/ai_chart_series_card.dart';
+import 'package:smart_retail/app/widgets/ai/ai_html_response_card.dart';
 
 class AiSalesAnalysisView extends GetView<AiSalesAnalysisController> {
-  const AiSalesAnalysisView({Key? key}) : super(key: key);
+  const AiSalesAnalysisView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +20,7 @@ class AiSalesAnalysisView extends GetView<AiSalesAnalysisController> {
             const SizedBox(height: 16),
             _buildPromptInput(),
             const SizedBox(height: 24),
-            Expanded(child: _buildResponseArea()),
+            Expanded(child: _buildResponseArea(context)),
           ],
         ),
       ),
@@ -82,7 +84,7 @@ class AiSalesAnalysisView extends GetView<AiSalesAnalysisController> {
     );
   }
 
-  Widget _buildResponseArea() {
+  Widget _buildResponseArea(BuildContext context) {
     return Obx(() {
       if (controller.isLoading.value) {
         return const Center(child: CircularProgressIndicator());
@@ -101,8 +103,106 @@ class AiSalesAnalysisView extends GetView<AiSalesAnalysisController> {
         );
       }
       return SingleChildScrollView(
-        child: Text(controller.analysisResult.value),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildViewModeDropdown(),
+            const SizedBox(height: 12),
+            if (controller.viewMode.value == AiResponseViewMode.chartAndHtml)
+              AiChartSeriesCard(points: controller.chartSeries),
+            if (controller.viewMode.value != AiResponseViewMode.rawData)
+              AiHtmlResponseCard(
+                html: controller.analysisHtml.value,
+                fallbackText: controller.analysisResult.value,
+              ),
+            if (controller.viewMode.value == AiResponseViewMode.rawData)
+              _buildRawDataCard(context),
+          ],
+        ),
       );
     });
+  }
+
+  Widget _buildViewModeDropdown() {
+    return Row(
+      children: [
+        const Text(
+          'View:',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(width: 8),
+        DropdownButton<AiResponseViewMode>(
+          value: controller.viewMode.value,
+          onChanged: (value) {
+            if (value != null) {
+              controller.setViewMode(value);
+            }
+          },
+          items: const [
+            DropdownMenuItem(
+              value: AiResponseViewMode.chartAndHtml,
+              child: Text('Chart + HTML'),
+            ),
+            DropdownMenuItem(
+              value: AiResponseViewMode.htmlOnly,
+              child: Text('HTML only'),
+            ),
+            DropdownMenuItem(
+              value: AiResponseViewMode.rawData,
+              child: Text('Raw data (debug)'),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRawDataCard(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'SQL',
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 8),
+          SelectableText(
+            controller.sqlQuery.value.isEmpty
+                ? 'No SQL available.'
+                : controller.sqlQuery.value,
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontFamily: 'monospace',
+            ),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            'Raw Data',
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 8),
+          SelectableText(
+            controller.rawDataJson.value.isEmpty
+                ? '[]'
+                : controller.rawDataJson.value,
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontFamily: 'monospace',
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

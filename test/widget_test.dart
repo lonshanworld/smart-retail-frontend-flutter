@@ -13,7 +13,7 @@ import 'package:flutter_test/flutter_test.dart';
 // smoke test).
 
 class _CounterTestWidget extends StatefulWidget {
-  const _CounterTestWidget({super.key});
+  const _CounterTestWidget();
 
   @override
   State<_CounterTestWidget> createState() => _CounterTestWidgetState();

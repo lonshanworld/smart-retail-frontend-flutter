@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:smart_retail/app/utils/dialog_utils.dart';
 import 'package:smart_retail/app/core/config/app_config.dart';
@@ -100,8 +99,9 @@ class AdminUserService extends GetxService {
     };
     if (role != null && role.isNotEmpty) queryParams['role'] = role;
     if (isActive != null) queryParams['isActive'] = isActive.toString();
-    if (searchTerm != null && searchTerm.isNotEmpty)
+    if (searchTerm != null && searchTerm.isNotEmpty) {
       queryParams['q'] = searchTerm;
+    }
 
     final response = await _connect.get(
       _adminUsersBaseUrl,
@@ -144,7 +144,7 @@ class AdminUserService extends GetxService {
     }
     final headers = await _getAuthHeaders();
     if (headers == null) return null;
-    print('create user start here ${userData}');
+    print('create user start here $userData');
     final response = await _connect.post(
       _adminUsersBaseUrl,
       userData,

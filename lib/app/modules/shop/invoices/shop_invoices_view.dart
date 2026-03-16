@@ -9,7 +9,7 @@ import 'package:smart_retail/app/widgets/section_header.dart';
 import 'package:smart_retail/app/widgets/app_colors.dart';
 
 class ShopInvoicesView extends GetView<ShopInvoicesController> {
-  const ShopInvoicesView({Key? key}) : super(key: key);
+  const ShopInvoicesView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +20,7 @@ class ShopInvoicesView extends GetView<ShopInvoicesController> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [AppColors.shop.shade50.withOpacity(0.3), Colors.white],
+            colors: [AppColors.shop.shade50.withValues(alpha: 0.3), Colors.white],
           ),
         ),
         child: Obx(() {

@@ -82,6 +82,7 @@ class MerchantInvoicesController extends GetxController {
     fetchInvoices(resetPage: true);
   }
 
+  @override
   void refresh() {
     fetchInvoices(resetPage: true);
   }

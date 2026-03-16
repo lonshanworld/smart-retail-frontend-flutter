@@ -49,7 +49,7 @@ class MerchantShopInventoryView
         return FloatingActionButton.extended(
           onPressed: () => _showBulkStockInDialog(),
           icon: const Icon(Icons.add),
-          label: const Text('Add Stock'),
+          label: const Text('Add wow Stock'),
           backgroundColor: AppColors.merchant,
         );
       }),
@@ -83,7 +83,7 @@ class MerchantShopInventoryView
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
@@ -766,7 +766,7 @@ class MerchantShopInventoryView
               ),
               const SizedBox(height: 15),
               DropdownButtonFormField<String>(
-                value: movementType,
+                initialValue: movementType,
                 decoration: const InputDecoration(
                   labelText: 'Adjustment Type',
                   border: OutlineInputBorder(),
@@ -894,8 +894,14 @@ class MerchantShopInventoryView
 
   void _showBulkStockInDialog() {
     if (controller.selectedShopDetails.value == null) {
-      DialogUtils.showError('Please select a shop first');
-      return;
+      // Recover gracefully when shop list is available but selection has not been bound yet.
+      if (controller.shops.isNotEmpty) {
+        controller.onShopSelected(controller.shops.first);
+      }
+      if (controller.selectedShopDetails.value == null) {
+        DialogUtils.showError('Please select a shop first');
+        return;
+      }
     }
 
     // Fetch all merchant inventory items first
@@ -908,11 +914,17 @@ class MerchantShopInventoryView
 
     DialogUtils.showCustomDialog(
       dialog: Dialog(
-        child: Container(
-          width: 650,
-          constraints: const BoxConstraints(maxHeight: 750),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final screen = MediaQuery.of(context).size;
+            final dialogWidth = screen.width < 700 ? screen.width * 0.94 : 650.0;
+            final dialogHeight = (screen.height * 0.88).clamp(480.0, 780.0).toDouble();
+
+            return SizedBox(
+              width: dialogWidth,
+              height: dialogHeight,
+              child: Column(
+                mainAxisSize: MainAxisSize.max,
             children: [
               // Header
               Container(
@@ -1361,6 +1373,8 @@ class MerchantShopInventoryView
                           backgroundColor: AppColors.merchant,
                           foregroundColor: Colors.white,
                           disabledBackgroundColor: Colors.grey.shade300,
+                          // Avoid inherited infinite minimum width in unconstrained dialog measure passes.
+                          minimumSize: const Size(0, 44),
                           padding: const EdgeInsets.symmetric(
                             horizontal: 24,
                             vertical: 12,
@@ -1371,8 +1385,10 @@ class MerchantShopInventoryView
                   ],
                 ),
               ),
-            ],
-          ),
+                ],
+              ),
+            );
+          },
         ),
       ),
     );

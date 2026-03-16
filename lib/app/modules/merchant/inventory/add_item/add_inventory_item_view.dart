@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:smart_retail/app/data/models/inventory_item_model.dart';
 import './add_inventory_item_controller.dart';
 
 class AddInventoryItemView extends GetView<AddInventoryItemController> {
-  const AddInventoryItemView({Key? key}) : super(key: key);
+  const AddInventoryItemView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -96,12 +97,77 @@ class AddInventoryItemView extends GetView<AddInventoryItemController> {
                 ],
               ),
               const SizedBox(height: 16),
-              TextFormField(
-                controller: controller.categoryController,
-                decoration: const InputDecoration(
-                  labelText: 'Category (optional)',
-                  border: OutlineInputBorder(),
+              Obx(
+                () => DropdownButtonFormField<String>(
+                  initialValue: controller.selectedCategoryId.value,
+                  decoration: const InputDecoration(
+                    labelText: 'Category (optional)',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: controller.categories
+                      .map(
+                        (category) => DropdownMenuItem(
+                          value: category.id,
+                          child: Text(category.name),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: controller.setSelectedCategory,
                 ),
+              ),
+              const SizedBox(height: 16),
+              Obx(
+                () => DropdownButtonFormField<String>(
+                  initialValue: controller.selectedSubcategoryId.value,
+                  decoration: const InputDecoration(
+                    labelText: 'Subcategory (optional)',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: controller.filteredSubcategories
+                      .map(
+                        (subcategory) => DropdownMenuItem(
+                          value: subcategory.id,
+                          child: Text(subcategory.name),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: controller.filteredSubcategories.isEmpty
+                      ? null
+                      : controller.setSelectedSubcategory,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Autocomplete<BrandRef>(
+                optionsBuilder: (textEditingValue) {
+                  if (textEditingValue.text.isEmpty) {
+                    return controller.brands;
+                  }
+                  final query = textEditingValue.text.toLowerCase();
+                  return controller.brands.where(
+                    (brand) => brand.name.toLowerCase().contains(query),
+                  );
+                },
+                displayStringForOption: (brand) => brand.name,
+                onSelected: (brand) {
+                  controller.selectedBrandId.value = brand.id;
+                  controller.brandController.text = brand.name;
+                },
+                fieldViewBuilder:
+                    (context, textController, focusNode, onSubmitted) {
+                      textController.text = controller.brandController.text;
+                      textController.selection = TextSelection.fromPosition(
+                        TextPosition(offset: textController.text.length),
+                      );
+                      return TextFormField(
+                        controller: textController,
+                        focusNode: focusNode,
+                        decoration: const InputDecoration(
+                          labelText: 'Brand (optional)',
+                          border: OutlineInputBorder(),
+                        ),
+                        onChanged: controller.selectBrandByName,
+                      );
+                    },
               ),
               const SizedBox(height: 32),
               Obx(

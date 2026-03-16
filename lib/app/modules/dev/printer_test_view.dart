@@ -6,7 +6,7 @@ import 'package:smart_retail/app/data/services/printer_service.dart';
 import 'package:flutter/services.dart';
 
 class PrinterTestView extends StatefulWidget {
-  const PrinterTestView({Key? key}) : super(key: key);
+  const PrinterTestView({super.key});
 
   @override
   State<PrinterTestView> createState() => _PrinterTestViewState();
@@ -68,6 +68,7 @@ class _PrinterTestViewState extends State<PrinterTestView> {
     if (_transport == 'ble') {
       ok = await _printer.connectBle(d);
       if (!ok) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to connect (BLE)')));
         return;
       }
@@ -77,6 +78,7 @@ class _PrinterTestViewState extends State<PrinterTestView> {
         final char = Uuid.parse(_bleCharController.text.trim());
         printed = await _printer.blePrintTest(device: d, serviceId: service, charId: char);
       } catch (e) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invalid BLE UUIDs')));
         return;
       }
@@ -84,12 +86,14 @@ class _PrinterTestViewState extends State<PrinterTestView> {
     } else {
       ok = await _printer.connect(d);
       if (!ok) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to connect')));
         return;
       }
       printed = await _printer.printTestReceipt();
       await _printer.disconnect();
     }
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(printed ? 'Printed' : 'Print failed')));
   }
 
@@ -136,6 +140,8 @@ class _PrinterTestViewState extends State<PrinterTestView> {
                           ElevatedButton(
                             onPressed: () async {
                               final ok = await _printer.quickConnectSaved();
+                              if (!mounted) return;
+
                               ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ok ? 'Connected' : 'Connect failed')));
                             },
                             child: const Text('Quick Connect'),
@@ -146,6 +152,7 @@ class _PrinterTestViewState extends State<PrinterTestView> {
                             onPressed: () async {
                               await _printer.clearSavedSelection();
                               setState(() => _saved = null);
+                              if (!mounted) return;
                               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Cleared saved printer')));
                             },
                             child: const Text('Clear'),

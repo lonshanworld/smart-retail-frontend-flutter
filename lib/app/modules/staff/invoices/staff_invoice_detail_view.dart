@@ -5,7 +5,7 @@ import 'package:smart_retail/app/modules/merchant/invoices/invoice_detail_contro
 import 'package:smart_retail/app/modules/staff_dashboard/widgets/staff_main_scaffold.dart';
 
 class StaffInvoiceDetailView extends GetView<InvoiceDetailController> {
-  const StaffInvoiceDetailView({Key? key}) : super(key: key);
+  const StaffInvoiceDetailView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -66,7 +66,7 @@ class StaffInvoiceDetailView extends GetView<InvoiceDetailController> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  invoice!.invoiceNumber,
+                                  invoice.invoiceNumber,
                                   style: const TextStyle(
                                     fontSize: 24,
                                     fontWeight: FontWeight.bold,
@@ -180,7 +180,7 @@ class StaffInvoiceDetailView extends GetView<InvoiceDetailController> {
                             Text('\$${it.subtotal.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold)),
                           ],
                         ),
-                      )).toList(),
+                      )),
                     ],
                   ),
                 ),

@@ -10,7 +10,7 @@ import 'package:smart_retail/app/widgets/modern_card.dart';
 import 'package:smart_retail/app/widgets/responsive_data_table.dart';
 
 class ShopsAdminView extends GetView<AdminShopsController> {
-  const ShopsAdminView({Key? key}) : super(key: key);
+  const ShopsAdminView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -114,7 +114,7 @@ class ShopsAdminView extends GetView<AdminShopsController> {
                       ),
                       isDense: true,
                     ),
-                    value: controller.isActiveFilter.value,
+                    initialValue: controller.isActiveFilter.value,
                     hint: const Text("Any Status"),
                     items: const [
                       DropdownMenuItem(value: null, child: Text("Any Status")),
@@ -255,7 +255,7 @@ class ShopsAdminView extends GetView<AdminShopsController> {
               ),
               DataCell(
                 Text(
-                  shop.merchantId.substring(0, 13) + '...',
+                  '${shop.merchantId.substring(0, 13)}...',
                   style: const TextStyle(fontSize: 12),
                 ),
                 onTap: () => controller.goToShopDetailsPage(shop),
@@ -324,7 +324,7 @@ class ShopsAdminView extends GetView<AdminShopsController> {
                 ),
               ),
               title: shop.name,
-              subtitle: shop.merchantId.substring(0, 20) + '...',
+              subtitle: '${shop.merchantId.substring(0, 20)}...',
               statusColor: isActive ? AppColors.success : AppColors.error,
               statusText: isActive ? 'Active' : 'Inactive',
               details: [
@@ -416,8 +416,9 @@ class ShopsAdminView extends GetView<AdminShopsController> {
   Widget _buildPaginationControls() {
     return Obx(() {
       if (controller.totalPages.value <= 1) return const SizedBox.shrink();
-      if (controller.isLoading.value && controller.shops.isEmpty)
+      if (controller.isLoading.value && controller.shops.isEmpty) {
         return const SizedBox.shrink();
+      }
 
       return Card(
         elevation: 2,

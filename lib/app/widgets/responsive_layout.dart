@@ -7,11 +7,11 @@ class ResponsiveLayout extends StatelessWidget {
   final Widget? desktop;
 
   const ResponsiveLayout({
-    Key? key,
+    super.key,
     required this.mobile,
     this.tablet,
     this.desktop,
-  }) : super(key: key);
+  });
 
   static bool isMobile(BuildContext context) =>
       MediaQuery.of(context).size.width < 650;
@@ -48,13 +48,13 @@ class ResponsiveGrid extends StatelessWidget {
   final int desktopColumns;
 
   const ResponsiveGrid({
-    Key? key,
+    super.key,
     required this.children,
     this.spacing = 16,
     this.mobileColumns = 1,
     this.tabletColumns = 2,
     this.desktopColumns = 3,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

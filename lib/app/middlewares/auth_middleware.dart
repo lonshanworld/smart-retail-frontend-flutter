@@ -22,7 +22,7 @@ class AuthMiddleware extends GetMiddleware {
       return const RouteSettings(name: Routes.LOGIN);
     }
 
-    final UserRole? currentRole = userRoleFromString(
+    final UserRole currentRole = userRoleFromString(
       authService.userRole.value,
     );
     bool isAuthorized = false;

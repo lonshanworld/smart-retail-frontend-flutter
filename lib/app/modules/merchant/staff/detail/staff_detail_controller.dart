@@ -34,13 +34,13 @@ class StaffDetailController extends GetxController {
 
   Future<void> checkAndDeleteStaff() async {
     final s = staff.value;
-    if (s == null || s.id == null) return;
+    if (s == null) return;
     if (isCheckingDelete.value) return;
     isCheckingDelete.value = true;
     deleteBlockers.clear();
     isDeletable.value = false;
     try {
-      final result = await _staffApiService.checkStaffDeletable(s.id!);
+      final result = await _staffApiService.checkStaffDeletable(s.id);
       if (result == null) {
         DialogUtils.showError('Failed to check deletion status.');
         return;
@@ -48,8 +48,12 @@ class StaffDetailController extends GetxController {
       final bool deletable = result['deletable'] == true;
       final Map<String, dynamic> blockers = result['blockers'] ?? {};
       blockers.forEach((k, v) {
-        if (v is int) deleteBlockers[k] = v;
-        else if (v is String) deleteBlockers[k] = int.tryParse(v) ?? 0;
+        if (v is int) {
+          deleteBlockers[k] = v;
+        } else if (v is String) {
+          deleteBlockers[k] = int.tryParse(v) ?? 0;
+        }else {
+        }
       });
       isDeletable.value = deletable;
       if (!deletable) {
@@ -67,7 +71,7 @@ class StaffDetailController extends GetxController {
       );
       if (confirm != true) return;
 
-      await _staffApiService.deleteStaff(s.id!);
+      await _staffApiService.deleteStaff(s.id);
       DialogUtils.showSuccess('Staff deleted');
       Get.back(result: true);
     } catch (e) {

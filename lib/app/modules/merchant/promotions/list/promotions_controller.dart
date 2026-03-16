@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:smart_retail/app/data/models/promotion_model.dart';
 import 'package:smart_retail/app/data/services/promotion_api_service.dart';

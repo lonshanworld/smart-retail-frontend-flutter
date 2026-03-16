@@ -1,4 +1,6 @@
 import 'package:get/get.dart';
+import 'package:smart_retail/app/data/providers/api_constants.dart';
+import 'package:smart_retail/app/data/services/auth_service.dart';
 import '../models/sync_models.dart';
 import 'local_database_service.dart';
 import 'connectivity_service.dart';
@@ -8,6 +10,8 @@ class OfflineSalesService extends GetxService {
   late LocalDatabaseService _localDatabaseService;
   late ConnectivityService _connectivityService;
   late OfflineModeManager _offlineModeManager;
+  late GetConnect _connect;
+  late AuthService _authService;
 
   // Observable sales data
   final Rx<List<Map<String, dynamic>>> pendingSales = Rx([]);
@@ -23,6 +27,8 @@ class OfflineSalesService extends GetxService {
     _localDatabaseService = Get.find<LocalDatabaseService>();
     _connectivityService = Get.find<ConnectivityService>();
     _offlineModeManager = Get.find<OfflineModeManager>();
+    _connect = Get.find<GetConnect>();
+    _authService = Get.find<AuthService>();
 
     // Load pending sales on init
     _loadPendingSales();
@@ -63,21 +69,41 @@ class OfflineSalesService extends GetxService {
     try {
       print('[OfflineSales] Processing sale online...');
 
-      // Add metadata
-      saleData['timestamp'] = DateTime.now().toIso8601String();
-      saleData['status'] = 'synced';
-      saleData['syncAttempts'] = 1;
+      final token = _authService.authToken.value;
+      if (token == null || token.isEmpty) {
+        print(
+          '[OfflineSales] Missing auth token, queueing sale for offline sync',
+        );
+        return await _queueSaleOffline(saleData);
+      }
 
-      // TODO: Send to backend API
-      // var response = await _apiService.submitSale(saleData);
-      // if (response.statusCode == 200) {
-      //   print('[OfflineSales] Sale processed online successfully');
-      //   return true;
-      // }
+      final shopId = saleData['shopId']?.toString();
+      if (shopId == null || shopId.isEmpty) {
+        print(
+          '[OfflineSales] Missing shopId in sale payload, queueing offline',
+        );
+        return await _queueSaleOffline(saleData);
+      }
 
-      // For now, simulate online processing
-      print('[OfflineSales] Sale processed online successfully (mock)');
-      return true;
+      final payload = Map<String, dynamic>.from(saleData);
+      payload['timestamp'] = DateTime.now().toIso8601String();
+      payload['status'] = 'syncing';
+      payload['syncAttempts'] = (payload['syncAttempts'] as int?) ?? 1;
+
+      final response = await _connect.post(
+        '${ApiConstants.baseUrl}/merchant/pos/checkout',
+        payload,
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 201 && response.body?['data'] != null) {
+        print('[OfflineSales] Sale processed online successfully');
+        return true;
+      }
+
+      final backendMessage = response.body?['message'] ?? 'Checkout failed';
+      print('[OfflineSales] Backend rejected sale: $backendMessage');
+      return await _queueSaleOffline(saleData);
     } catch (e) {
       print('[OfflineSales] Error processing sale online: $e');
       // On error, queue for offline processing
@@ -202,7 +228,7 @@ class OfflineSalesService extends GetxService {
   /// Delete a sale
   Future<void> deleteSale(String saleId) async {
     try {
-      // TODO: Implement delete in LocalDatabaseService
+      await _localDatabaseService.deleteSale(saleId);
       await _loadPendingSales();
       print('[OfflineSales] Deleted sale $saleId');
     } catch (e) {
@@ -213,7 +239,7 @@ class OfflineSalesService extends GetxService {
   /// Clear all pending sales (use with caution!)
   Future<void> clearAllPendingSales() async {
     try {
-      // TODO: Implement clear all in LocalDatabaseService
+      await _localDatabaseService.clearAllSales();
       await _loadPendingSales();
       print('[OfflineSales] Cleared all pending sales');
     } catch (e) {

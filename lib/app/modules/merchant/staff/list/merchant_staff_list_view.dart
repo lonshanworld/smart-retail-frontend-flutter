@@ -7,7 +7,7 @@ import 'package:smart_retail/app/widgets/app_colors.dart';
 import 'package:smart_retail/app/widgets/responsive_data_table.dart';
 
 class MerchantStaffListView extends GetView<MerchantStaffListController> {
-  const MerchantStaffListView({Key? key}) : super(key: key);
+  const MerchantStaffListView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -175,7 +175,7 @@ class MerchantStaffListView extends GetView<MerchantStaffListController> {
                   color: Colors.redAccent,
                   onPressed: () {
                     // Controller handles confirmation dialog internally
-                    if (staff.id != null) controller.deleteStaff(staff.id!);
+                    controller.deleteStaff(staff.id);
                   },
                 ),
               ],
@@ -212,7 +212,7 @@ class MerchantStaffListView extends GetView<MerchantStaffListController> {
             onSelected: (value) {
               if (value == 'edit') controller.goToEditStaff(staff);
               if (value == 'view') controller.goToStaffDetails(staff);
-              if (value == 'delete' && staff.id != null) controller.deleteStaff(staff.id!);
+              if (value == 'delete') controller.deleteStaff(staff.id);
             },
             itemBuilder: (context) => [
               const PopupMenuItem(

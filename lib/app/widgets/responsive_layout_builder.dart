@@ -13,11 +13,11 @@ class ResponsiveLayoutBuilder extends StatelessWidget {
       900.0; // Adjusted from 1200 for more general use
 
   const ResponsiveLayoutBuilder({
-    Key? key,
+    super.key,
     required this.mobile,
     this.tablet,
     required this.desktop,
-  }) : super(key: key);
+  });
 
   static bool isMobile(BuildContext context) =>
       MediaQuery.of(context).size.width < _kTabletBreakpoint;

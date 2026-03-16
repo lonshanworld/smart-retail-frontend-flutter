@@ -6,7 +6,7 @@ import 'package:smart_retail/app/widgets/app_colors.dart';
 import 'package:smart_retail/app/widgets/modern_card.dart';
 
 class AdminAddEditMerchantView extends GetView<AdminAddEditMerchantController> {
-  const AdminAddEditMerchantView({Key? key}) : super(key: key);
+  const AdminAddEditMerchantView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +51,7 @@ class AdminAddEditMerchantView extends GetView<AdminAddEditMerchantController> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [AppColors.admin.shade50.withOpacity(0.3), Colors.white],
+            colors: [AppColors.admin.shade50.withValues(alpha:0.3), Colors.white],
           ),
         ),
         child: SingleChildScrollView(
@@ -68,7 +68,7 @@ class AdminAddEditMerchantView extends GetView<AdminAddEditMerchantController> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: AppColors.merchant.withOpacity(0.1),
+                          color: AppColors.merchant.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Obx(
@@ -419,8 +419,8 @@ class AdminAddEditMerchantView extends GetView<AdminAddEditMerchantController> {
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
                           color: controller.isActive.value
-                              ? Colors.green.withOpacity(0.1)
-                              : Colors.red.withOpacity(0.1),
+                              ? Colors.green.withValues(alpha: 0.1)
+                              : Colors.red.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Icon(
@@ -432,7 +432,7 @@ class AdminAddEditMerchantView extends GetView<AdminAddEditMerchantController> {
                               : Colors.red.shade700,
                         ),
                       ),
-                      activeColor: Colors.green,
+                      activeThumbColor: Colors.green,
                     ),
                   ),
                 ),
@@ -498,7 +498,7 @@ class AdminAddEditMerchantView extends GetView<AdminAddEditMerchantController> {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: AppColors.merchant.withOpacity(0.1),
+            color: AppColors.merchant.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, color: AppColors.merchant, size: 20),

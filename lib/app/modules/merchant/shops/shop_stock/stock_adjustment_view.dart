@@ -59,7 +59,7 @@ class StockAdjustmentView extends GetView<StockAdjustmentController> {
                     border: OutlineInputBorder(),
                     prefixIcon: Icon(Icons.category_outlined),
                   ),
-                  value: controller.selectedAdjustmentType.value,
+                  initialValue: controller.selectedAdjustmentType.value,
                   hint: const Text('Select reason for adjustment'),
                   isExpanded: true,
                   items: controller.adjustmentTypes.entries.map((entry) {

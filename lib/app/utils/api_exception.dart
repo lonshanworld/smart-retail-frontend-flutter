@@ -21,25 +21,23 @@ class ApiException implements Exception {
 
 /// Exception for authentication failures (e.g., 401 Unauthorized, missing token).
 class ApiAuthException extends ApiException {
-  ApiAuthException(String message, {dynamic details})
-    : super(message, statusCode: 401, details: details);
+  ApiAuthException(super.message, {super.details})
+    : super(statusCode: 401);
 }
 
 /// Exception for authorization failures (e.g., 403 Forbidden).
 class ApiForbiddenException extends ApiException {
-  ApiForbiddenException(String message, {dynamic details})
-    : super(message, statusCode: 403, details: details);
+  ApiForbiddenException(super.message, {super.details})
+    : super(statusCode: 403);
 }
 
 /// Exception for validation errors from the API (e.g., 400 Bad Request, 422 Unprocessable Entity).
 class ApiValidationException extends ApiException {
   final Map<String, dynamic>? errors; // Field-specific validation errors
 
-  ApiValidationException(String message, {this.errors, dynamic details})
+  ApiValidationException(super.message, {this.errors, super.details})
     : super(
-        message,
         statusCode: 400,
-        details: details,
       ); // Default to 400, can be 422
 
   @override
@@ -54,20 +52,19 @@ class ApiValidationException extends ApiException {
 
 /// Exception for when a resource is not found (e.g., 404 Not Found).
 class ApiNotFoundException extends ApiException {
-  ApiNotFoundException(String message, {dynamic details})
-    : super(message, statusCode: 404, details: details);
+  ApiNotFoundException(super.message, {super.details})
+    : super(statusCode: 404);
 }
 
 /// Exception for general server-side errors (e.g., 500 Internal Server Error).
 class ApiServerException extends ApiException {
-  ApiServerException(String message, {int? statusCode, dynamic details})
-    : super(message, statusCode: statusCode ?? 500, details: details);
+  ApiServerException(super.message, {int? statusCode, super.details})
+    : super(statusCode: statusCode ?? 500);
 }
 
 /// Exception for unexpected data format from the API.
 class ApiDataParsingException extends ApiException {
-  ApiDataParsingException(String message, {dynamic details})
-    : super(message, details: details);
+  ApiDataParsingException(super.message, {super.details});
 }
 
 /// Exception for network or connectivity issues.

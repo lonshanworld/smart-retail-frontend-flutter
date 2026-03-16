@@ -189,8 +189,8 @@ class PaginatedAdminMerchantsResponse {
     List<Merchant> merchantsList = [];
     if (list.isNotEmpty) {
       merchantsList = list
-          .where((item) => item is Map<String, dynamic>) // Ensure item is a map
-          .map((item) => Merchant.fromJson(item as Map<String, dynamic>))
+          .whereType<Map<String, dynamic>>() // Ensure item is a map
+          .map((item) => Merchant.fromJson(item))
           .toList();
     }
 

@@ -24,7 +24,7 @@ class MerchantDashboardView extends GetView<MerchantDashboardController> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [AppColors.primary.shade50.withOpacity(0.3), Colors.white],
+            colors: [AppColors.primary.shade50.withValues(alpha: 0.3), Colors.white],
           ),
         ),
         child: RefreshIndicator(
@@ -85,7 +85,7 @@ class MerchantDashboardView extends GetView<MerchantDashboardController> {
         const DropdownMenuItem<Shop?>(value: null, child: Text("All Shops")),
         ...controller.shopList.map((shop) {
           return DropdownMenuItem<Shop?>(value: shop, child: Text(shop.name));
-        }).toList(),
+        }),
       ];
 
       return ModernCard(
@@ -116,7 +116,7 @@ class MerchantDashboardView extends GetView<MerchantDashboardController> {
               vertical: 16.0,
             ),
           ),
-          value: controller.selectedShop.value,
+          initialValue: controller.selectedShop.value,
           items: shopItems,
           onChanged: (Shop? newValue) {
             controller.onShopSelected(newValue);
@@ -349,7 +349,7 @@ class MerchantDashboardView extends GetView<MerchantDashboardController> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, size: 32, color: Colors.white),
@@ -372,7 +372,7 @@ class MerchantDashboardView extends GetView<MerchantDashboardController> {
                   subtitle,
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                   ),
                 ),
               ],
@@ -380,7 +380,7 @@ class MerchantDashboardView extends GetView<MerchantDashboardController> {
           ),
           Icon(
             Icons.arrow_forward_ios_rounded,
-            color: Colors.white.withOpacity(0.7),
+            color: Colors.white.withValues(alpha: 0.7),
             size: 20,
           ),
         ],

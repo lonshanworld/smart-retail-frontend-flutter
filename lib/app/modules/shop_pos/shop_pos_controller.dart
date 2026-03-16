@@ -4,15 +4,19 @@ import 'package:smart_retail/app/data/models/cart_item_model.dart';
 import 'package:smart_retail/app/data/models/inventory_item_model.dart';
 import 'package:smart_retail/app/data/models/promotion_model.dart';
 import 'package:smart_retail/app/data/models/sale_model.dart';
+import 'package:smart_retail/app/data/services/auth_service.dart';
 import 'package:smart_retail/app/data/services/bluetooth_printer_service.dart';
 import 'package:smart_retail/app/data/services/shop_pos_api_service.dart';
+import 'package:smart_retail/app/modules/shared/code_scanner/code_scanner_view.dart';
 import 'package:smart_retail/app/utils/dialog_utils.dart';
+import 'package:smart_retail/app/widgets/app_colors.dart';
 import 'dart:convert';
 
 class ShopPosController extends GetxController {
   final ShopPosApiService _apiService = Get.find<ShopPosApiService>();
   final BluetoothPrinterService _printerService =
       Get.find<BluetoothPrinterService>();
+  final AuthService _authService = Get.find<AuthService>();
 
   var cartItems = <CartItem>[].obs;
   var isCheckingOut = false.obs;
@@ -48,8 +52,17 @@ class ShopPosController extends GetxController {
     return 0.0;
   }
 
+  double get effectiveTaxRatePercent =>
+      _authService.currentShop.value?.taxRate ?? 5.0;
+
+  String get taxRateLabel {
+    final rate = effectiveTaxRatePercent;
+    final isWhole = rate.truncateToDouble() == rate;
+    return isWhole ? rate.toStringAsFixed(0) : rate.toStringAsFixed(2);
+  }
+
   double get taxAmount =>
-      (cartSubtotal - discountAmount) * 0.05; // 5% tax on discounted amount
+      (cartSubtotal - discountAmount) * (effectiveTaxRatePercent / 100);
   double get cartTotal => cartSubtotal - discountAmount + taxAmount;
 
   @override
@@ -102,6 +115,16 @@ class ShopPosController extends GetxController {
     } finally {
       isSearching.value = false;
     }
+  }
+
+  Future<void> scanAndSearchProducts() async {
+    final scannedCode = await Get.to<String>(() => const CodeScannerView());
+    if (scannedCode == null || scannedCode.isEmpty) {
+      return;
+    }
+
+    searchController.text = scannedCode;
+    searchProducts();
   }
 
   void addToCart(InventoryItem product) {
@@ -173,7 +196,9 @@ class ShopPosController extends GetxController {
 
     try {
       final Sale result = await _apiService.checkout(shopId, saleData);
-      print('DEBUG: Shop POS checkout response received: saleId=${result.id} total=${result.totalAmount}');
+      print(
+        'DEBUG: Shop POS checkout response received: saleId=${result.id} total=${result.totalAmount}',
+      );
       _showSuccessDialog(result);
       clearCart();
       customerNameController.clear();
@@ -200,7 +225,7 @@ class ShopPosController extends GetxController {
               const SizedBox(height: 8),
               Text(
                 'Discount: -\$${sale.discountAmount!.toStringAsFixed(2)}',
-                style: const TextStyle(color: Colors.green),
+                style: const TextStyle(color: AppColors.success),
               ),
             ],
             Text(
@@ -234,7 +259,8 @@ class ShopPosController extends GetxController {
     for (var item in sale.items) {
       voucherText += ' - ${item.itemName} x${item.quantitySold}\n';
     }
-    voucherText += '\n--------------------------\nTotal: \$${sale.totalAmount.toStringAsFixed(2)}\n\nThank you for your purchase!';
+    voucherText +=
+        '\n--------------------------\nTotal: \$${sale.totalAmount.toStringAsFixed(2)}\n\nThank you for your purchase!';
     return voucherText;
   }
 

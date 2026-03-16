@@ -5,7 +5,7 @@ import 'package:smart_retail/app/data/models/inventory_item_model.dart';
 import 'package:smart_retail/app/data/services/database_service.dart';
 import 'package:smart_retail/app/data/services/inventory_api_service.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
-import 'package:uuid/uuid.dart' hide Uuid;
+import 'package:uuid/uuid.dart' as uuid_pkg;
 
 class InventoryController extends GetxController {
   final DatabaseService _dbService = Get.find<DatabaseService>();
@@ -20,7 +20,7 @@ class InventoryController extends GetxController {
   var currentPage = 1.obs;
   var totalPagesFromApi = 1.obs;
   final int _pageSize = 15;
-  var uuid = Uuid();
+  var uuid = uuid_pkg.Uuid();
 
   // --- Form TextEditingControllers ---
   final TextEditingController nameController = TextEditingController();
@@ -32,6 +32,37 @@ class InventoryController extends GetxController {
       TextEditingController();
   final TextEditingController categoryController = TextEditingController();
   final TextEditingController supplierNameController = TextEditingController();
+
+  final RxList<CategoryWithSubcategories> categories =
+      <CategoryWithSubcategories>[].obs;
+  final RxList<BrandRef> brands = <BrandRef>[].obs;
+  final RxnString selectedCategoryFilterId = RxnString();
+  final RxnString selectedSubcategoryFilterId = RxnString();
+  final RxnString selectedBrandFilterId = RxnString();
+
+  List<SubcategoryRef> get filteredSubcategoriesForFilter {
+    final categoryId = selectedCategoryFilterId.value;
+    if (categoryId == null) return const [];
+    return categories
+            .firstWhereOrNull((c) => c.id == categoryId)
+            ?.subcategories ??
+        const [];
+  }
+
+  List<InventoryItem> get visibleInventoryItems {
+    return inventoryItems.where((item) {
+      final categoryMatch =
+          selectedCategoryFilterId.value == null ||
+          item.categoryId == selectedCategoryFilterId.value;
+      final subcategoryMatch =
+          selectedSubcategoryFilterId.value == null ||
+          item.subcategoryId == selectedSubcategoryFilterId.value;
+      final brandMatch =
+          selectedBrandFilterId.value == null ||
+          item.brandId == selectedBrandFilterId.value;
+      return categoryMatch && subcategoryMatch && brandMatch;
+    }).toList();
+  }
 
   // Stores the ID of the item being edited, if any
   String? _editingItemId;
@@ -58,6 +89,28 @@ class InventoryController extends GetxController {
       print("Already authenticated as merchant, initializing inventory.");
       initializeInventory();
     }
+
+    _loadCatalogOptions();
+  }
+
+  Future<void> _loadCatalogOptions() async {
+    final catalog = await _apiService.getCatalogOptions();
+    if (catalog == null) return;
+    categories.assignAll(catalog.categories);
+    brands.assignAll(catalog.brands);
+  }
+
+  void setCategoryFilter(String? categoryId) {
+    selectedCategoryFilterId.value = categoryId;
+    selectedSubcategoryFilterId.value = null;
+  }
+
+  void setSubcategoryFilter(String? subcategoryId) {
+    selectedSubcategoryFilterId.value = subcategoryId;
+  }
+
+  void setBrandFilter(String? brandId) {
+    selectedBrandFilterId.value = brandId;
   }
 
   // --- Method to populate form fields for editing ---
@@ -403,22 +456,30 @@ class InventoryController extends GetxController {
     );
 
     Map<String, dynamic> changesForApi = {};
-    if (itemWithChanges.name != originalItem.name)
+    if (itemWithChanges.name != originalItem.name) {
       changesForApi['name'] = itemWithChanges.name;
-    if (itemWithChanges.description != originalItem.description)
+    }
+    if (itemWithChanges.description != originalItem.description) {
       changesForApi['description'] = itemWithChanges.description;
-    if (itemWithChanges.sku != originalItem.sku)
+    }
+    if (itemWithChanges.sku != originalItem.sku) {
       changesForApi['sku'] = itemWithChanges.sku;
-    if (itemWithChanges.sellingPrice != originalItem.sellingPrice)
+    }
+    if (itemWithChanges.sellingPrice != originalItem.sellingPrice) {
       changesForApi['sellingPrice'] = itemWithChanges.sellingPrice;
-    if (itemWithChanges.originalPrice != originalItem.originalPrice)
+    }
+    if (itemWithChanges.originalPrice != originalItem.originalPrice) {
       changesForApi['originalPrice'] = itemWithChanges.originalPrice;
-    if (itemWithChanges.lowStockThreshold != originalItem.lowStockThreshold)
+    }
+    if (itemWithChanges.lowStockThreshold != originalItem.lowStockThreshold) {
       changesForApi['lowStockThreshold'] = itemWithChanges.lowStockThreshold;
-    if (itemWithChanges.category != originalItem.category)
+    }
+    if (itemWithChanges.category != originalItem.category) {
       changesForApi['category'] = itemWithChanges.category;
-    if (itemWithChanges.supplier != originalItem.supplier)
+    }
+    if (itemWithChanges.supplier != originalItem.supplier) {
       changesForApi['supplier'] = itemWithChanges.supplier;
+    }
 
     if (changesForApi.isEmpty) {
       DialogUtils.showInfo("No changes detected to update.");
@@ -578,8 +639,12 @@ class InventoryController extends GetxController {
       final bool deletable = result['deletable'] == true;
       final Map<String, dynamic> blockers = result['blockers'] ?? {};
       if (!deletable) {
-        final entries = blockers.entries.map((e) => '${e.key}: ${e.value}').join('\n');
-        DialogUtils.showError('Cannot delete item. References found:\n$entries');
+        final entries = blockers.entries
+            .map((e) => '${e.key}: ${e.value}')
+            .join('\n');
+        DialogUtils.showError(
+          'Cannot delete item. References found:\n$entries',
+        );
         return;
       }
 

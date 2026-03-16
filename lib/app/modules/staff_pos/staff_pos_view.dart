@@ -19,7 +19,10 @@ class StaffPosView extends GetView<StaffPosController> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [AppColors.staff.shade50.withOpacity(0.3), Colors.white],
+            colors: [
+              AppColors.staff.shade50.withValues(alpha: 0.3),
+              AppColors.cardBackground,
+            ],
           ),
         ),
         child: LayoutBuilder(
@@ -78,10 +81,15 @@ class StaffPosView extends GetView<StaffPosController> {
       padding: const EdgeInsets.all(12.0),
       child: TextField(
         controller: controller.searchController,
-        decoration: const InputDecoration(
+        decoration: InputDecoration(
           hintText: 'Search products...',
-          prefixIcon: Icon(Icons.search),
-          border: OutlineInputBorder(
+          prefixIcon: const Icon(Icons.search),
+          suffixIcon: IconButton(
+            tooltip: 'Scan Barcode / QR',
+            onPressed: controller.scanAndSearchProducts,
+            icon: const Icon(Icons.qr_code_scanner),
+          ),
+          border: const OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(25.0)),
           ),
         ),
@@ -118,11 +126,11 @@ class StaffPosView extends GetView<StaffPosController> {
                 children: [
                   Expanded(
                     child: Container(
-                      color: Colors.grey[200],
-                      child: const Icon(
+                      color: AppColors.backgroundGrey,
+                      child: Icon(
                         Icons.image_outlined,
                         size: 50,
-                        color: Colors.grey,
+                        color: Get.theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ),
@@ -210,10 +218,13 @@ class StaffPosView extends GetView<StaffPosController> {
           const SizedBox(height: 8),
           TextButton.icon(
             onPressed: controller.clearCart,
-            icon: const Icon(Icons.delete_sweep_outlined, color: Colors.red),
+            icon: const Icon(
+              Icons.delete_sweep_outlined,
+              color: AppColors.error,
+            ),
             label: const Text(
               'Clear Cart',
-              style: TextStyle(color: Colors.red),
+              style: TextStyle(color: AppColors.error),
             ),
           ),
         ],
@@ -273,11 +284,15 @@ class StaffPosView extends GetView<StaffPosController> {
               children: [
                 Text(
                   'Discount',
-                  style: Get.textTheme.bodyLarge?.copyWith(color: Colors.green),
+                  style: Get.textTheme.bodyLarge?.copyWith(
+                    color: AppColors.success,
+                  ),
                 ),
                 Text(
                   '-${currencyFormatter.format(controller.discountAmount)}',
-                  style: Get.textTheme.bodyLarge?.copyWith(color: Colors.green),
+                  style: Get.textTheme.bodyLarge?.copyWith(
+                    color: AppColors.success,
+                  ),
                 ),
               ],
             ),
@@ -285,7 +300,10 @@ class StaffPosView extends GetView<StaffPosController> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Tax (5%)', style: Get.textTheme.bodyLarge),
+              Text(
+                'Tax (${controller.taxRateLabel}%)',
+                style: Get.textTheme.bodyLarge,
+              ),
               Text(
                 currencyFormatter.format(controller.taxAmount),
                 style: Get.textTheme.bodyLarge,
@@ -329,7 +347,7 @@ class StaffPosView extends GetView<StaffPosController> {
           Text('Promotion', style: Get.textTheme.titleSmall),
           const SizedBox(height: 8),
           DropdownButtonFormField<Promotion?>(
-            value: controller.selectedPromotion.value,
+            initialValue: controller.selectedPromotion.value,
             decoration: const InputDecoration(
               border: OutlineInputBorder(),
               contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -353,7 +371,9 @@ class StaffPosView extends GetView<StaffPosController> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Get.theme.colorScheme.primaryContainer.withOpacity(0.3),
+                color: Get.theme.colorScheme.primaryContainer.withValues(
+                  alpha: 0.4,
+                ),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Column(
@@ -373,7 +393,7 @@ class StaffPosView extends GetView<StaffPosController> {
                     Text(
                       'Need \$${(controller.selectedPromotion.value!.minSpend - controller.cartSubtotal).toStringAsFixed(2)} more to apply',
                       style: const TextStyle(
-                        color: Colors.orange,
+                        color: AppColors.warning,
                         fontSize: 12,
                       ),
                     ),

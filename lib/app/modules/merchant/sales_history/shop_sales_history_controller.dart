@@ -57,8 +57,9 @@ class ShopSalesHistoryController extends GetxController {
         }
       } else {
         errorMessage.value = "Failed to fetch sales history.";
-        if (initialLoad)
+        if (initialLoad) {
           sales.clear(); // Ensure list is empty on error during initial load
+        }
       }
     } catch (e) {
       print("Error fetching sales history for shop $shopId: $e");

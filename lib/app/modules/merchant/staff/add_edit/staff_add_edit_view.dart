@@ -6,7 +6,7 @@ import 'package:smart_retail/app/widgets/app_colors.dart';
 import 'package:smart_retail/app/widgets/modern_card.dart';
 
 class StaffAddEditView extends GetView<StaffAddEditController> {
-  const StaffAddEditView({Key? key}) : super(key: key);
+  const StaffAddEditView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -309,7 +309,7 @@ class StaffAddEditView extends GetView<StaffAddEditController> {
                                 value: controller.isActive.value,
                                 onChanged: (value) =>
                                     controller.isActive.value = value,
-                                activeColor: AppColors.success,
+                                activeThumbColor: AppColors.success,
                               ),
                             ),
                           ],
@@ -456,7 +456,7 @@ class StaffAddEditView extends GetView<StaffAddEditController> {
         );
       }
       return DropdownButtonFormField<String>(
-        value: controller.selectedShopId.value,
+        initialValue: controller.selectedShopId.value,
         hint: const Text('Select a shop (Optional)'),
         items: [
           const DropdownMenuItem<String>(
@@ -474,7 +474,7 @@ class StaffAddEditView extends GetView<StaffAddEditController> {
                 ],
               ),
             );
-          }).toList(),
+          }),
         ],
         onChanged: (String? newValue) {
           controller.selectedShopId.value = newValue;

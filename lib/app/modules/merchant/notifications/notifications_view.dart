@@ -59,7 +59,7 @@ class NotificationsView extends GetView<NotificationsController> {
     final icon = _getIconForType(notification.type);
 
     return Material(
-      color: isRead ? Colors.transparent : Colors.teal.withOpacity(0.05),
+      color: isRead ? Colors.transparent : Colors.teal.withValues(alpha: 0.05),
       child: InkWell(
         onTap: () => controller.markAsRead(notification),
         child: Padding(
@@ -121,3 +121,4 @@ class NotificationsView extends GetView<NotificationsController> {
     }
   }
 }
+

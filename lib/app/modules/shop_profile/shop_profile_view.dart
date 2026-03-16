@@ -6,7 +6,7 @@ import 'package:smart_retail/app/modules/shop_dashboard/widgets/shop_main_scaffo
 import 'package:smart_retail/app/modules/shop_profile/shop_profile_controller.dart';
 
 class ShopProfileView extends GetView<ShopProfileController> {
-  const ShopProfileView({Key? key}) : super(key: key);
+  const ShopProfileView({super.key});
 
   @override
   Widget build(BuildContext context) {

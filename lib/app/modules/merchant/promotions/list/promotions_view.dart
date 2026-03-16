@@ -2,15 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:smart_retail/app/modules/merchant/widgets/merchant_main_scaffold.dart';
-import 'package:smart_retail/app/routes/app_pages.dart';
-import 'package:smart_retail/app/widgets/app_colors.dart';
-import 'package:smart_retail/app/widgets/responsive_data_table.dart';
-import 'package:smart_retail/app/widgets/modern_card.dart';
+
 import 'promotions_controller.dart';
 import 'package:smart_retail/app/utils/dialog_utils.dart';
 
 class PromotionsView extends GetView<PromotionsController> {
-  const PromotionsView({Key? key}) : super(key: key);
+  const PromotionsView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -142,7 +139,7 @@ class PromotionsView extends GetView<PromotionsController> {
                               value: promotion.isActive,
                               onChanged: (value) =>
                                   controller.togglePromotionStatus(promotion),
-                              activeColor: Colors.green,
+                              activeThumbColor: Colors.green,
                             ),
                             Text(
                               promotion.isActive ? 'Active' : 'Inactive',
@@ -173,8 +170,8 @@ class PromotionsView extends GetView<PromotionsController> {
       }),
       floatingActionButton: FloatingActionButton(
         onPressed: () => controller.goToAddPromotion(),
-        child: const Icon(Icons.add),
         tooltip: 'Add Promotion',
+        child: const Icon(Icons.add),
       ),
     );
   }

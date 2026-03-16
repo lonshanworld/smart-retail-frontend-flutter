@@ -6,7 +6,7 @@ import 'package:smart_retail/app/modules/shop_settings/shop_settings_controller.
 import 'package:smart_retail/app/widgets/cards/data_sync_card.dart';
 
 class ShopSettingsView extends GetView<ShopSettingsController> {
-  const ShopSettingsView({Key? key}) : super(key: key);
+  const ShopSettingsView({super.key});
 
   @override
   Widget build(BuildContext context) {

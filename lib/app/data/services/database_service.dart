@@ -1,11 +1,10 @@
-import 'package:get/get_state_manager/src/rx_flutter/rx_disposable.dart';
+import 'package:get/get.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import '../models/inventory_item_model.dart';
 import '../models/shop_model.dart';
-import '../models/shop_stock_model.dart'; // For type hints, though we might store simpler structure in DB
-import 'dart:math';
+import 'package:uuid/uuid.dart';
 
 class DatabaseService extends GetxService {
   static const String _dbName = kIsWeb
@@ -442,22 +441,4 @@ class DatabaseService extends GetxService {
     }
   }
 
-  // A simple UUID generator placeholder. Consider using the 'uuid' package.
-  // Ensure you import 'dart:math' if you keep this.
-  // static final _random = Random(); // Make it static if Uuid methods are static or Uuid is a singleton
-}
-
-// Basic Uuid class for generating IDs locally for new DB entries if needed.
-// In a real app, use a proper UUID package e.g., 'uuid'
-class Uuid {
-  final _random = new Random();
-  String v4() {
-    // Basic pseudo-UUID - replace with a proper package like 'uuid' for production
-    return '${_random.nextInt(0xFFFFFFFF).toRadixString(16).padLeft(8, '0')}-'
-        '${_random.nextInt(0xFFFF).toRadixString(16).padLeft(4, '0')}-'
-        '4${_random.nextInt(0xFFF).toRadixString(16).padLeft(3, '0')}-'
-        // ignore: lines_longer_than_80_chars
-        '${(_random.nextInt(0x3FFF) | 0x8000).toRadixString(16).padLeft(4, '0')}-'
-        '${_random.nextInt(0xFFFFFFFFFFFF).toRadixString(16).padLeft(12, '0')}';
-  }
 }

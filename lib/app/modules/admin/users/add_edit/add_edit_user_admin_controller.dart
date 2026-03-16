@@ -73,8 +73,9 @@ class AddEditUserAdminController extends GetxController {
 
   // Fetches the list of merchants from the API service to populate the dropdown.
   Future<void> fetchMerchantsForSelection() async {
-    if (isFetchingMerchants.value)
+    if (isFetchingMerchants.value) {
       return; // Prevent multiple simultaneous calls
+    }
     isFetchingMerchants.value = true;
     try {
       final merchants = await _adminUserService

@@ -1,106 +1,134 @@
 @echo off
+setlocal EnableDelayedExpansion
+
 REM Smart Retail Portal Builder for Windows
-REM Usage: build-portal.bat [admin|customer] [web|apk|ios]
+REM Usage: build-portal.bat [public|admin|merchant|staff|shop|customer] [platform ...]
+REM Platforms: web apk appbundle windows linux macos ios all
 
-set PORTAL_TYPE=%1
-set BUILD_TYPE=%2
+set PORTAL=%~1
+if "%PORTAL%"=="" goto usage
 
-if "%PORTAL_TYPE%"=="" goto usage
-if "%BUILD_TYPE%"=="" goto usage
+if /I "%PORTAL%"=="customer" set PORTAL=public
 
-if not "%PORTAL_TYPE%"=="admin" if not "%PORTAL_TYPE%"=="customer" (
-    echo Error: Portal type must be 'admin' or 'customer'
-    exit /b 1
+set VALID_PORTAL=
+if /I "%PORTAL%"=="public" set VALID_PORTAL=1
+if /I "%PORTAL%"=="admin" set VALID_PORTAL=1
+if /I "%PORTAL%"=="merchant" set VALID_PORTAL=1
+if /I "%PORTAL%"=="staff" set VALID_PORTAL=1
+if /I "%PORTAL%"=="shop" set VALID_PORTAL=1
+if not defined VALID_PORTAL (
+    echo Error: Invalid portal '%PORTAL%'.
+    goto usage
 )
 
-if not "%BUILD_TYPE%"=="web" if not "%BUILD_TYPE%"=="apk" if not "%BUILD_TYPE%"=="ios" (
-    echo Error: Build type must be 'web', 'apk', or 'ios'
+for /f "tokens=1*" %%A in ("%*") do set PLATFORMS=%%B
+if "%PLATFORMS%"=="" set PLATFORMS=web
+if /I "%PLATFORMS%"=="all" set PLATFORMS=web apk appbundle windows
+
+set ENV_FILE=.env.%PORTAL%
+if not exist "%ENV_FILE%" (
+    echo Error: %ENV_FILE% not found.
     exit /b 1
 )
 
 echo ================================================
-echo   Smart Retail Portal Builder
+echo Smart Retail Portal Builder
 echo ================================================
-echo Portal: %PORTAL_TYPE%
-echo Build Type: %BUILD_TYPE%
+echo Portal: %PORTAL%
+echo Platforms: %PLATFORMS%
 echo.
 
-REM Copy the appropriate .env file
-echo Copying .env.%PORTAL_TYPE% to .env...
-copy /Y .env.%PORTAL_TYPE% .env
-
+echo Configuring environment from %ENV_FILE% ...
+copy /Y "%ENV_FILE%" .env >nul
 if errorlevel 1 (
-    echo Error: Failed to copy .env.%PORTAL_TYPE%
+    echo Failed to copy environment file.
     exit /b 1
 )
 
-echo Environment configured for %PORTAL_TYPE% portal
-echo.
+set TARGET_FILE=lib\main_%PORTAL%.dart
+if not exist "%TARGET_FILE%" (
+    echo Error: %TARGET_FILE% not found.
+    exit /b 1
+)
 
-REM Clean previous builds
-echo Cleaning previous builds...
-call flutter clean
-
-REM Get dependencies
 echo Getting dependencies...
 call flutter pub get
+if errorlevel 1 exit /b 1
 
-REM Build based on type
-echo.
-echo Building %PORTAL_TYPE% portal for %BUILD_TYPE%...
-echo.
+if not exist build\artifacts mkdir build\artifacts
 
-if "%BUILD_TYPE%"=="web" (
-    call flutter build web --release
-    set BUILD_OUTPUT=build\web
-)
-
-if "%BUILD_TYPE%"=="apk" (
-    call flutter build apk --release
-    set BUILD_OUTPUT=build\app\outputs\flutter-apk\app-release.apk
-)
-
-if "%BUILD_TYPE%"=="ios" (
-    call flutter build ios --release
-    set BUILD_OUTPUT=build\ios
-)
-
-if errorlevel 1 (
-    echo.
-    echo BUILD FAILED!
-    exit /b 1
+for %%P in (%PLATFORMS%) do (
+    call :buildOne %%P
+    if errorlevel 1 exit /b 1
 )
 
 echo.
 echo ================================================
-echo BUILD SUCCESSFUL!
+echo BUILD MATRIX COMPLETE
+echo Artifacts folder: build\artifacts\%PORTAL%
 echo ================================================
-echo Portal: %PORTAL_TYPE%
-echo Build Type: %BUILD_TYPE%
-echo Output: %BUILD_OUTPUT%
-echo.
+exit /b 0
 
-REM Rename output for clarity
-if "%BUILD_TYPE%"=="apk" (
-    move /Y %BUILD_OUTPUT% build\smart-retail-%PORTAL_TYPE%.apk
-    echo APK renamed to: build\smart-retail-%PORTAL_TYPE%.apk
+:buildOne
+set PLATFORM=%~1
+set OUT_DIR=build\artifacts\%PORTAL%\%PLATFORM%
+if exist "!OUT_DIR!" rmdir /s /q "!OUT_DIR!"
+mkdir "!OUT_DIR!"
+
+echo.
+echo ---- Building %PORTAL% / %PLATFORM% ----
+
+if /I "%PLATFORM%"=="web" (
+    call flutter build web --release --target="%TARGET_FILE%"
+    if errorlevel 1 exit /b 1
+    xcopy /E /I /Y build\web "!OUT_DIR!\web" >nul
+    exit /b 0
 )
 
-if "%BUILD_TYPE%"=="web" (
-    if exist build\%PORTAL_TYPE%-portal rmdir /s /q build\%PORTAL_TYPE%-portal
-    move build\web build\%PORTAL_TYPE%-portal
-    echo Web build moved to: build\%PORTAL_TYPE%-portal
+if /I "%PLATFORM%"=="apk" (
+    call flutter build apk --release --target="%TARGET_FILE%"
+    if errorlevel 1 exit /b 1
+    copy /Y build\app\outputs\flutter-apk\app-release.apk "!OUT_DIR!\smart-retail-%PORTAL%-release.apk" >nul
+    exit /b 0
 )
 
-echo.
-goto end
+if /I "%PLATFORM%"=="appbundle" (
+    call flutter build appbundle --release --target="%TARGET_FILE%"
+    if errorlevel 1 exit /b 1
+    copy /Y build\app\outputs\bundle\release\app-release.aab "!OUT_DIR!\smart-retail-%PORTAL%-release.aab" >nul
+    exit /b 0
+)
 
-:usage
-echo Usage: build-portal.bat [admin^|customer] [web^|apk^|ios]
-echo.
-echo Examples:
-echo   build-portal.bat admin web      # Build admin portal for web
-echo   build-portal.bat customer apk   # Build customer portal for Android
+if /I "%PLATFORM%"=="windows" (
+    call flutter build windows --release --target="%TARGET_FILE%"
+    if errorlevel 1 exit /b 1
+    xcopy /E /I /Y build\windows\x64\runner\Release "!OUT_DIR!\windows-release" >nul
+    exit /b 0
+)
+
+if /I "%PLATFORM%"=="linux" (
+    echo Skipping linux build on Windows host.
+    exit /b 0
+)
+
+if /I "%PLATFORM%"=="macos" (
+    echo Skipping macos build on Windows host.
+    exit /b 0
+)
+
+if /I "%PLATFORM%"=="ios" (
+    echo Skipping ios build on Windows host.
+    exit /b 0
+)
+
+echo Error: Unsupported platform '%PLATFORM%'.
 exit /b 1
 
-:end
+:usage
+echo Usage: build-portal.bat [public^|admin^|merchant^|staff^|shop^|customer] [platform ...]
+echo Platforms: web apk appbundle windows linux macos ios all
+echo Examples:
+echo   build-portal.bat public web
+echo   build-portal.bat admin web windows
+echo   build-portal.bat merchant all
+exit /b 1

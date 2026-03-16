@@ -5,7 +5,7 @@ import 'package:smart_retail/app/modules/merchant/invoices/invoice_detail_contro
 import 'package:smart_retail/app/modules/merchant/widgets/merchant_main_scaffold.dart';
 
 class InvoiceDetailView extends GetView<InvoiceDetailController> {
-  const InvoiceDetailView({Key? key}) : super(key: key);
+  const InvoiceDetailView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -223,7 +223,7 @@ class InvoiceDetailView extends GetView<InvoiceDetailController> {
                             Text('\$${it.subtotal.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold)),
                           ],
                         ),
-                      )).toList(),
+                      )),
                     ],
                   ),
                 ),
@@ -268,7 +268,7 @@ class InvoiceDetailView extends GetView<InvoiceDetailController> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: _getStatusColor(status).withOpacity(0.2),
+        color: _getStatusColor(status).withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: _getStatusColor(status)),
       ),

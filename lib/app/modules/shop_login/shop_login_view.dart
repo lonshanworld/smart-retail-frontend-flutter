@@ -4,7 +4,7 @@ import 'package:smart_retail/app/routes/app_pages.dart';
 import './shop_login_controller.dart';
 
 class ShopLoginView extends GetView<ShopLoginController> {
-  const ShopLoginView({Key? key}) : super(key: key);
+  const ShopLoginView({super.key});
 
   MaterialColor _getColorForRole(String role) {
     if (role == 'Merchant') {
@@ -69,7 +69,7 @@ class ShopLoginView extends GetView<ShopLoginController> {
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color: color.withOpacity(0.3),
+                                  color: color.withValues(alpha: 0.3),
                                   blurRadius: 20,
                                   offset: const Offset(0, 10),
                                 ),
@@ -112,7 +112,7 @@ class ShopLoginView extends GetView<ShopLoginController> {
                               borderRadius: BorderRadius.circular(20),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.08),
+                                  color: Colors.black.withValues(alpha: 0.08),
                                   blurRadius: 30,
                                   offset: const Offset(0, 10),
                                 ),
@@ -123,7 +123,7 @@ class ShopLoginView extends GetView<ShopLoginController> {
                               children: [
                                 // Role Selector
                                 DropdownButtonFormField<String>(
-                                  value: controller.selectedRole.value,
+                                  initialValue: controller.selectedRole.value,
                                   decoration: InputDecoration(
                                     labelText: 'Login as',
                                     hintText: 'Select your role',
@@ -342,3 +342,4 @@ class ShopLoginView extends GetView<ShopLoginController> {
     });
   }
 }
+

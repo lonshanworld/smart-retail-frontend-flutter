@@ -8,7 +8,7 @@ import 'package:smart_retail/app/widgets/responsive_data_table.dart';
 import 'package:smart_retail/app/utils/dialog_utils.dart';
 
 class ShopCustomersView extends GetView<ShopCustomersController> {
-  const ShopCustomersView({Key? key}) : super(key: key);
+  const ShopCustomersView({super.key});
 
   @override
   Widget build(BuildContext context) {

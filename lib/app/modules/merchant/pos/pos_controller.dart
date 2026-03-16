@@ -11,6 +11,7 @@ import 'package:smart_retail/app/data/models/shop_model.dart';
 import 'package:smart_retail/app/data/services/bluetooth_printer_service.dart';
 import 'package:smart_retail/app/data/services/pos_api_service.dart';
 import 'package:smart_retail/app/data/services/merchant_shops_api_service.dart';
+import 'package:smart_retail/app/modules/shared/code_scanner/code_scanner_view.dart';
 import 'dart:convert';
 
 class PosController extends GetxController {
@@ -57,8 +58,16 @@ class PosController extends GetxController {
     return 0.0;
   }
 
+  double get effectiveTaxRatePercent => selectedShop.value?.taxRate ?? 5.0;
+
+  String get taxRateLabel {
+    final rate = effectiveTaxRatePercent;
+    final isWhole = rate.truncateToDouble() == rate;
+    return isWhole ? rate.toStringAsFixed(0) : rate.toStringAsFixed(2);
+  }
+
   double get taxAmount =>
-      (cartSubtotal - discountAmount) * 0.05; // 5% tax on discounted amount
+      (cartSubtotal - discountAmount) * (effectiveTaxRatePercent / 100);
   double get cartTotal => cartSubtotal - discountAmount + taxAmount;
 
   @override
@@ -127,29 +136,33 @@ class PosController extends GetxController {
       '🔄 [POS CONTROLLER] Fetching promotions for: ${selectedShop.value!.name} (${selectedShop.value!.id})',
     );
 
-    Timer? _promotionsTimeoutTimer;
-    var _didRespond = false;
+    late final Timer promotionsTimeoutTimer;
+    var didRespond = false;
     try {
       isLoadingPromotions.value = true;
-      print('🔄 [POS CONTROLLER] Starting promotions fetch (will warn after 12s if slow)');
+      print(
+        '🔄 [POS CONTROLLER] Starting promotions fetch (will warn after 12s if slow)',
+      );
 
       // Use a cancelable Timer guarded by a local flag so the info warning
       // won't fire after a successful response (race conditions on the
       // event loop could otherwise let the callback run).
-      _promotionsTimeoutTimer = Timer(const Duration(seconds: 12), () {
-        if (!_didRespond && isLoadingPromotions.value) {
+      promotionsTimeoutTimer = Timer(const Duration(seconds: 12), () {
+        if (!didRespond && isLoadingPromotions.value) {
           final msg = 'Promotions load is taking longer than expected';
           print('⚠️ [POS CONTROLLER] $msg');
           DialogUtils.showInfo(msg);
         }
       });
 
-      final promotions = await _posApiService.getActivePromotions(selectedShop.value!.id!);
-      _didRespond = true;
+      final promotions = await _posApiService.getActivePromotions(
+        selectedShop.value!.id!,
+      );
+      didRespond = true;
       availablePromotions.assignAll(promotions);
       // Cancel timeout now that we have a response
       try {
-        if (_promotionsTimeoutTimer != null) { _promotionsTimeoutTimer!.cancel(); }
+        promotionsTimeoutTimer.cancel();
       } catch (_) {}
 
       // Debug logging
@@ -178,11 +191,11 @@ class PosController extends GetxController {
       print('❌ [POS CONTROLLER] Error loading promotions: $e');
       DialogUtils.showInfo('Could not load promotions: $e');
       try {
-        if (_promotionsTimeoutTimer != null) { _promotionsTimeoutTimer!.cancel(); }
+        promotionsTimeoutTimer.cancel();
       } catch (_) {}
     } finally {
       try {
-        if (_promotionsTimeoutTimer != null) { _promotionsTimeoutTimer!.cancel(); }
+        promotionsTimeoutTimer.cancel();
       } catch (_) {}
       isLoadingPromotions.value = false;
       print(
@@ -220,6 +233,16 @@ class PosController extends GetxController {
     } finally {
       isSearching.value = false;
     }
+  }
+
+  Future<void> scanAndSearchProducts() async {
+    final scannedCode = await Get.to<String>(() => const CodeScannerView());
+    if (scannedCode == null || scannedCode.isEmpty) {
+      return;
+    }
+
+    searchController.text = scannedCode;
+    await searchProducts();
   }
 
   void addToCart(InventoryItem product) {
@@ -296,7 +319,9 @@ class PosController extends GetxController {
         selectedShop.value!.id!,
         saleData,
       );
-      print('DEBUG: Merchant POS checkout response received: saleId=${result.id} total=${result.totalAmount}');
+      print(
+        'DEBUG: Merchant POS checkout response received: saleId=${result.id} total=${result.totalAmount}',
+      );
       _showSuccessDialog(result);
       clearCart();
       customerNameController.clear();
@@ -359,7 +384,8 @@ class PosController extends GetxController {
     for (var item in sale.items) {
       voucherText += ' - ${item.itemName} x${item.quantitySold}\n';
     }
-    voucherText += '\n--------------------------\nTotal: \$${sale.totalAmount.toStringAsFixed(2)}\n\nThank you for your purchase!';
+    voucherText +=
+        '\n--------------------------\nTotal: \$${sale.totalAmount.toStringAsFixed(2)}\n\nThank you for your purchase!';
     return voucherText;
   }
 

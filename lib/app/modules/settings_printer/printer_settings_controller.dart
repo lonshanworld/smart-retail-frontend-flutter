@@ -1,3 +1,4 @@
+import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 import 'package:get/get.dart';
 import 'package:smart_retail/app/data/services/bluetooth_printer_service.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -9,9 +10,9 @@ class PrinterSettingsController extends GetxController {
   late bool _isDev;
 
   // Make service observables available to the view
-  get devices => _printerService.devices;
-  get isScanning => _printerService.isScanning;
-  get selectedDevice => _printerService.selectedDevice;
+  RxList<BluetoothDevice> get devices => _printerService.devices;
+  RxBool get isScanning => _printerService.isScanning;
+  Rxn<BluetoothDevice> get selectedDevice => _printerService.selectedDevice;
 
   @override
   void onInit() {

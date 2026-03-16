@@ -8,7 +8,7 @@ import 'package:smart_retail/app/widgets/app_colors.dart';
 import 'package:smart_retail/app/widgets/modern_card.dart';
 
 class AdminMerchantDetailView extends GetView<AdminMerchantDetailController> {
-  const AdminMerchantDetailView({Key? key}) : super(key: key);
+  const AdminMerchantDetailView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -440,7 +440,7 @@ class AdminMerchantDetailView extends GetView<AdminMerchantDetailController> {
                             ),
                           ),
                         )
-                        .toList(),
+                        ,
                   const SizedBox(height: 24),
 
                   // Timestamps

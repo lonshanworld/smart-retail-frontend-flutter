@@ -8,12 +8,12 @@ class CenteredMessage extends StatelessWidget {
   final String retryText;
 
   const CenteredMessage({
-    Key? key,
+    super.key,
     required this.message,
     this.icon,
     this.onRetry,
     this.retryText = 'Try Again',
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

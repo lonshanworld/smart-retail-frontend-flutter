@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart'; // For kDebugMode
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:smart_retail/app/utils/dialog_utils.dart';
 import 'package:smart_retail/app/core/config/app_config.dart';
@@ -125,14 +124,18 @@ class AdminMerchantService extends GetxService {
       'page': page.toString(),
       'pageSize': pageSize.toString(),
     };
-    if (nameFilter != null && nameFilter.isNotEmpty)
+    if (nameFilter != null && nameFilter.isNotEmpty) {
       queryParameters['name'] = nameFilter;
-    if (emailFilter != null && emailFilter.isNotEmpty)
+    }
+    if (emailFilter != null && emailFilter.isNotEmpty) {
       queryParameters['email'] = emailFilter;
-    if (isActiveFilter != null)
+    }
+    if (isActiveFilter != null) {
       queryParameters['isActive'] = isActiveFilter.toString();
-    if (userIdFilter != null && userIdFilter.isNotEmpty)
+    }
+    if (userIdFilter != null && userIdFilter.isNotEmpty) {
       queryParameters['userId'] = userIdFilter;
+    }
 
     if (kDebugMode) {
       print(
@@ -218,7 +221,7 @@ class AdminMerchantService extends GetxService {
     }
     final token = await _getAuthToken();
     if (token == null) return null;
-    print("check data before sending ${userData}");
+    print("check data before sending $userData");
     final response = await _connect.post(
       _adminUsersBaseUrl,
       userData..['role'] = 'MERCHANT',
@@ -228,7 +231,7 @@ class AdminMerchantService extends GetxService {
     if (response.statusCode! < 300) {
       print('check merchant create after status check ${response.body}');
       final user = User.fromJsonWithShop(asMap(response.body['data']));
-      print('check after json ${user}');
+      print('check after json $user');
       return user;
     } else {
       _handleError(response, "creating user as merchant");

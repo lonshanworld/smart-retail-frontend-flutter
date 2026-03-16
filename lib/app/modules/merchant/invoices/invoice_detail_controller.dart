@@ -67,6 +67,7 @@ class InvoiceDetailController extends GetxController {
     }
   }
 
+  @override
   void refresh() {
     if (invoiceId != null) {
       fetchInvoiceDetails();

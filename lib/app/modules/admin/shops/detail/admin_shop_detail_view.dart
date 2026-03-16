@@ -9,7 +9,7 @@ import 'package:smart_retail/app/shared/widgets/centered_message.dart';
 import 'package:smart_retail/app/shared/widgets/loading_indicator.dart';
 
 class AdminShopDetailView extends GetView<AdminShopDetailController> {
-  const AdminShopDetailView({Key? key}) : super(key: key);
+  const AdminShopDetailView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +41,7 @@ class AdminShopDetailView extends GetView<AdminShopDetailController> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [AppColors.admin.shade50.withOpacity(0.3), Colors.white],
+            colors: [AppColors.admin.shade50.withValues(alpha: 0.3), Colors.white],
           ),
         ),
         child: Obx(() {

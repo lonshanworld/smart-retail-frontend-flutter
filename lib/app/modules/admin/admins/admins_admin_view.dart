@@ -6,7 +6,7 @@ import 'package:smart_retail/app/widgets/app_colors.dart';
 import 'package:smart_retail/app/widgets/modern_card.dart';
 
 class AdminsAdminView extends GetView<AdminsAdminController> {
-  const AdminsAdminView({Key? key}) : super(key: key);
+  const AdminsAdminView({super.key});
 
   @override
   Widget build(BuildContext context) {

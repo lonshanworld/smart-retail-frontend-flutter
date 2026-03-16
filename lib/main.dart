@@ -19,6 +19,7 @@ import 'package:smart_retail/app/data/services/notification_center_service.dart'
 import 'package:smart_retail/app/data/services/payment_api_service.dart';
 import 'package:smart_retail/app/data/services/pos_api_service.dart';
 import 'package:smart_retail/app/data/services/promotion_api_service.dart';
+import 'package:smart_retail/app/data/services/public_ai_chat_service.dart';
 import 'package:smart_retail/app/data/services/report_api_service.dart';
 import 'package:smart_retail/app/data/services/sales_analysis_api_service.dart';
 import 'package:smart_retail/app/data/services/shop_api_service.dart';
@@ -32,30 +33,49 @@ import 'package:smart_retail/app/services/theme_service.dart';
 import 'package:smart_retail/app/services/offline_bindings.dart';
 import 'package:smart_retail/app/data/services/user_api_service.dart';
 import 'package:smart_retail/app/routes/app_pages.dart';
-import 'package:smart_retail/app/widgets/global_theme_toggle_wrapper.dart';
+import 'package:smart_retail/app/core/theme/app_theme.dart';
 import 'package:smart_retail/app/services/ui_keys.dart';
+import 'package:smart_retail/app/core/config/runtime_portal.dart';
 
 // For sqflite web and desktop support
 import 'dart:convert';
 
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'package:sqflite/sqflite.dart';
 
 // Import flutter_dotenv
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 Future<void> main() async {
+  await startSmartRetailApp(envFile: '.env.public', forcedPortal: 'public');
+}
+
+Future<void> startSmartRetailApp({
+  String envFile = '.env',
+  String? forcedPortal,
+}) async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: ".env");
+  try {
+    await dotenv.load(fileName: envFile);
+  } catch (e) {
+    // Fallback to default env so portal entrypoint asset issues do not blank the app.
+    debugPrint('Failed to load $envFile: $e. Falling back to .env');
+    await dotenv.load(fileName: '.env');
+  }
+
+  if (forcedPortal != null && forcedPortal.trim().isNotEmpty) {
+    RuntimePortal.set(forcedPortal);
+  } else {
+    RuntimePortal.clear();
+  }
 
   // Initialize Core Services
   await Get.putAsync(() => AppConfig().init());
   Get.put(GetConnect());
   // Normalize responses globally to handle web JS interop types (JSArray/JSObject)
   try {
-    final _gc = Get.find<GetConnect>();
-    _gc.httpClient.addResponseModifier((request, response) async {
+    final getConnect = Get.find<GetConnect>();
+    getConnect.httpClient.addResponseModifier((request, response) async {
       try {
         if (response.body != null) {
           final normalized = jsonDecode(jsonEncode(response.body));
@@ -94,6 +114,7 @@ Future<void> main() async {
   Get.lazyPut<NotificationCenterService>(() => NotificationCenterService());
   Get.lazyPut<PaymentApiService>(() => PaymentApiService());
   Get.lazyPut<PromotionApiService>(() => PromotionApiService());
+  Get.lazyPut<PublicAiChatService>(() => PublicAiChatService());
   Get.lazyPut<ReportApiService>(() => ReportApiService());
   Get.lazyPut<SalesAnalysisApiService>(() => SalesAnalysisApiService());
   Get.lazyPut<ShopDashboardApiService>(
@@ -111,8 +132,8 @@ Future<void> main() async {
   try {
     OfflineBindings().dependencies();
   } catch (e, st) {
-    print('⚠️ Offline bindings failed to initialize: $e');
-    print(st);
+    debugPrint('⚠️ Offline bindings failed to initialize: $e');
+    debugPrint('$st');
   }
 
   // Initialize SQLite for different platforms
@@ -120,90 +141,15 @@ Future<void> main() async {
     // Desktop platforms: Windows, Linux, macOS
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
-    print("SQLite FFI factory initialized for desktop platform.");
+    debugPrint("SQLite FFI factory initialized for desktop platform.");
   } else if (kIsWeb) {
     // Web platform
     databaseFactory = databaseFactoryFfiWeb;
-    print("SQLite FFI Web factory initialized for web platform.");
+    debugPrint("SQLite FFI Web factory initialized for web platform.");
   }
   // Mobile platforms (Android/iOS) use default sqflite, no initialization needed
 
   runApp(const MyApp());
-}
-
-class AppThemes {
-  static final ThemeData lightTheme = ThemeData(
-    brightness: Brightness.light,
-    scaffoldBackgroundColor: Colors.grey[50],
-    primarySwatch: Colors.deepPurple,
-    colorScheme: ColorScheme.light(
-      primary: Colors.deepPurple,
-      onPrimary: Colors.white,
-      secondary: Colors.deepOrange,
-      onSecondary: Colors.white,
-      surface: Colors.white,
-      onSurface: Colors.black87,
-      background: Colors.grey[100]!,
-      onBackground: Colors.black87,
-      error: Colors.red,
-      onError: Colors.white,
-    ),
-    textTheme: ThemeData.light().textTheme
-        .apply(bodyColor: Colors.black87, displayColor: Colors.black87)
-        .copyWith(
-          bodyLarge: TextStyle(color: Colors.black87),
-          bodyMedium: TextStyle(color: Colors.black87),
-          bodySmall: TextStyle(color: Colors.black87),
-          labelLarge: TextStyle(color: Colors.black87),
-          labelMedium: TextStyle(color: Colors.black87),
-          labelSmall: TextStyle(color: Colors.black87),
-        ),
-    appBarTheme: AppBarTheme(
-      backgroundColor: Colors.deepPurple,
-      foregroundColor: Colors.white,
-      elevation: 4.0,
-    ),
-    elevatedButtonTheme: ElevatedButtonThemeData(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.deepPurple,
-        foregroundColor: Colors.white,
-      ),
-    ),
-    outlinedButtonTheme: OutlinedButtonThemeData(
-      style: OutlinedButton.styleFrom(
-        foregroundColor: Colors.deepPurple,
-        side: BorderSide(color: Colors.deepPurple),
-      ),
-    ),
-    inputDecorationTheme: InputDecorationTheme(
-      filled: true,
-      fillColor: Colors.grey[200],
-      hintStyle: TextStyle(color: Colors.grey[500]),
-      labelStyle: TextStyle(color: Colors.black87),
-      focusedBorder: OutlineInputBorder(
-        borderSide: BorderSide(color: Colors.deepPurple, width: 1.0),
-        borderRadius: BorderRadius.circular(8.0),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderSide: BorderSide(color: Colors.grey[400]!, width: 1.0),
-        borderRadius: BorderRadius.circular(8.0),
-      ),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8.0),
-        borderSide: BorderSide(color: Colors.grey[400]!),
-      ),
-    ),
-    cardTheme: CardThemeData(
-      color: Colors.white,
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-    ),
-    floatingActionButtonTheme: FloatingActionButtonThemeData(
-      backgroundColor: Colors.deepPurple,
-      foregroundColor: Colors.white,
-    ),
-    useMaterial3: true,
-  );
 }
 
 class MyApp extends StatelessWidget {
@@ -213,7 +159,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetMaterialApp(
       title: 'Smart Retail',
-      theme: AppThemes.lightTheme,
+      theme: AppTheme.light,
       themeMode: ThemeMode.light,
       debugShowCheckedModeBanner: false,
       scaffoldMessengerKey: scaffoldMessengerKey,

@@ -25,7 +25,7 @@ class InventoryView extends GetView<InventoryController> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [AppColors.merchant.shade50.withOpacity(0.3), Colors.white],
+            colors: [AppColors.merchant.shade50.withValues(alpha: 0.3), Colors.white],
           ),
         ),
         child: Obx(() {
@@ -97,11 +97,98 @@ class InventoryView extends GetView<InventoryController> {
           return Column(
             children: [
               if (controller.isSyncing.value) const LinearProgressIndicator(),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Obx(
+                        () => DropdownButtonFormField<String>(
+                          initialValue: controller.selectedCategoryFilterId.value,
+                          decoration: const InputDecoration(
+                            labelText: 'Category filter',
+                            border: OutlineInputBorder(),
+                            isDense: true,
+                          ),
+                          items: [
+                            const DropdownMenuItem<String>(
+                              value: null,
+                              child: Text('All categories'),
+                            ),
+                            ...controller.categories.map(
+                              (category) => DropdownMenuItem<String>(
+                                value: category.id,
+                                child: Text(category.name),
+                              ),
+                            ),
+                          ],
+                          onChanged: controller.setCategoryFilter,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Obx(
+                        () => DropdownButtonFormField<String>(
+                          initialValue: controller.selectedSubcategoryFilterId.value,
+                          decoration: const InputDecoration(
+                            labelText: 'Subcategory filter',
+                            border: OutlineInputBorder(),
+                            isDense: true,
+                          ),
+                          items: [
+                            const DropdownMenuItem<String>(
+                              value: null,
+                              child: Text('All subcategories'),
+                            ),
+                            ...controller.filteredSubcategoriesForFilter.map(
+                              (subcategory) => DropdownMenuItem<String>(
+                                value: subcategory.id,
+                                child: Text(subcategory.name),
+                              ),
+                            ),
+                          ],
+                          onChanged:
+                              controller.filteredSubcategoriesForFilter.isEmpty
+                              ? null
+                              : controller.setSubcategoryFilter,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Obx(
+                        () => DropdownButtonFormField<String>(
+                          initialValue: controller.selectedBrandFilterId.value,
+                          decoration: const InputDecoration(
+                            labelText: 'Brand filter',
+                            border: OutlineInputBorder(),
+                            isDense: true,
+                          ),
+                          items: [
+                            const DropdownMenuItem<String>(
+                              value: null,
+                              child: Text('All brands'),
+                            ),
+                            ...controller.brands.map(
+                              (brand) => DropdownMenuItem<String>(
+                                value: brand.id,
+                                child: Text(brand.name),
+                              ),
+                            ),
+                          ],
+                          onChanged: controller.setBrandFilter,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               Expanded(
                 child: RefreshIndicator(
                   onRefresh: () => controller.initializeInventory(),
                   child: ResponsiveDataTable<InventoryItem>(
-                    items: controller.inventoryItems,
+                    items: controller.visibleInventoryItems,
                     columns: const [
                       DataColumn(
                         label: Text(
@@ -273,7 +360,8 @@ class InventoryView extends GetView<InventoryController> {
                                 size: 20,
                               ),
                               tooltip: 'Delete',
-                              onPressed: () => controller.checkAndDeleteItemFromList(item),
+                              onPressed: () =>
+                                  controller.checkAndDeleteItemFromList(item),
                             ),
                           ],
                         ),
@@ -355,7 +443,8 @@ class InventoryView extends GetView<InventoryController> {
                               color: Colors.redAccent,
                               size: 24,
                             ),
-                            onPressed: () => controller.checkAndDeleteItemFromList(item),
+                            onPressed: () =>
+                                controller.checkAndDeleteItemFromList(item),
                           ),
                         ],
                       ),
@@ -393,7 +482,7 @@ class InventoryView extends GetView<InventoryController> {
           color: Get.theme.cardColor,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               spreadRadius: 0,
               blurRadius: 5,
             ),
@@ -449,3 +538,4 @@ class InventoryView extends GetView<InventoryController> {
     });
   }
 }
+

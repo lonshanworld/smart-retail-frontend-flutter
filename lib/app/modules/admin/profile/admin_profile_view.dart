@@ -4,7 +4,7 @@ import 'package:smart_retail/app/modules/admin/profile/admin_profile_controller.
 import 'package:smart_retail/app/modules/admin/widgets/admin_main_scaffold.dart';
 
 class AdminProfileView extends GetView<AdminProfileController> {
-  const AdminProfileView({Key? key}) : super(key: key);
+  const AdminProfileView({super.key});
 
   @override
   Widget build(BuildContext context) {

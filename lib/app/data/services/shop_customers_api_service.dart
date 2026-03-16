@@ -83,7 +83,7 @@ class ShopCustomersApiService extends GetxService {
       if (response.isOk && response.body != null) {
         final data = asList(response.body['data']);
         developer.log(
-          '✅ [ShopCustomersApiService] Data received: ${data?.length ?? 0} customers',
+          '✅ [ShopCustomersApiService] Data received: ${data.length} customers',
           name: 'API',
         );
         return data.map((json) {

@@ -1,7 +1,6 @@
 import 'package:get/get.dart';
 import 'package:smart_retail/app/core/config/app_config.dart';
 import 'package:smart_retail/app/data/providers/api_constants.dart';
-import 'package:smart_retail/app/data/api_config.dart';
 // Import for Admin Dashboard
 import 'package:smart_retail/app/modules/admin/dashboard/models/admin_dashboard_summary_model.dart';
 // Import for Merchant Dashboard

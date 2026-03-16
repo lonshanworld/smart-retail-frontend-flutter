@@ -5,7 +5,7 @@ import 'package:smart_retail/app/widgets/app_colors.dart';
 import 'package:smart_retail/app/widgets/modern_card.dart';
 
 class StaffDetailView extends GetView<StaffDetailController> {
-  const StaffDetailView({Key? key}) : super(key: key);
+  const StaffDetailView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -103,7 +103,7 @@ class StaffDetailView extends GetView<StaffDetailController> {
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
+                              color: Colors.black.withValues(alpha: 0.1),
                               blurRadius: 10,
                               offset: const Offset(0, 4),
                             ),

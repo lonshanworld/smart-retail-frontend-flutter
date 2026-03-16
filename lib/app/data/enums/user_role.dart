@@ -31,7 +31,6 @@ String userRoleToString(UserRole role) {
     case UserRole.staff:
       return 'Staff';
     case UserRole.unknown:
-    default:
       return 'Unknown';
   }
 }

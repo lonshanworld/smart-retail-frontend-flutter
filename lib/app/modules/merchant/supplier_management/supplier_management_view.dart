@@ -7,7 +7,7 @@ import 'package:smart_retail/app/widgets/responsive_data_table.dart';
 import 'package:smart_retail/app/widgets/modern_card.dart';
 
 class SupplierManagementView extends GetView<SupplierManagementController> {
-  const SupplierManagementView({Key? key}) : super(key: key);
+  const SupplierManagementView({super.key});
 
   @override
   Widget build(BuildContext context) {

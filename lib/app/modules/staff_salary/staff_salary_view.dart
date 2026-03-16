@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 
 class StaffSalaryView extends StatelessWidget {
-  const StaffSalaryView({Key? key}) : super(key: key);
+  const StaffSalaryView({super.key});
 
   @override
   Widget build(BuildContext context) {

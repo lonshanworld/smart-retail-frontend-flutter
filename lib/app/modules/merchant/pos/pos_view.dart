@@ -8,7 +8,7 @@ import 'package:smart_retail/app/modules/merchant/widgets/merchant_main_scaffold
 import 'package:smart_retail/app/widgets/app_colors.dart';
 
 class PosView extends GetView<PosController> {
-  const PosView({Key? key}) : super(key: key);
+  const PosView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +19,7 @@ class PosView extends GetView<PosController> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [AppColors.merchant.shade50.withOpacity(0.3), Colors.white],
+            colors: [AppColors.merchant.shade50.withValues(alpha: 0.3), Colors.white],
           ),
         ),
         child: LayoutBuilder(
@@ -86,7 +86,7 @@ class PosView extends GetView<PosController> {
           return const Text('No shops found. Please add a shop first.');
         }
         return DropdownButtonFormField<Shop>(
-          value: controller.selectedShop.value,
+          initialValue: controller.selectedShop.value,
           items: controller.shopList.map((shop) {
             return DropdownMenuItem<Shop>(value: shop, child: Text(shop.name));
           }).toList(),
@@ -105,10 +105,15 @@ class PosView extends GetView<PosController> {
       padding: const EdgeInsets.all(12.0),
       child: TextField(
         controller: controller.searchController,
-        decoration: const InputDecoration(
+        decoration: InputDecoration(
           hintText: 'Search products...',
-          prefixIcon: Icon(Icons.search),
-          border: OutlineInputBorder(
+          prefixIcon: const Icon(Icons.search),
+          suffixIcon: IconButton(
+            tooltip: 'Scan Barcode / QR',
+            onPressed: controller.scanAndSearchProducts,
+            icon: const Icon(Icons.qr_code_scanner),
+          ),
+          border: const OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(25.0)),
           ),
         ),
@@ -314,7 +319,10 @@ class PosView extends GetView<PosController> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Tax (5%)', style: Get.textTheme.bodyLarge),
+              Text(
+                'Tax (${controller.taxRateLabel}%)',
+                style: Get.textTheme.bodyLarge,
+              ),
               Text(
                 currencyFormatter.format(controller.taxAmount),
                 style: Get.textTheme.bodyLarge,
@@ -363,7 +371,7 @@ class PosView extends GetView<PosController> {
           ),
           const SizedBox(height: 8),
           DropdownButtonFormField<String?>(
-            value: controller.selectedPromotion.value?.id,
+            initialValue: controller.selectedPromotion.value?.id,
             decoration: InputDecoration(
               prefixIcon: const Icon(Icons.local_offer),
               border: const OutlineInputBorder(),
@@ -401,7 +409,7 @@ class PosView extends GetView<PosController> {
                     ],
                   ),
                 );
-              }).toList(),
+              }),
             ],
             onChanged: (promoId) {
               if (promoId == null) {

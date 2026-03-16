@@ -49,12 +49,6 @@ class StockAdjustmentController extends GetxController {
     // shopName = args['shopName'] as String? ?? '';
   }
 
-  @override
-  void onInit() {
-    super.onInit();
-    // Set a default adjustment type if desired
-    // selectedAdjustmentType.value = adjustmentTypes.keys.first;
-  }
 
   Future<void> performAdjustment() async {
     if (!formKey.currentState!.validate()) {
@@ -96,7 +90,7 @@ class StockAdjustmentController extends GetxController {
           }
         }
         DialogUtils.showInfo(
-          'Successfully adjusted stock for ${itemName}. New quantity: ${adjustedItem.quantity}',
+          'Successfully adjusted stock for $itemName. New quantity: ${adjustedItem.quantity}',
           snackPosition: SnackPosition.BOTTOM,
         );
       } else {

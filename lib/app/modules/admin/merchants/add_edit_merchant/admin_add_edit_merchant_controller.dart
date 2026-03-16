@@ -70,8 +70,9 @@ class AdminAddEditMerchantController extends GetxController {
   }
 
   String? validateShopName(String? value) {
-    if (value == null || value.isEmpty)
+    if (value == null || value.isEmpty) {
       return "Shop name is required for a merchant.";
+    }
     if (value.length < 2) return "Shop name must be at least 2 characters.";
     if (value.length > 100) return "Shop name cannot exceed 100 characters.";
     return null;
@@ -99,8 +100,9 @@ class AdminAddEditMerchantController extends GetxController {
 
   String? validateConfirmPassword(String? value) {
     if (!isEditMode.value) {
-      if (value == null || value.isEmpty)
+      if (value == null || value.isEmpty) {
         return "Confirm password is required.";
+      }
       if (value != passwordController.text) return "Passwords do not match.";
     }
     return null;

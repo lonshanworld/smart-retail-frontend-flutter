@@ -7,7 +7,7 @@ import 'package:smart_retail/app/widgets/app_colors.dart';
 import 'package:smart_retail/app/widgets/responsive_data_table.dart';
 
 class MerchantStocksView extends GetView<MerchantStocksController> {
-  const MerchantStocksView({Key? key}) : super(key: key);
+  const MerchantStocksView({super.key});
 
   @override
   Widget build(BuildContext context) {

@@ -7,7 +7,7 @@ import 'package:smart_retail/app/widgets/responsive_data_table.dart';
 import './shop_inventory_controller.dart';
 
 class ShopInventoryView extends GetView<ShopInventoryController> {
-  const ShopInventoryView({Key? key}) : super(key: key);
+  const ShopInventoryView({super.key});
 
   @override
   Widget build(BuildContext context) {

@@ -33,7 +33,7 @@ class AdminIntroView extends StatelessWidget {
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
+                            color: Colors.black.withValues(alpha: 0.1),
                             blurRadius: 20,
                             offset: const Offset(0, 10),
                           ),
@@ -79,7 +79,7 @@ class AdminIntroView extends StatelessWidget {
                           backgroundColor: Colors.white,
                           foregroundColor: Colors.blue.shade700,
                           elevation: 8,
-                          shadowColor: Colors.black.withOpacity(0.3),
+                          shadowColor: Colors.black.withValues(alpha: 0.3),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(28),
                           ),
@@ -107,7 +107,7 @@ class AdminIntroView extends StatelessWidget {
                       'Secure Admin Access Only',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.white.withOpacity(0.5),
+                        color: Colors.white.withValues(alpha: 0.5),
                       ),
                     ),
                   ],
@@ -120,3 +120,4 @@ class AdminIntroView extends StatelessWidget {
     );
   }
 }
+

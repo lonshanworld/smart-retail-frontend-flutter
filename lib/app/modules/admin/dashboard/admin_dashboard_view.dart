@@ -22,7 +22,7 @@ class AdminDashboardView extends GetView<AdminDashboardController> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [AppColors.admin.shade50.withOpacity(0.3), Colors.white],
+            colors: [AppColors.admin.shade50.withValues(alpha: 0.3), Colors.white],
           ),
         ),
         child: Obx(() {
@@ -172,7 +172,7 @@ class AdminDashboardView extends GetView<AdminDashboardController> {
                               Container(
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.3),
+                                  color: Colors.white.withValues(alpha: 0.3),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: const Icon(
@@ -224,7 +224,7 @@ class AdminDashboardView extends GetView<AdminDashboardController> {
                               Container(
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.3),
+                                  color: Colors.white.withValues(alpha: 0.3),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: const Icon(
@@ -276,7 +276,7 @@ class AdminDashboardView extends GetView<AdminDashboardController> {
                               Container(
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.3),
+                                  color: Colors.white.withValues(alpha: 0.3),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: const Icon(
@@ -328,7 +328,7 @@ class AdminDashboardView extends GetView<AdminDashboardController> {
                               Container(
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.3),
+                                  color: Colors.white.withValues(alpha: 0.3),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: const Icon(
@@ -382,3 +382,4 @@ class AdminDashboardView extends GetView<AdminDashboardController> {
     );
   }
 }
+

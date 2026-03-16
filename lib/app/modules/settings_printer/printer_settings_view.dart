@@ -5,10 +5,8 @@ import 'package:smart_retail/app/utils/dialog_utils.dart';
 import 'package:smart_retail/app/widgets/app_colors.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-import 'package:smart_retail/app/utils/dialog_utils.dart';
-
 class PrinterSettingsView extends GetView<PrinterSettingsController> {
-  const PrinterSettingsView({Key? key}) : super(key: key);
+  const PrinterSettingsView({super.key});
 
   bool get _isDev => dotenv.env['APP_ENV'] == 'dev';
 

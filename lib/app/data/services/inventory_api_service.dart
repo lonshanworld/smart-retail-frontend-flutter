@@ -18,6 +18,31 @@ class InventoryApiService extends GetxService {
 
   final String _inventoryBaseUrl = "${ApiConstants.baseUrl}/merchant/inventory";
   final String _suppliersBaseUrl = "${ApiConstants.baseUrl}/merchant/suppliers";
+  final String _catalogBaseUrl = "${ApiConstants.baseUrl}/merchant/catalog";
+
+  Future<CatalogOptionsResponse?> getCatalogOptions() async {
+    if (_appConfig.isDevelopment) {
+      await Future.delayed(const Duration(milliseconds: 250));
+      return CatalogOptionsResponse(categories: [], brands: []);
+    }
+
+    final token = await _getAuthToken();
+    if (token == null) return null;
+
+    final response = await _connect.get(
+      '$_catalogBaseUrl/options',
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200 && response.body['status'] == 'success') {
+      return CatalogOptionsResponse.fromJson(asMap(response.body['data']));
+    }
+
+    print(
+      'Error loading catalog options: ${response.statusCode} - ${response.bodyString}',
+    );
+    return null;
+  }
 
   // --- Supplier Specific Methods --- //
 
@@ -100,7 +125,9 @@ class InventoryApiService extends GetxService {
 
     if (response.statusCode == 200 && response.body['status'] == 'success') {
       if (response.body['data'] != null) {
-        return PaginatedSuppliersResponse.fromJson(asMap(response.body['data']));
+        return PaginatedSuppliersResponse.fromJson(
+          asMap(response.body['data']),
+        );
       }
     }
     print(
@@ -502,6 +529,16 @@ class InventoryApiService extends GetxService {
 
     Map<String, dynamic> payload = item.toJsonForCreate();
 
+    if (item.categoryId != null && item.categoryId!.isNotEmpty) {
+      payload['categoryId'] = item.categoryId;
+    }
+    if (item.subcategoryId != null && item.subcategoryId!.isNotEmpty) {
+      payload['subcategoryId'] = item.subcategoryId;
+    }
+    if (item.brandId != null && item.brandId!.isNotEmpty) {
+      payload['brandId'] = item.brandId;
+    }
+
     if (item.supplier != null && item.supplier!.isNotEmpty) {
       String? supplierId = await _resolveSupplierNameToId(item.supplier!);
       if (supplierId != null) {
@@ -604,6 +641,10 @@ class InventoryApiService extends GetxService {
     if (token == null) return null;
 
     Map<String, dynamic> payload = Map<String, dynamic>.from(updates);
+
+    if (payload['categoryId'] == '') payload.remove('categoryId');
+    if (payload['subcategoryId'] == '') payload.remove('subcategoryId');
+    if (payload['brandId'] == '') payload.remove('brandId');
 
     if (payload.containsKey('supplier') && payload['supplier'] is String) {
       String supplierName = payload['supplier'] as String;
@@ -756,7 +797,9 @@ class InventoryApiService extends GetxService {
 
   /// Preflight check whether an inventory item can be safely deleted.
   /// Returns { 'deletable': bool, 'blockers': { 'shop_stock': 2, ... } }
-  Future<Map<String, dynamic>?> checkInventoryItemDeletable(String itemId) async {
+  Future<Map<String, dynamic>?> checkInventoryItemDeletable(
+    String itemId,
+  ) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(milliseconds: 200));
       return {'deletable': true, 'blockers': {}};
@@ -770,7 +813,9 @@ class InventoryApiService extends GetxService {
     if (response.statusCode == 200 && response.body['status'] == 'success') {
       return Map<String, dynamic>.from(asMap(response.body['data']));
     } else {
-      print('Error checking item deletable: ${response.statusCode} - ${response.bodyString}');
+      print(
+        'Error checking item deletable: ${response.statusCode} - ${response.bodyString}',
+      );
       return null;
     }
   }

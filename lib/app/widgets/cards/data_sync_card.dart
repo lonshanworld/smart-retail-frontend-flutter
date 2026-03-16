@@ -9,7 +9,7 @@ import 'package:smart_retail/app/widgets/dialogs/sync_history_dialog.dart';
 import 'package:smart_retail/app/utils/dialog_utils.dart';
 
 class DataSyncCard extends StatelessWidget {
-  const DataSyncCard({Key? key}) : super(key: key);
+  const DataSyncCard({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +32,7 @@ class DataSyncCard extends StatelessWidget {
                 Container(
                   padding: EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.deepPurple.withOpacity(0.1),
+                    color: Colors.deepPurple.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
@@ -83,13 +83,13 @@ class DataSyncCard extends StatelessWidget {
                 padding: EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: hasOfflineSales
-                      ? Colors.orange.withOpacity(0.1)
-                      : Colors.green.withOpacity(0.1),
+                      ? Colors.orange.withValues(alpha: 0.1)
+                      : Colors.green.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: hasOfflineSales
-                        ? Colors.orange.withOpacity(0.3)
-                        : Colors.green.withOpacity(0.3),
+                        ? Colors.orange.withValues(alpha: 0.3)
+                        : Colors.green.withValues(alpha: 0.3),
                   ),
                 ),
                 child: Row(
@@ -278,7 +278,7 @@ class DataSyncCard extends StatelessWidget {
             Container(
               padding: EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.05),
+                color: Colors.blue.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(

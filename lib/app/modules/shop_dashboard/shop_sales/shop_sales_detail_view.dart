@@ -8,7 +8,7 @@ import 'package:smart_retail/app/widgets/app_colors.dart';
 class ShopSalesDetailView extends StatelessWidget {
   final Sale sale;
 
-  const ShopSalesDetailView({Key? key, required this.sale}) : super(key: key);
+  const ShopSalesDetailView({super.key, required this.sale});
 
   @override
   Widget build(BuildContext context) {

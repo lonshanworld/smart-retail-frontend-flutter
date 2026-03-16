@@ -7,7 +7,7 @@ import 'package:smart_retail/app/widgets/app_colors.dart';
 import 'package:smart_retail/app/widgets/responsive_data_table.dart';
 
 class ShopItemsView extends GetView<ShopItemsController> {
-  const ShopItemsView({Key? key}) : super(key: key);
+  const ShopItemsView({super.key});
 
   @override
   Widget build(BuildContext context) {

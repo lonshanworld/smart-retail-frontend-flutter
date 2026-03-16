@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:smart_retail/app/data/models/inventory_item_model.dart';
 import 'package:smart_retail/app/data/services/inventory_api_service.dart';
-import 'package:smart_retail/app/utils/dialog_utils.dart';
+
+import 'package:smart_retail/app/utils/dialog_utils.dart';
 
 class AddInventoryItemController extends GetxController {
   final InventoryApiService _inventoryApiService =
@@ -15,7 +16,15 @@ class AddInventoryItemController extends GetxController {
   late TextEditingController descriptionController;
   late TextEditingController originalPriceController;
   late TextEditingController sellingPriceController;
-  late TextEditingController categoryController;
+  late TextEditingController brandController;
+
+  final RxList<CategoryWithSubcategories> categories =
+      <CategoryWithSubcategories>[].obs;
+  final RxList<SubcategoryRef> filteredSubcategories = <SubcategoryRef>[].obs;
+  final RxList<BrandRef> brands = <BrandRef>[].obs;
+  final RxnString selectedCategoryId = RxnString();
+  final RxnString selectedSubcategoryId = RxnString();
+  final RxnString selectedBrandId = RxnString();
 
   final RxBool isLoading = false.obs;
 
@@ -27,7 +36,43 @@ class AddInventoryItemController extends GetxController {
     descriptionController = TextEditingController();
     originalPriceController = TextEditingController();
     sellingPriceController = TextEditingController();
-    categoryController = TextEditingController();
+    brandController = TextEditingController();
+
+    _loadCatalogOptions();
+  }
+
+  Future<void> _loadCatalogOptions() async {
+    final catalog = await _inventoryApiService.getCatalogOptions();
+    if (catalog == null) return;
+
+    categories.assignAll(catalog.categories);
+    brands.assignAll(catalog.brands);
+    filteredSubcategories.clear();
+  }
+
+  void setSelectedCategory(String? categoryId) {
+    selectedCategoryId.value = categoryId;
+    selectedSubcategoryId.value = null;
+
+    if (categoryId == null) {
+      filteredSubcategories.clear();
+      return;
+    }
+
+    final category = categories.firstWhereOrNull((c) => c.id == categoryId);
+    filteredSubcategories.assignAll(category?.subcategories ?? const []);
+  }
+
+  void setSelectedSubcategory(String? subcategoryId) {
+    selectedSubcategoryId.value = subcategoryId;
+  }
+
+  void selectBrandByName(String brandName) {
+    final brand = brands.firstWhereOrNull(
+      (b) => b.name.toLowerCase() == brandName.toLowerCase(),
+    );
+    selectedBrandId.value = brand?.id;
+    brandController.text = brandName;
   }
 
   Future<void> createInventoryItem() async {
@@ -39,13 +84,19 @@ class AddInventoryItemController extends GetxController {
 
     try {
       final newItem = InventoryItem(
-        merchantId: 'your-merchant-id', // Replace with actual merchant ID
+        merchantId: '',
         name: nameController.text,
         sku: skuController.text,
         description: descriptionController.text,
         originalPrice: double.tryParse(originalPriceController.text) ?? 0.0,
         sellingPrice: double.tryParse(sellingPriceController.text) ?? 0.0,
-        category: categoryController.text,
+        categoryId: selectedCategoryId.value,
+        subcategoryId: selectedSubcategoryId.value,
+        brandId: selectedBrandId.value,
+        category: categories
+            .firstWhereOrNull((c) => c.id == selectedCategoryId.value)
+            ?.name,
+        brandObj: brands.firstWhereOrNull((b) => b.id == selectedBrandId.value),
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
@@ -74,7 +125,7 @@ class AddInventoryItemController extends GetxController {
     descriptionController.dispose();
     originalPriceController.dispose();
     sellingPriceController.dispose();
-    categoryController.dispose();
+    brandController.dispose();
     super.onClose();
   }
 }

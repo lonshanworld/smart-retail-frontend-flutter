@@ -6,8 +6,7 @@ import 'package:smart_retail/app/services/sync_service.dart';
 class SyncProgressDialog extends StatelessWidget {
   final SyncService syncService;
 
-  const SyncProgressDialog({Key? key, required this.syncService})
-    : super(key: key);
+  const SyncProgressDialog({super.key, required this.syncService});
 
   @override
   Widget build(BuildContext context) {
@@ -56,7 +55,7 @@ class SyncProgressDialog extends StatelessWidget {
                   Container(
                     padding: EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.1),
+                      color: Colors.green.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
@@ -71,7 +70,7 @@ class SyncProgressDialog extends StatelessWidget {
                   Container(
                     padding: EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.red.withOpacity(0.1),
+                      color: Colors.red.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(Icons.error, color: Colors.red, size: 40),

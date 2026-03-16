@@ -291,7 +291,7 @@ class InvoicePdfService {
           style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
         ),
         pw.SizedBox(height: 8),
-        pw.Table.fromTextArray(
+        pw.TableHelper.fromTextArray(
           headers: headers,
           data: invoice.items.map((it) {
             return [

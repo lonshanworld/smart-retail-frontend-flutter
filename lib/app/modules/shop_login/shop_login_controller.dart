@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get/get.dart';
 import 'package:smart_retail/app/utils/dialog_utils.dart';
-import 'package:smart_retail/app/data/models/shop_model.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
-import 'package:smart_retail/app/data/services/shop_api_service.dart';
 import 'package:smart_retail/app/routes/app_pages.dart';
 
 class ShopLoginController extends GetxController {
   final AuthService _authService = Get.find<AuthService>();
-  final ShopApiService _shopApiService = Get.find<ShopApiService>();
 
   final formKey = GlobalKey<FormState>();
   final shopIdController = TextEditingController();
@@ -18,13 +16,16 @@ class ShopLoginController extends GetxController {
   var isLoading = false.obs;
   var selectedRole = 'Staff'.obs;
 
+  String get _defaultShopId =>
+      dotenv.env['MOCK_SHOP_ID'] ?? '944e9452-197e-4ce1-8c6a-1ea36f0bdacc';
+
   void login() async {
     if (formKey.currentState!.validate()) {
       isLoading.value = true;
       try {
         bool success = false;
         if (selectedRole.value == 'Staff') {
-          shopIdController.text = '944e9452-197e-4ce1-8c6a-1ea36f0bdacc';
+          shopIdController.text = _defaultShopId;
           success = await _authService.loginToShop(
             shopIdController.text,
             emailController.text,
@@ -41,14 +42,14 @@ class ShopLoginController extends GetxController {
           // Merchant Login
           // Login as merchant and verify shop ownership
           success = await _authService.loginMerchantToShop(
-            '944e9452-197e-4ce1-8c6a-1ea36f0bdacc',
+            _defaultShopId,
             emailController.text,
             passwordController.text,
           );
 
           if (success) {
             // Navigate to shop dashboard with shopId parameter
-            final shopId = '944e9452-197e-4ce1-8c6a-1ea36f0bdacc';
+            final shopId = _defaultShopId;
             Get.offAllNamed(
               Routes.SHOP_DASHBOARD,
               parameters: {'shopId': shopId},

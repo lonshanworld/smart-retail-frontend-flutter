@@ -139,7 +139,7 @@ class _StaffMainScaffoldState extends State<StaffMainScaffold> {
                               color: Colors.white,
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
+                                  color: Colors.black.withValues(alpha: 0.05),
                                   blurRadius: 10,
                                   offset: const Offset(0, 2),
                                 ),
@@ -159,8 +159,9 @@ class _StaffMainScaffoldState extends State<StaffMainScaffold> {
                                 // User profile badge
                                 Obx(() {
                                   final User? user = _authService.user.value;
-                                  if (user == null)
+                                  if (user == null) {
                                     return const SizedBox.shrink();
+                                  }
                                   return Container(
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 16,
@@ -245,7 +246,7 @@ class _StaffMainScaffoldState extends State<StaffMainScaffold> {
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
+                        color: Colors.black.withValues(alpha: 0.2),
                         blurRadius: 20,
                         offset: const Offset(0, 4),
                       ),
@@ -270,7 +271,7 @@ class _StaffMainScaffoldState extends State<StaffMainScaffold> {
                 Text(
                   'Smart Retail System',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.7),
+                    color: Colors.white.withValues(alpha: 0.7),
                     fontSize: 12,
                   ),
                 ),
@@ -301,12 +302,12 @@ class _StaffMainScaffoldState extends State<StaffMainScaffold> {
                         ),
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? Colors.white.withOpacity(0.15)
+                              ? Colors.white.withValues(alpha: 0.15)
                               : Colors.transparent,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: isSelected
-                                ? Colors.white.withOpacity(0.3)
+                                ? Colors.white.withValues(alpha: 0.3)
                                 : Colors.transparent,
                             width: 1,
                           ),
@@ -396,7 +397,7 @@ class _StaffMainScaffoldState extends State<StaffMainScaffold> {
                       Text(
                         user.email,
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.7),
+                          color: Colors.white.withValues(alpha: 0.7),
                           fontSize: 11,
                         ),
                         overflow: TextOverflow.ellipsis,
@@ -414,13 +415,13 @@ class _StaffMainScaffoldState extends State<StaffMainScaffold> {
                 icon: const Icon(Icons.logout, size: 18),
                 label: const Text('Logout'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white.withOpacity(0.1),
+                  backgroundColor: Colors.white.withValues(alpha: 0.1),
                   foregroundColor: Colors.white,
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
-                    side: BorderSide(color: Colors.white.withOpacity(0.3)),
+                    side: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
                   ),
                 ),
               ),
@@ -499,7 +500,7 @@ class _StaffMainScaffoldState extends State<StaffMainScaffold> {
                         ),
                       ),
                       selected: isSelected,
-                      selectedTileColor: Colors.white.withOpacity(0.15),
+                      selectedTileColor: Colors.white.withValues(alpha: 0.15),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -518,3 +519,4 @@ class _StaffMainScaffoldState extends State<StaffMainScaffold> {
     );
   }
 }
+

@@ -6,7 +6,7 @@ import 'package:smart_retail/app/modules/merchant/widgets/merchant_main_scaffold
 import 'package:smart_retail/app/widgets/cards/data_sync_card.dart';
 
 class SettingsView extends GetView<SettingsController> {
-  const SettingsView({Key? key}) : super(key: key);
+  const SettingsView({super.key});
 
   @override
   Widget build(BuildContext context) {

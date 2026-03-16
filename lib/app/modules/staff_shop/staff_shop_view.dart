@@ -89,9 +89,7 @@ class StaffShopView extends GetView<StaffShopController> {
                       _buildDetailRow(
                         Icons.calendar_today_outlined,
                         'Created On',
-                        shop.createdAt != null
-                            ? DateFormat.yMMMd().format(shop.createdAt!)
-                            : 'N/A',
+                        DateFormat.yMMMd().format(shop.createdAt),
                       ),
                     ],
                   ),

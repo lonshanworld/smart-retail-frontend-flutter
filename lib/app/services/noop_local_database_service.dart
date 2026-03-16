@@ -7,7 +7,7 @@ import 'local_database_service.dart';
 /// keep working on web.
 class NoopLocalDatabaseService extends LocalDatabaseService {
   @override
-  Future<void> queueSale(Map<String, dynamic> saleData) async => null;
+  Future<void> queueSale(Map<String, dynamic> saleData) async {}
 
   @override
   Future<List<Map<String, dynamic>>> getPendingSales() async => [];
@@ -16,28 +16,47 @@ class NoopLocalDatabaseService extends LocalDatabaseService {
   Future<List<Map<String, dynamic>>> getFailedSales() async => [];
 
   @override
-  Future<void> markSaleAsSynced(String saleId, String serverSaleId) async => null;
+  Future<void> markSaleAsSynced(String saleId, String serverSaleId) async {}
 
   @override
-  Future<void> markSaleFailed(String saleId, String? errorMsg) async => null;
+  Future<void> markSaleFailed(String saleId, String? errorMsg) async {}
 
   @override
   Future<int> getPendingSalesCount() async => 0;
 
   @override
-  Future<void> cacheProducts(List<Map<String, dynamic>> products, String merchantId) async => null;
+  Future<void> deleteSale(String saleId) async {}
 
   @override
-  Future<List<Map<String, dynamic>>?> getCachedProducts(String merchantId) async => null;
+  Future<void> clearAllSales() async {}
 
   @override
-  Future<void> cachePromotions(List<Map<String, dynamic>> promotions, String merchantId) async => null;
+  Future<void> cacheProducts(
+    List<Map<String, dynamic>> products,
+    String merchantId,
+  ) async {}
 
   @override
-  Future<List<Map<String, dynamic>>?> getCachedPromotions(String merchantId) async => null;
+  Future<List<Map<String, dynamic>>?> getCachedProducts(
+    String merchantId,
+  ) async => null;
 
   @override
-  Future<void> cacheShopInfo(Map<String, dynamic> shopInfo, String merchantId) async => null;
+  Future<void> cachePromotions(
+    List<Map<String, dynamic>> promotions,
+    String merchantId,
+  ) async {}
+
+  @override
+  Future<List<Map<String, dynamic>>?> getCachedPromotions(
+    String merchantId,
+  ) async => null;
+
+  @override
+  Future<void> cacheShopInfo(
+    Map<String, dynamic> shopInfo,
+    String merchantId,
+  ) async {}
 
   @override
   Future<Map<String, dynamic>?> getCachedShopInfo(String shopId) async => null;
@@ -46,35 +65,36 @@ class NoopLocalDatabaseService extends LocalDatabaseService {
   Future<bool> isCacheExpired(String cacheType) async => true;
 
   @override
-  Future<void> clearExpiredCache() async => null;
+  Future<void> clearExpiredCache() async {}
 
   @override
-  Future<void> clearAllCache() async => null;
+  Future<void> clearAllCache() async {}
 
   @override
   Future<String> calculateCacheSize() async => '0 MB';
 
   @override
-  Future<void> logSyncAttempt(Map<String, dynamic> log) async => null;
+  Future<void> logSyncAttempt(Map<String, dynamic> log) async {}
 
   @override
-  Future<List<Map<String, dynamic>>> getSyncHistory({int limit = 50}) async => [];
+  Future<List<Map<String, dynamic>>> getSyncHistory({int limit = 50}) async =>
+      [];
 
   @override
   Future<int> getSyncSuccessCount() async => 0;
 
   @override
-  Future<void> setSetting(String key, String value) async => null;
+  Future<void> setSetting(String key, String value) async {}
 
   @override
   Future<String?> getSetting(String key) async => null;
 
   @override
-  Future<void> setLastSyncTime(DateTime time) async => null;
+  Future<void> setLastSyncTime(DateTime time) async {}
 
   @override
   Future<DateTime?> getLastSyncTime() async => null;
 
   @override
-  Future<void> closeDatabase() async => null;
+  Future<void> closeDatabase() async {}
 }

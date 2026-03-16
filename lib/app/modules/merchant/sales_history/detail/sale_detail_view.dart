@@ -155,7 +155,7 @@ class SaleDetailView extends GetView<SaleDetailController> {
             const SizedBox(height: 12),
             ...items
                 .map((item) => _buildItemTile(item, currencyFormat))
-                .toList(),
+                ,
           ],
         ),
       ),

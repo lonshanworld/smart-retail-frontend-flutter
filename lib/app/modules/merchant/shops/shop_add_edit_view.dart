@@ -70,7 +70,7 @@ class ShopAddEditView extends GetView<ShopAddEditController> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(
@@ -219,6 +219,47 @@ class ShopAddEditView extends GetView<ShopAddEditController> {
                       maxLines: 3,
                       minLines: 2,
                     ),
+                    const SizedBox(height: 20),
+                    TextFormField(
+                      controller: controller.taxRateController,
+                      decoration: InputDecoration(
+                        labelText: 'Tax Rate (%)',
+                        hintText: 'e.g., 5.00',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: AppColors.merchant,
+                            width: 2,
+                          ),
+                        ),
+                        filled: true,
+                        fillColor: Colors.white,
+                        prefixIcon: Icon(
+                          Icons.percent,
+                          color: AppColors.merchant,
+                        ),
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      validator: (value) {
+                        final parsed = double.tryParse((value ?? '').trim());
+                        if (parsed == null) {
+                          return 'Enter a valid tax rate';
+                        }
+                        if (parsed < 0 || parsed > 100) {
+                          return 'Tax rate must be between 0 and 100';
+                        }
+                        return null;
+                      },
+                    ),
                   ],
                 ),
               ),
@@ -268,3 +309,4 @@ class ShopAddEditView extends GetView<ShopAddEditController> {
     );
   }
 }
+

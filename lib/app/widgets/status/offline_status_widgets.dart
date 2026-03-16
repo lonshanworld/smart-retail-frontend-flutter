@@ -10,10 +10,10 @@ class OfflineStatusBadge extends StatelessWidget {
   final double size;
 
   const OfflineStatusBadge({
-    Key? key,
+    super.key,
     this.showPendingCount = true,
     this.size = 32,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +26,7 @@ class OfflineStatusBadge extends StatelessWidget {
 
       if (isOnline && pendingCount == 0) {
         // All synced, no badge needed
-        return SizedBox.shrink();
+        return const SizedBox.shrink();
       }
 
       return Tooltip(
@@ -41,11 +41,11 @@ class OfflineStatusBadge extends StatelessWidget {
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: (isOnline ? Colors.green : Colors.orange).withOpacity(
-                  0.3,
+                color: (isOnline ? Colors.green : Colors.orange).withValues(
+                  alpha: 0.3,
                 ),
                 blurRadius: 8,
-                offset: Offset(0, 2),
+                offset: const Offset(0, 2),
               ),
             ],
           ),
@@ -62,7 +62,7 @@ class OfflineStatusBadge extends StatelessWidget {
                   top: 0,
                   right: 0,
                   child: Container(
-                    padding: EdgeInsets.all(2),
+                    padding: const EdgeInsets.all(2),
                     decoration: BoxDecoration(
                       color: Colors.red,
                       shape: BoxShape.circle,
@@ -97,8 +97,7 @@ class OfflineStatusBadge extends StatelessWidget {
 class OfflineStatusBanner extends StatelessWidget {
   final bool showAtTop;
 
-  const OfflineStatusBanner({Key? key, this.showAtTop = true})
-    : super(key: key);
+  const OfflineStatusBanner({super.key, this.showAtTop = true});
 
   @override
   Widget build(BuildContext context) {
@@ -110,7 +109,7 @@ class OfflineStatusBanner extends StatelessWidget {
       final pendingCount = offlineSalesService.totalPendingCount.value;
 
       if (isOnline && pendingCount == 0) {
-        return SizedBox.shrink();
+        return const SizedBox.shrink();
       }
 
       final message = offlineSalesService.getOfflineStatusMessage();
@@ -118,7 +117,7 @@ class OfflineStatusBanner extends StatelessWidget {
 
       return Container(
         width: double.infinity,
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           color: isDegraded ? Colors.red[50] : Colors.orange[50],
           border: Border(
@@ -141,7 +140,7 @@ class OfflineStatusBanner extends StatelessWidget {
               color: isDegraded ? Colors.red[600] : Colors.orange[600],
               size: 20,
             ),
-            SizedBox(width: 12),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -156,7 +155,7 @@ class OfflineStatusBanner extends StatelessWidget {
                   ),
                   if (isDegraded)
                     Padding(
-                      padding: EdgeInsets.only(top: 4),
+                      padding: const EdgeInsets.only(top: 4),
                       child: Text(
                         'Sync queue is at ${offlineSalesService.getQueuePressure().toStringAsFixed(0)}% capacity',
                         style: TextStyle(color: Colors.red[600], fontSize: 11),
@@ -176,7 +175,7 @@ class OfflineStatusBanner extends StatelessWidget {
 class OfflineStatusChip extends StatelessWidget {
   final bool compact;
 
-  const OfflineStatusChip({Key? key, this.compact = false}) : super(key: key);
+  const OfflineStatusChip({super.key, this.compact = false});
 
   @override
   Widget build(BuildContext context) {
@@ -200,12 +199,12 @@ class OfflineStatusChip extends StatelessWidget {
           ),
         ),
         backgroundColor: isOnline
-            ? Colors.green.withOpacity(0.1)
-            : Colors.orange.withOpacity(0.1),
+            ? Colors.green.withValues(alpha: 0.1)
+            : Colors.orange.withValues(alpha: 0.1),
         side: BorderSide(
           color: isOnline
-              ? Colors.green.withOpacity(0.3)
-              : Colors.orange.withOpacity(0.3),
+              ? Colors.green.withValues(alpha: 0.3)
+              : Colors.orange.withValues(alpha: 0.3),
         ),
       );
     });

@@ -9,10 +9,10 @@ class SignupView extends StatefulWidget {
   const SignupView({super.key});
 
   @override
-  _SignupViewState createState() => _SignupViewState();
+  SignupViewState createState() => SignupViewState();
 }
 
-class _SignupViewState extends State<SignupView> {
+class SignupViewState extends State<SignupView> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
@@ -39,6 +39,7 @@ class _SignupViewState extends State<SignupView> {
 
     try {
       final connect = GetConnect();
+      print(ApiConstants.baseUrl);
       final response = await connect.post('${ApiConstants.baseUrl}/auth/signup', {
         'name': name,
         'email': email,
@@ -119,7 +120,7 @@ class _SignupViewState extends State<SignupView> {
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: color.withOpacity(0.3),
+                                color: color.withValues(alpha: 0.3),
                                 blurRadius: 20,
                                 offset: const Offset(0, 10),
                               ),
@@ -162,7 +163,7 @@ class _SignupViewState extends State<SignupView> {
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.08),
+                                color: Colors.black.withValues(alpha: 0.08),
                                 blurRadius: 30,
                                 offset: const Offset(0, 10),
                               ),
@@ -328,3 +329,4 @@ class _SignupViewState extends State<SignupView> {
     );
   }
 }
+

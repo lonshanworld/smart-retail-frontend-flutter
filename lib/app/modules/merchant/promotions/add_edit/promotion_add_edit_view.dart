@@ -6,7 +6,7 @@ import 'package:smart_retail/app/data/models/shop_model.dart';
 import 'package:smart_retail/app/modules/merchant/promotions/add_edit/promotion_add_edit_controller.dart';
 
 class PromotionAddEditView extends GetView<PromotionAddEditController> {
-  const PromotionAddEditView({Key? key}) : super(key: key);
+  const PromotionAddEditView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -114,7 +114,7 @@ class PromotionAddEditView extends GetView<PromotionAddEditController> {
         return const Center(child: CircularProgressIndicator());
       }
       return DropdownButtonFormField<Shop>(
-        value: controller.selectedShop.value,
+        initialValue: controller.selectedShop.value,
         hint: const Text('1. Select a Shop'),
         items: controller.shopList
             .map((s) => DropdownMenuItem(value: s, child: Text(s.name)))
@@ -132,7 +132,7 @@ class PromotionAddEditView extends GetView<PromotionAddEditController> {
   Widget _buildPromotionTypeSelector() {
     return Obx(
       () => DropdownButtonFormField<String>(
-        value: controller.selectedPromotionType.value,
+        initialValue: controller.selectedPromotionType.value,
         items: const [
           DropdownMenuItem(
             value: 'percentage',
@@ -171,24 +171,24 @@ class PromotionAddEditView extends GetView<PromotionAddEditController> {
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
-          RadioListTile<String>(
-            title: const Text('All Products (Cart-wide)'),
-            subtitle: const Text(
-              'Discount applies to entire cart when minimum spend is met',
-            ),
-            value: 'all',
-            groupValue: controller.promotionAppliesTo.value,
-            onChanged: (value) => controller.promotionAppliesTo.value = value!,
-          ),
-          RadioListTile<String>(
-            title: const Text('Specific Products Only'),
-            subtitle: const Text(
-              'Discount applies only when selected products are in cart',
-            ),
-            value: 'specific',
-            groupValue: controller.promotionAppliesTo.value,
-            onChanged: (value) {
-              controller.promotionAppliesTo.value = value!;
+          SegmentedButton<String>(
+            segments: const [
+              ButtonSegment<String>(
+                value: 'all',
+                label: Text('All Products'),
+                icon: Icon(Icons.shopping_cart_outlined),
+              ),
+              ButtonSegment<String>(
+                value: 'specific',
+                label: Text('Specific Products'),
+                icon: Icon(Icons.category_outlined),
+              ),
+            ],
+            selected: {controller.promotionAppliesTo.value},
+            onSelectionChanged: (selection) {
+              if (selection.isEmpty) return;
+              final value = selection.first;
+              controller.promotionAppliesTo.value = value;
               if (value == 'specific' &&
                   controller.selectedShop.value != null) {
                 controller.fetchProductsForShop(
@@ -196,6 +196,13 @@ class PromotionAddEditView extends GetView<PromotionAddEditController> {
                 );
               }
             },
+          ),
+          const SizedBox(height: 8),
+          Text(
+            controller.promotionAppliesTo.value == 'all'
+                ? 'Discount applies to entire cart when minimum spend is met'
+                : 'Discount applies only when selected products are in cart',
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
           ),
           if (controller.promotionAppliesTo.value == 'specific') ...[
             const SizedBox(height: 8),
@@ -235,7 +242,7 @@ class PromotionAddEditView extends GetView<PromotionAddEditController> {
         );
       }
       return DropdownButtonFormField<InventoryItem>(
-        value: controller.selectedProduct.value,
+        initialValue: controller.selectedProduct.value,
         hint: const Text('Select Product(s)'),
         items: controller.productList
             .map((p) => DropdownMenuItem(value: p, child: Text(p.name)))

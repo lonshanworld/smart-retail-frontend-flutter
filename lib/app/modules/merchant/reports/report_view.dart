@@ -73,7 +73,7 @@ class ReportView extends GetView<ReportController> {
               labelText: 'Select Shop',
               border: OutlineInputBorder(),
             ),
-            value: controller.selectedShop.value,
+            initialValue: controller.selectedShop.value,
             hint: const Text('Select a shop'),
             isExpanded: true,
             items: controller.shops.map((Shop shop) {
@@ -98,7 +98,7 @@ class ReportView extends GetView<ReportController> {
               labelText: 'Select Product',
               border: OutlineInputBorder(),
             ),
-            value: controller.selectedItem.value,
+            initialValue: controller.selectedItem.value,
             hint: const Text('Select an item to forecast'),
             isExpanded: true,
             items: controller.inventoryItems.map((InventoryItem item) {

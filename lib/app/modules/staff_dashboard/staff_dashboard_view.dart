@@ -24,7 +24,7 @@ class StaffDashboardView extends GetView<StaffDashboardController> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [AppColors.staff.shade50.withOpacity(0.3), Colors.white],
+            colors: [AppColors.staff.shade50.withValues(alpha: 0.3), Colors.white],
           ),
         ),
         child: Obx(() {
@@ -177,7 +177,7 @@ class StaffDashboardView extends GetView<StaffDashboardController> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(
@@ -262,16 +262,16 @@ class StaffDashboardView extends GetView<StaffDashboardController> {
               ],
               onTap: () => Get.toNamed(Routes.STAFF_INVOICES),
             ),
-                _buildActionCard(
-                  icon: Icons.print_rounded,
-                  title: 'Printer Settings',
-                  subtitle: 'Configure receipt printer',
-                  gradient: [
-                    AppColors.secondary.shade400,
-                    AppColors.secondary.shade600,
-                  ],
-                  onTap: () => Get.toNamed(Routes.STAFF_PRINTER_SETTINGS),
-                ),
+            _buildActionCard(
+              icon: Icons.print_rounded,
+              title: 'Printer Settings',
+              subtitle: 'Configure receipt printer',
+              gradient: [
+                AppColors.secondary.shade400,
+                AppColors.secondary.shade600,
+              ],
+              onTap: () => Get.toNamed(Routes.STAFF_PRINTER_SETTINGS),
+            ),
           ],
         ),
       ],
@@ -298,7 +298,7 @@ class StaffDashboardView extends GetView<StaffDashboardController> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, size: 32, color: Colors.white),
@@ -321,7 +321,7 @@ class StaffDashboardView extends GetView<StaffDashboardController> {
                   subtitle,
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                   ),
                 ),
               ],
@@ -329,7 +329,7 @@ class StaffDashboardView extends GetView<StaffDashboardController> {
           ),
           Icon(
             Icons.arrow_forward_ios_rounded,
-            color: Colors.white.withOpacity(0.7),
+            color: Colors.white.withValues(alpha: 0.7),
             size: 20,
           ),
         ],
@@ -492,3 +492,4 @@ class StaffDashboardView extends GetView<StaffDashboardController> {
     );
   }
 }
+

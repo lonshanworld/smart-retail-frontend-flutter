@@ -30,11 +30,15 @@ dependencies:
   flutter_reactive_ble: ^5.4.0
   printing: ^5.10.0
   pdf: ^3.10.1
+  mobile_scanner: ^6.0.2
+  flutter_html: ^3.0.0
+  url_launcher: ^6.3.1
   # Bluetooth printing transport and ESC-POS utils
   bluetooth_print:
      git:
       url: https://github.com/lonshanworld/bluetooth_print.git
       ref: main
+  google_fonts: ^8.0.2
 
 dev_dependencies:
   flutter_test:
@@ -47,3 +51,9 @@ flutter:
   uses-material-design: true
   assets:
     - .env
+    - .env.public
+    - .env.admin
+    - .env.merchant
+    - .env.staff
+    - .env.shop
+    - .env.customer

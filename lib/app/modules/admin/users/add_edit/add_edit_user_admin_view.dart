@@ -52,7 +52,7 @@ class AddEditUserAdminView extends GetView<AddEditUserAdminController> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [AppColors.admin.shade50.withOpacity(0.3), Colors.white],
+            colors: [AppColors.admin.shade50.withValues(alpha: 0.3), Colors.white],
           ),
         ),
         child: SingleChildScrollView(
@@ -69,7 +69,7 @@ class AddEditUserAdminView extends GetView<AddEditUserAdminController> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: AppColors.admin.withOpacity(0.1),
+                          color: AppColors.admin.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
@@ -294,8 +294,9 @@ class AddEditUserAdminView extends GetView<AddEditUserAdminController> {
                                       obscureText:
                                           controller.isPasswordObscured.value,
                                       validator: (value) {
-                                        if (controller.isEditMode.value)
+                                        if (controller.isEditMode.value) {
                                           return null;
+                                        }
                                         if (value == null || value.isEmpty) {
                                           return 'Please enter a password';
                                         }
@@ -324,7 +325,7 @@ class AddEditUserAdminView extends GetView<AddEditUserAdminController> {
                             // Role Dropdown
                             Obx(
                               () => DropdownButtonFormField<UserRole>(
-                                value: controller.selectedRole.value,
+                                initialValue: controller.selectedRole.value,
                                 decoration: InputDecoration(
                                   labelText: 'User Role',
                                   filled: true,
@@ -434,7 +435,7 @@ class AddEditUserAdminView extends GetView<AddEditUserAdminController> {
                                         ),
                                       )
                                     : DropdownButtonFormField<String>(
-                                        value:
+                                        initialValue:
                                             controller.selectedMerchantId.value,
                                         decoration: InputDecoration(
                                           labelText: 'Associated Merchant',
@@ -545,8 +546,8 @@ class AddEditUserAdminView extends GetView<AddEditUserAdminController> {
                                         padding: const EdgeInsets.all(8),
                                         decoration: BoxDecoration(
                                           color: controller.isActive.value
-                                              ? Colors.green.withOpacity(0.1)
-                                              : Colors.red.withOpacity(0.1),
+                                              ? Colors.green.withValues(alpha: 0.1)
+                                              : Colors.red.withValues(alpha: 0.1),
                                           borderRadius: BorderRadius.circular(
                                             8,
                                           ),
@@ -560,7 +561,7 @@ class AddEditUserAdminView extends GetView<AddEditUserAdminController> {
                                               : Colors.red.shade700,
                                         ),
                                       ),
-                                      activeColor: Colors.green,
+                                      activeThumbColor: Colors.green,
                                     ),
                                   ),
                                   const SizedBox(height: 24),
@@ -666,7 +667,7 @@ class AddEditUserAdminView extends GetView<AddEditUserAdminController> {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: AppColors.admin.withOpacity(0.1),
+            color: AppColors.admin.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, color: AppColors.admin, size: 20),

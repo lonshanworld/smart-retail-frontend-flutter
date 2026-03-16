@@ -52,7 +52,7 @@ class UserDetailAdminView extends GetView<UserDetailAdminController> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [AppColors.admin.shade50.withOpacity(0.3), Colors.white],
+            colors: [AppColors.admin.shade50.withValues(alpha: 0.3), Colors.white],
           ),
         ),
         child: Obx(() {
@@ -334,7 +334,7 @@ class UserDetailAdminView extends GetView<UserDetailAdminController> {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: AppColors.admin.withOpacity(0.1),
+            color: AppColors.admin.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, color: AppColors.admin, size: 20),
@@ -416,3 +416,4 @@ class UserDetailAdminView extends GetView<UserDetailAdminController> {
     }
   }
 }
+

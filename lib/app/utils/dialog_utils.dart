@@ -260,8 +260,8 @@ class DialogUtils {
   /// Show a loading dialog
   static void showLoading({String message = 'Loading...'}) {
     Get.dialog(
-      WillPopScope(
-        onWillPop: () async => false,
+      PopScope(
+        canPop: false,
         child: AlertDialog(
           content: Row(
             children: [

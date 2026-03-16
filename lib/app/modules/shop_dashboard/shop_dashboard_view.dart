@@ -12,7 +12,7 @@ import 'package:smart_retail/app/routes/app_pages.dart';
 import 'package:smart_retail/app/widgets/cards/data_sync_card.dart';
 
 class ShopDashboardView extends GetView<ShopDashboardController> {
-  const ShopDashboardView({Key? key}) : super(key: key);
+  const ShopDashboardView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +23,7 @@ class ShopDashboardView extends GetView<ShopDashboardController> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [AppColors.shop.shade50.withOpacity(0.3), Colors.white],
+            colors: [AppColors.shop.shade50.withValues(alpha: 0.3), Colors.white],
           ),
         ),
         child: RefreshIndicator(
@@ -93,7 +93,7 @@ class ShopDashboardView extends GetView<ShopDashboardController> {
     );
   }
 
-  Widget _buildPerformanceMetrics(summary) {
+  Widget _buildPerformanceMetrics(dynamic summary) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -186,16 +186,16 @@ class ShopDashboardView extends GetView<ShopDashboardController> {
               ],
               onTap: () => Get.toNamed(Routes.SHOP_INVOICES),
             ),
-                _buildActionCard(
-                  icon: Icons.print_rounded,
-                  title: 'Printer Settings',
-                  subtitle: 'Configure receipt printer',
-                  gradient: [
-                    AppColors.secondary.shade400,
-                    AppColors.secondary.shade600,
-                  ],
-                  onTap: () => Get.toNamed(Routes.SHOP_PRINTER_SETTINGS),
-                ),
+            _buildActionCard(
+              icon: Icons.print_rounded,
+              title: 'Printer Settings',
+              subtitle: 'Configure receipt printer',
+              gradient: [
+                AppColors.secondary.shade400,
+                AppColors.secondary.shade600,
+              ],
+              onTap: () => Get.toNamed(Routes.SHOP_PRINTER_SETTINGS),
+            ),
             _buildActionCard(
               icon: Icons.people_rounded,
               title: 'Customers',
@@ -242,7 +242,7 @@ class ShopDashboardView extends GetView<ShopDashboardController> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, size: 32, color: Colors.white),
@@ -265,7 +265,7 @@ class ShopDashboardView extends GetView<ShopDashboardController> {
                   subtitle,
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                   ),
                 ),
               ],
@@ -273,7 +273,7 @@ class ShopDashboardView extends GetView<ShopDashboardController> {
           ),
           Icon(
             Icons.arrow_forward_ios_rounded,
-            color: Colors.white.withOpacity(0.7),
+            color: Colors.white.withValues(alpha: 0.7),
             size: 20,
           ),
         ],
@@ -281,3 +281,4 @@ class ShopDashboardView extends GetView<ShopDashboardController> {
     );
   }
 }
+

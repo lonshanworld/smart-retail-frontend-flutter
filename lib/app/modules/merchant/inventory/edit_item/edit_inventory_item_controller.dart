@@ -16,7 +16,15 @@ class EditInventoryItemController extends GetxController {
   late TextEditingController descriptionController;
   late TextEditingController originalPriceController;
   late TextEditingController sellingPriceController;
-  late TextEditingController categoryController;
+  late TextEditingController brandController;
+
+  final RxList<CategoryWithSubcategories> categories =
+      <CategoryWithSubcategories>[].obs;
+  final RxList<SubcategoryRef> filteredSubcategories = <SubcategoryRef>[].obs;
+  final RxList<BrandRef> brands = <BrandRef>[].obs;
+  final RxnString selectedCategoryId = RxnString();
+  final RxnString selectedSubcategoryId = RxnString();
+  final RxnString selectedBrandId = RxnString();
 
   final RxBool isLoading = false.obs;
   final Rxn<InventoryItem> itemToEdit = Rxn<InventoryItem>();
@@ -41,9 +49,57 @@ class EditInventoryItemController extends GetxController {
     sellingPriceController = TextEditingController(
       text: itemToEdit.value?.sellingPrice.toString(),
     );
-    categoryController = TextEditingController(
-      text: itemToEdit.value?.category,
+    brandController = TextEditingController(
+      text: itemToEdit.value?.brandObj?.name,
     );
+
+    selectedCategoryId.value = itemToEdit.value?.categoryId;
+    selectedSubcategoryId.value = itemToEdit.value?.subcategoryId;
+    selectedBrandId.value = itemToEdit.value?.brandId;
+
+    _loadCatalogOptions();
+  }
+
+  Future<void> _loadCatalogOptions() async {
+    final catalog = await _inventoryApiService.getCatalogOptions();
+    if (catalog == null) return;
+
+    categories.assignAll(catalog.categories);
+    brands.assignAll(catalog.brands);
+
+    setSelectedCategory(selectedCategoryId.value, preserveSubcategory: true);
+  }
+
+  void setSelectedCategory(
+    String? categoryId, {
+    bool preserveSubcategory = false,
+  }) {
+    selectedCategoryId.value = categoryId;
+
+    if (categoryId == null) {
+      filteredSubcategories.clear();
+      selectedSubcategoryId.value = null;
+      return;
+    }
+
+    final category = categories.firstWhereOrNull((c) => c.id == categoryId);
+    filteredSubcategories.assignAll(category?.subcategories ?? const []);
+
+    if (!preserveSubcategory) {
+      selectedSubcategoryId.value = null;
+    }
+  }
+
+  void setSelectedSubcategory(String? subcategoryId) {
+    selectedSubcategoryId.value = subcategoryId;
+  }
+
+  void selectBrandByName(String brandName) {
+    final brand = brands.firstWhereOrNull(
+      (b) => b.name.toLowerCase() == brandName.toLowerCase(),
+    );
+    selectedBrandId.value = brand?.id;
+    brandController.text = brandName;
   }
 
   Future<void> updateInventoryItem() async {
@@ -60,7 +116,9 @@ class EditInventoryItemController extends GetxController {
         'description': descriptionController.text,
         'originalPrice': double.tryParse(originalPriceController.text) ?? 0.0,
         'sellingPrice': double.tryParse(sellingPriceController.text) ?? 0.0,
-        'category': categoryController.text,
+        'categoryId': selectedCategoryId.value,
+        'subcategoryId': selectedSubcategoryId.value,
+        'brandId': selectedBrandId.value,
       };
 
       final updatedItem = await _inventoryApiService.updateInventoryItem(
@@ -88,7 +146,9 @@ class EditInventoryItemController extends GetxController {
     isCheckingDelete.value = true;
     deleteBlockers.clear();
     try {
-      final result = await _inventoryApiService.checkInventoryItemDeletable(item.id!);
+      final result = await _inventoryApiService.checkInventoryItemDeletable(
+        item.id!,
+      );
       if (result == null) {
         DialogUtils.showError('Failed to check deletion status.');
         return;
@@ -96,26 +156,37 @@ class EditInventoryItemController extends GetxController {
       final bool deletable = result['deletable'] == true;
       final Map<String, dynamic> blockers = result['blockers'] ?? {};
       blockers.forEach((k, v) {
-        if (v is int) deleteBlockers[k] = v;
-        else if (v is String) deleteBlockers[k] = int.tryParse(v) ?? 0;
+        if (v is int) {
+          deleteBlockers[k] = v;
+        } else if (v is String){
+           deleteBlockers[k] = int.tryParse(v) ?? 0;
+        }else{
+          
+        }        
       });
       isDeletable.value = deletable;
       if (!deletable) {
-        final entries = deleteBlockers.entries.map((e) => '${e.key}: ${e.value}').join('\n');
-        DialogUtils.showError('Cannot delete item. References found:\n$entries');
+        final entries = deleteBlockers.entries
+            .map((e) => '${e.key}: ${e.value}')
+            .join('\n');
+        DialogUtils.showError(
+          'Cannot delete item. References found:\n$entries',
+        );
         return;
       }
 
       bool confirm = true;
       if (!skipFinalConfirm) {
-        confirm = await DialogUtils.showConfirmDialog(
-          title: 'Delete Item',
-          message:
-              'Are you sure you want to permanently delete "${item.name}"? This action cannot be undone.',
-          confirmText: 'Delete',
-          cancelText: 'Cancel',
-          isDanger: true,
-        ) ?? false;
+        confirm =
+            await DialogUtils.showConfirmDialog(
+              title: 'Delete Item',
+              message:
+                  'Are you sure you want to permanently delete "${item.name}"? This action cannot be undone.',
+              confirmText: 'Delete',
+              cancelText: 'Cancel',
+              isDanger: true,
+            ) ??
+            false;
       }
       if (confirm != true) return;
 
@@ -140,7 +211,7 @@ class EditInventoryItemController extends GetxController {
     descriptionController.dispose();
     originalPriceController.dispose();
     sellingPriceController.dispose();
-    categoryController.dispose();
+    brandController.dispose();
     super.onClose();
   }
 }

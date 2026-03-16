@@ -11,7 +11,7 @@ import 'package:smart_retail/app/widgets/modern_card.dart';
 import 'package:smart_retail/app/widgets/responsive_data_table.dart';
 
 class AdminMerchantsView extends GetView<AdminMerchantsController> {
-  const AdminMerchantsView({Key? key}) : super(key: key);
+  const AdminMerchantsView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -93,7 +93,7 @@ class AdminMerchantsView extends GetView<AdminMerchantsController> {
                 ),
                 isDense: true,
               ),
-              value: controller.isActiveFilter.value,
+              initialValue: controller.isActiveFilter.value,
               hint: const Text("Any Status"),
               items: const [
                 DropdownMenuItem(value: null, child: Text("Any Status")),
@@ -303,7 +303,7 @@ class AdminMerchantsView extends GetView<AdminMerchantsController> {
                 DetailRow(
                   icon: Icons.fingerprint,
                   label: 'ID',
-                  value: merchant.id.substring(0, 13) + '...',
+                  value: '${merchant.id.substring(0, 13)}...',
                 ),
               ],
               trailing: _buildActionsMenu(merchant),
@@ -384,15 +384,17 @@ class AdminMerchantsView extends GetView<AdminMerchantsController> {
 
   Widget _buildPaginationControls() {
     return Obx(() {
-      if (controller.totalPages.value <= 1 && !controller.isLoading.value)
+      if (controller.totalPages.value <= 1 && !controller.isLoading.value) {
         return const SizedBox.shrink();
-      if (controller.isLoading.value && controller.merchants.isEmpty)
+      }
+      if (controller.isLoading.value && controller.merchants.isEmpty) {
         return const Center(
           child: Padding(
             padding: EdgeInsets.all(8.0),
             child: Text("Loading pagination..."),
           ),
         );
+      }
 
       return Card(
         elevation: 2,

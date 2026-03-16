@@ -286,7 +286,7 @@ class MerchantPosApiService extends GetxService {
     }
 
     try {
-      print('📡 [POS API] Calling: ${_baseUrl}/promotions?shopId=$shopId');
+      print('📡 [POS API] Calling: $_baseUrl/promotions?shopId=$shopId');
 
       final response = await _connect.get(
         '$_baseUrl/promotions',

@@ -4,6 +4,10 @@ abstract class Routes {
   static const INTRO = '/intro'; // This will be dynamic based on portal type
   static const ADMIN_INTRO = '/admin-intro';
   static const CUSTOMER_INTRO = '/customer-intro';
+  static const PUBLIC_FEATURES = '/public/features';
+  static const PUBLIC_ABOUT = '/public/about';
+  static const PUBLIC_SUPPORT = '/public/support';
+  static const PUBLIC_CONTACT = '/public/contact';
   static const LOGIN = '/login';
   static const MERCHANT_LOGIN = '/merchant/login';
   static const ADMIN_LOGIN = '/admin/login';

@@ -14,7 +14,7 @@ class ImagePlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       // Optional: Add a background color or border to make it look more like a placeholder box
       // color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
       // decoration: BoxDecoration(
@@ -28,7 +28,7 @@ class ImagePlaceholder extends StatelessWidget {
           iconData,
           size: (size ?? 60) * 0.6, // Icon size relative to placeholder size
           color:
-              color ?? Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+              color ?? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
         ),
       ),
     );

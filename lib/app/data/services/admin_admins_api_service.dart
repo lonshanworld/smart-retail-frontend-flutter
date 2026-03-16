@@ -58,7 +58,7 @@ class AdminAdminsApiService extends GetConnect {
       '$_baseUrl?page=$page&limit=$limit',
       headers: await _getHeaders(),
     );
-    print('check response for admin list ${response}');
+    print('check response for admin list $response');
     if (response.isOk &&
         response.body != null &&
         response.body['data'] != null) {

@@ -488,7 +488,7 @@ class ShopInventoryView extends GetView<ShopInventoryController> {
               ),
               const SizedBox(height: 15),
               DropdownButtonFormField<String>(
-                value: movementType,
+                initialValue: movementType,
                 decoration: const InputDecoration(
                   labelText: 'Adjustment Type',
                   border: OutlineInputBorder(),

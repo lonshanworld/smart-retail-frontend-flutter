@@ -6,24 +6,29 @@ import 'package:smart_retail/app/data/models/cart_item_model.dart';
 import 'package:smart_retail/app/data/models/inventory_item_model.dart';
 import 'package:smart_retail/app/data/models/promotion_model.dart';
 import 'package:smart_retail/app/data/models/sale_model.dart';
+import 'package:smart_retail/app/data/services/auth_service.dart';
 import 'package:smart_retail/app/data/services/bluetooth_printer_service.dart';
 import 'package:smart_retail/app/data/services/staff_pos_api_service.dart';
+import 'package:smart_retail/app/modules/shared/code_scanner/code_scanner_view.dart';
+import 'package:smart_retail/app/widgets/app_colors.dart';
 
 class StaffPosController extends GetxController {
   // Make the API service optional in unit tests to avoid requiring full
   // networking stack during small unit tests. When not registered,
   // controller will operate in degraded mode (no remote calls).
-  final StaffPosApiService? _apiService =
-      Get.isRegistered<StaffPosApiService>()
-          ? Get.find<StaffPosApiService>()
-          : null;
-    // Make the printer service optional for unit tests where Bluetooth
-    // functionality isn't registered. Use `Get.isRegistered` to avoid
-    // throwing during controller construction in test environments.
-    final BluetoothPrinterService? _printerService =
+  final StaffPosApiService? _apiService = Get.isRegistered<StaffPosApiService>()
+      ? Get.find<StaffPosApiService>()
+      : null;
+  final AuthService? _authService = Get.isRegistered<AuthService>()
+      ? Get.find<AuthService>()
+      : null;
+  // Make the printer service optional for unit tests where Bluetooth
+  // functionality isn't registered. Use `Get.isRegistered` to avoid
+  // throwing during controller construction in test environments.
+  final BluetoothPrinterService? _printerService =
       Get.isRegistered<BluetoothPrinterService>()
-        ? Get.find<BluetoothPrinterService>()
-        : null;
+      ? Get.find<BluetoothPrinterService>()
+      : null;
 
   var cartItems = <CartItem>[].obs;
   var isCheckingOut = false.obs;
@@ -57,8 +62,17 @@ class StaffPosController extends GetxController {
     return 0.0;
   }
 
+  double get effectiveTaxRatePercent =>
+      _authService?.currentShop.value?.taxRate ?? 5.0;
+
+  String get taxRateLabel {
+    final rate = effectiveTaxRatePercent;
+    final isWhole = rate.truncateToDouble() == rate;
+    return isWhole ? rate.toStringAsFixed(0) : rate.toStringAsFixed(2);
+  }
+
   double get taxAmount =>
-      (cartSubtotal - discountAmount) * 0.05; // 5% tax on discounted amount
+      (cartSubtotal - discountAmount) * (effectiveTaxRatePercent / 100);
   double get cartTotal => cartSubtotal - discountAmount + taxAmount;
 
   @override
@@ -119,6 +133,16 @@ class StaffPosController extends GetxController {
     } finally {
       isSearching.value = false;
     }
+  }
+
+  Future<void> scanAndSearchProducts() async {
+    final scannedCode = await Get.to<String>(() => const CodeScannerView());
+    if (scannedCode == null || scannedCode.isEmpty) {
+      return;
+    }
+
+    searchController.text = scannedCode;
+    searchProducts();
   }
 
   void addToCart(InventoryItem product) {
@@ -210,7 +234,9 @@ class StaffPosController extends GetxController {
 
         final result = Sale(
           id: saleId,
-          merchantId: cartItems.isNotEmpty ? cartItems.first.product.merchantId : '',
+          merchantId: cartItems.isNotEmpty
+              ? cartItems.first.product.merchantId
+              : '',
           shopId: 'local-shop',
           saleDate: now,
           totalAmount: cartTotal,
@@ -228,7 +254,9 @@ class StaffPosController extends GetxController {
         customerNameController.clear();
       } else {
         final Sale result = await _apiService.checkout(saleData);
-        print('DEBUG: Staff POS checkout response received: saleId=${result.id} total=${result.totalAmount}');
+        print(
+          'DEBUG: Staff POS checkout response received: saleId=${result.id} total=${result.totalAmount}',
+        );
         // Use the standardized success dialog
         _showSuccessDialog(result);
         clearCart();
@@ -285,7 +313,7 @@ class StaffPosController extends GetxController {
               const SizedBox(height: 8),
               Text(
                 'Discount: -\$${sale.discountAmount!.toStringAsFixed(2)}',
-                style: const TextStyle(color: Colors.green),
+                style: const TextStyle(color: AppColors.success),
               ),
             ],
             Text(
@@ -331,7 +359,8 @@ class StaffPosController extends GetxController {
     for (var item in sale.items) {
       voucherText += ' - ${item.itemName} x${item.quantitySold}\n';
     }
-    voucherText += '\n--------------------------\nTotal: \$${sale.totalAmount.toStringAsFixed(2)}\n\nThank you for your purchase!';
+    voucherText +=
+        '\n--------------------------\nTotal: \$${sale.totalAmount.toStringAsFixed(2)}\n\nThank you for your purchase!';
     return voucherText;
   }
 

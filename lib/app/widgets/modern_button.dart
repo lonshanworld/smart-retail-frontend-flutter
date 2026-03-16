@@ -12,7 +12,7 @@ class ModernButton extends StatelessWidget {
   final double? height;
 
   const ModernButton({
-    Key? key,
+    super.key,
     required this.text,
     this.onPressed,
     this.icon,
@@ -21,7 +21,7 @@ class ModernButton extends StatelessWidget {
     this.isOutlined = false,
     this.width,
     this.height,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -117,13 +117,13 @@ class ModernIconButton extends StatelessWidget {
   final String? tooltip;
 
   const ModernIconButton({
-    Key? key,
+    super.key,
     required this.icon,
     this.onPressed,
     this.color,
     this.size = 40,
     this.tooltip,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -133,7 +133,7 @@ class ModernIconButton extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: btnColor.withOpacity(0.1),
+        color: btnColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: IconButton(

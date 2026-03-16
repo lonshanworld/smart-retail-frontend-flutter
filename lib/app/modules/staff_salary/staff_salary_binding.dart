@@ -1,5 +1,4 @@
 import 'package:get/get.dart';
-import 'package:smart_retail/app/data/services/staff_api_service.dart';
 import './staff_salary_controller.dart';
 
 class StaffSalaryBinding extends Bindings {

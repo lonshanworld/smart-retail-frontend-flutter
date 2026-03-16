@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 class StockInfo {
   final int quantity;
   final String shopId;
@@ -17,6 +15,109 @@ class StockInfo {
   }
 }
 
+class CategoryRef {
+  final String id;
+  final String name;
+  final String? description;
+
+  CategoryRef({required this.id, required this.name, this.description});
+
+  factory CategoryRef.fromJson(Map<String, dynamic> json) {
+    return CategoryRef(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      description: json['description'] as String?,
+    );
+  }
+}
+
+class SubcategoryRef {
+  final String id;
+  final String categoryId;
+  final String name;
+  final String? description;
+
+  SubcategoryRef({
+    required this.id,
+    required this.categoryId,
+    required this.name,
+    this.description,
+  });
+
+  factory SubcategoryRef.fromJson(Map<String, dynamic> json) {
+    return SubcategoryRef(
+      id: json['id'] as String,
+      categoryId:
+          json['categoryId'] as String? ?? json['category_id'] as String,
+      name: json['name'] as String,
+      description: json['description'] as String?,
+    );
+  }
+}
+
+class BrandRef {
+  final String id;
+  final String name;
+  final String? description;
+
+  BrandRef({required this.id, required this.name, this.description});
+
+  factory BrandRef.fromJson(Map<String, dynamic> json) {
+    return BrandRef(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      description: json['description'] as String?,
+    );
+  }
+}
+
+class CategoryWithSubcategories extends CategoryRef {
+  final List<SubcategoryRef> subcategories;
+
+  CategoryWithSubcategories({
+    required super.id,
+    required super.name,
+    super.description,
+    required this.subcategories,
+  });
+
+  factory CategoryWithSubcategories.fromJson(Map<String, dynamic> json) {
+    final rawSubs = (json['subcategories'] as List?) ?? const [];
+    return CategoryWithSubcategories(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      description: json['description'] as String?,
+      subcategories: rawSubs
+          .map((e) => SubcategoryRef.fromJson(Map<String, dynamic>.from(e)))
+          .toList(),
+    );
+  }
+}
+
+class CatalogOptionsResponse {
+  final List<CategoryWithSubcategories> categories;
+  final List<BrandRef> brands;
+
+  CatalogOptionsResponse({required this.categories, required this.brands});
+
+  factory CatalogOptionsResponse.fromJson(Map<String, dynamic> json) {
+    final rawCategories = (json['categories'] as List?) ?? const [];
+    final rawBrands = (json['brands'] as List?) ?? const [];
+    return CatalogOptionsResponse(
+      categories: rawCategories
+          .map(
+            (e) => CategoryWithSubcategories.fromJson(
+              Map<String, dynamic>.from(e),
+            ),
+          )
+          .toList(),
+      brands: rawBrands
+          .map((e) => BrandRef.fromJson(Map<String, dynamic>.from(e)))
+          .toList(),
+    );
+  }
+}
+
 class InventoryItem {
   String? id;
   String merchantId;
@@ -27,7 +128,13 @@ class InventoryItem {
   double? originalPrice;
   int? lowStockThreshold;
   String? category;
+  String? categoryId;
+  String? subcategoryId;
+  String? brandId;
   String? supplier;
+  CategoryRef? categoryObj;
+  SubcategoryRef? subcategoryObj;
+  BrandRef? brandObj;
   bool isArchived;
   DateTime createdAt;
   DateTime updatedAt;
@@ -49,7 +156,13 @@ class InventoryItem {
     this.originalPrice,
     this.lowStockThreshold,
     this.category,
+    this.categoryId,
+    this.subcategoryId,
+    this.brandId,
     this.supplier,
+    this.categoryObj,
+    this.subcategoryObj,
+    this.brandObj,
     this.isArchived = false,
     required this.createdAt,
     required this.updatedAt,
@@ -69,7 +182,13 @@ class InventoryItem {
     double? originalPrice,
     int? lowStockThreshold,
     String? category,
+    String? categoryId,
+    String? subcategoryId,
+    String? brandId,
     String? supplier,
+    CategoryRef? categoryObj,
+    SubcategoryRef? subcategoryObj,
+    BrandRef? brandObj,
     bool? isArchived,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -88,7 +207,13 @@ class InventoryItem {
       originalPrice: originalPrice ?? this.originalPrice,
       lowStockThreshold: lowStockThreshold ?? this.lowStockThreshold,
       category: category ?? this.category,
+      categoryId: categoryId ?? this.categoryId,
+      subcategoryId: subcategoryId ?? this.subcategoryId,
+      brandId: brandId ?? this.brandId,
       supplier: supplier ?? this.supplier,
+      categoryObj: categoryObj ?? this.categoryObj,
+      subcategoryObj: subcategoryObj ?? this.subcategoryObj,
+      brandObj: brandObj ?? this.brandObj,
       isArchived: isArchived ?? this.isArchived,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -143,7 +268,27 @@ class InventoryItem {
                   json['low_stock_threshold'] as num?)
               ?.toInt(),
       category: json['category'] as String?,
+      categoryId:
+          json['categoryId'] as String? ?? json['category_id'] as String?,
+      subcategoryId:
+          json['subcategoryId'] as String? ?? json['subcategory_id'] as String?,
+      brandId: json['brandId'] as String? ?? json['brand_id'] as String?,
       supplier: json['supplier'] as String?,
+      categoryObj: json['categoryObj'] != null
+          ? CategoryRef.fromJson(
+              Map<String, dynamic>.from(json['categoryObj'] as Map),
+            )
+          : null,
+      subcategoryObj: json['subcategoryObj'] != null
+          ? SubcategoryRef.fromJson(
+              Map<String, dynamic>.from(json['subcategoryObj'] as Map),
+            )
+          : null,
+      brandObj: json['brandObj'] != null
+          ? BrandRef.fromJson(
+              Map<String, dynamic>.from(json['brandObj'] as Map),
+            )
+          : null,
       isArchived:
           json['isArchived'] as bool? ?? json['is_archived'] as bool? ?? false,
       createdAt: DateTime.parse(
@@ -168,6 +313,9 @@ class InventoryItem {
       originalPrice: map['originalPrice'] as double?,
       lowStockThreshold: map['lowStockThreshold'] as int?,
       category: map['category'] as String?,
+      categoryId: map['categoryId'] as String?,
+      subcategoryId: map['subcategoryId'] as String?,
+      brandId: map['brandId'] as String?,
       supplier: map['supplier'] as String?,
       isArchived: map['isArchived'] == 1,
       createdAt: DateTime.parse(map['createdAt'] as String),
@@ -189,6 +337,9 @@ class InventoryItem {
       'originalPrice': originalPrice,
       'lowStockThreshold': lowStockThreshold,
       'category': category,
+      'categoryId': categoryId,
+      'subcategoryId': subcategoryId,
+      'brandId': brandId,
       'supplier': supplier,
       'isArchived': isArchived ? 1 : 0,
       'createdAt': createdAt.toIso8601String(),
@@ -208,6 +359,9 @@ class InventoryItem {
       'originalPrice': originalPrice,
       'lowStockThreshold': lowStockThreshold,
       'category': category,
+      'categoryId': categoryId,
+      'subcategoryId': subcategoryId,
+      'brandId': brandId,
       'supplier': supplier,
     };
   }
@@ -219,9 +373,13 @@ class InventoryItem {
     if (sku != null) data['sku'] = sku;
     data['sellingPrice'] = sellingPrice;
     if (originalPrice != null) data['originalPrice'] = originalPrice;
-    if (lowStockThreshold != null)
+    if (lowStockThreshold != null) {
       data['lowStockThreshold'] = lowStockThreshold;
+    }
     if (category != null) data['category'] = category;
+    if (categoryId != null) data['categoryId'] = categoryId;
+    if (subcategoryId != null) data['subcategoryId'] = subcategoryId;
+    if (brandId != null) data['brandId'] = brandId;
     if (supplier != null) data['supplier'] = supplier;
     // Note: Archiving is handled via a separate method/endpoint for clarity.
     return data;

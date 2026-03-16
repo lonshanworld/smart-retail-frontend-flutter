@@ -6,7 +6,7 @@ import 'package:smart_retail/app/widgets/modern_card.dart';
 import 'package:smart_retail/app/widgets/app_colors.dart';
 
 class AdminAddEditShopView extends GetView<AdminAddEditShopController> {
-  const AdminAddEditShopView({Key? key}) : super(key: key);
+  const AdminAddEditShopView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +28,7 @@ class AdminAddEditShopView extends GetView<AdminAddEditShopController> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [AppColors.admin.shade50.withOpacity(0.3), Colors.white],
+            colors: [AppColors.admin.shade50.withValues(alpha: 0.3), Colors.white],
           ),
         ),
         child: SingleChildScrollView(
@@ -107,7 +107,7 @@ class AdminAddEditShopView extends GetView<AdminAddEditShopController> {
                         }
 
                         return DropdownButtonFormField<String>(
-                          value: controller.selectedMerchantId.value,
+                          initialValue: controller.selectedMerchantId.value,
                           decoration: InputDecoration(
                             labelText: 'Merchant *',
                             hintText: 'Select a merchant',
@@ -255,7 +255,7 @@ class AdminAddEditShopView extends GetView<AdminAddEditShopController> {
                           onChanged: (bool value) {
                             controller.isActive.value = value;
                           },
-                          activeColor: AppColors.success,
+                          activeThumbColor: AppColors.success,
                           contentPadding: EdgeInsets.zero,
                         ),
                       ),

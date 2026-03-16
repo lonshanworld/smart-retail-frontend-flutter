@@ -5,7 +5,7 @@ import 'package:smart_retail/app/modules/merchant/invoices/merchant_invoices_con
 import 'package:smart_retail/app/modules/merchant/widgets/merchant_main_scaffold.dart';
 
 class MerchantInvoicesView extends GetView<MerchantInvoicesController> {
-  const MerchantInvoicesView({Key? key}) : super(key: key);
+  const MerchantInvoicesView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -111,7 +111,7 @@ class MerchantInvoicesView extends GetView<MerchantInvoicesController> {
                       child: ListTile(
                         contentPadding: const EdgeInsets.all(16.0),
                         leading: CircleAvatar(
-                          backgroundColor: _getStatusColor(invoice.paymentStatus).withOpacity(0.2),
+                          backgroundColor: _getStatusColor(invoice.paymentStatus).withValues(alpha: 0.2),
                           child: Icon(
                             Icons.receipt_long,
                             color: _getStatusColor(invoice.paymentStatus),
@@ -175,7 +175,7 @@ class MerchantInvoicesView extends GetView<MerchantInvoicesController> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: _getStatusColor(status).withOpacity(0.2),
+        color: _getStatusColor(status).withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(

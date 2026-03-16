@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -13,9 +12,7 @@ class AuthService extends GetxService {
   static const String _tokenKey = 'auth_token';
   static const String _userKey = 'auth_user';
   static const String _shopKey = 'auth_shop';
-  static const String _userRoleKey = 'user_role';
-  static const String _userIdKey = 'user_id';
-  static const String _shopIdKey = 'shop_id';
+
 
   final RxnString authToken = RxnString();
   final Rxn<User> user = Rxn<User>();
@@ -44,7 +41,7 @@ class AuthService extends GetxService {
     authToken.value = prefs.getString(_tokenKey);
 
     final userJson = prefs.getString(_userKey);
-    print('checking auth user json ${userJson}');
+    print('checking auth user json $userJson');
     if (userJson != null) {
       try {
         user.value = User.fromJson(jsonDecode(userJson));

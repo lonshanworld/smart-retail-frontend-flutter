@@ -1,11 +1,10 @@
-import 'dart:convert';
-
 class Shop {
   String? id;
   String merchantId;
   String name;
   String? address;
   String? phone;
+  double taxRate;
   bool? isActive;
   bool? isPrimary;
   DateTime createdAt;
@@ -17,6 +16,7 @@ class Shop {
     required this.name,
     this.address,
     this.phone,
+    this.taxRate = 5.0,
     this.isActive,
     this.isPrimary,
     required this.createdAt,
@@ -31,6 +31,10 @@ class Shop {
       name: json['name'] as String? ?? '',
       address: json['address'] as String?,
       phone: json['phone'] as String?,
+      taxRate:
+          (json['taxRate'] as num?)?.toDouble() ??
+          (json['tax_rate'] as num?)?.toDouble() ??
+          5.0,
       isActive: json['isActive'] as bool? ?? json['is_active'] as bool?,
       isPrimary: json['isPrimary'] as bool? ?? json['is_primary'] as bool?,
       createdAt: DateTime.parse(
@@ -53,6 +57,7 @@ class Shop {
       'name': name,
       'address': address,
       'phone': phone,
+      'taxRate': taxRate,
       'isActive': isActive,
       'isPrimary': isPrimary,
       'createdAt': createdAt.toIso8601String(),
@@ -66,6 +71,7 @@ class Shop {
       'merchantId': merchantId,
       if (address != null && address!.isNotEmpty) 'address': address,
       if (phone != null && phone!.isNotEmpty) 'phone': phone,
+      'taxRate': taxRate,
     };
   }
 
@@ -95,6 +101,7 @@ class Shop {
     if (phone != null) {
       data['phone'] = phone;
     } else {}
+    data['taxRate'] = taxRate;
     return data;
   }
 
@@ -125,6 +132,7 @@ class Shop {
     if (newIsPrimary != null) {
       data['isPrimary'] = newIsPrimary;
     }
+    // Tax rate can only be edited by merchant owner through merchant routes.
     return data;
   }
 
@@ -137,6 +145,7 @@ class Shop {
       phone: map['phone'] as String?,
       isActive: map['isActive'] == 1,
       isPrimary: map['isPrimary'] == 1,
+      taxRate: (map['taxRate'] as num?)?.toDouble() ?? 5.0,
       createdAt: DateTime.parse(map['createdAt'] as String),
       updatedAt: DateTime.parse(map['updatedAt'] as String),
     );
@@ -149,6 +158,7 @@ class Shop {
       'name': name,
       'address': address,
       'phone': phone,
+      'taxRate': taxRate,
       'isActive': isActive == true ? 1 : 0,
       'isPrimary': isPrimary == true ? 1 : 0,
       'createdAt': createdAt.toIso8601String(),
@@ -164,6 +174,7 @@ class Shop {
     String? phone,
     bool? isActive,
     bool? isPrimary,
+    double? taxRate,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -175,6 +186,7 @@ class Shop {
       phone: phone ?? this.phone,
       isActive: isActive ?? this.isActive,
       isPrimary: isPrimary ?? this.isPrimary,
+      taxRate: taxRate ?? this.taxRate,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -290,7 +302,7 @@ class PaginatedShopResponse {
       shopsListJson = dataField;
       totalItemsJson = shopsListJson.length;
       currentPageJson = 1;
-      pageSizeJson = shopsListJson.length > 0 ? shopsListJson.length : 10;
+      pageSizeJson = shopsListJson.isNotEmpty ? shopsListJson.length : 10;
       totalPagesJson = 1;
     } else {
       shopsListJson = [];

@@ -1,144 +1,124 @@
 # Portal Deployment Guide
 
-This project supports two separate portal deployments:
-1. **Admin Portal** - For administrative access only
-2. **Customer Portal** - For merchants, shops, and staff
+This project now supports 4 deployment portals:
 
-## Portal Configuration
+1. `public` (landing website with support/contact)
+2. `admin`
+3. `merchant`
+4. `staff`
 
-The portal type is controlled by the `DEPLOY_PORTAL` environment variable in the `.env` file.
+Optional internal target:
+- `shop`
 
-### Environment Files
+## Portal Selection
 
-- **`.env.admin`** - Admin portal configuration (`DEPLOY_PORTAL=admin`)
-- **`.env.customer`** - Customer portal configuration (`DEPLOY_PORTAL=customer`)
-- **`.env`** - Default configuration (currently set to admin)
+Portal boot route is selected by:
 
-## Building for Different Portals
+1. `--dart-define=APP_PORTAL=<portal>` (highest priority)
+2. `.env` value `DEPLOY_PORTAL=<portal>`
 
-### Admin Portal Build
+`customer` is treated as alias for `public`.
+
+## Environment Files
+
+Available env presets:
+
+- `.env.public`
+- `.env.admin`
+- `.env.merchant`
+- `.env.staff`
+- `.env.shop`
+
+Each build script copies `.env.<portal>` into `.env` before building.
+
+## Build Scripts
+
+### Single portal, selected platforms
+
+Windows:
+
+```bat
+build-portal.bat public web
+build-portal.bat admin web windows
+build-portal.bat merchant apk appbundle
+build-portal.bat staff all
+```
+
+Linux/macOS:
 
 ```bash
-# Copy admin environment
-cp .env.admin .env
-
-# Run the app
-flutter run
-
-# Or build for production
-flutter build web
-flutter build apk
-flutter build ios
+./build-portal.sh public web
+./build-portal.sh admin web linux
+./build-portal.sh merchant apk appbundle
+./build-portal.sh staff all
 ```
 
-### Customer Portal Build
+Supported platforms:
+- `web`
+- `apk`
+- `appbundle`
+- `windows`
+- `linux`
+- `macos`
+- `ios`
+- `all`
+
+## Build all portals
+
+Windows:
+
+```bat
+build-all-portals.bat web
+build-all-portals.bat apk appbundle
+build-all-portals.bat all
+```
+
+Linux/macOS:
 
 ```bash
-# Copy customer environment
-cp .env.customer .env
-
-# Run the app
-flutter run
-
-# Or build for production
-flutter build web
-flutter build apk
-flutter build ios
+./build-all-portals.sh web
+./build-all-portals.sh apk appbundle
+./build-all-portals.sh all
 ```
 
-## Portal Differences
+## Per-portal wrappers
 
-### Admin Portal
-- **Initial Screen**: Simple admin login page
-- **Features**: Only admin login button
-- **Design**: Minimal and professional
-- **Routes**: `/admin-intro` → `/admin/login`
+Windows:
+- `build-public-all.bat`
+- `build-admin-all.bat`
+- `build-merchant-all.bat`
+- `build-staff-all.bat`
 
-### Customer Portal
-- **Initial Screen**: Full landing page with scrollable sections
-- **Features**: 
-  - Hero section with branding
-  - Features showcase
-  - Three login buttons (Merchant, Shop, Staff)
-  - About section
-  - Footer
-- **Design**: Modern, colorful, and engaging
-- **Routes**: `/customer-intro` → `/merchant/login`, `/shop/login`, `/staff/login`
+Linux/macOS:
+- `build-public-all.sh`
+- `build-admin-all.sh`
+- `build-merchant-all.sh`
+- `build-staff-all.sh`
 
-## Portal Features
+## Output Structure
 
-The portal configuration automatically:
-- Shows the correct intro/landing page on app start
-- Sets the app title (`Smart Retail Admin` vs `Smart Retail`)
-- Configures available routes and features
-- Can be extended to show/hide features based on portal type
+Artifacts are separated by portal and platform:
 
-## Development
-
-During development, you can quickly switch portals by:
-
-1. Editing `.env` file directly:
-   ```properties
-   DEPLOY_PORTAL=admin   # For admin portal
-   DEPLOY_PORTAL=customer  # For customer portal
-   ```
-
-2. Hot restart the app (not just hot reload)
-
-## Production Deployment
-
-For production, build separate artifacts:
-
-### Web Deployment
-```bash
-# Admin Portal
-cp .env.admin .env
-flutter build web --release
-mv build/web build/admin-portal
-
-# Customer Portal
-cp .env.customer .env
-flutter build web --release
-mv build/web build/customer-portal
+```text
+build/artifacts/<portal>/<platform>/...
 ```
 
-### Mobile Deployment
-```bash
-# Admin Portal APK
-cp .env.admin .env
-flutter build apk --release
-mv build/app/outputs/flutter-apk/app-release.apk smart-retail-admin.apk
+Examples:
+- `build/artifacts/public/web/web`
+- `build/artifacts/admin/windows/windows-release`
+- `build/artifacts/merchant/apk/smart-retail-merchant-release.apk`
+- `build/artifacts/staff/appbundle/smart-retail-staff-release.aab`
 
-# Customer Portal APK
-cp .env.customer .env
-flutter build apk --release
-mv build/app/outputs/flutter-apk/app-release.apk smart-retail-customer.apk
-```
+## Host Platform Notes
 
-## CI/CD Integration
+- Windows host skips `ios`, `macos`, `linux` builds.
+- Linux host cannot build `ios`/`macos`.
+- macOS host can build all targets (with proper SDK/tooling installed).
 
-Example GitHub Actions workflow:
+## Troubleshooting Checklist
 
-```yaml
-jobs:
-  build-admin:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - run: cp .env.admin .env
-      - run: flutter build web --release
-      
-  build-customer:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - run: cp .env.customer .env
-      - run: flutter build web --release
-```
-
-## Notes
-
-- The `.env` file is git-ignored for security
-- Always ensure the correct `.env` file is used before building
-- Portal configuration is read once at app initialization
-- Changing portal requires app restart, not just hot reload
+1. Run `flutter pub get`.
+2. Verify `API_BASE_URL` in `.env.<portal>` or pass `--dart-define=API_BASE_URL=...`.
+3. Confirm mobile signing config for release builds.
+4. Ensure platform tooling is installed (`xcode`, Android SDK, Windows build tools, etc.).
+5. Use `flutter analyze` and test commands before final release packaging.

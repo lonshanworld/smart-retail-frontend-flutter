@@ -13,6 +13,7 @@ class ShopAddEditController extends GetxController {
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
   final TextEditingController nameController = TextEditingController();
   final TextEditingController addressController = TextEditingController();
+  final TextEditingController taxRateController = TextEditingController();
 
   var isEditing = false.obs;
   var isSaving = false.obs;
@@ -32,8 +33,10 @@ class ShopAddEditController extends GetxController {
       _editingShop = shopArg;
       nameController.text = _editingShop!.name;
       addressController.text = _editingShop!.address ?? '';
+      taxRateController.text = _editingShop!.taxRate.toStringAsFixed(2);
     } else {
       isEditing.value = false;
+      taxRateController.text = '5.00';
     }
   }
 
@@ -55,6 +58,13 @@ class ShopAddEditController extends GetxController {
       }
 
       Shop? savedShop;
+      final double parsedTaxRate =
+          double.tryParse(taxRateController.text.trim()) ?? -1;
+      if (parsedTaxRate < 0 || parsedTaxRate > 100) {
+        DialogUtils.showError('Tax rate must be between 0 and 100.');
+        isSaving.value = false;
+        return;
+      }
       if (isEditing.value && _editingShop != null && _editingShop!.id != null) {
         // Update existing shop
         Map<String, dynamic> updates = {
@@ -62,6 +72,7 @@ class ShopAddEditController extends GetxController {
           'address': addressController.text.isNotEmpty
               ? addressController.text
               : null,
+          'taxRate': parsedTaxRate,
         };
         // Ensure the merchantId is not accidentally changed during update if it's part of the `updates` map implicitly.
         // The API should ideally protect against this, or the DTO for update shouldn't include merchantId.
@@ -77,6 +88,7 @@ class ShopAddEditController extends GetxController {
           address: addressController.text.isNotEmpty
               ? addressController.text
               : null,
+          taxRate: parsedTaxRate,
           createdAt: DateTime.now(), // Client-side, backend will override
           updatedAt: DateTime.now(), // Client-side, backend will override
         );
@@ -114,7 +126,9 @@ class ShopAddEditController extends GetxController {
     isDeletable.value = false;
 
     try {
-      final result = await _shopApiService.checkShopDeletable(_editingShop!.id!);
+      final result = await _shopApiService.checkShopDeletable(
+        _editingShop!.id!,
+      );
       if (result == null) {
         DialogUtils.showError('Failed to check deletion status.');
         return;
@@ -122,8 +136,9 @@ class ShopAddEditController extends GetxController {
       final bool deletable = result['deletable'] == true;
       final Map<String, dynamic> blockers = result['blockers'] ?? {};
       blockers.forEach((k, v) {
-        if (v is int) deleteBlockers[k] = v;
-        else if (v is String) {
+        if (v is int) {
+          deleteBlockers[k] = v;
+        } else if (v is String) {
           final parsed = int.tryParse(v) ?? 0;
           deleteBlockers[k] = parsed;
         }
@@ -132,15 +147,20 @@ class ShopAddEditController extends GetxController {
 
       if (!deletable) {
         // Show blockers
-        final entries = deleteBlockers.entries.map((e) => '${e.key}: ${e.value}').join('\n');
-        DialogUtils.showError('Cannot delete shop. References found:\n$entries');
+        final entries = deleteBlockers.entries
+            .map((e) => '${e.key}: ${e.value}')
+            .join('\n');
+        DialogUtils.showError(
+          'Cannot delete shop. References found:\n$entries',
+        );
         return;
       }
 
       // Confirm and delete
       final confirm = await DialogUtils.showConfirmDialog(
         title: 'Delete Shop',
-        message: 'Are you sure you want to permanently delete this shop? This action cannot be undone.',
+        message:
+            'Are you sure you want to permanently delete this shop? This action cannot be undone.',
         confirmText: 'Delete',
         cancelText: 'Cancel',
         isDanger: true,
@@ -170,6 +190,7 @@ class ShopAddEditController extends GetxController {
   void onClose() {
     nameController.dispose();
     addressController.dispose();
+    taxRateController.dispose();
     super.onClose();
   }
 }

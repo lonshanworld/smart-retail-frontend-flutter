@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:smart_retail/app/data/services/sales_analysis_api_service.dart';
 
+enum AiResponseViewMode { chartAndHtml, htmlOnly, rawData }
+
 class AiSalesAnalysisController extends GetxController {
   final SalesAnalysisApiService _apiService =
       Get.find<SalesAnalysisApiService>();
@@ -10,6 +12,16 @@ class AiSalesAnalysisController extends GetxController {
   final RxBool isLoading = false.obs;
   final RxnString errorMessage = RxnString();
   final RxString analysisResult = ''.obs;
+  final RxString analysisHtml = ''.obs;
+  final RxBool isHtmlResult = false.obs;
+  final RxList<AiChartPoint> chartSeries = <AiChartPoint>[].obs;
+  final RxString sqlQuery = ''.obs;
+  final RxString rawDataJson = ''.obs;
+  final Rx<AiResponseViewMode> viewMode = AiResponseViewMode.chartAndHtml.obs;
+
+  void setViewMode(AiResponseViewMode mode) {
+    viewMode.value = mode;
+  }
 
   void askQuestion(String question) {
     promptController.text = question;
@@ -25,14 +37,24 @@ class AiSalesAnalysisController extends GetxController {
 
     isLoading.value = true;
     errorMessage.value = null;
-    print('🤖 [AI SALES ANALYSIS] Sending prompt: $prompt');
+    debugPrint('🤖 [AI SALES ANALYSIS] Sending prompt: $prompt');
     try {
       final result = await _apiService.getSalesAnalysis(prompt);
-      print('🤖 [AI SALES ANALYSIS] Received result: $result');
-      analysisResult.value = result;
+      debugPrint('🤖 [AI SALES ANALYSIS] Received result: $result');
+      analysisResult.value = result.analysisText;
+      analysisHtml.value = result.analysisHtml;
+      isHtmlResult.value = result.isHtml;
+      chartSeries.assignAll(result.chartSeries);
+      sqlQuery.value = result.sql;
+      rawDataJson.value = result.rawDataJson;
     } catch (e) {
       errorMessage.value = e.toString();
       analysisResult.value = ''; // Clear previous results on error
+      analysisHtml.value = '';
+      isHtmlResult.value = false;
+      chartSeries.clear();
+      sqlQuery.value = '';
+      rawDataJson.value = '';
     } finally {
       isLoading.value = false;
     }

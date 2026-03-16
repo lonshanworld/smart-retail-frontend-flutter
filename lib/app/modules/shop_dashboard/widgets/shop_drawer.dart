@@ -4,7 +4,7 @@ import 'package:smart_retail/app/routes/app_pages.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
 
 class ShopDrawer extends StatelessWidget {
-  const ShopDrawer({Key? key}) : super(key: key);
+  const ShopDrawer({super.key});
 
   @override
   Widget build(BuildContext context) {

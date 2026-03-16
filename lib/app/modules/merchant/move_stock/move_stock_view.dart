@@ -5,7 +5,7 @@ import 'package:smart_retail/app/data/models/shop_model.dart';
 import './move_stock_controller.dart';
 
 class MoveStockView extends GetView<MoveStockController> {
-  const MoveStockView({Key? key}) : super(key: key);
+  const MoveStockView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -82,7 +82,7 @@ class MoveStockView extends GetView<MoveStockController> {
                 const SizedBox(height: 8),
                 Obx(
                   () => DropdownButtonFormField<InventoryItem>(
-                    value: controller.selectedItem.value,
+                    initialValue: controller.selectedItem.value,
                     decoration: InputDecoration(
                       labelText: 'Inventory Item',
                       prefixIcon: const Icon(Icons.inventory_2),
@@ -114,7 +114,7 @@ class MoveStockView extends GetView<MoveStockController> {
                 const SizedBox(height: 8),
                 Obx(
                   () => DropdownButtonFormField<Shop>(
-                    value: controller.fromShop.value,
+                    initialValue: controller.fromShop.value,
                     decoration: InputDecoration(
                       labelText: 'Source Shop',
                       prefixIcon: const Icon(Icons.store_outlined),
@@ -173,7 +173,7 @@ class MoveStockView extends GetView<MoveStockController> {
                 const SizedBox(height: 8),
                 Obx(
                   () => DropdownButtonFormField<Shop>(
-                    value: controller.toShop.value,
+                    initialValue: controller.toShop.value,
                     decoration: InputDecoration(
                       labelText: 'Destination Shop',
                       prefixIcon: const Icon(Icons.store),

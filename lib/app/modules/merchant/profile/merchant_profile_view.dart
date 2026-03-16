@@ -4,7 +4,7 @@ import 'package:smart_retail/app/modules/merchant/profile/merchant_profile_contr
 import 'package:smart_retail/app/modules/merchant/widgets/merchant_main_scaffold.dart';
 
 class MerchantProfileView extends GetView<MerchantProfileController> {
-  const MerchantProfileView({Key? key}) : super(key: key);
+  const MerchantProfileView({super.key});
 
   @override
   Widget build(BuildContext context) {

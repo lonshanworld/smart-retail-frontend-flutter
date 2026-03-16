@@ -1,4 +1,6 @@
 import 'package:get/get.dart';
+import 'package:smart_retail/app/data/providers/api_constants.dart';
+import 'package:smart_retail/app/data/services/auth_service.dart';
 import 'package:smart_retail/app/utils/response_utils.dart';
 import 'package:uuid/uuid.dart';
 import '../models/sync_models.dart';
@@ -16,6 +18,7 @@ class SyncService extends GetxService {
 
   late ConnectivityService _connectivityService;
   late LocalDatabaseService _localDatabaseService;
+  late AuthService _authService;
 
   @override
   void onInit() {
@@ -26,6 +29,7 @@ class SyncService extends GetxService {
   void _initServices() {
     _connectivityService = Get.find<ConnectivityService>();
     _localDatabaseService = Get.find<LocalDatabaseService>();
+    _authService = Get.find<AuthService>();
 
     // Listen to connectivity changes
     ever(_connectivityService.isOnline, (isOnline) async {
@@ -181,6 +185,8 @@ class SyncService extends GetxService {
       );
 
       final connect = Get.find<GetConnect>();
+      final token = _authService.authToken.value;
+      final authenticatedUserId = _authService.userId.value;
 
       // Prepare sync request with all sale data
       final syncPayload = {
@@ -211,7 +217,8 @@ class SyncService extends GetxService {
             )
             .toList(),
         'deviceId': 'flutter-app',
-        'userId': 'user-id-from-auth', // This should come from AuthService
+        if (authenticatedUserId != null && authenticatedUserId.isNotEmpty)
+          'userId': authenticatedUserId,
       };
 
       print(
@@ -220,8 +227,11 @@ class SyncService extends GetxService {
 
       // Send to backend
       final response = await connect.post(
-        'http://localhost:3000/api/v1/merchant/pos/sync',
+        '${ApiConstants.baseUrl}/merchant/pos/sync',
         syncPayload,
+        headers: token != null && token.isNotEmpty
+            ? {'Authorization': 'Bearer $token'}
+            : null,
       );
 
       print('[SyncService] Backend response status: ${response.statusCode}');
@@ -343,8 +353,4 @@ class SyncService extends GetxService {
     failedCount.value = 0;
   }
 
-  @override
-  void onClose() {
-    super.onClose();
-  }
 }

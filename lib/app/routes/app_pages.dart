@@ -1,9 +1,15 @@
 import 'package:get/get.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:smart_retail/app/core/config/runtime_portal.dart';
 
 // Import all the pages
 import 'package:smart_retail/app/modules/intro/intro_view.dart';
 import 'package:smart_retail/app/modules/admin_intro/admin_intro_view.dart';
 import 'package:smart_retail/app/modules/customer_landing/customer_landing_view.dart';
+import 'package:smart_retail/app/modules/public/about/public_about_view.dart';
+import 'package:smart_retail/app/modules/public/features/public_features_view.dart';
+import 'package:smart_retail/app/modules/public/support/public_support_view.dart';
+import 'package:smart_retail/app/modules/public/contact/public_contact_view.dart';
 import 'package:smart_retail/app/modules/login/login_view.dart';
 import 'package:smart_retail/app/modules/login/login_binding.dart';
 import 'package:smart_retail/app/modules/merchant/dashboard/merchant_dashboard_view.dart';
@@ -141,8 +147,36 @@ import 'package:smart_retail/app/modules/dev/printer_test_view.dart';
 part 'app_routes.dart';
 
 class AppPages {
-  // Always start with customer landing page
-  static const String INITIAL = Routes.CUSTOMER_INTRO;
+  static String get INITIAL => initialRoute;
+
+  static String get initialRoute {
+    final portalFromRuntime = RuntimePortal.value;
+    const portalFromDefine = String.fromEnvironment('APP_PORTAL');
+    final portal =
+      ((portalFromRuntime != null && portalFromRuntime.isNotEmpty)
+          ? portalFromRuntime
+          : portalFromDefine.isNotEmpty
+                ? portalFromDefine
+          : (dotenv.env['DEPLOY_PORTAL'] ?? 'public'))
+            .toLowerCase()
+            .trim();
+
+    switch (portal) {
+      case 'admin':
+        return Routes.ADMIN_LOGIN;
+      case 'merchant':
+        return Routes.MERCHANT_LOGIN;
+      case 'staff':
+        return Routes.STAFF_LOGIN;
+      case 'shop':
+        return Routes.SHOP_LOGIN;
+      case 'public':
+      case 'customer':
+      case 'landing':
+      default:
+        return Routes.CUSTOMER_INTRO;
+    }
+  }
 
   // Build routes lazily to avoid running middleware constructors at import time
   static List<GetPage> get routes => [
@@ -152,6 +186,10 @@ class AppPages {
       name: Routes.CUSTOMER_INTRO,
       page: () => const CustomerLandingView(),
     ),
+    GetPage(name: Routes.PUBLIC_FEATURES, page: () => const PublicFeaturesView()),
+    GetPage(name: Routes.PUBLIC_ABOUT, page: () => const PublicAboutView()),
+    GetPage(name: Routes.PUBLIC_SUPPORT, page: () => const PublicSupportView()),
+    GetPage(name: Routes.PUBLIC_CONTACT, page: () => const PublicContactView()),
     GetPage(
       name: Routes.LOGIN,
       page: () => LoginView(),
@@ -186,7 +224,9 @@ class AppPages {
       name: Routes.MERCHANT_INVOICES,
       page: () => const MerchantInvoicesView(),
       binding: BindingsBuilder(() {
-        Get.lazyPut<MerchantInvoicesController>(() => MerchantInvoicesController());
+        Get.lazyPut<MerchantInvoicesController>(
+          () => MerchantInvoicesController(),
+        );
       }),
       middlewares: [AuthMiddleware(requiredRole: UserRole.merchant)],
     ),
@@ -388,10 +428,7 @@ class AppPages {
     ),
 
     // Dev / testing routes
-    GetPage(
-      name: Routes.DEV_PRINTER_TEST,
-      page: () => const PrinterTestView(),
-    ),
+    GetPage(name: Routes.DEV_PRINTER_TEST, page: () => const PrinterTestView()),
 
     // Staff Routes
     GetPage(

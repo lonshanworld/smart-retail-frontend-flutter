@@ -1,5 +1,4 @@
 import 'package:get/get.dart';
-import 'package:smart_retail/app/data/services/merchant_staff_api_service.dart';
 import 'package:smart_retail/app/modules/merchant/staff/add_edit/staff_add_edit_controller.dart';
 
 class StaffAddEditBinding extends Bindings {

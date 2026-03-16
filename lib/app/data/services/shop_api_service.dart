@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart'; // For kDebugMode
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:smart_retail/app/utils/dialog_utils.dart';
 import 'package:smart_retail/app/core/config/app_config.dart';

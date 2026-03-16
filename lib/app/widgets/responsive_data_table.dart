@@ -19,7 +19,7 @@ class ResponsiveDataTable<T> extends StatelessWidget {
   final bool showCheckboxColumn;
 
   const ResponsiveDataTable({
-    Key? key,
+    super.key,
     required this.items,
     required this.columns,
     required this.buildCells,
@@ -33,7 +33,7 @@ class ResponsiveDataTable<T> extends StatelessWidget {
     this.dataRowHeight,
     this.headingRowHeight,
     this.showCheckboxColumn = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -55,9 +55,9 @@ class ResponsiveDataTable<T> extends StatelessWidget {
 
     return ScrollbarTheme(
       data: ScrollbarThemeData(
-        thumbVisibility: MaterialStateProperty.all(true),
-        thickness: MaterialStateProperty.all(8.0),
-        thumbColor: MaterialStateProperty.all(Colors.grey.shade400),
+        thumbVisibility: WidgetStateProperty.all(true),
+        thickness: WidgetStateProperty.all(8.0),
+        thumbColor: WidgetStateProperty.all(Colors.grey.shade400),
         radius: const Radius.circular(4),
         minThumbLength: 40,
       ),
@@ -83,9 +83,10 @@ class ResponsiveDataTable<T> extends StatelessWidget {
                     sortColumnIndex: sortColumnIndex,
                     showCheckboxColumn: showCheckboxColumn,
                     headingRowColor: headingRowColor != null
-                        ? MaterialStateProperty.all(headingRowColor!)
-                        : MaterialStateProperty.all(Colors.grey.shade100),
-                    dataRowHeight: dataRowHeight ?? 72,
+                        ? WidgetStateProperty.all(headingRowColor!)
+                        : WidgetStateProperty.all(Colors.grey.shade100),
+                    dataRowMinHeight: dataRowHeight ?? 72,
+                    dataRowMaxHeight: dataRowHeight ?? 72,
                     headingRowHeight: headingRowHeight ?? 56,
                     columns: columns,
                     rows: items.map((item) {
@@ -112,9 +113,9 @@ class ResponsiveDataTable<T> extends StatelessWidget {
     if (buildMobileCard != null) {
       return ScrollbarTheme(
         data: ScrollbarThemeData(
-          thumbVisibility: MaterialStateProperty.all(true),
-          thickness: MaterialStateProperty.all(8.0),
-          thumbColor: MaterialStateProperty.all(Colors.grey.shade400),
+          thumbVisibility: WidgetStateProperty.all(true),
+          thickness: WidgetStateProperty.all(8.0),
+          thumbColor: WidgetStateProperty.all(Colors.grey.shade400),
           radius: const Radius.circular(4),
           minThumbLength: 40,
         ),
@@ -140,9 +141,9 @@ class ResponsiveDataTable<T> extends StatelessWidget {
     final fallbackController = ScrollController();
     return ScrollbarTheme(
       data: ScrollbarThemeData(
-        thumbVisibility: MaterialStateProperty.all(true),
-        thickness: MaterialStateProperty.all(8.0),
-        thumbColor: MaterialStateProperty.all(Colors.grey.shade400),
+        thumbVisibility: WidgetStateProperty.all(true),
+        thickness: WidgetStateProperty.all(8.0),
+        thumbColor: WidgetStateProperty.all(Colors.grey.shade400),
         radius: const Radius.circular(4),
         minThumbLength: 40,
       ),
@@ -191,7 +192,7 @@ class DataRowCard extends StatelessWidget {
   final Gradient? gradient;
 
   const DataRowCard({
-    Key? key,
+    super.key,
     this.leading,
     required this.title,
     this.subtitle,
@@ -201,7 +202,7 @@ class DataRowCard extends StatelessWidget {
     this.statusColor,
     this.statusText,
     this.gradient,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -246,7 +247,7 @@ class DataRowCard extends StatelessWidget {
                             ),
                             decoration: BoxDecoration(
                               color:
-                                  statusColor?.withOpacity(0.1) ??
+                                  statusColor?.withValues(alpha: 0.1) ??
                                   Colors.grey.shade200,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
@@ -300,13 +301,13 @@ class DetailRow extends StatelessWidget {
   final FontWeight? valueFontWeight;
 
   const DetailRow({
-    Key? key,
+    super.key,
     this.icon,
     required this.label,
     required this.value,
     this.valueColor,
     this.valueFontWeight,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

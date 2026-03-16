@@ -12,7 +12,7 @@ class ModernCard extends StatelessWidget {
   final BorderRadius? borderRadius;
 
   const ModernCard({
-    Key? key,
+    super.key,
     required this.child,
     this.padding,
     this.margin,
@@ -21,7 +21,7 @@ class ModernCard extends StatelessWidget {
     this.onTap,
     this.elevation,
     this.borderRadius,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -33,8 +33,8 @@ class ModernCard extends StatelessWidget {
         borderRadius: borderRadius ?? BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(
-              elevation != null ? elevation! * 0.02 : 0.05,
+            color: Colors.black.withValues(
+              alpha: elevation != null ? elevation! * 0.02 : 0.05,
             ),
             blurRadius: 20,
             offset: const Offset(0, 4),

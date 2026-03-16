@@ -9,7 +9,7 @@ import 'package:smart_retail/app/widgets/section_header.dart';
 import 'package:smart_retail/app/widgets/app_colors.dart';
 
 class StaffInvoicesView extends GetView<StaffInvoicesController> {
-  const StaffInvoicesView({Key? key}) : super(key: key);
+  const StaffInvoicesView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +20,7 @@ class StaffInvoicesView extends GetView<StaffInvoicesController> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [AppColors.staff.shade50.withOpacity(0.3), Colors.white],
+            colors: [AppColors.staff.shade50.withValues(alpha: 0.3), Colors.white],
           ),
         ),
         child: Obx(() {
@@ -127,16 +127,16 @@ class StaffInvoicesView extends GetView<StaffInvoicesController> {
                 Expanded(
                   child: ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                    itemCount: invoices.length + (controller.hasMorePages.value ? 1 : 0),
+                    itemCount:
+                        invoices.length +
+                        (controller.hasMorePages.value ? 1 : 0),
                     itemBuilder: (context, index) {
                       if (index == invoices.length) {
                         // Load more indicator
                         controller.loadMoreInvoices();
                         return const Padding(
                           padding: EdgeInsets.all(16.0),
-                          child: Center(
-                            child: CircularProgressIndicator(),
-                          ),
+                          child: Center(child: CircularProgressIndicator()),
                         );
                       }
 
@@ -200,10 +200,7 @@ class StaffInvoicesView extends GetView<StaffInvoicesController> {
               children: [
                 Text(
                   DateFormat.yMMMd().format(invoice.invoiceDate.toLocal()),
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey.shade600,
-                  ),
+                  style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                 ),
                 Text(
                   '\$${invoice.totalAmount.toStringAsFixed(2)}',
@@ -221,18 +218,11 @@ class StaffInvoicesView extends GetView<StaffInvoicesController> {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Icon(
-                    Icons.schedule,
-                    size: 16,
-                    color: Colors.grey.shade500,
-                  ),
+                  Icon(Icons.schedule, size: 16, color: Colors.grey.shade500),
                   const SizedBox(width: 4),
                   Text(
                     'Due: ${DateFormat.yMMMd().format(invoice.dueDate!.toLocal())}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey.shade600,
-                    ),
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                   ),
                 ],
               ),
@@ -281,3 +271,4 @@ class StaffInvoicesView extends GetView<StaffInvoicesController> {
     );
   }
 }
+

@@ -9,7 +9,7 @@ import 'package:smart_retail/app/widgets/app_colors.dart';
 import 'package:smart_retail/app/utils/dialog_utils.dart';
 
 class ShopsView extends GetView<MerchantShopsController> {
-  const ShopsView({Key? key}) : super(key: key);
+  const ShopsView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +26,7 @@ class ShopsView extends GetView<MerchantShopsController> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [AppColors.merchant.shade50.withOpacity(0.3), Colors.white],
+            colors: [AppColors.merchant.shade50.withValues(alpha: 0.3), Colors.white],
           ),
         ),
         child: Obx(() {

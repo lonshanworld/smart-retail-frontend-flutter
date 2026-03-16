@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smart_retail/app/widgets/app_colors.dart';
 
 /// Section header with title and optional action
 class SectionHeader extends StatelessWidget {
@@ -9,13 +10,13 @@ class SectionHeader extends StatelessWidget {
   final EdgeInsetsGeometry? padding;
 
   const SectionHeader({
-    Key? key,
+    super.key,
     required this.title,
     this.subtitle,
     this.action,
     this.icon,
     this.padding,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +26,7 @@ class SectionHeader extends StatelessWidget {
       child: Row(
         children: [
           if (icon != null) ...[
-            Icon(icon, size: 28, color: Colors.grey.shade700),
+            Icon(icon, size: 28, color: AppColors.textSecondary),
             const SizedBox(width: 12),
           ],
           Expanded(
@@ -34,17 +35,20 @@ class SectionHeader extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
-                    color: Colors.grey.shade900,
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 if (subtitle != null) ...[
                   const SizedBox(height: 4),
                   Text(
                     subtitle!,
-                    style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ],
               ],

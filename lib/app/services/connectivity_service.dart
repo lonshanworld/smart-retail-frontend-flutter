@@ -80,8 +80,4 @@ class ConnectivityService extends GetxService {
     // Connectivity is automatically monitored through the stream
   }
 
-  @override
-  void onClose() {
-    super.onClose();
-  }
 }

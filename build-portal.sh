@@ -1,104 +1,101 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 
 # Smart Retail Portal Builder
-# Usage: ./build-portal.sh [admin|customer] [web|apk|ios]
+# Usage: ./build-portal.sh [public|admin|merchant|staff|shop|customer] [platform...]
+# Platforms: web apk appbundle ios macos linux windows all
 
-PORTAL_TYPE=$1
-BUILD_TYPE=$2
-
-if [ -z "$PORTAL_TYPE" ] || [ -z "$BUILD_TYPE" ]; then
-    echo "Usage: ./build-portal.sh [admin|customer] [web|apk|ios]"
-    echo ""
-    echo "Examples:"
-    echo "  ./build-portal.sh admin web      # Build admin portal for web"
-    echo "  ./build-portal.sh customer apk   # Build customer portal for Android"
+PORTAL="${1:-}"
+if [[ -z "$PORTAL" ]]; then
+    echo "Usage: ./build-portal.sh [public|admin|merchant|staff|shop|customer] [platform ...]"
     exit 1
 fi
 
-# Validate portal type
-if [ "$PORTAL_TYPE" != "admin" ] && [ "$PORTAL_TYPE" != "customer" ]; then
-    echo "Error: Portal type must be 'admin' or 'customer'"
-    exit 1
+if [[ "$PORTAL" == "customer" ]]; then
+    PORTAL="public"
 fi
 
-# Validate build type
-if [ "$BUILD_TYPE" != "web" ] && [ "$BUILD_TYPE" != "apk" ] && [ "$BUILD_TYPE" != "ios" ]; then
-    echo "Error: Build type must be 'web', 'apk', or 'ios'"
-    exit 1
-fi
-
-echo "================================================"
-echo "  Smart Retail Portal Builder"
-echo "================================================"
-echo "Portal: $PORTAL_TYPE"
-echo "Build Type: $BUILD_TYPE"
-echo ""
-
-# Copy the appropriate .env file
-echo "📋 Copying .env.$PORTAL_TYPE to .env..."
-cp .env.$PORTAL_TYPE .env
-
-if [ $? -ne 0 ]; then
-    echo "❌ Error: Failed to copy .env.$PORTAL_TYPE"
-    exit 1
-fi
-
-echo "✅ Environment configured for $PORTAL_TYPE portal"
-echo ""
-
-# Clean previous builds
-echo "🧹 Cleaning previous builds..."
-flutter clean
-
-# Get dependencies
-echo "📦 Getting dependencies..."
-flutter pub get
-
-# Build based on type
-echo ""
-echo "🔨 Building $PORTAL_TYPE portal for $BUILD_TYPE..."
-echo ""
-
-case $BUILD_TYPE in
-    web)
-        flutter build web --release
-        BUILD_OUTPUT="build/web"
-        ;;
-    apk)
-        flutter build apk --release
-        BUILD_OUTPUT="build/app/outputs/flutter-apk/app-release.apk"
-        ;;
-    ios)
-        flutter build ios --release
-        BUILD_OUTPUT="build/ios"
+case "$PORTAL" in
+    public|admin|merchant|staff|shop) ;;
+    *)
+        echo "Error: invalid portal '$PORTAL'"
+        exit 1
         ;;
 esac
 
-if [ $? -eq 0 ]; then
-    echo ""
-    echo "================================================"
-    echo "✅ BUILD SUCCESSFUL!"
-    echo "================================================"
-    echo "Portal: $PORTAL_TYPE"
-    echo "Build Type: $BUILD_TYPE"
-    echo "Output: $BUILD_OUTPUT"
-    echo ""
-    
-    # Rename output for clarity
-    if [ "$BUILD_TYPE" == "apk" ]; then
-        mv $BUILD_OUTPUT "build/smart-retail-$PORTAL_TYPE.apk"
-        echo "📱 APK renamed to: build/smart-retail-$PORTAL_TYPE.apk"
-    elif [ "$BUILD_TYPE" == "web" ]; then
-        if [ -d "build/$PORTAL_TYPE-portal" ]; then
-            rm -rf "build/$PORTAL_TYPE-portal"
-        fi
-        mv build/web "build/$PORTAL_TYPE-portal"
-        echo "🌐 Web build moved to: build/$PORTAL_TYPE-portal"
-    fi
-    
-    echo ""
+shift || true
+if [[ "$#" -eq 0 ]]; then
+    PLATFORMS=(web)
 else
-    echo ""
-    echo "❌ BUILD FAILED!"
+    if [[ "$1" == "all" ]]; then
+        PLATFORMS=(web apk appbundle ios macos linux windows)
+    else
+        PLATFORMS=("$@")
+    fi
+fi
+
+ENV_FILE=".env.${PORTAL}"
+if [[ ! -f "$ENV_FILE" ]]; then
+    echo "Error: $ENV_FILE not found"
     exit 1
 fi
+
+echo "========================================"
+echo "Smart Retail Portal Builder"
+echo "Portal: $PORTAL"
+echo "Platforms: ${PLATFORMS[*]}"
+echo "========================================"
+
+cp "$ENV_FILE" .env
+TARGET_FILE="lib/main_${PORTAL}.dart"
+if [[ ! -f "$TARGET_FILE" ]]; then
+    echo "Error: $TARGET_FILE not found"
+    exit 1
+fi
+flutter pub get
+
+mkdir -p "build/artifacts/$PORTAL"
+
+for platform in "${PLATFORMS[@]}"; do
+    out_dir="build/artifacts/$PORTAL/$platform"
+    rm -rf "$out_dir"
+    mkdir -p "$out_dir"
+
+    echo "---- Building $PORTAL / $platform ----"
+    case "$platform" in
+        web)
+            flutter build web --release --target="$TARGET_FILE"
+            cp -R build/web "$out_dir/web"
+            ;;
+        apk)
+            flutter build apk --release --target="$TARGET_FILE"
+            cp build/app/outputs/flutter-apk/app-release.apk "$out_dir/smart-retail-$PORTAL-release.apk"
+            ;;
+        appbundle)
+            flutter build appbundle --release --target="$TARGET_FILE"
+            cp build/app/outputs/bundle/release/app-release.aab "$out_dir/smart-retail-$PORTAL-release.aab"
+            ;;
+        ios)
+            flutter build ios --release --target="$TARGET_FILE"
+            cp -R build/ios "$out_dir/ios"
+            ;;
+        macos)
+            flutter build macos --release --target="$TARGET_FILE"
+            cp -R build/macos/Build/Products/Release "$out_dir/macos-release"
+            ;;
+        linux)
+            flutter build linux --release --target="$TARGET_FILE"
+            cp -R build/linux/x64/release/bundle "$out_dir/linux-bundle"
+            ;;
+        windows)
+            flutter build windows --release --target="$TARGET_FILE"
+            cp -R build/windows/x64/runner/Release "$out_dir/windows-release"
+            ;;
+        *)
+            echo "Error: unsupported platform '$platform'"
+            exit 1
+            ;;
+    esac
+done
+
+echo "Build matrix complete: build/artifacts/$PORTAL"
