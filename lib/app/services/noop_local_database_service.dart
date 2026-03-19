@@ -31,6 +31,21 @@ class NoopLocalDatabaseService extends LocalDatabaseService {
   Future<void> clearAllSales() async {}
 
   @override
+  Future<void> queueOperation(Map<String, dynamic> operation) async {}
+
+  @override
+  Future<List<Map<String, dynamic>>> getPendingOperations() async => [];
+
+  @override
+  Future<void> markOperationAsSynced(String operationId) async {}
+
+  @override
+  Future<void> markOperationFailed(String operationId, String? errorMsg) async {}
+
+  @override
+  Future<int> getPendingOperationsCount() async => 0;
+
+  @override
   Future<void> cacheProducts(
     List<Map<String, dynamic>> products,
     String merchantId,

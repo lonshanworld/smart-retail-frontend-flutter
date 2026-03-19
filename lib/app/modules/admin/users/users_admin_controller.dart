@@ -100,7 +100,9 @@ class UsersAdminController extends GetxController {
         fetchUsers(); // Refresh the list
       } catch (e) {
         print("UsersAdminController: Error deleting user $userId: $e");
-        DialogUtils.showError("Failed to delete user $userName: ${e.toString()}");
+        DialogUtils.showError(
+          "Failed to delete user $userName: ${e.toString()}",
+        );
       } finally {
         isLoading.value = false;
       }
@@ -139,13 +141,17 @@ class UsersAdminController extends GetxController {
       isUpdatingStatus.value = true;
       try {
         await _userApiService.updateUser(user.id, {'isActive': newStatus});
-        DialogUtils.showSuccess("User ${user.name} ${actionText}d successfully.");
+        DialogUtils.showSuccess(
+          "User ${user.name} ${actionText}d successfully.",
+        );
         fetchUsers();
       } catch (e) {
         print(
           "UsersAdminController: Error ${actionText}ing user ${user.id}: $e",
         );
-        DialogUtils.showError("Failed to $actionText user ${user.name}: ${e.toString()}");
+        DialogUtils.showError(
+          "Failed to $actionText user ${user.name}: ${e.toString()}",
+        );
       } finally {
         isUpdatingStatus.value = false;
       }

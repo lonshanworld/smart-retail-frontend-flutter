@@ -1,4 +1,3 @@
-
 class Supplier {
   final String? id;
   final String merchantId;

@@ -28,7 +28,10 @@ class AdminAddEditShopView extends GetView<AdminAddEditShopController> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [AppColors.admin.shade50.withValues(alpha: 0.3), Colors.white],
+            colors: [
+              AppColors.admin.shade50.withValues(alpha: 0.3),
+              Colors.white,
+            ],
           ),
         ),
         child: SingleChildScrollView(

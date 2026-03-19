@@ -12,6 +12,7 @@ class Receipt {
   final String? staffName;
   final double originalTotal;
   final double discountAmount;
+  final double deliveryCharge;
   final double finalTotal;
   final String paymentType;
   final String paymentStatus; // This field is now included
@@ -28,6 +29,7 @@ class Receipt {
     this.staffName,
     required this.originalTotal,
     required this.discountAmount,
+    required this.deliveryCharge,
     required this.finalTotal,
     required this.paymentType,
     required this.paymentStatus, // This field is now included
@@ -43,7 +45,10 @@ class Receipt {
     // Calculate original total before discount
     double finalAmount = safeDouble(json['final_total']);
     double discount = safeDouble(json['discount_amount']);
-    double originalTotal = finalAmount + discount;
+    double deliveryCharge = safeDouble(
+      json['delivery_charge'] ?? json['deliveryCharge'],
+    );
+    double originalTotal = finalAmount + discount - deliveryCharge;
 
     return Receipt(
       saleId: json['saleId'] as String? ?? json['sale_id'] as String,
@@ -60,6 +65,7 @@ class Receipt {
       staffName: json['staffName'] as String? ?? json['staff_name'] as String?,
       originalTotal: originalTotal, // Calculated value
       discountAmount: discount,
+      deliveryCharge: deliveryCharge,
       finalTotal: finalAmount,
       paymentType:
           json['paymentType'] as String? ?? json['payment_type'] as String,

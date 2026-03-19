@@ -7,11 +7,15 @@ import 'package:smart_retail/app/data/services/auth_service.dart';
 import 'package:smart_retail/app/data/models/admin_paginated_users_response.dart'; // <<< ADDED IMPORT
 import 'package:smart_retail/app/data/models/user_selection_item.dart'; // <<< ADDED IMPORT
 import 'package:smart_retail/app/utils/response_utils.dart';
+import 'package:smart_retail/app/services/local_database_service.dart';
+import 'package:uuid/uuid.dart';
 
 class AdminUserService extends GetxService {
   final GetConnect _connect = GetConnect(timeout: const Duration(seconds: 30));
   final AuthService _authService = Get.find<AuthService>();
   final AppConfig _appConfig = Get.find<AppConfig>();
+  final LocalDatabaseService _localDatabaseService =
+      Get.find<LocalDatabaseService>();
 
   final String _adminUsersBaseUrl = "${ApiConstants.baseUrl}/admin/users";
 
@@ -25,6 +29,35 @@ class AdminUserService extends GetxService {
       'Authorization': 'Bearer $token',
       'Content-Type': 'application/json',
     };
+  }
+
+  bool _shouldQueue(dynamic error) {
+    final text = error.toString().toLowerCase();
+    return _appConfig.localStorageOnly ||
+        text.contains('socketexception') ||
+        text.contains('failed host lookup') ||
+        text.contains('connection') ||
+        text.contains('timeout');
+  }
+
+  Future<void> _queueOperation({
+    required String clientOperationId,
+    required String entityType,
+    required String action,
+    required String endpoint,
+    required Map<String, dynamic> payload,
+    String method = 'POST',
+  }) async {
+    await _localDatabaseService.queueOperation({
+      'id': clientOperationId,
+      'client_operation_id': clientOperationId,
+      'entity_type': entityType,
+      'action': action,
+      'method': method,
+      'endpoint': endpoint,
+      'payload': payload,
+      'headers': {'X-Client-Operation-Id': clientOperationId},
+    });
   }
 
   /// Fetches a paginated list of users.
@@ -111,9 +144,7 @@ class AdminUserService extends GetxService {
 
     if (response.statusCode == 200 && response.body['status'] == 'success') {
       // Use defensive normalization for the response data
-      return AdminPaginatedUsersResponse.fromJson(
-        asMap(response.body['data']),
-      );
+      return AdminPaginatedUsersResponse.fromJson(asMap(response.body['data']));
     } else {
       print(
         'Error listing users: ${response.statusCode} - ${response.bodyString}',
@@ -144,16 +175,23 @@ class AdminUserService extends GetxService {
     }
     final headers = await _getAuthHeaders();
     if (headers == null) return null;
-    print('create user start here $userData');
-    final response = await _connect.post(
-      _adminUsersBaseUrl,
-      userData,
-      headers: headers,
-    );
-    print('after response ${response.body}');
-    if (response.statusCode! < 300) {
-      return User.fromJson(asMap(response.body['data']['user']));
-    } else {
+    final clientOperationId = userData['clientOperationId']?.toString() ??
+        const Uuid().v4();
+    final payload = Map<String, dynamic>.from(userData)
+      ..['clientOperationId'] = clientOperationId;
+
+    try {
+      final response = await _connect.post(
+        _adminUsersBaseUrl,
+        payload,
+        headers: {
+          ...headers,
+          'X-Client-Operation-Id': clientOperationId,
+        },
+      );
+      if (response.statusCode! < 300) {
+        return User.fromJson(asMap(response.body['data']['user']));
+      }
       print(
         'Error creating user: ${response.statusCode} - ${response.bodyString}',
       );
@@ -161,6 +199,23 @@ class AdminUserService extends GetxService {
         "Failed to create user: ${response.body?['message'] ?? response.statusText}",
       );
       return null;
+    } catch (e) {
+      if (_shouldQueue(e)) {
+        await _queueOperation(
+          clientOperationId: clientOperationId,
+          entityType: 'admin_user',
+          action: 'create',
+          endpoint: _adminUsersBaseUrl,
+          payload: payload,
+        );
+        return User.fromJson({
+          ...payload,
+          'id': clientOperationId,
+          'createdAt': DateTime.now().toIso8601String(),
+          'updatedAt': DateTime.now().toIso8601String(),
+        });
+      }
+      rethrow;
     }
   }
 
@@ -227,16 +282,24 @@ class AdminUserService extends GetxService {
     }
     final headers = await _getAuthHeaders();
     if (headers == null) return null;
+    final clientOperationId = userData['clientOperationId']?.toString() ??
+        const Uuid().v4();
+    final payload = Map<String, dynamic>.from(userData)
+      ..['clientOperationId'] = clientOperationId;
 
-    final response = await _connect.put(
-      '$_adminUsersBaseUrl/$userId',
-      userData,
-      headers: headers,
-    );
+    try {
+      final response = await _connect.put(
+        '$_adminUsersBaseUrl/$userId',
+        payload,
+        headers: {
+          ...headers,
+          'X-Client-Operation-Id': clientOperationId,
+        },
+      );
 
-    if (response.statusCode == 200 && response.body['status'] == 'success') {
-      return User.fromJson(asMap(response.body['data']));
-    } else {
+      if (response.statusCode == 200 && response.body['status'] == 'success') {
+        return User.fromJson(asMap(response.body['data']));
+      }
       print(
         'Error updating user $userId: ${response.statusCode} - ${response.bodyString}',
       );
@@ -244,6 +307,23 @@ class AdminUserService extends GetxService {
         "Failed to update user: ${response.body?['message'] ?? response.statusText}",
       );
       return null;
+    } catch (e) {
+      if (_shouldQueue(e)) {
+        await _queueOperation(
+          clientOperationId: clientOperationId,
+          entityType: 'admin_user',
+          action: 'update',
+          endpoint: '$_adminUsersBaseUrl/$userId',
+          payload: payload,
+          method: 'PUT',
+        );
+        return User.fromJson({
+          ...payload,
+          'id': userId,
+          'updatedAt': DateTime.now().toIso8601String(),
+        });
+      }
+      rethrow;
     }
   }
 
@@ -264,16 +344,22 @@ class AdminUserService extends GetxService {
     }
     final headers = await _getAuthHeaders();
     if (headers == null) return false;
+    final clientOperationId = const Uuid().v4();
+    try {
+      final response = await _connect.delete(
+        '$_adminUsersBaseUrl/$userId',
+        headers: {
+          ...headers,
+          'X-Client-Operation-Id': clientOperationId,
+        },
+      );
 
-    final response = await _connect.delete(
-      '$_adminUsersBaseUrl/$userId',
-      headers: headers,
-    );
-
-    if (response.statusCode == 200 && response.body['status'] == 'success') {
-      DialogUtils.showSuccess(response.body?['message'] ?? "User deactivated successfully");
-      return true;
-    } else {
+      if (response.statusCode == 200 && response.body['status'] == 'success') {
+        DialogUtils.showSuccess(
+          response.body?['message'] ?? "User deactivated successfully",
+        );
+        return true;
+      }
       print(
         'Error deactivating user $userId: ${response.statusCode} - ${response.bodyString}',
       );
@@ -281,6 +367,19 @@ class AdminUserService extends GetxService {
         "Failed to deactivate user: ${response.body?['message'] ?? response.statusText}",
       );
       return false;
+    } catch (e) {
+      if (_shouldQueue(e)) {
+        await _queueOperation(
+          clientOperationId: clientOperationId,
+          entityType: 'admin_user',
+          action: 'delete',
+          endpoint: '$_adminUsersBaseUrl/$userId',
+          payload: {'userId': userId},
+          method: 'DELETE',
+        );
+        return true;
+      }
+      rethrow;
     }
   }
 
@@ -310,17 +409,23 @@ class AdminUserService extends GetxService {
     }
     final headers = await _getAuthHeaders();
     if (headers == null) return null;
+    final clientOperationId = const Uuid().v4();
+    try {
+      final response = await _connect.put(
+        '$_adminUsersBaseUrl/$userId/activate',
+        {},
+        headers: {
+          ...headers,
+          'X-Client-Operation-Id': clientOperationId,
+        },
+      );
 
-    final response = await _connect.put(
-      '$_adminUsersBaseUrl/$userId/activate',
-      {}, // Empty body
-      headers: headers,
-    );
-
-    if (response.statusCode == 200 && response.body['status'] == 'success') {
-      DialogUtils.showSuccess(response.body?['message'] ?? "User activated successfully");
-      return User.fromJson(asMap(response.body['data']));
-    } else {
+      if (response.statusCode == 200 && response.body['status'] == 'success') {
+        DialogUtils.showSuccess(
+          response.body?['message'] ?? "User activated successfully",
+        );
+        return User.fromJson(asMap(response.body['data']));
+      }
       print(
         'Error activating user $userId: ${response.statusCode} - ${response.bodyString}',
       );
@@ -328,6 +433,27 @@ class AdminUserService extends GetxService {
         "Failed to activate user: ${response.body?['message'] ?? response.statusText}",
       );
       return null;
+    } catch (e) {
+      if (_shouldQueue(e)) {
+        await _queueOperation(
+          clientOperationId: clientOperationId,
+          entityType: 'admin_user',
+          action: 'update',
+          endpoint: '$_adminUsersBaseUrl/$userId/activate',
+          payload: {'isActive': true},
+          method: 'PUT',
+        );
+        return User(
+          id: userId,
+          name: 'Pending user',
+          email: '',
+          role: 'merchant',
+          isActive: true,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+      }
+      rethrow;
     }
   }
 
@@ -352,15 +478,22 @@ class AdminUserService extends GetxService {
     // IMPORTANT: Confirm this is the correct endpoint for permanent deletion on your backend.
     // It might be something like '$userId/force' or with a query parameter like '?permanent=true'.
     // For now, I'm using a common pattern: '$userId/permanent-delete'
-    final response = await _connect.delete(
-      '$_adminUsersBaseUrl/$userId/permanent-delete',
-      headers: headers,
-    );
+    final clientOperationId = const Uuid().v4();
+    try {
+      final response = await _connect.delete(
+        '$_adminUsersBaseUrl/$userId/permanent-delete',
+        headers: {
+          ...headers,
+          'X-Client-Operation-Id': clientOperationId,
+        },
+      );
 
-    if (response.statusCode == 200 && response.body['status'] == 'success') {
-      DialogUtils.showSuccess(response.body?['message'] ?? "User permanently deleted");
-      return true;
-    } else {
+      if (response.statusCode == 200 && response.body['status'] == 'success') {
+        DialogUtils.showSuccess(
+          response.body?['message'] ?? "User permanently deleted",
+        );
+        return true;
+      }
       print(
         'Error permanently deleting user $userId: ${response.statusCode} - ${response.bodyString}',
       );
@@ -368,6 +501,19 @@ class AdminUserService extends GetxService {
         "Failed to permanently delete user: ${response.body?['message'] ?? response.statusText}",
       );
       return false;
+    } catch (e) {
+      if (_shouldQueue(e)) {
+        await _queueOperation(
+          clientOperationId: clientOperationId,
+          entityType: 'admin_user',
+          action: 'delete',
+          endpoint: '$_adminUsersBaseUrl/$userId/permanent-delete',
+          payload: {'userId': userId, 'permanent': true},
+          method: 'DELETE',
+        );
+        return true;
+      }
+      rethrow;
     }
   }
 
@@ -402,7 +548,10 @@ class AdminUserService extends GetxService {
     if (response.statusCode == 200 && response.body['status'] == 'success') {
       final rawList = asList(response.body['data']);
       return rawList
-          .map((json) => UserSelectionItem.fromJson(Map<String, dynamic>.from(json)))
+          .map(
+            (json) =>
+                UserSelectionItem.fromJson(Map<String, dynamic>.from(json)),
+          )
           .toList();
     } else {
       print(

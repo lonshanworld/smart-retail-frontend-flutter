@@ -17,6 +17,7 @@ abstract class Routes {
   // Merchant Routes
   static const MERCHANT_DASHBOARD = '/merchant/dashboard';
   static const MERCHANT_INVENTORY = '/merchant/inventory';
+  static const MERCHANT_CATALOG = '/merchant/catalog';
   static const MERCHANT_STOCKS = '/merchant/stocks';
   static const MERCHANT_STOCK_MOVE = '/merchant/stock-move';
   static const MERCHANT_INVENTORY_ADD = '/merchant/inventory/add';
@@ -71,6 +72,7 @@ abstract class Routes {
   static const SHOP_POS = '/shop/pos';
   static const SHOP_CUSTOMERS = '/shop/customers';
   static const SHOP_INVOICES = '/shop/invoices';
+  static const SHOP_SUPPORT = '/shop/support';
   static const SHOP_PROFILE = '/shop/profile';
   static const SHOP_SETTINGS = '/shop/settings';
   static const SHOP_PRINTER_SETTINGS = '/shop/settings/printer';

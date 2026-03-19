@@ -56,7 +56,7 @@ class StaffAddEditView extends GetView<StaffAddEditController> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Obx(
-                            () => Text(
+                                () => Text(
                               controller.isEditMode.value
                                   ? 'Update Staff Information'
                                   : 'Add New Staff Member',
@@ -128,7 +128,9 @@ class StaffAddEditView extends GetView<StaffAddEditController> {
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Colors.grey.shade300),
+                            borderSide: BorderSide(
+                              color: Colors.grey.shade300,
+                            ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -161,7 +163,9 @@ class StaffAddEditView extends GetView<StaffAddEditController> {
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Colors.grey.shade300),
+                            borderSide: BorderSide(
+                              color: Colors.grey.shade300,
+                            ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -182,47 +186,53 @@ class StaffAddEditView extends GetView<StaffAddEditController> {
 
                       // Password Field (only for new staff)
                       Obx(
-                        () => controller.isEditMode.value
+                            () => controller.isEditMode.value
                             ? const SizedBox.shrink()
                             : Column(
-                                children: [
-                                  TextFormField(
-                                    controller: controller.passwordController,
-                                    decoration: InputDecoration(
-                                      labelText: 'Password',
-                                      hintText: 'Enter secure password',
-                                      prefixIcon: Icon(
-                                        Icons.lock_outline,
-                                        color: AppColors.merchant.shade600,
-                                      ),
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide(
-                                          color: Colors.grey.shade300,
-                                        ),
-                                      ),
-                                      focusedBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide(
-                                          color: AppColors.merchant,
-                                          width: 2,
-                                        ),
-                                      ),
-                                      filled: true,
-                                      fillColor: Colors.grey.shade50,
-                                    ),
-                                    obscureText: true,
-                                    validator: (value) =>
-                                        (value?.isEmpty ?? true)
-                                        ? 'Password is required'
-                                        : null,
+                          children: [
+                            TextFormField(
+                              controller: controller.passwordController,
+                              decoration: InputDecoration(
+                                labelText: 'Password',
+                                hintText: 'Enter secure password',
+                                prefixIcon: Icon(
+                                  Icons.lock_outline,
+                                  color: AppColors.merchant.shade600,
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(
+                                    12,
                                   ),
-                                  const SizedBox(height: 20),
-                                ],
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(
+                                    12,
+                                  ),
+                                  borderSide: BorderSide(
+                                    color: Colors.grey.shade300,
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(
+                                    12,
+                                  ),
+                                  borderSide: BorderSide(
+                                    color: AppColors.merchant,
+                                    width: 2,
+                                  ),
+                                ),
+                                filled: true,
+                                fillColor: Colors.grey.shade50,
                               ),
+                              obscureText: true,
+                              validator: (value) =>
+                              (value?.isEmpty ?? true)
+                                  ? 'Password is required'
+                                  : null,
+                            ),
+                            const SizedBox(height: 20),
+                          ],
+                        ),
                       ),
 
                       const Divider(height: 40),
@@ -305,10 +315,10 @@ class StaffAddEditView extends GetView<StaffAddEditController> {
                               ),
                             ),
                             Obx(
-                              () => Switch(
+                                  () => Switch(
                                 value: controller.isActive.value,
                                 onChanged: (value) =>
-                                    controller.isActive.value = value,
+                                controller.isActive.value = value,
                                 activeThumbColor: AppColors.success,
                               ),
                             ),
@@ -356,18 +366,18 @@ class StaffAddEditView extends GetView<StaffAddEditController> {
 
                       // Save Button
                       Obx(
-                        () => SizedBox(
+                            () => SizedBox(
                           height: 56,
                           child: ElevatedButton.icon(
                             icon: controller.isSaving.value
                                 ? const SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.white,
-                                    ),
-                                  )
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
                                 : const Icon(Icons.save, size: 24),
                             label: Text(
                               controller.isSaving.value
@@ -391,7 +401,7 @@ class StaffAddEditView extends GetView<StaffAddEditController> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               disabledBackgroundColor:
-                                  AppColors.merchant.shade300,
+                              AppColors.merchant.shade300,
                             ),
                           ),
                         ),

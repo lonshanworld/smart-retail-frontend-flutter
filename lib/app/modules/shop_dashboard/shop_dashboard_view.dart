@@ -23,7 +23,10 @@ class ShopDashboardView extends GetView<ShopDashboardController> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [AppColors.shop.shade50.withValues(alpha: 0.3), Colors.white],
+            colors: [
+              AppColors.shop.shade50.withValues(alpha: 0.3),
+              Colors.white,
+            ],
           ),
         ),
         child: RefreshIndicator(
@@ -216,6 +219,13 @@ class ShopDashboardView extends GetView<ShopDashboardController> {
               ],
               onTap: () => Get.toNamed(Routes.SHOP_ITEMS),
             ),
+            _buildActionCard(
+              icon: Icons.support_agent_rounded,
+              title: 'Support Desk',
+              subtitle: 'Track and reply tickets',
+              gradient: [AppColors.info.shade400, AppColors.info.shade700],
+              onTap: () => Get.toNamed(Routes.SHOP_SUPPORT),
+            ),
           ],
         ),
       ],
@@ -281,4 +291,3 @@ class ShopDashboardView extends GetView<ShopDashboardController> {
     );
   }
 }
-

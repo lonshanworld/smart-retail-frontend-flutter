@@ -86,7 +86,7 @@ class AddEditUserAdminView extends GetView<AddEditUserAdminController> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Obx(
-                              () => Text(
+                                  () => Text(
                                 controller.isEditMode.value
                                     ? 'Update User Information'
                                     : 'Create New User Account',
@@ -227,89 +227,89 @@ class AddEditUserAdminView extends GetView<AddEditUserAdminController> {
 
                       // Security Section (Password - only for new users)
                       Obx(
-                        () => controller.isEditMode.value
+                            () => controller.isEditMode.value
                             ? const SizedBox.shrink()
                             : Column(
-                                children: [
-                                  _buildSectionHeader(
-                                    icon: Icons.lock_outline,
-                                    title: 'Security',
-                                    subtitle: 'Set up account credentials',
+                          children: [
+                            _buildSectionHeader(
+                              icon: Icons.lock_outline,
+                              title: 'Security',
+                              subtitle: 'Set up account credentials',
+                            ),
+                            const SizedBox(height: 12),
+                            ModernCard(
+                              child: TextFormField(
+                                controller: controller.passwordController,
+                                decoration: InputDecoration(
+                                  labelText: 'Password',
+                                  hintText: 'Enter a strong password',
+                                  filled: true,
+                                  fillColor: Colors.grey.shade50,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(
+                                      12,
+                                    ),
+                                    borderSide: BorderSide.none,
                                   ),
-                                  const SizedBox(height: 12),
-                                  ModernCard(
-                                    child: TextFormField(
-                                      controller: controller.passwordController,
-                                      decoration: InputDecoration(
-                                        labelText: 'Password',
-                                        hintText: 'Enter a strong password',
-                                        filled: true,
-                                        fillColor: Colors.grey.shade50,
-                                        border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                          borderSide: BorderSide.none,
-                                        ),
-                                        enabledBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                          borderSide: BorderSide(
-                                            color: Colors.grey.shade200,
-                                          ),
-                                        ),
-                                        focusedBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                          borderSide: BorderSide(
-                                            color: AppColors.admin,
-                                            width: 2,
-                                          ),
-                                        ),
-                                        errorBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                          borderSide: const BorderSide(
-                                            color: Colors.red,
-                                          ),
-                                        ),
-                                        prefixIcon: Icon(
-                                          Icons.lock_outline,
-                                          color: AppColors.admin,
-                                        ),
-                                        suffixIcon: IconButton(
-                                          icon: Icon(
-                                            controller.isPasswordObscured.value
-                                                ? Icons.visibility_off_outlined
-                                                : Icons.visibility_outlined,
-                                            color: Colors.grey.shade600,
-                                          ),
-                                          onPressed: () => controller
-                                              .togglePasswordVisibility(),
-                                        ),
-                                      ),
-                                      obscureText:
-                                          controller.isPasswordObscured.value,
-                                      validator: (value) {
-                                        if (controller.isEditMode.value) {
-                                          return null;
-                                        }
-                                        if (value == null || value.isEmpty) {
-                                          return 'Please enter a password';
-                                        }
-                                        if (value.length < 8) {
-                                          return 'Password must be at least 8 characters';
-                                        }
-                                        return null;
-                                      },
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(
+                                      12,
+                                    ),
+                                    borderSide: BorderSide(
+                                      color: Colors.grey.shade200,
                                     ),
                                   ),
-                                  const SizedBox(height: 24),
-                                ],
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(
+                                      12,
+                                    ),
+                                    borderSide: BorderSide(
+                                      color: AppColors.admin,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  errorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(
+                                      12,
+                                    ),
+                                    borderSide: const BorderSide(
+                                      color: Colors.red,
+                                    ),
+                                  ),
+                                  prefixIcon: Icon(
+                                    Icons.lock_outline,
+                                    color: AppColors.admin,
+                                  ),
+                                  suffixIcon: IconButton(
+                                    icon: Icon(
+                                      controller.isPasswordObscured.value
+                                          ? Icons.visibility_off_outlined
+                                          : Icons.visibility_outlined,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                    onPressed: () => controller
+                                        .togglePasswordVisibility(),
+                                  ),
+                                ),
+                                obscureText:
+                                controller.isPasswordObscured.value,
+                                validator: (value) {
+                                  if (controller.isEditMode.value) {
+                                    return null;
+                                  }
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please enter a password';
+                                  }
+                                  if (value.length < 8) {
+                                    return 'Password must be at least 8 characters';
+                                  }
+                                  return null;
+                                },
                               ),
+                            ),
+                            const SizedBox(height: 24),
+                          ],
+                        ),
                       ),
 
                       // Role & Permissions Section
@@ -324,7 +324,7 @@ class AddEditUserAdminView extends GetView<AddEditUserAdminController> {
                           children: [
                             // Role Dropdown
                             Obx(
-                              () => DropdownButtonFormField<UserRole>(
+                                  () => DropdownButtonFormField<UserRole>(
                                 initialValue: controller.selectedRole.value,
                                 decoration: InputDecoration(
                                   labelText: 'User Role',
@@ -361,21 +361,21 @@ class AddEditUserAdminView extends GetView<AddEditUserAdminController> {
                                 items: UserRole.values
                                     .where((role) => role != UserRole.unknown)
                                     .map((UserRole role) {
-                                      return DropdownMenuItem<UserRole>(
-                                        value: role,
-                                        child: Row(
-                                          children: [
-                                            Icon(
-                                              _getRoleIcon(role),
-                                              size: 20,
-                                              color: _getRoleColor(role),
-                                            ),
-                                            const SizedBox(width: 12),
-                                            Text(role.toDisplayString()),
-                                          ],
+                                  return DropdownMenuItem<UserRole>(
+                                    value: role,
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          _getRoleIcon(role),
+                                          size: 20,
+                                          color: _getRoleColor(role),
                                         ),
-                                      );
-                                    })
+                                        const SizedBox(width: 12),
+                                        Text(role.toDisplayString()),
+                                      ],
+                                    ),
+                                  );
+                                })
                                     .toList(),
                                 onChanged: (UserRole? newValue) {
                                   if (newValue != null) {
@@ -383,7 +383,7 @@ class AddEditUserAdminView extends GetView<AddEditUserAdminController> {
                                   }
                                 },
                                 validator: (value) =>
-                                    value == null || value == UserRole.unknown
+                                value == null || value == UserRole.unknown
                                     ? 'Please select a role'
                                     : null,
                               ),
@@ -407,101 +407,101 @@ class AddEditUserAdminView extends GetView<AddEditUserAdminController> {
                               ModernCard(
                                 child: controller.isFetchingMerchants.value
                                     ? const Padding(
-                                        padding: EdgeInsets.all(16.0),
-                                        child: Center(
-                                          child: CircularProgressIndicator(),
-                                        ),
-                                      )
+                                  padding: EdgeInsets.all(16.0),
+                                  child: Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                )
                                     : controller.merchantsForSelection.isEmpty
                                     ? Padding(
-                                        padding: const EdgeInsets.all(16.0),
-                                        child: Row(
-                                          children: [
-                                            Icon(
-                                              Icons.info_outline,
-                                              color: Colors.orange.shade700,
-                                            ),
-                                            const SizedBox(width: 12),
-                                            Expanded(
-                                              child: Text(
-                                                'No merchants available to assign. Please create a merchant user first.',
-                                                style: TextStyle(
-                                                  color: Colors.orange.shade700,
-                                                  fontSize: 14,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      )
-                                    : DropdownButtonFormField<String>(
-                                        initialValue:
-                                            controller.selectedMerchantId.value,
-                                        decoration: InputDecoration(
-                                          labelText: 'Associated Merchant',
-                                          hintText:
-                                              'Select a merchant for this staff member',
-                                          filled: true,
-                                          fillColor: Colors.grey.shade50,
-                                          border: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              12,
-                                            ),
-                                            borderSide: BorderSide.none,
-                                          ),
-                                          enabledBorder: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              12,
-                                            ),
-                                            borderSide: BorderSide(
-                                              color: Colors.grey.shade200,
-                                            ),
-                                          ),
-                                          focusedBorder: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              12,
-                                            ),
-                                            borderSide: BorderSide(
-                                              color: AppColors.admin,
-                                              width: 2,
-                                            ),
-                                          ),
-                                          errorBorder: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              12,
-                                            ),
-                                            borderSide: const BorderSide(
-                                              color: Colors.red,
-                                            ),
-                                          ),
-                                          prefixIcon: Icon(
-                                            Icons.supervisor_account_outlined,
-                                            color: AppColors.admin,
-                                          ),
-                                        ),
-                                        isExpanded: true,
-                                        items: controller.merchantsForSelection
-                                            .map((UserSelectionItem merchant) {
-                                              return DropdownMenuItem<String>(
-                                                value: merchant.id,
-                                                child: Text(merchant.name),
-                                              );
-                                            })
-                                            .toList(),
-                                        onChanged: (String? newValue) {
-                                          controller.selectedMerchantId.value =
-                                              newValue;
-                                        },
-                                        validator: (value) {
-                                          if (controller.selectedRole.value ==
-                                                  UserRole.staff &&
-                                              (value == null ||
-                                                  value.isEmpty)) {
-                                            return 'Please assign a merchant to this staff member';
-                                          }
-                                          return null;
-                                        },
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.info_outline,
+                                        color: Colors.orange.shade700,
                                       ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Text(
+                                          'No merchants available to assign. Please create a merchant user first.',
+                                          style: TextStyle(
+                                            color: Colors.orange.shade700,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                                    : DropdownButtonFormField<String>(
+                                  initialValue:
+                                  controller.selectedMerchantId.value,
+                                  decoration: InputDecoration(
+                                    labelText: 'Associated Merchant',
+                                    hintText:
+                                    'Select a merchant for this staff member',
+                                    filled: true,
+                                    fillColor: Colors.grey.shade50,
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(
+                                        12,
+                                      ),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(
+                                        12,
+                                      ),
+                                      borderSide: BorderSide(
+                                        color: Colors.grey.shade200,
+                                      ),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(
+                                        12,
+                                      ),
+                                      borderSide: BorderSide(
+                                        color: AppColors.admin,
+                                        width: 2,
+                                      ),
+                                    ),
+                                    errorBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(
+                                        12,
+                                      ),
+                                      borderSide: const BorderSide(
+                                        color: Colors.red,
+                                      ),
+                                    ),
+                                    prefixIcon: Icon(
+                                      Icons.supervisor_account_outlined,
+                                      color: AppColors.admin,
+                                    ),
+                                  ),
+                                  isExpanded: true,
+                                  items: controller.merchantsForSelection
+                                      .map((UserSelectionItem merchant) {
+                                    return DropdownMenuItem<String>(
+                                      value: merchant.id,
+                                      child: Text(merchant.name),
+                                    );
+                                  })
+                                      .toList(),
+                                  onChanged: (String? newValue) {
+                                    controller.selectedMerchantId.value =
+                                        newValue;
+                                  },
+                                  validator: (value) {
+                                    if (controller.selectedRole.value ==
+                                        UserRole.staff &&
+                                        (value == null ||
+                                            value.isEmpty)) {
+                                      return 'Please assign a merchant to this staff member';
+                                    }
+                                    return null;
+                                  },
+                                ),
                               ),
                               const SizedBox(height: 24),
                             ],
@@ -512,61 +512,61 @@ class AddEditUserAdminView extends GetView<AddEditUserAdminController> {
 
                       // Account Status (Edit mode only)
                       Obx(
-                        () => controller.isEditMode.value
+                            () => controller.isEditMode.value
                             ? Column(
-                                children: [
-                                  _buildSectionHeader(
-                                    icon: Icons.toggle_on_outlined,
-                                    title: 'Account Status',
-                                    subtitle: 'Enable or disable user access',
+                          children: [
+                            _buildSectionHeader(
+                              icon: Icons.toggle_on_outlined,
+                              title: 'Account Status',
+                              subtitle: 'Enable or disable user access',
+                            ),
+                            const SizedBox(height: 12),
+                            ModernCard(
+                              child: SwitchListTile(
+                                title: const Text(
+                                  'Active Status',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w500,
                                   ),
-                                  const SizedBox(height: 12),
-                                  ModernCard(
-                                    child: SwitchListTile(
-                                      title: const Text(
-                                        'Active Status',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                      subtitle: Text(
-                                        controller.isActive.value
-                                            ? 'User can access the system'
-                                            : 'User access is disabled',
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          color: Colors.grey.shade600,
-                                        ),
-                                      ),
-                                      value: controller.isActive.value,
-                                      onChanged: (bool value) {
-                                        controller.isActive.value = value;
-                                      },
-                                      secondary: Container(
-                                        padding: const EdgeInsets.all(8),
-                                        decoration: BoxDecoration(
-                                          color: controller.isActive.value
-                                              ? Colors.green.withValues(alpha: 0.1)
-                                              : Colors.red.withValues(alpha: 0.1),
-                                          borderRadius: BorderRadius.circular(
-                                            8,
-                                          ),
-                                        ),
-                                        child: Icon(
-                                          controller.isActive.value
-                                              ? Icons.check_circle_outline
-                                              : Icons.highlight_off_outlined,
-                                          color: controller.isActive.value
-                                              ? Colors.green.shade700
-                                              : Colors.red.shade700,
-                                        ),
-                                      ),
-                                      activeThumbColor: Colors.green,
+                                ),
+                                subtitle: Text(
+                                  controller.isActive.value
+                                      ? 'User can access the system'
+                                      : 'User access is disabled',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                                value: controller.isActive.value,
+                                onChanged: (bool value) {
+                                  controller.isActive.value = value;
+                                },
+                                secondary: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: controller.isActive.value
+                                        ? Colors.green.withValues(alpha: 0.1)
+                                        : Colors.red.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(
+                                      8,
                                     ),
                                   ),
-                                  const SizedBox(height: 24),
-                                ],
-                              )
+                                  child: Icon(
+                                    controller.isActive.value
+                                        ? Icons.check_circle_outline
+                                        : Icons.highlight_off_outlined,
+                                    color: controller.isActive.value
+                                        ? Colors.green.shade700
+                                        : Colors.red.shade700,
+                                  ),
+                                ),
+                                activeThumbColor: Colors.green,
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                          ],
+                        )
                             : const SizedBox.shrink(),
                       ),
 
@@ -606,18 +606,18 @@ class AddEditUserAdminView extends GetView<AddEditUserAdminController> {
 
                       // Save Button
                       Obx(
-                        () => SizedBox(
+                            () => SizedBox(
                           height: 54,
                           child: ElevatedButton.icon(
                             icon: controller.isSaving.value
                                 ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      color: Colors.white,
-                                      strokeWidth: 2,
-                                    ),
-                                  )
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
                                 : const Icon(Icons.save_outlined),
                             label: Text(
                               controller.isSaving.value
@@ -653,7 +653,7 @@ class AddEditUserAdminView extends GetView<AddEditUserAdminController> {
             ),
           ),
         ),
-      ),
+      )
     );
   }
 

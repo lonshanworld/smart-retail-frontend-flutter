@@ -187,23 +187,27 @@ class AdminDashboardApiService extends GetxService {
     }
 
     try {
-      print('[AdminDashboardApiService] Requesting merchant dashboard summary for shopId: $shopId');
+      print(
+        '[AdminDashboardApiService] Requesting merchant dashboard summary for shopId: $shopId',
+      );
       // Set a request timeout so the UI won't wait indefinitely on network issues.
       final response = await _getConnect
           .get(
-        url,
-        headers: {'Authorization': 'Bearer $token'},
-        query: queryParameters.isNotEmpty ? queryParameters : null,
-      )
+            url,
+            headers: {'Authorization': 'Bearer $token'},
+            query: queryParameters.isNotEmpty ? queryParameters : null,
+          )
           .timeout(
-        const Duration(seconds: 15),
-        onTimeout: () {
-          throw Exception('Request timed out after 15 seconds');
-        },
-      );
+            const Duration(seconds: 15),
+            onTimeout: () {
+              throw Exception('Request timed out after 15 seconds');
+            },
+          );
 
       print('[MerchantDashboard] Response status: ${response.statusCode}');
-      print('[MerchantDashboard] Response body type: ${response.body.runtimeType}');
+      print(
+        '[MerchantDashboard] Response body type: ${response.body.runtimeType}',
+      );
       print('[MerchantDashboard] Response body: ${response.body}');
 
       if (response.statusCode != null && response.statusCode! < 300) {
@@ -214,13 +218,17 @@ class AdminDashboardApiService extends GetxService {
             if (payload is Map && payload.containsKey('data')) {
               payload = payload['data'];
             }
-            print('[AdminDashboardApiService] payload runtimeType: ${payload.runtimeType}');
+            print(
+              '[AdminDashboardApiService] payload runtimeType: ${payload.runtimeType}',
+            );
             final Map<String, dynamic> map = asMap(payload);
             print('[AdminDashboardApiService] map keys: ${map.keys.length}');
             final model = MerchantDashboardSummaryModel.fromJson(map);
             return model;
           } catch (e, st) {
-            print('[AdminDashboardApiService] Error parsing dashboard JSON: $e');
+            print(
+              '[AdminDashboardApiService] Error parsing dashboard JSON: $e',
+            );
             print(st);
             DialogUtils.showError('Failed to parse merchant dashboard data.');
             return null;
@@ -232,7 +240,8 @@ class AdminDashboardApiService extends GetxService {
           return null;
         }
       } else {
-        String errorMessage = 'No data in dashboard summary. Status Code: ${response.statusCode}';
+        String errorMessage =
+            'No data in dashboard summary. Status Code: ${response.statusCode}';
         if (response.body != null && response.body['message'] != null) {
           errorMessage = response.body['message'];
         }
@@ -240,9 +249,13 @@ class AdminDashboardApiService extends GetxService {
         return null;
       }
     } catch (e, st) {
-      print('[AdminDashboardApiService] Exception fetching dashboard summary: $e');
+      print(
+        '[AdminDashboardApiService] Exception fetching dashboard summary: $e',
+      );
       print(st);
-      DialogUtils.showError('Error fetching merchant dashboard data: ${e.toString()}');
+      DialogUtils.showError(
+        'Error fetching merchant dashboard data: ${e.toString()}',
+      );
       return null;
     }
   }

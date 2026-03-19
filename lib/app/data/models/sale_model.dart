@@ -99,6 +99,7 @@ class Sale {
   final String merchantId;
   final DateTime saleDate;
   final double totalAmount;
+  final double deliveryCharge;
   final String? appliedPromotionId;
   final double? discountAmount;
   final String paymentType;
@@ -118,6 +119,7 @@ class Sale {
     required this.merchantId,
     required this.saleDate,
     required this.totalAmount,
+    required this.deliveryCharge,
     this.appliedPromotionId,
     this.discountAmount,
     required this.paymentType,
@@ -137,14 +139,19 @@ class Sale {
 
     double discount = (json['discountAmount'] as num? ?? 0.0).toDouble();
     double finalAmount = (json['totalAmount'] as num).toDouble();
-    double originalTotal = finalAmount + discount;
+    double deliveryCharge =
+        (json['deliveryCharge'] as num? ??
+                json['delivery_charge'] as num? ??
+                0.0)
+            .toDouble();
 
     return Sale(
       id: json['id'],
       shopId: json['shopId'],
       merchantId: json['merchantId'],
       saleDate: DateTime.parse(json['saleDate']),
-      totalAmount: originalTotal,
+      totalAmount: finalAmount,
+      deliveryCharge: deliveryCharge,
       appliedPromotionId: json['appliedPromotionId'],
       discountAmount: discount,
       paymentType: json['paymentType'],

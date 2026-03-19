@@ -72,7 +72,7 @@ class AdminAddEditMerchantView extends GetView<AdminAddEditMerchantController> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Obx(
-                          () => Icon(
+                              () => Icon(
                             controller.isEditMode.value
                                 ? Icons.edit_outlined
                                 : Icons.store_mall_directory_outlined,
@@ -87,7 +87,7 @@ class AdminAddEditMerchantView extends GetView<AdminAddEditMerchantController> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Obx(
-                              () => Text(
+                                  () => Text(
                                 controller.isEditMode.value
                                     ? 'Update Merchant Information'
                                     : 'Create New Merchant Account',
@@ -287,106 +287,106 @@ class AdminAddEditMerchantView extends GetView<AdminAddEditMerchantController> {
 
                 // Security Section (Password - only for new merchants)
                 Obx(
-                  () => !controller.isEditMode.value
+                      () => !controller.isEditMode.value
                       ? Column(
+                    children: [
+                      _buildSectionHeader(
+                        icon: Icons.lock_outline,
+                        title: 'Security',
+                        subtitle: 'Set up account credentials',
+                      ),
+                      const SizedBox(height: 12),
+                      ModernCard(
+                        child: Column(
                           children: [
-                            _buildSectionHeader(
-                              icon: Icons.lock_outline,
-                              title: 'Security',
-                              subtitle: 'Set up account credentials',
-                            ),
-                            const SizedBox(height: 12),
-                            ModernCard(
-                              child: Column(
-                                children: [
-                                  // Password
-                                  TextFormField(
-                                    controller: controller.passwordController,
-                                    decoration: InputDecoration(
-                                      labelText: "Password",
-                                      hintText: "Enter a strong password",
-                                      filled: true,
-                                      fillColor: Colors.grey.shade50,
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide.none,
-                                      ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide(
-                                          color: Colors.grey.shade200,
-                                        ),
-                                      ),
-                                      focusedBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide(
-                                          color: AppColors.merchant,
-                                          width: 2,
-                                        ),
-                                      ),
-                                      errorBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: const BorderSide(
-                                          color: Colors.red,
-                                        ),
-                                      ),
-                                      prefixIcon: Icon(
-                                        Icons.lock_outline,
-                                        color: AppColors.merchant,
-                                      ),
-                                    ),
-                                    obscureText: true,
-                                    validator: controller.validatePassword,
+                            // Password
+                            TextFormField(
+                              controller: controller.passwordController,
+                              decoration: InputDecoration(
+                                labelText: "Password",
+                                hintText: "Enter a strong password",
+                                filled: true,
+                                fillColor: Colors.grey.shade50,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none,
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: Colors.grey.shade200,
                                   ),
-                                  const SizedBox(height: 16),
-
-                                  // Confirm Password
-                                  TextFormField(
-                                    controller:
-                                        controller.confirmPasswordController,
-                                    decoration: InputDecoration(
-                                      labelText: "Confirm Password",
-                                      hintText: "Re-enter the password",
-                                      filled: true,
-                                      fillColor: Colors.grey.shade50,
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide.none,
-                                      ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide(
-                                          color: Colors.grey.shade200,
-                                        ),
-                                      ),
-                                      focusedBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide(
-                                          color: AppColors.merchant,
-                                          width: 2,
-                                        ),
-                                      ),
-                                      errorBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: const BorderSide(
-                                          color: Colors.red,
-                                        ),
-                                      ),
-                                      prefixIcon: Icon(
-                                        Icons.password_outlined,
-                                        color: AppColors.merchant,
-                                      ),
-                                    ),
-                                    obscureText: true,
-                                    validator:
-                                        controller.validateConfirmPassword,
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: AppColors.merchant,
+                                    width: 2,
                                   ),
-                                ],
+                                ),
+                                errorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(
+                                    color: Colors.red,
+                                  ),
+                                ),
+                                prefixIcon: Icon(
+                                  Icons.lock_outline,
+                                  color: AppColors.merchant,
+                                ),
                               ),
+                              obscureText: true,
+                              validator: controller.validatePassword,
                             ),
-                            const SizedBox(height: 24),
+                            const SizedBox(height: 16),
+
+                            // Confirm Password
+                            TextFormField(
+                              controller:
+                              controller.confirmPasswordController,
+                              decoration: InputDecoration(
+                                labelText: "Confirm Password",
+                                hintText: "Re-enter the password",
+                                filled: true,
+                                fillColor: Colors.grey.shade50,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none,
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: Colors.grey.shade200,
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: AppColors.merchant,
+                                    width: 2,
+                                  ),
+                                ),
+                                errorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(
+                                    color: Colors.red,
+                                  ),
+                                ),
+                                prefixIcon: Icon(
+                                  Icons.password_outlined,
+                                  color: AppColors.merchant,
+                                ),
+                              ),
+                              obscureText: true,
+                              validator:
+                              controller.validateConfirmPassword,
+                            ),
                           ],
-                        )
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+                  )
                       : const SizedBox.shrink(),
                 ),
 
@@ -399,7 +399,7 @@ class AdminAddEditMerchantView extends GetView<AdminAddEditMerchantController> {
                 const SizedBox(height: 12),
                 ModernCard(
                   child: Obx(
-                    () => SwitchListTile(
+                        () => SwitchListTile(
                       title: const Text(
                         'Merchant Active Status',
                         style: TextStyle(fontWeight: FontWeight.w500),
@@ -440,18 +440,18 @@ class AdminAddEditMerchantView extends GetView<AdminAddEditMerchantController> {
 
                 // Save Button
                 Obx(
-                  () => SizedBox(
+                      () => SizedBox(
                     height: 54,
                     child: ElevatedButton.icon(
                       icon: controller.isLoading.value
                           ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
-                              ),
-                            )
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
                           : const Icon(Icons.save_outlined),
                       label: Text(
                         controller.isLoading.value
@@ -484,7 +484,7 @@ class AdminAddEditMerchantView extends GetView<AdminAddEditMerchantController> {
             ),
           ),
         ),
-      ),
+      )
     );
   }
 

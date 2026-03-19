@@ -63,7 +63,11 @@ class AdminAdminsApiService extends GetConnect {
         response.body != null &&
         response.body['data'] != null) {
       final rawList = asList(response.body['data']);
-      return rawList.map((adminJson) => User.fromJson(Map<String, dynamic>.from(adminJson))).toList();
+      return rawList
+          .map(
+            (adminJson) => User.fromJson(Map<String, dynamic>.from(adminJson)),
+          )
+          .toList();
     } else {
       throw Exception('Failed to load admins: ${response.statusText}');
     }

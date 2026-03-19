@@ -16,7 +16,9 @@ class DialogUtils {
   }) {
     // Compute common values first
     final showDuration = duration ?? const Duration(seconds: 3);
-    final bg = backgroundColor ?? (isError ? Colors.red.shade600 : Colors.green.shade600);
+    final bg =
+        backgroundColor ??
+        (isError ? Colors.red.shade600 : Colors.green.shade600);
 
     // Prefer showing via the app's ScaffoldMessenger (most robust).
     final messenger = scaffoldMessengerKey.currentState;
@@ -25,7 +27,13 @@ class DialogUtils {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: TextStyle(color: colorText ?? Colors.white, fontWeight: FontWeight.bold)),
+          Text(
+            title,
+            style: TextStyle(
+              color: colorText ?? Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           const SizedBox(height: 4),
           Text(message, style: TextStyle(color: colorText ?? Colors.white)),
         ],
@@ -55,64 +63,78 @@ class DialogUtils {
       late OverlayEntry entry;
       entry = OverlayEntry(
         builder: (context) {
-            final media = MediaQuery.of(context);
-            final width = media.size.width;
-            final maxWidth = width > 540 ? 500.0 : width - 40.0;
-            return Positioned(
-              top: 20,
-              left: (media.size.width - maxWidth) / 2,
-              width: maxWidth,
-              child: Material(
-                color: Colors.transparent,
-                child: SafeArea(
-                  minimum: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 8),
-                    decoration: BoxDecoration(
-                      color: bg,
-                      borderRadius: BorderRadius.circular(8),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black26,
-                          blurRadius: 8,
-                          offset: Offset(0, 2),
-                        ),
-                      ],
+          final media = MediaQuery.of(context);
+          final width = media.size.width;
+          final maxWidth = width > 540 ? 500.0 : width - 40.0;
+          return Positioned(
+            top: 20,
+            left: (media.size.width - maxWidth) / 2,
+            width: maxWidth,
+            child: Material(
+              color: Colors.transparent,
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 8),
+                decoration: BoxDecoration(
+                  color: bg,
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 8,
+                      offset: Offset(0, 2),
                     ),
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(title, style: TextStyle(color: colorText ?? Colors.white, fontWeight: FontWeight.bold)),
-                              const SizedBox(height: 4),
-                              Text(message, style: TextStyle(color: colorText ?? Colors.white)),
-                            ],
+                  ],
+                ),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 12,
+                  horizontal: 16,
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            title,
+                            style: TextStyle(
+                              color: colorText ?? Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                        GestureDetector(
-                          onTap: () {
-                            try {
-                              entry.remove();
-                            } catch (_) {}
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.only(left: 12),
-                            child: Icon(Icons.close, color: colorText ?? Colors.white),
+                          const SizedBox(height: 4),
+                          Text(
+                            message,
+                            style: TextStyle(
+                              color: colorText ?? Colors.white,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
+                    GestureDetector(
+                      onTap: () {
+                        try {
+                          entry.remove();
+                        } catch (_) {}
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 12),
+                        child: Icon(
+                          Icons.close,
+                          color: colorText ?? Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            );
-          },
-        );
+            ),
+          );
+        },
+      );
 
       overlay.insert(entry);
       Future.delayed(showDuration, () {

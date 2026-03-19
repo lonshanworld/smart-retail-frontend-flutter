@@ -1,19 +1,52 @@
 import 'dart:convert';
 import 'package:get/get.dart';
+import 'package:uuid/uuid.dart';
 import 'package:smart_retail/app/core/config/app_config.dart';
 import 'package:smart_retail/app/data/models/inventory_item_model.dart';
 import 'package:smart_retail/app/data/models/supplier_model.dart';
 import 'package:smart_retail/app/data/providers/api_constants.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
+import 'package:smart_retail/app/services/local_database_service.dart';
 import 'package:smart_retail/app/utils/response_utils.dart';
 
 class InventoryApiService extends GetxService {
   final GetConnect _connect = GetConnect(timeout: const Duration(seconds: 30));
   final AuthService _authService = Get.find<AuthService>();
   final AppConfig _appConfig = Get.find<AppConfig>();
+  final LocalDatabaseService _localDatabaseService =
+      Get.find<LocalDatabaseService>();
 
   Future<String?> _getAuthToken() async {
     return await _authService.getToken();
+  }
+
+  bool _shouldQueue(dynamic error) {
+    final text = error.toString().toLowerCase();
+    return _appConfig.localStorageOnly ||
+        text.contains('socketexception') ||
+        text.contains('failed host lookup') ||
+        text.contains('connection') ||
+        text.contains('timeout');
+  }
+
+  Future<void> _queueMutation({
+    required String clientOperationId,
+    required String entityType,
+    required String action,
+    required String endpoint,
+    required Map<String, dynamic> payload,
+    String method = 'POST',
+  }) async {
+    await _localDatabaseService.queueOperation({
+      'id': clientOperationId,
+      'client_operation_id': clientOperationId,
+      'entity_type': entityType,
+      'action': action,
+      'method': method,
+      'endpoint': endpoint,
+      'payload': payload,
+      'headers': {'X-Client-Operation-Id': clientOperationId},
+    });
   }
 
   final String _inventoryBaseUrl = "${ApiConstants.baseUrl}/merchant/inventory";
@@ -42,6 +75,356 @@ class InventoryApiService extends GetxService {
       'Error loading catalog options: ${response.statusCode} - ${response.bodyString}',
     );
     return null;
+  }
+
+  Future<bool> createCategory({
+    required String name,
+    String? description,
+  }) async {
+    final clientOperationId = const Uuid().v4();
+    final token = await _getAuthToken();
+    if (token == null) return false;
+
+    final payload = {
+      'name': name,
+      'clientOperationId': clientOperationId,
+      if (description != null && description.isNotEmpty)
+        'description': description,
+    };
+
+    try {
+      final response = await _connect.post(
+        '$_catalogBaseUrl/categories',
+        payload,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'X-Client-Operation-Id': clientOperationId,
+        },
+      );
+      return response.statusCode == 201 && response.body['status'] == 'success';
+    } catch (e) {
+      if (_shouldQueue(e)) {
+        await _queueMutation(
+          clientOperationId: clientOperationId,
+          entityType: 'catalog_category',
+          action: 'create',
+          endpoint: '$_catalogBaseUrl/categories',
+          payload: payload,
+        );
+        return true;
+      }
+      rethrow;
+    }
+  }
+
+  Future<bool> updateCategory({
+    required String categoryId,
+    required String name,
+    String? description,
+  }) async {
+    final clientOperationId = const Uuid().v4();
+    final token = await _getAuthToken();
+    if (token == null) return false;
+
+    final payload = {
+      'name': name,
+      'clientOperationId': clientOperationId,
+      if (description != null && description.isNotEmpty)
+        'description': description,
+    };
+
+    try {
+      final response = await _connect.put(
+        '$_catalogBaseUrl/categories/$categoryId',
+        payload,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'X-Client-Operation-Id': clientOperationId,
+        },
+      );
+      return response.statusCode == 200 && response.body['status'] == 'success';
+    } catch (e) {
+      if (_shouldQueue(e)) {
+        await _queueMutation(
+          clientOperationId: clientOperationId,
+          entityType: 'catalog_category',
+          action: 'update',
+          endpoint: '$_catalogBaseUrl/categories/$categoryId',
+          payload: payload,
+          method: 'PUT',
+        );
+        return true;
+      }
+      rethrow;
+    }
+  }
+
+  Future<bool> deleteCategory(String categoryId) async {
+    final clientOperationId = const Uuid().v4();
+    final token = await _getAuthToken();
+    if (token == null) return false;
+
+    try {
+      final response = await _connect.delete(
+        '$_catalogBaseUrl/categories/$categoryId',
+        headers: {
+          'Authorization': 'Bearer $token',
+          'X-Client-Operation-Id': clientOperationId,
+        },
+      );
+      return response.statusCode == 204 || response.statusCode == 200;
+    } catch (e) {
+      if (_shouldQueue(e)) {
+        await _queueMutation(
+          clientOperationId: clientOperationId,
+          entityType: 'catalog_category',
+          action: 'delete',
+          endpoint: '$_catalogBaseUrl/categories/$categoryId',
+          payload: {'categoryId': categoryId},
+          method: 'DELETE',
+        );
+        return true;
+      }
+      rethrow;
+    }
+  }
+
+  Future<bool> createSubcategory({
+    required String categoryId,
+    required String name,
+    String? description,
+  }) async {
+    final clientOperationId = const Uuid().v4();
+    final token = await _getAuthToken();
+    if (token == null) return false;
+
+    final payload = {
+      'categoryId': categoryId,
+      'name': name,
+      'clientOperationId': clientOperationId,
+      if (description != null && description.isNotEmpty)
+        'description': description,
+    };
+
+    try {
+      final response = await _connect.post(
+        '$_catalogBaseUrl/subcategories',
+        payload,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'X-Client-Operation-Id': clientOperationId,
+        },
+      );
+      return response.statusCode == 201 && response.body['status'] == 'success';
+    } catch (e) {
+      if (_shouldQueue(e)) {
+        await _queueMutation(
+          clientOperationId: clientOperationId,
+          entityType: 'catalog_subcategory',
+          action: 'create',
+          endpoint: '$_catalogBaseUrl/subcategories',
+          payload: payload,
+        );
+        return true;
+      }
+      rethrow;
+    }
+  }
+
+  Future<bool> updateSubcategory({
+    required String subcategoryId,
+    required String categoryId,
+    required String name,
+    String? description,
+  }) async {
+    final clientOperationId = const Uuid().v4();
+    final token = await _getAuthToken();
+    if (token == null) return false;
+
+    final payload = {
+      'categoryId': categoryId,
+      'name': name,
+      'clientOperationId': clientOperationId,
+      if (description != null && description.isNotEmpty)
+        'description': description,
+    };
+
+    try {
+      final response = await _connect.put(
+        '$_catalogBaseUrl/subcategories/$subcategoryId',
+        payload,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'X-Client-Operation-Id': clientOperationId,
+        },
+      );
+      return response.statusCode == 200 && response.body['status'] == 'success';
+    } catch (e) {
+      if (_shouldQueue(e)) {
+        await _queueMutation(
+          clientOperationId: clientOperationId,
+          entityType: 'catalog_subcategory',
+          action: 'update',
+          endpoint: '$_catalogBaseUrl/subcategories/$subcategoryId',
+          payload: payload,
+          method: 'PUT',
+        );
+        return true;
+      }
+      rethrow;
+    }
+  }
+
+  Future<bool> deleteSubcategory(String subcategoryId) async {
+    final clientOperationId = const Uuid().v4();
+    final token = await _getAuthToken();
+    if (token == null) return false;
+
+    try {
+      final response = await _connect.delete(
+        '$_catalogBaseUrl/subcategories/$subcategoryId',
+        headers: {
+          'Authorization': 'Bearer $token',
+          'X-Client-Operation-Id': clientOperationId,
+        },
+      );
+      return response.statusCode == 204 || response.statusCode == 200;
+    } catch (e) {
+      if (_shouldQueue(e)) {
+        await _queueMutation(
+          clientOperationId: clientOperationId,
+          entityType: 'catalog_subcategory',
+          action: 'delete',
+          endpoint: '$_catalogBaseUrl/subcategories/$subcategoryId',
+          payload: {'subcategoryId': subcategoryId},
+          method: 'DELETE',
+        );
+        return true;
+      }
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> createBrand({
+    required String name,
+    String? description,
+    String? imageUrl,
+  }) async {
+    final clientOperationId = const Uuid().v4();
+    final token = await _getAuthToken();
+    if (token == null) return {'ok': false, 'message': 'Not authenticated'};
+
+    final payload = {
+      'name': name,
+      'clientOperationId': clientOperationId,
+      if (description != null && description.isNotEmpty)
+        'description': description,
+      if (imageUrl != null && imageUrl.isNotEmpty) 'imageUrl': imageUrl,
+    };
+
+    try {
+      final response = await _connect.post(
+        '$_catalogBaseUrl/brands',
+        payload,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'X-Client-Operation-Id': clientOperationId,
+        },
+      );
+
+      if (response.statusCode == 201 && response.body['status'] == 'success') {
+        return {'ok': true, 'message': 'Brand created'};
+      }
+    } catch (e) {
+      if (_shouldQueue(e)) {
+        await _queueMutation(
+          clientOperationId: clientOperationId,
+          entityType: 'catalog_brand',
+          action: 'create',
+          endpoint: '$_catalogBaseUrl/brands',
+          payload: payload,
+        );
+        return {'ok': true, 'message': 'Brand queued locally'};
+      }
+      rethrow;
+    }
+
+    final msg = (response.body is Map && response.body['message'] != null)
+        ? response.body['message'].toString()
+        : (response.bodyString ?? 'Failed to create brand');
+    return {'ok': false, 'message': msg};
+  }
+
+  Future<bool> updateBrand({
+    required String brandId,
+    required String name,
+    String? description,
+  }) async {
+    final clientOperationId = const Uuid().v4();
+    final token = await _getAuthToken();
+    if (token == null) return false;
+
+    final payload = {
+      'name': name,
+      'clientOperationId': clientOperationId,
+      if (description != null && description.isNotEmpty)
+        'description': description,
+    };
+
+    try {
+      final response = await _connect.put(
+        '$_catalogBaseUrl/brands/$brandId',
+        payload,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'X-Client-Operation-Id': clientOperationId,
+        },
+      );
+      return response.statusCode == 200 && response.body['status'] == 'success';
+    } catch (e) {
+      if (_shouldQueue(e)) {
+        await _queueMutation(
+          clientOperationId: clientOperationId,
+          entityType: 'catalog_brand',
+          action: 'update',
+          endpoint: '$_catalogBaseUrl/brands/$brandId',
+          payload: payload,
+          method: 'PUT',
+        );
+        return true;
+      }
+      rethrow;
+    }
+  }
+
+  Future<bool> deleteBrand(String brandId) async {
+    final clientOperationId = const Uuid().v4();
+    final token = await _getAuthToken();
+    if (token == null) return false;
+
+    try {
+      final response = await _connect.delete(
+        '$_catalogBaseUrl/brands/$brandId',
+        headers: {
+          'Authorization': 'Bearer $token',
+          'X-Client-Operation-Id': clientOperationId,
+        },
+      );
+      return response.statusCode == 204 || response.statusCode == 200;
+    } catch (e) {
+      if (_shouldQueue(e)) {
+        await _queueMutation(
+          clientOperationId: clientOperationId,
+          entityType: 'catalog_brand',
+          action: 'delete',
+          endpoint: '$_catalogBaseUrl/brands/$brandId',
+          payload: {'brandId': brandId},
+          method: 'DELETE',
+        );
+        return true;
+      }
+      rethrow;
+    }
   }
 
   // --- Supplier Specific Methods --- //
@@ -852,6 +1235,7 @@ class InventoryApiService extends GetxService {
     required String fromShopId,
     required String toShopId,
     required int quantity,
+    String? clientOperationId,
   }) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 2));
@@ -864,7 +1248,10 @@ class InventoryApiService extends GetxService {
     final token = await _getAuthToken();
     if (token == null) return false;
 
+    clientOperationId ??= const Uuid().v4();
+
     final payload = {
+      'clientOperationId': clientOperationId,
       'itemId': itemId,
       'fromShopId': fromShopId,
       'toShopId': toShopId,

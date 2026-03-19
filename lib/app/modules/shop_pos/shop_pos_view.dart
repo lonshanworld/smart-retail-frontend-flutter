@@ -79,20 +79,105 @@ class ShopPosView extends GetView<ShopPosController> {
   Widget _buildSearchField() {
     return Padding(
       padding: const EdgeInsets.all(12.0),
-      child: TextField(
-        controller: controller.searchController,
-        decoration: InputDecoration(
-          hintText: 'Search products...',
-          prefixIcon: const Icon(Icons.search),
-          suffixIcon: IconButton(
-            tooltip: 'Scan Barcode / QR',
-            onPressed: controller.scanAndSearchProducts,
-            icon: const Icon(Icons.qr_code_scanner),
+      child: Column(
+        children: [
+          TextField(
+            controller: controller.searchController,
+            decoration: InputDecoration(
+              hintText: 'Search products...',
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon: IconButton(
+                tooltip: 'Scan Barcode / QR',
+                onPressed: controller.scanAndSearchProducts,
+                icon: const Icon(Icons.qr_code_scanner),
+              ),
+              border: const OutlineInputBorder(
+                borderRadius: BorderRadius.all(Radius.circular(25.0)),
+              ),
+            ),
           ),
-          border: const OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(25.0)),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              onPressed: () => _showFilterDialog(Get.context!),
+              icon: const Icon(Icons.filter_alt_outlined),
+              label: const Text('Filters'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showFilterDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Filter Products'),
+        content: Obx(
+          () => Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DropdownButtonFormField<String>(
+                initialValue: controller.selectedCategoryId.value,
+                decoration: const InputDecoration(labelText: 'Category'),
+                items: controller.categories
+                    .map(
+                      (c) => DropdownMenuItem<String>(
+                        value: c.id,
+                        child: Text(c.name),
+                      ),
+                    )
+                    .toList(),
+                onChanged: controller.setCategoryFilter,
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                initialValue: controller.selectedSubcategoryId.value,
+                decoration: const InputDecoration(labelText: 'Subcategory'),
+                items: controller.filteredSubcategories
+                    .map(
+                      (s) => DropdownMenuItem<String>(
+                        value: s.id,
+                        child: Text(s.name),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (v) => controller.selectedSubcategoryId.value = v,
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                initialValue: controller.selectedBrandId.value,
+                decoration: const InputDecoration(labelText: 'Brand'),
+                items: controller.brands
+                    .map(
+                      (b) => DropdownMenuItem<String>(
+                        value: b.id,
+                        child: Text(b.name),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (v) => controller.selectedBrandId.value = v,
+              ),
+            ],
           ),
         ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              controller.clearFilters();
+              Navigator.of(ctx).pop();
+            },
+            child: const Text('Clear'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              controller.searchProducts(initialLoad: true);
+              Navigator.of(ctx).pop();
+            },
+            child: const Text('Apply'),
+          ),
+        ],
       ),
     );
   }
@@ -189,6 +274,8 @@ class ShopPosView extends GetView<ShopPosController> {
           _buildPromotionSelector(),
           const Divider(),
           _buildCustomerNameField(),
+          const SizedBox(height: 8),
+          _buildDeliveryChargeField(),
           const Divider(),
           _buildTotals(),
           const SizedBox(height: 16),
@@ -310,6 +397,18 @@ class ShopPosView extends GetView<ShopPosController> {
               ),
             ],
           ),
+          if (controller.deliveryCharge > 0) ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Delivery Charge', style: Get.textTheme.bodyLarge),
+                Text(
+                  currencyFormatter.format(controller.deliveryCharge),
+                  style: Get.textTheme.bodyLarge,
+                ),
+              ],
+            ),
+          ],
           const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -419,6 +518,27 @@ class ShopPosView extends GetView<ShopPosController> {
             border: OutlineInputBorder(),
             contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             prefixIcon: Icon(Icons.person_outline),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDeliveryChargeField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text('Delivery Charge (Optional)', style: Get.textTheme.titleSmall),
+        const SizedBox(height: 8),
+        TextField(
+          controller: controller.deliveryChargeController,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          onChanged: controller.updateDeliveryCharge,
+          decoration: const InputDecoration(
+            hintText: 'Enter delivery charge',
+            border: OutlineInputBorder(),
+            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            prefixIcon: Icon(Icons.local_shipping_outlined),
           ),
         ),
       ],

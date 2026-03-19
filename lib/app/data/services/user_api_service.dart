@@ -33,7 +33,9 @@ class UserApiService extends GetxService {
           );
           await _authService.logout();
           Get.offAllNamed(Routes.LOGIN); // Default to merchant login
-          DialogUtils.showInfo("Your session has expired. Please log in again.");
+          DialogUtils.showInfo(
+            "Your session has expired. Please log in again.",
+          );
           Future.delayed(
             const Duration(milliseconds: 500),
             () => _authService.setIsLoggingOut(false),

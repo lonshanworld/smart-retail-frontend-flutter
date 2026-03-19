@@ -30,7 +30,9 @@ class ShopInvoicesController extends GetxController {
   void _initializeShopId() {
     // Try route parameters first (e.g., /shop/invoices?shopId=...)
     final params = Get.parameters;
-    if (params.containsKey('shopId') && params['shopId'] != null && params['shopId']!.isNotEmpty) {
+    if (params.containsKey('shopId') &&
+        params['shopId'] != null &&
+        params['shopId']!.isNotEmpty) {
       _shopId = params['shopId'];
       return;
     }
@@ -124,4 +126,3 @@ class ShopInvoicesController extends GetxController {
     Get.toNamed('/shop/invoices/detail', arguments: invoiceId);
   }
 }
-

@@ -26,7 +26,9 @@ void main() {
         updatedAt: DateTime.now(),
       );
 
-      controller.cartItems.add(CartItem(product: item, initialQuantity: 2)); // subtotal 100
+      controller.cartItems.add(
+        CartItem(product: item, initialQuantity: 2),
+      ); // subtotal 100
 
       final promo = Promotion(
         id: 'promo1',
@@ -68,7 +70,9 @@ void main() {
         updatedAt: DateTime.now(),
       );
 
-      controller.cartItems.add(CartItem(product: item, initialQuantity: 3)); // subtotal 60
+      controller.cartItems.add(
+        CartItem(product: item, initialQuantity: 3),
+      ); // subtotal 60
 
       controller.customerNameController.text = 'Alice';
 

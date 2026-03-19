@@ -71,6 +71,12 @@ class _ShopMainScaffoldState extends State<ShopMainScaffold> {
       'selectedIcon': Icons.people,
     },
     {
+      'route': Routes.SHOP_SUPPORT,
+      'label': 'Support',
+      'icon': Icons.support_agent_outlined,
+      'selectedIcon': Icons.support_agent,
+    },
+    {
       'route': Routes.SHOP_PROFILE,
       'label': 'Profile',
       'icon': Icons.person_outline,
@@ -499,81 +505,79 @@ class _ShopMainScaffoldState extends State<ShopMainScaffold> {
             colors: [AppColors.shop.shade700, AppColors.shop.shade900],
           ),
         ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Logo and brand
-              Container(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  children: [
-                    Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
+        child: Column(
+          children: [
+            // Logo and brand
+            Container(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                children: [
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Icon(
+                      Icons.storefront_rounded,
+                      size: 32,
+                      color: AppColors.shop,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Obx(() {
+                    final Shop? shop = _authService.currentShop.value;
+                    return Text(
+                      shop?.name ?? 'Shop Portal',
+                      style: const TextStyle(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
                       ),
-                      child: Icon(
-                        Icons.storefront_rounded,
-                        size: 32,
-                        color: AppColors.shop,
+                      textAlign: TextAlign.center,
+                    );
+                  }),
+                ],
+              ),
+            ),
+            const Divider(color: Colors.white24),
+            // Navigation items
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                itemCount: _shopNavItems.length,
+                itemBuilder: (context, index) {
+                  final item = _shopNavItems[index];
+                  final isSelected = selectedIndex == index;
+                  return ListTile(
+                    leading: Icon(
+                      isSelected ? item['selectedIcon'] : item['icon'],
+                      color: Colors.white,
+                    ),
+                    title: Text(
+                      item['label'],
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: isSelected
+                            ? FontWeight.w600
+                            : FontWeight.w400,
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    Obx(() {
-                      final Shop? shop = _authService.currentShop.value;
-                      return Text(
-                        shop?.name ?? 'Shop Portal',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      );
-                    }),
-                  ],
-                ),
+                    selected: isSelected,
+                    selectedTileColor: Colors.white.withValues(alpha: 0.15),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    onTap: () =>
+                        _onDestinationSelected(index, fromDrawer: true),
+                  );
+                },
               ),
-              const Divider(color: Colors.white24),
-              // Navigation items
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  itemCount: _shopNavItems.length,
-                  itemBuilder: (context, index) {
-                    final item = _shopNavItems[index];
-                    final isSelected = selectedIndex == index;
-                    return ListTile(
-                      leading: Icon(
-                        isSelected ? item['selectedIcon'] : item['icon'],
-                        color: Colors.white,
-                      ),
-                      title: Text(
-                        item['label'],
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: isSelected
-                              ? FontWeight.w600
-                              : FontWeight.w400,
-                        ),
-                      ),
-                      selected: isSelected,
-                      selectedTileColor: Colors.white.withValues(alpha: 0.15),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      onTap: () =>
-                          _onDestinationSelected(index, fromDrawer: true),
-                    );
-                  },
-                ),
-              ),
-              const Divider(color: Colors.white24),
-              _buildSidebarUserProfile(),
-            ],
-          ),
+            ),
+            const Divider(color: Colors.white24),
+            _buildSidebarUserProfile(),
+          ],
         ),
       ),
     );

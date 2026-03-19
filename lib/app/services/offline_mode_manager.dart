@@ -1,9 +1,11 @@
 import 'package:get/get.dart';
+import 'package:smart_retail/app/core/config/app_config.dart';
 import 'connectivity_service.dart';
 
 class OfflineModeManager extends GetxService {
   final ConnectivityService _connectivityService =
       Get.find<ConnectivityService>();
+  final AppConfig _appConfig = Get.find<AppConfig>();
 
   bool canProcessSales() => true; // Always allowed, will be queued offline
   bool canViewDashboard() => true; // Cached data available
@@ -16,14 +18,20 @@ class OfflineModeManager extends GetxService {
       _connectivityService.isOnline.value; // Requires online
   bool canAccessReports() => true; // Can view local cache
   bool canViewSalesHistory() => true; // Local history available
-  bool canSync() => _connectivityService.isOnline.value;
+  bool canSync() => _connectivityService.isOnline.value && !_appConfig.localStorageOnly;
 
-  bool isOnlineMode() => _connectivityService.isOnline.value;
+  bool get isLocalStorageOnly => _appConfig.localStorageOnly;
+
+  bool isOnlineMode() => _connectivityService.isOnline.value && !_appConfig.localStorageOnly;
   bool isOfflineMode() => !_connectivityService.isOnline.value;
 
   String getFeatureStatus(String feature) {
     if (isOnlineMode()) {
       return 'Online - All features available';
+    }
+
+    if (isLocalStorageOnly) {
+      return 'Local storage only - Cloud sync disabled';
     }
 
     switch (feature) {

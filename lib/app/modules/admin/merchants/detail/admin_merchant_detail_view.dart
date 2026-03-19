@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:smart_retail/app/data/models/merchant_model.dart';
 import 'package:smart_retail/app/modules/admin/merchants/detail/admin_merchant_detail_controller.dart';
 import 'package:smart_retail/app/widgets/app_colors.dart';
 import 'package:smart_retail/app/widgets/modern_card.dart';
@@ -297,150 +296,141 @@ class AdminMerchantDetailView extends GetView<AdminMerchantDetailController> {
                       ),
                     )
                   else
-                    ...merchant.shops
-                        .map(
-                          (shop) => Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: ModernCard(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                    ...merchant.shops.map(
+                      (shop) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: ModernCard(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
                                 children: [
-                                  Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(8),
-                                        decoration: BoxDecoration(
-                                          color: AppColors.merchant.withOpacity(
-                                            0.1,
-                                          ),
-                                          borderRadius: BorderRadius.circular(
-                                            8,
-                                          ),
-                                        ),
-                                        child: Icon(
-                                          Icons.store,
-                                          color: AppColors.merchant,
-                                          size: 20,
-                                        ),
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.merchant.withOpacity(
+                                        0.1,
                                       ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: Text(
-                                          shop.name,
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ),
-                                      if (shop.isPrimary ?? false)
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 4,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: Colors.blue.shade50,
-                                            borderRadius: BorderRadius.circular(
-                                              8,
-                                            ),
-                                            border: Border.all(
-                                              color: Colors.blue.shade300,
-                                            ),
-                                          ),
-                                          child: Text(
-                                            'PRIMARY',
-                                            style: TextStyle(
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.blue.shade700,
-                                            ),
-                                          ),
-                                        ),
-                                      const SizedBox(width: 8),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 8,
-                                          vertical: 4,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: (shop.isActive ?? false)
-                                              ? Colors.green.shade50
-                                              : Colors.red.shade50,
-                                          borderRadius: BorderRadius.circular(
-                                            8,
-                                          ),
-                                          border: Border.all(
-                                            color: (shop.isActive ?? false)
-                                                ? Colors.green.shade300
-                                                : Colors.red.shade300,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          (shop.isActive ?? false)
-                                              ? 'ACTIVE'
-                                              : 'INACTIVE',
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.bold,
-                                            color: (shop.isActive ?? false)
-                                                ? Colors.green.shade700
-                                                : Colors.red.shade700,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Icon(
+                                      Icons.store,
+                                      color: AppColors.merchant,
+                                      size: 20,
+                                    ),
                                   ),
-                                  const SizedBox(height: 12),
-                                  if (shop.address != null &&
-                                      shop.address!.isNotEmpty)
-                                    Padding(
-                                      padding: const EdgeInsets.only(bottom: 8),
-                                      child: Row(
-                                        children: [
-                                          Icon(
-                                            Icons.location_on_outlined,
-                                            size: 16,
-                                            color: Colors.grey.shade600,
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Expanded(
-                                            child: Text(
-                                              shop.address!,
-                                              style: TextStyle(
-                                                fontSize: 13,
-                                                color: Colors.grey.shade700,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      shop.name,
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
-                                  if (shop.phone != null &&
-                                      shop.phone!.isNotEmpty)
-                                    Row(
-                                      children: [
-                                        Icon(
-                                          Icons.phone_outlined,
-                                          size: 16,
-                                          color: Colors.grey.shade600,
+                                  ),
+                                  if (shop.isPrimary ?? false)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.blue.shade50,
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: Colors.blue.shade300,
                                         ),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          shop.phone!,
+                                      ),
+                                      child: Text(
+                                        'PRIMARY',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.blue.shade700,
+                                        ),
+                                      ),
+                                    ),
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: (shop.isActive ?? false)
+                                          ? Colors.green.shade50
+                                          : Colors.red.shade50,
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                        color: (shop.isActive ?? false)
+                                            ? Colors.green.shade300
+                                            : Colors.red.shade300,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      (shop.isActive ?? false)
+                                          ? 'ACTIVE'
+                                          : 'INACTIVE',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        color: (shop.isActive ?? false)
+                                            ? Colors.green.shade700
+                                            : Colors.red.shade700,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              if (shop.address != null &&
+                                  shop.address!.isNotEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 8),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.location_on_outlined,
+                                        size: 16,
+                                        color: Colors.grey.shade600,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          shop.address!,
                                           style: TextStyle(
                                             fontSize: 13,
                                             color: Colors.grey.shade700,
                                           ),
                                         ),
-                                      ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              if (shop.phone != null && shop.phone!.isNotEmpty)
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.phone_outlined,
+                                      size: 16,
+                                      color: Colors.grey.shade600,
                                     ),
-                                ],
-                              ),
-                            ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      shop.phone!,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: Colors.grey.shade700,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                            ],
                           ),
-                        )
-                        ,
+                        ),
+                      ),
+                    ),
                   const SizedBox(height: 24),
 
                   // Timestamps

@@ -309,4 +309,3 @@ class ShopAddEditView extends GetView<ShopAddEditController> {
     );
   }
 }
-

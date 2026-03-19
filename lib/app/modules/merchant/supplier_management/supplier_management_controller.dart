@@ -82,7 +82,8 @@ class SupplierManagementController extends GetxController {
     final supplier = suppliers.firstWhereOrNull((s) => s.id == supplierId);
     final confirm = await DialogUtils.showConfirmDialog(
       title: 'Delete Supplier',
-      message: 'Are you sure you want to permanently delete "${supplier?.name ?? 'this supplier'}"? This action cannot be undone.',
+      message:
+          'Are you sure you want to permanently delete "${supplier?.name ?? 'this supplier'}"? This action cannot be undone.',
       confirmText: 'Delete',
       cancelText: 'Cancel',
       isDanger: true,

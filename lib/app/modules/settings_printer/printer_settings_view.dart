@@ -350,7 +350,7 @@ class PrinterSettingsView extends GetView<PrinterSettingsController> {
                       ),
                     ),
                     subtitle: Text(
-                      device.address ?? 'No address',
+                      device.address,
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey.shade600,
@@ -477,7 +477,9 @@ class PrinterSettingsView extends GetView<PrinterSettingsController> {
             onPressed: () {
               print('🖨️ [PRINTER SETTINGS] Sending mock print...');
               Get.back();
-              DialogUtils.showInfo('Test receipt printed successfully (dev mode)');
+              DialogUtils.showInfo(
+                'Test receipt printed successfully (dev mode)',
+              );
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
             child: const Text('Send Print'),

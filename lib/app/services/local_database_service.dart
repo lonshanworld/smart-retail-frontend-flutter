@@ -1,10 +1,11 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'platform_paths.dart';
+import 'package:uuid/uuid.dart';
 
 class LocalDatabaseService {
   static const String DB_NAME = 'smart_retail.db';
-  static const int DB_VERSION = 1;
+  static const int DB_VERSION = 2;
   static Database? _database;
 
   // Table names
@@ -14,6 +15,7 @@ class LocalDatabaseService {
   static const String TABLE_CACHED_SHOP_INFO = 'cached_shop_info';
   static const String TABLE_SYNC_LOG = 'sync_log';
   static const String TABLE_APP_SETTINGS = 'app_settings';
+  static const String TABLE_OFFLINE_OPERATIONS = 'offline_operations';
 
   // Column names - offline_sales
   static const String COL_ID = 'id';
@@ -32,6 +34,17 @@ class LocalDatabaseService {
   static const String COL_CREATED_AT = 'created_at';
   static const String COL_SYNCED_AT = 'synced_at';
   static const String COL_UPDATED_AT = 'updated_at';
+
+  // Column names - offline_operations
+  static const String COL_CLIENT_OPERATION_ID = 'client_operation_id';
+  static const String COL_ENTITY_TYPE = 'entity_type';
+  static const String COL_ACTION = 'action';
+  static const String COL_METHOD = 'method';
+  static const String COL_ENDPOINT = 'endpoint';
+  static const String COL_PAYLOAD = 'payload';
+  static const String COL_HEADERS = 'headers';
+  static const String COL_RESPONSE_CODE = 'response_code';
+  static const String COL_RESPONSE_BODY = 'response_body';
 
   // Status values
   static const String STATUS_PENDING = 'pending';
@@ -199,10 +212,65 @@ class LocalDatabaseService {
         updated_at TEXT NOT NULL
       )
     ''');
+
+    await db.execute('''
+      CREATE TABLE $TABLE_OFFLINE_OPERATIONS (
+        $COL_ID TEXT PRIMARY KEY,
+        $COL_CLIENT_OPERATION_ID TEXT UNIQUE NOT NULL,
+        $COL_ENTITY_TYPE TEXT NOT NULL,
+        $COL_ACTION TEXT NOT NULL,
+        $COL_METHOD TEXT NOT NULL,
+        $COL_ENDPOINT TEXT NOT NULL,
+        $COL_PAYLOAD TEXT NOT NULL,
+        $COL_HEADERS TEXT,
+        $COL_STATUS TEXT NOT NULL DEFAULT 'pending',
+        $COL_SYNC_ATTEMPTS INTEGER DEFAULT 0,
+        $COL_LAST_SYNC_ERROR TEXT,
+        $COL_RESPONSE_CODE INTEGER,
+        $COL_RESPONSE_BODY TEXT,
+        $COL_CREATED_AT TEXT NOT NULL,
+        $COL_SYNCED_AT TEXT,
+        $COL_UPDATED_AT TEXT NOT NULL
+      )
+    ''');
+
+    await db.execute(
+      'CREATE INDEX idx_offline_operations_status ON $TABLE_OFFLINE_OPERATIONS($COL_STATUS)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_offline_operations_created_at ON $TABLE_OFFLINE_OPERATIONS($COL_CREATED_AT)',
+    );
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    // Handle migrations here if needed
+    if (oldVersion < 2) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS $TABLE_OFFLINE_OPERATIONS (
+          $COL_ID TEXT PRIMARY KEY,
+          $COL_CLIENT_OPERATION_ID TEXT UNIQUE NOT NULL,
+          $COL_ENTITY_TYPE TEXT NOT NULL,
+          $COL_ACTION TEXT NOT NULL,
+          $COL_METHOD TEXT NOT NULL,
+          $COL_ENDPOINT TEXT NOT NULL,
+          $COL_PAYLOAD TEXT NOT NULL,
+          $COL_HEADERS TEXT,
+          $COL_STATUS TEXT NOT NULL DEFAULT 'pending',
+          $COL_SYNC_ATTEMPTS INTEGER DEFAULT 0,
+          $COL_LAST_SYNC_ERROR TEXT,
+          $COL_RESPONSE_CODE INTEGER,
+          $COL_RESPONSE_BODY TEXT,
+          $COL_CREATED_AT TEXT NOT NULL,
+          $COL_SYNCED_AT TEXT,
+          $COL_UPDATED_AT TEXT NOT NULL
+        )
+      ''');
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_offline_operations_status ON $TABLE_OFFLINE_OPERATIONS($COL_STATUS)',
+      );
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_offline_operations_created_at ON $TABLE_OFFLINE_OPERATIONS($COL_CREATED_AT)',
+      );
+    }
   }
 
   // ============ OFFLINE SALES METHODS ============
@@ -210,8 +278,12 @@ class LocalDatabaseService {
   Future<void> queueSale(Map<String, dynamic> saleData) async {
     final db = await database;
     final now = DateTime.now().toIso8601String();
+    final saleId = (saleData['id']?.toString().isNotEmpty ?? false)
+        ? saleData['id'].toString()
+        : const Uuid().v4();
 
     final sale = {
+      COL_ID: saleId,
       ...saleData,
       COL_STATUS: STATUS_PENDING,
       COL_SYNC_ATTEMPTS: 0,
@@ -325,6 +397,97 @@ class LocalDatabaseService {
   Future<void> clearAllSales() async {
     final db = await database;
     await db.delete(TABLE_OFFLINE_SALES);
+  }
+
+  // ============ OFFLINE OPERATION QUEUE METHODS ============
+
+  Future<void> queueOperation(Map<String, dynamic> operation) async {
+    final db = await database;
+    final now = DateTime.now().toIso8601String();
+    final operationId = (operation[COL_CLIENT_OPERATION_ID]?.toString().isNotEmpty ?? false)
+        ? operation[COL_CLIENT_OPERATION_ID].toString()
+        : const Uuid().v4();
+
+    await db.insert(
+      TABLE_OFFLINE_OPERATIONS,
+      {
+        COL_ID: operation[COL_ID] ?? const Uuid().v4(),
+        COL_CLIENT_OPERATION_ID: operationId,
+        COL_ENTITY_TYPE: operation[COL_ENTITY_TYPE] ?? 'unknown',
+        COL_ACTION: operation[COL_ACTION] ?? 'mutation',
+        COL_METHOD: operation[COL_METHOD] ?? 'POST',
+        COL_ENDPOINT: operation[COL_ENDPOINT] ?? '',
+        COL_PAYLOAD: operation[COL_PAYLOAD] is String
+            ? operation[COL_PAYLOAD]
+            : _jsonEncode(operation[COL_PAYLOAD] ?? {}),
+        COL_HEADERS: operation[COL_HEADERS] is String
+            ? operation[COL_HEADERS]
+            : (operation[COL_HEADERS] != null ? _jsonEncode(operation[COL_HEADERS]) : null),
+        COL_STATUS: STATUS_PENDING,
+        COL_SYNC_ATTEMPTS: 0,
+        COL_CREATED_AT: now,
+        COL_UPDATED_AT: now,
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> getPendingOperations() async {
+    final db = await database;
+    return await db.query(
+      TABLE_OFFLINE_OPERATIONS,
+      where: '$COL_STATUS = ?',
+      whereArgs: [STATUS_PENDING],
+      orderBy: '$COL_CREATED_AT ASC',
+    );
+  }
+
+  Future<void> markOperationAsSynced(String operationId) async {
+    final db = await database;
+    final now = DateTime.now().toIso8601String();
+    await db.update(
+      TABLE_OFFLINE_OPERATIONS,
+      {
+        COL_STATUS: STATUS_SYNCED,
+        COL_SYNCED_AT: now,
+        COL_UPDATED_AT: now,
+        COL_LAST_SYNC_ERROR: null,
+      },
+      where: '$COL_ID = ?',
+      whereArgs: [operationId],
+    );
+  }
+
+  Future<void> markOperationFailed(String operationId, String? errorMsg) async {
+    final db = await database;
+    final now = DateTime.now().toIso8601String();
+    final op = await db.query(
+      TABLE_OFFLINE_OPERATIONS,
+      where: '$COL_ID = ?',
+      whereArgs: [operationId],
+    );
+    if (op.isEmpty) return;
+    final attempts = (op.first[COL_SYNC_ATTEMPTS] as int?) ?? 0;
+    await db.update(
+      TABLE_OFFLINE_OPERATIONS,
+      {
+        COL_STATUS: STATUS_FAILED,
+        COL_SYNC_ATTEMPTS: attempts + 1,
+        COL_LAST_SYNC_ERROR: errorMsg,
+        COL_UPDATED_AT: now,
+      },
+      where: '$COL_ID = ?',
+      whereArgs: [operationId],
+    );
+  }
+
+  Future<int> getPendingOperationsCount() async {
+    final db = await database;
+    final result = await db.rawQuery(
+      'SELECT COUNT(*) as count FROM $TABLE_OFFLINE_OPERATIONS WHERE $COL_STATUS = ?',
+      [STATUS_PENDING],
+    );
+    return result.isNotEmpty ? (result.first['count'] as int?) ?? 0 : 0;
   }
 
   // ============ CACHE METHODS ============

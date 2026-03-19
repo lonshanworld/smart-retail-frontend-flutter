@@ -2,7 +2,7 @@ import 'package:get/get.dart';
 import 'package:smart_retail/app/data/models/notification_model.dart';
 import 'package:smart_retail/app/data/services/notification_api_service.dart';
 import 'package:smart_retail/app/data/services/notification_center_service.dart';
-import 'package:smart_retail/app/utils/dialog_utils.dart';
+import 'package:smart_retail/app/utils/dialog_utils.dart';
 
 class NotificationsController extends GetxController {
   final NotificationApiService _apiService = Get.find<NotificationApiService>();

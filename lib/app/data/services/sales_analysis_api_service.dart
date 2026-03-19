@@ -96,7 +96,9 @@ class SalesAnalysisApiService extends GetxService {
       final sql = (response.body['sql'] as String?) ?? '';
       final rawDataJson = _prettyJson(response.body['data']);
 
-      debugPrint('✅ [AI SALES API] Analysis received (${analysis.length} chars)');
+      debugPrint(
+        '✅ [AI SALES API] Analysis received (${analysis.length} chars)',
+      );
 
       // Optionally log the SQL and data for debugging
       if (response.body['sql'] != null) {

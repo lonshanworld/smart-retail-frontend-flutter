@@ -1,18 +1,47 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get/get.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smart_retail/app/core/config/app_config.dart';
 import 'package:smart_retail/app/data/models/shop_model.dart';
 import 'package:smart_retail/app/data/models/user_model.dart';
 import 'package:smart_retail/app/data/providers/api_constants.dart';
+import 'package:smart_retail/app/core/config/runtime_portal.dart';
 import 'package:smart_retail/app/routes/app_pages.dart';
+
+enum AuthSessionMode { remember, alwaysLogin }
+
+extension AuthSessionModeParser on AuthSessionMode {
+  static AuthSessionMode fromEnv(String? rawValue) {
+    switch ((rawValue ?? 'true').trim().toLowerCase()) {
+      case 'true':
+      case '1':
+      case 'yes':
+      case 'y':
+      case 'remember':
+        return AuthSessionMode.remember;
+      case 'false':
+      case '0':
+      case 'no':
+      case 'n':
+      case 'always_login':
+      case 'always-login':
+      case 'alwayslogin':
+      case 'always':
+        return AuthSessionMode.alwaysLogin;
+      default:
+        return AuthSessionMode.remember;
+    }
+  }
+}
 
 class AuthService extends GetxService {
   static const String _tokenKey = 'auth_token';
   static const String _userKey = 'auth_user';
   static const String _shopKey = 'auth_shop';
-
+  static const FlutterSecureStorage _secureStorage = FlutterSecureStorage();
 
   final RxnString authToken = RxnString();
   final Rxn<User> user = Rxn<User>();
@@ -22,14 +51,50 @@ class AuthService extends GetxService {
   final RxnString shopId = RxnString();
   final RxString errorMessage = ''.obs;
   final RxBool isLoggingOut = false.obs;
+  Future<void>? _initializeFuture;
 
   final _connect = GetConnect(timeout: const Duration(seconds: 30));
   final AppConfig _appConfig = Get.find<AppConfig>();
 
+  AuthSessionMode get _sessionMode =>
+      AuthSessionModeParser.fromEnv(_sessionModeEnvValue());
+
+  String? _sessionModeEnvValue() {
+    final portal = RuntimePortal.value;
+    final portalSpecificKey = switch (portal) {
+      'admin' => 'AUTH_SESSION_MODE_ADMIN',
+      'merchant' => 'AUTH_SESSION_MODE_MERCHANT',
+      'staff' => 'AUTH_SESSION_MODE_STAFF',
+      'shop' => 'AUTH_SESSION_MODE_SHOP',
+      _ => null,
+    };
+
+    if (portalSpecificKey != null) {
+      final portalValue = dotenv.env[portalSpecificKey];
+      if (portalValue != null && portalValue.trim().isNotEmpty) {
+        return portalValue;
+      }
+    }
+
+    return dotenv.env['AUTH_SESSION_MODE'];
+  }
+
+  bool get _shouldPersistAuthData => _sessionMode == AuthSessionMode.remember;
+
+  bool get _useSecureStorage =>
+      !kIsWeb &&
+      _shouldPersistAuthData &&
+      (defaultTargetPlatform == TargetPlatform.android ||
+          defaultTargetPlatform == TargetPlatform.iOS);
+
+  Future<void> initialize() {
+    return _initializeFuture ??= _loadAuthDataFromStorage();
+  }
+
   @override
   void onInit() {
     super.onInit();
-    _loadAuthDataFromStorage();
+    initialize();
   }
 
   void setIsLoggingOut(bool value) {
@@ -37,10 +102,14 @@ class AuthService extends GetxService {
   }
 
   Future<void> _loadAuthDataFromStorage() async {
-    final prefs = await SharedPreferences.getInstance();
-    authToken.value = prefs.getString(_tokenKey);
+    if (!_shouldPersistAuthData) {
+      await _clearPersistedAuthData();
+      return;
+    }
 
-    final userJson = prefs.getString(_userKey);
+    authToken.value = await _readString(_tokenKey);
+
+    final userJson = await _readString(_userKey);
     print('checking auth user json $userJson');
     if (userJson != null) {
       try {
@@ -54,7 +123,7 @@ class AuthService extends GetxService {
       }
     }
 
-    final shopJson = prefs.getString(_shopKey);
+    final shopJson = await _readString(_shopKey);
     if (shopJson != null) {
       try {
         currentShop.value = Shop.fromJson(jsonDecode(shopJson));
@@ -70,14 +139,17 @@ class AuthService extends GetxService {
     User userData, {
     Shop? shopData,
   }) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_userKey, jsonEncode(userData.toJson()));
-    await prefs.setString(_tokenKey, token);
+    if (_shouldPersistAuthData) {
+      await _writeString(_userKey, jsonEncode(userData.toJson()));
+      await _writeString(_tokenKey, token);
 
-    if (shopData != null) {
-      await prefs.setString(_shopKey, jsonEncode(shopData.toJson()));
+      if (shopData != null) {
+        await _writeString(_shopKey, jsonEncode(shopData.toJson()));
+      } else {
+        await _removeString(_shopKey);
+      }
     } else {
-      await prefs.remove(_shopKey);
+      await _clearPersistedAuthData();
     }
 
     authToken.value = token;
@@ -94,7 +166,11 @@ class AuthService extends GetxService {
 
   /// Save authentication data directly from a token and user JSON payload.
   /// Useful for signup or token-exchange flows where the backend returns an access token.
-  Future<void> saveAuthDataFromPayload(String token, Map<String, dynamic> userJson, {Map<String, dynamic>? shopJson}) async {
+  Future<void> saveAuthDataFromPayload(
+    String token,
+    Map<String, dynamic> userJson, {
+    Map<String, dynamic>? shopJson,
+  }) async {
     try {
       final userData = User.fromJson(userJson);
       Shop? shopData;
@@ -115,11 +191,48 @@ class AuthService extends GetxService {
 
   bool get isAuthenticated => authToken.value != null;
 
-  Future<void> clearAuthData() async {
+  Future<String?> _readString(String key) async {
+    if (_useSecureStorage) {
+      return _secureStorage.read(key: key);
+    }
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(key);
+  }
+
+  Future<void> _writeString(String key, String value) async {
+    if (_useSecureStorage) {
+      await _secureStorage.write(key: key, value: value);
+      return;
+    }
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(key, value);
+  }
+
+  Future<void> _removeString(String key) async {
+    if (_useSecureStorage) {
+      await _secureStorage.delete(key: key);
+      return;
+    }
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(key);
+  }
+
+  Future<void> _clearPersistedAuthData() async {
+    if (_useSecureStorage) {
+      await _secureStorage.delete(key: _tokenKey);
+      await _secureStorage.delete(key: _userKey);
+      await _secureStorage.delete(key: _shopKey);
+      return;
+    }
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_tokenKey);
     await prefs.remove(_userKey);
     await prefs.remove(_shopKey);
+  }
+
+  Future<void> clearAuthData() async {
+    await _clearPersistedAuthData();
 
     authToken.value = null;
     user.value = null;
@@ -364,6 +477,7 @@ class AuthService extends GetxService {
           name: 'Mock Merchant',
           email: email,
           role: 'merchant',
+          assignedShopId: shopId,
         );
         await _saveAuthData('mock_merchant_token', mockUser);
         return true;
@@ -393,7 +507,9 @@ class AuthService extends GetxService {
         if (token is String &&
             token.isNotEmpty &&
             userData is Map<String, dynamic>) {
-          final loggedInUser = User.fromJson(userData);
+          final loggedInUser = User.fromJson(userData).copyWith(
+            assignedShopId: shopId,
+          );
 
           // Verify the user is actually a merchant
           if (loggedInUser.role != 'merchant') {

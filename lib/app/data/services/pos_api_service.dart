@@ -9,6 +9,7 @@ import 'package:smart_retail/app/services/offline_sales_service.dart';
 import 'package:smart_retail/app/services/connectivity_service.dart';
 import 'package:smart_retail/app/services/cache_manager_service.dart';
 import 'package:smart_retail/app/utils/response_utils.dart';
+import 'package:uuid/uuid.dart';
 
 class MerchantPosApiService extends GetxService {
   final GetConnect _connect = Get.find<GetConnect>();
@@ -117,8 +118,11 @@ class MerchantPosApiService extends GetxService {
   /// - Logs warning when returning expired cache
   Future<List<InventoryItem>> searchProducts(
     String shopId,
-    String searchTerm,
-  ) async {
+    String searchTerm, {
+    String? categoryId,
+    String? subcategoryId,
+    String? brandId,
+  }) async {
     CacheManagerService? cacheManagerService;
     ConnectivityService? connectivityService;
 
@@ -151,11 +155,45 @@ class MerchantPosApiService extends GetxService {
     }
     // =========================================================================
 
+    if (_appConfig.localStorageOnly && cacheManagerService != null) {
+      print('[POS API] Local storage only mode - returning cached products');
+      final cachedProducts = await cacheManagerService.getCachedProducts(
+        'merchant-${_authService.hashCode}',
+      );
+
+      if (cachedProducts != null && cachedProducts.isNotEmpty) {
+        final products = cachedProducts.map((p) => InventoryItem.fromJson(p)).toList();
+
+        if (searchTerm.isEmpty) {
+          return products;
+        }
+
+        return products
+            .where(
+              (p) =>
+                  p.name.toLowerCase().contains(searchTerm.toLowerCase()) ||
+                  (p.sku?.toLowerCase().contains(searchTerm.toLowerCase()) ??
+                      false),
+            )
+            .toList();
+      }
+
+      return [];
+    }
+
     try {
       final response = await _connect.get(
         '$_baseUrl/products',
         headers: await _getHeaders(),
-        query: {'shopId': shopId, 'searchTerm': searchTerm},
+        query: {
+          'shopId': shopId,
+          'searchTerm': searchTerm,
+          if (categoryId != null && categoryId.isNotEmpty)
+            'categoryId': categoryId,
+          if (subcategoryId != null && subcategoryId.isNotEmpty)
+            'subcategoryId': subcategoryId,
+          if (brandId != null && brandId.isNotEmpty) 'brandId': brandId,
+        },
       );
 
       if (response.isOk && response.body['data'] != null) {
@@ -285,6 +323,19 @@ class MerchantPosApiService extends GetxService {
       ];
     }
 
+    if (_appConfig.localStorageOnly && cacheManagerService != null) {
+      print('[POS API] Local storage only mode - returning cached promotions');
+      final cachedPromotions = await cacheManagerService.getCachedPromotions(
+        'merchant-${_authService.hashCode}',
+      );
+
+      if (cachedPromotions != null && cachedPromotions.isNotEmpty) {
+        return cachedPromotions.map((p) => Promotion.fromJson(p)).toList();
+      }
+
+      return [];
+    }
+
     try {
       print('📡 [POS API] Calling: $_baseUrl/promotions?shopId=$shopId');
 
@@ -308,7 +359,9 @@ class MerchantPosApiService extends GetxService {
 
         // Cache the promotions for offline use
         if (cacheManagerService != null) {
-          final toCache = rawList.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+          final toCache = rawList
+              .map((e) => Map<String, dynamic>.from(e as Map))
+              .toList();
           await cacheManagerService.cachePromotions(
             toCache,
             'merchant-${_authService.hashCode}', // Temporary merchant ID
@@ -384,6 +437,9 @@ class MerchantPosApiService extends GetxService {
   /// - Returns a local sale object with pending status
   /// - Sale will be synced when device goes online
   Future<Sale> checkout(String shopId, Map<String, dynamic> saleData) async {
+    saleData['id'] ??= const Uuid().v4();
+    final clientSaleId = saleData['id'].toString();
+
     // Get offline services
     OfflineSalesService? offlineSalesService;
     ConnectivityService? connectivityService;
@@ -405,10 +461,10 @@ class MerchantPosApiService extends GetxService {
     // =========================================================================
     // MOCK IMPLEMENTATION
     // =========================================================================
-    if (_appConfig.isDevelopment) {
+    if (_appConfig.localStorageOnly || _appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
 
-      final saleId = 'sale-${DateTime.now().millisecondsSinceEpoch}';
+      final saleId = clientSaleId;
       final now = DateTime.now();
 
       final saleItems = (saleData['items'] as List).map((item) {
@@ -432,6 +488,7 @@ class MerchantPosApiService extends GetxService {
         shopId: shopId,
         saleDate: now,
         totalAmount: saleData['totalAmount'],
+        deliveryCharge: saleData['deliveryCharge'] ?? 0.0,
         items: saleItems,
         paymentType: saleData['paymentType'],
         paymentStatus: 'succeeded',
@@ -440,6 +497,51 @@ class MerchantPosApiService extends GetxService {
       );
     }
     // =========================================================================
+
+    if (_appConfig.localStorageOnly) {
+      if (offlineSalesService != null) {
+        print('[POS API] Local storage only mode - queueing sale locally');
+        final saleQueued = await offlineSalesService.processSale(saleData);
+
+        if (saleQueued) {
+          final saleId = clientSaleId;
+          final now = DateTime.now();
+
+          final saleItems = (saleData['items'] as List).map((item) {
+            final quantity = item['quantity'] as int;
+            final price = item['sellingPriceAtSale'] as double;
+            return SaleItem(
+              id: 'sale-item-${item['productId']}-${now.microsecondsSinceEpoch}',
+              saleId: saleId,
+              inventoryItemId: item['productId'] as String,
+              quantitySold: quantity,
+              sellingPriceAtSale: price,
+              subtotal: quantity * price,
+              createdAt: now,
+              updatedAt: now,
+            );
+          }).toList();
+
+          return Sale(
+            id: saleId,
+            merchantId: 'local-storage-only',
+            shopId: shopId,
+            saleDate: now,
+            totalAmount: saleData['totalAmount'],
+            deliveryCharge: saleData['deliveryCharge'] ?? 0.0,
+            items: saleItems,
+            paymentType: saleData['paymentType'],
+            paymentStatus: 'pending',
+            createdAt: now,
+            updatedAt: now,
+          );
+        }
+      }
+
+      throw Exception(
+        'Local storage only mode is enabled but sale queueing failed',
+      );
+    }
 
     // Check connectivity
     bool isOnline = connectivityService?.isOnline.value ?? true;
@@ -452,7 +554,7 @@ class MerchantPosApiService extends GetxService {
 
       if (saleQueued) {
         // Create a temporary local sale object for offline mode
-        final saleId = 'sale-offline-${DateTime.now().millisecondsSinceEpoch}';
+        final saleId = clientSaleId;
         final now = DateTime.now();
 
         final saleItems = (saleData['items'] as List).map((item) {
@@ -476,6 +578,7 @@ class MerchantPosApiService extends GetxService {
           shopId: shopId,
           saleDate: now,
           totalAmount: saleData['totalAmount'],
+          deliveryCharge: saleData['deliveryCharge'] ?? 0.0,
           items: saleItems,
           paymentType: saleData['paymentType'],
           paymentStatus: 'pending', // Mark as pending offline

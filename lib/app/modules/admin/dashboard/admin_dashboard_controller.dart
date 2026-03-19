@@ -23,7 +23,9 @@ class AdminDashboardController extends GetxController {
       final result = await _apiService.getAdminDashboardSummary();
       summary.value = result;
     } catch (e) {
-      DialogUtils.showError("Could not load dashboard summary. ${e.toString()}");
+      DialogUtils.showError(
+        "Could not load dashboard summary. ${e.toString()}",
+      );
     } finally {
       isLoadingSummary.value = false;
     }

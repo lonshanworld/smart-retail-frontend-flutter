@@ -1,4 +1,3 @@
-
 // Represents the stock of a specific inventory item within a specific shop.
 // This often includes details from the master InventoryItem for display purposes.
 class ShopStockItem {

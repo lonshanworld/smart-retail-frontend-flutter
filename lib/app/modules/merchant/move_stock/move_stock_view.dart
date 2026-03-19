@@ -10,10 +10,7 @@ class MoveStockView extends GetView<MoveStockController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Move Stock Between Shops'),
-        elevation: 2,
-      ),
+      appBar: AppBar(title: const Text('Move Stock Between Shops')),
       body: Obx(() {
         if (controller.isLoadingData.value) {
           return const Center(child: CircularProgressIndicator());
@@ -34,7 +31,10 @@ class MoveStockView extends GetView<MoveStockController> {
                   const SizedBox(height: 16),
                   Text(
                     controller.errorMessage.value!,
-                    style: TextStyle(color: Colors.red.shade700, fontSize: 16),
+                    style: TextStyle(
+                      color: Colors.red.shade700,
+                      fontSize: 16,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 24),
@@ -56,7 +56,6 @@ class MoveStockView extends GetView<MoveStockController> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Info card
                 Card(
                   color: Colors.blue.shade50,
                   child: Padding(
@@ -76,12 +75,10 @@ class MoveStockView extends GetView<MoveStockController> {
                   ),
                 ),
                 const SizedBox(height: 24),
-
-                // Select Item
                 _buildSectionTitle('1. Select Item'),
                 const SizedBox(height: 8),
                 Obx(
-                  () => DropdownButtonFormField<InventoryItem>(
+                      () => DropdownButtonFormField<InventoryItem>(
                     initialValue: controller.selectedItem.value,
                     decoration: InputDecoration(
                       labelText: 'Inventory Item',
@@ -104,16 +101,14 @@ class MoveStockView extends GetView<MoveStockController> {
                     }).toList(),
                     onChanged: controller.selectInventoryItem,
                     validator: (value) =>
-                        value == null ? 'Please select an item' : null,
+                    value == null ? 'Please select an item' : null,
                   ),
                 ),
                 const SizedBox(height: 24),
-
-                // From Shop
                 _buildSectionTitle('2. From Shop (Source)'),
                 const SizedBox(height: 8),
                 Obx(
-                  () => DropdownButtonFormField<Shop>(
+                      () => DropdownButtonFormField<Shop>(
                     initialValue: controller.fromShop.value,
                     decoration: InputDecoration(
                       labelText: 'Source Shop',
@@ -126,11 +121,13 @@ class MoveStockView extends GetView<MoveStockController> {
                     isExpanded: true,
                     hint: const Text('Select source shop'),
                     items: controller.getAvailableFromShops().map((shop) {
-                      // Find stock for this shop
-                      final stockInfo = controller.selectedItem.value?.stockInfo
+                      final stockInfo = controller
+                          .selectedItem
+                          .value
+                          ?.stockInfo
                           ?.firstWhereOrNull(
                             (stock) => stock.shopId == shop.id,
-                          );
+                      );
                       final qty = stockInfo?.quantity ?? 0;
 
                       return DropdownMenuItem<Shop>(
@@ -145,11 +142,9 @@ class MoveStockView extends GetView<MoveStockController> {
                         ? null
                         : controller.selectFromShop,
                     validator: (value) =>
-                        value == null ? 'Please select source shop' : null,
+                    value == null ? 'Please select source shop' : null,
                   ),
                 ),
-
-                // Show available stock
                 Obx(() {
                   if (controller.fromShop.value != null &&
                       controller.availableStock.value > 0) {
@@ -167,12 +162,10 @@ class MoveStockView extends GetView<MoveStockController> {
                   return const SizedBox.shrink();
                 }),
                 const SizedBox(height: 24),
-
-                // To Shop
                 _buildSectionTitle('3. To Shop (Destination)'),
                 const SizedBox(height: 8),
                 Obx(
-                  () => DropdownButtonFormField<Shop>(
+                      () => DropdownButtonFormField<Shop>(
                     initialValue: controller.toShop.value,
                     decoration: InputDecoration(
                       labelText: 'Destination Shop',
@@ -187,19 +180,21 @@ class MoveStockView extends GetView<MoveStockController> {
                     items: controller.getAvailableToShops().map((shop) {
                       return DropdownMenuItem<Shop>(
                         value: shop,
-                        child: Text(shop.name, overflow: TextOverflow.ellipsis),
+                        child: Text(
+                          shop.name,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       );
                     }).toList(),
                     onChanged: controller.fromShop.value == null
                         ? null
                         : controller.selectToShop,
-                    validator: (value) =>
-                        value == null ? 'Please select destination shop' : null,
+                    validator: (value) => value == null
+                        ? 'Please select destination shop'
+                        : null,
                   ),
                 ),
                 const SizedBox(height: 24),
-
-                // Quantity
                 _buildSectionTitle('4. Quantity to Move'),
                 const SizedBox(height: 8),
                 TextFormField(
@@ -217,22 +212,20 @@ class MoveStockView extends GetView<MoveStockController> {
                   validator: controller.validateQuantity,
                 ),
                 const SizedBox(height: 32),
-
-                // Move Stock Button
                 Obx(
-                  () => ElevatedButton.icon(
+                      () => ElevatedButton.icon(
                     onPressed: controller.isLoading.value
                         ? null
                         : controller.moveStock,
                     icon: controller.isLoading.value
                         ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
                         : const Icon(Icons.swap_horiz),
                     label: Text(
                       controller.isLoading.value

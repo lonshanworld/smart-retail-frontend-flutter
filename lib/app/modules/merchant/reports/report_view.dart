@@ -143,15 +143,6 @@ class ReportView extends GetView<ReportController> {
   }
 
   Widget _buildForecastChart(List<DailyForecast> forecastData) {
-    final spots = forecastData.asMap().entries.map((entry) {
-      return FlSpot(
-        entry.key.toDouble(),
-        entry.value.predictedQuantity.toDouble(),
-      );
-    }).toList();
-
-    final dateFormat = DateFormat('E, MMM d');
-
     return BarChart(
       BarChartData(
         alignment: BarChartAlignment.spaceAround,

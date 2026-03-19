@@ -9,7 +9,13 @@ class PrinterSelection {
   final String? serviceUuid;
   final String? charUuid;
 
-  PrinterSelection({required this.transport, required this.deviceId, required this.deviceName, this.serviceUuid, this.charUuid});
+  PrinterSelection({
+    required this.transport,
+    required this.deviceId,
+    required this.deviceName,
+    this.serviceUuid,
+    this.charUuid,
+  });
 
   Map<String, dynamic> toMap() {
     return {
@@ -40,8 +46,11 @@ class PrinterStorage {
     if (_db != null) return _db!;
     final databasesPath = await getDatabasesPath();
     final path = '$databasesPath/printer_selection.db';
-    _db = await openDatabase(path, version: 1, onCreate: (db, version) async {
-      await db.execute('''
+    _db = await openDatabase(
+      path,
+      version: 1,
+      onCreate: (db, version) async {
+        await db.execute('''
         CREATE TABLE selection (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           transport TEXT NOT NULL,
@@ -51,7 +60,8 @@ class PrinterStorage {
           char_uuid TEXT
         )
       ''');
-    });
+      },
+    );
     return _db!;
   }
 
@@ -62,7 +72,12 @@ class PrinterStorage {
     if (existing.isEmpty) {
       await db.insert('selection', s.toMap());
     } else {
-      await db.update('selection', s.toMap(), where: 'id = ?', whereArgs: [existing.first['id']]);
+      await db.update(
+        'selection',
+        s.toMap(),
+        where: 'id = ?',
+        whereArgs: [existing.first['id']],
+      );
     }
   }
 

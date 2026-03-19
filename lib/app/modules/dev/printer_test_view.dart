@@ -45,7 +45,8 @@ class _PrinterTestViewState extends State<PrinterTestView> {
       setState(() {
         _saved = sel;
         // prefill BLE UUID fields if present
-        if (sel.serviceUuid != null) _bleServiceController.text = sel.serviceUuid!;
+        if (sel.serviceUuid != null)
+          _bleServiceController.text = sel.serviceUuid!;
         if (sel.charUuid != null) _bleCharController.text = sel.charUuid!;
       });
     }
@@ -69,17 +70,25 @@ class _PrinterTestViewState extends State<PrinterTestView> {
       ok = await _printer.connectBle(d);
       if (!ok) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to connect (BLE)')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to connect (BLE)')),
+        );
         return;
       }
       // parse UUIDs from text fields
       try {
         final service = Uuid.parse(_bleServiceController.text.trim());
         final char = Uuid.parse(_bleCharController.text.trim());
-        printed = await _printer.blePrintTest(device: d, serviceId: service, charId: char);
+        printed = await _printer.blePrintTest(
+          device: d,
+          serviceId: service,
+          charId: char,
+        );
       } catch (e) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invalid BLE UUIDs')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Invalid BLE UUIDs')));
         return;
       }
       await _printer.disconnectBle();
@@ -87,17 +96,19 @@ class _PrinterTestViewState extends State<PrinterTestView> {
       ok = await _printer.connect(d);
       if (!ok) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to connect')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Failed to connect')));
         return;
       }
       printed = await _printer.printTestReceipt();
       await _printer.disconnect();
     }
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(printed ? 'Printed' : 'Print failed')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(printed ? 'Printed' : 'Print failed')),
+    );
   }
-
-  
 
   @override
   Widget build(BuildContext context) {
@@ -107,18 +118,23 @@ class _PrinterTestViewState extends State<PrinterTestView> {
         padding: const EdgeInsets.all(12.0),
         child: Column(
           children: [
-            Row(children: [
-              const Text('Transport: '),
-              const SizedBox(width: 8),
-              DropdownButton<String>(
-                value: _transport,
-                items: const [
-                  DropdownMenuItem(value: 'classic', child: Text('Classic Bluetooth (SPP)')),
-                  DropdownMenuItem(value: 'ble', child: Text('BLE (GATT)')),
-                ],
-                onChanged: (v) => setState(() => _transport = v ?? 'classic'),
-              ),
-            ]),
+            Row(
+              children: [
+                const Text('Transport: '),
+                const SizedBox(width: 8),
+                DropdownButton<String>(
+                  value: _transport,
+                  items: const [
+                    DropdownMenuItem(
+                      value: 'classic',
+                      child: Text('Classic Bluetooth (SPP)'),
+                    ),
+                    DropdownMenuItem(value: 'ble', child: Text('BLE (GATT)')),
+                  ],
+                  onChanged: (v) => setState(() => _transport = v ?? 'classic'),
+                ),
+              ],
+            ),
             const SizedBox(height: 8),
             if (_saved != null) ...[
               Card(
@@ -127,13 +143,18 @@ class _PrinterTestViewState extends State<PrinterTestView> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Saved Printer', style: TextStyle(fontWeight: FontWeight.bold)),
+                      const Text(
+                        'Saved Printer',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                       const SizedBox(height: 6),
                       Text('Transport: ${_saved!.transport}'),
                       Text('Name: ${_saved!.deviceName}'),
                       Text('ID: ${_saved!.deviceId}'),
-                      if (_saved!.serviceUuid != null) Text('Service: ${_saved!.serviceUuid}'),
-                      if (_saved!.charUuid != null) Text('Characteristic: ${_saved!.charUuid}'),
+                      if (_saved!.serviceUuid != null)
+                        Text('Service: ${_saved!.serviceUuid}'),
+                      if (_saved!.charUuid != null)
+                        Text('Characteristic: ${_saved!.charUuid}'),
                       const SizedBox(height: 8),
                       Row(
                         children: [
@@ -142,23 +163,35 @@ class _PrinterTestViewState extends State<PrinterTestView> {
                               final ok = await _printer.quickConnectSaved();
                               if (!mounted) return;
 
-                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ok ? 'Connected' : 'Connect failed')));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    ok ? 'Connected' : 'Connect failed',
+                                  ),
+                                ),
+                              );
                             },
                             child: const Text('Quick Connect'),
                           ),
                           const SizedBox(width: 8),
                           ElevatedButton(
-                            style: ElevatedButton.styleFrom(backgroundColor: Colors.grey),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.grey,
+                            ),
                             onPressed: () async {
                               await _printer.clearSavedSelection();
                               setState(() => _saved = null);
                               if (!mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Cleared saved printer')));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Cleared saved printer'),
+                                ),
+                              );
                             },
                             child: const Text('Clear'),
                           ),
                         ],
-                      )
+                      ),
                     ],
                   ),
                 ),
@@ -167,19 +200,34 @@ class _PrinterTestViewState extends State<PrinterTestView> {
             ],
             const SizedBox(height: 8),
             if (_transport == 'ble') ...[
-              TextField(controller: _bleServiceController, decoration: const InputDecoration(labelText: 'Service UUID (required for BLE print)')),
+              TextField(
+                controller: _bleServiceController,
+                decoration: const InputDecoration(
+                  labelText: 'Service UUID (required for BLE print)',
+                ),
+              ),
               const SizedBox(height: 8),
-              TextField(controller: _bleCharController, decoration: const InputDecoration(labelText: 'Characteristic UUID (required for BLE print)')),
+              TextField(
+                controller: _bleCharController,
+                decoration: const InputDecoration(
+                  labelText: 'Characteristic UUID (required for BLE print)',
+                ),
+              ),
               const SizedBox(height: 8),
             ],
             Row(
               children: [
-                ElevatedButton(onPressed: _scanning ? null : _scan, child: Text(_scanning ? 'Scanning...' : 'Scan for printers')),
+                ElevatedButton(
+                  onPressed: _scanning ? null : _scan,
+                  child: Text(_scanning ? 'Scanning...' : 'Scan for printers'),
+                ),
                 const SizedBox(width: 12),
                 ElevatedButton.icon(
                   icon: const Icon(Icons.settings_bluetooth),
                   label: const Text('Open Bluetooth Settings'),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.grey.shade700),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey.shade700,
+                  ),
                   onPressed: () async {
                     const channel = MethodChannel('smart_retail/printer');
                     try {
@@ -219,7 +267,8 @@ class _PrinterTestViewState extends State<PrinterTestView> {
                                     await _printer.saveLastSelection(
                                       transport: _transport,
                                       device: d,
-                                      serviceUuid: _bleServiceController.text.trim(),
+                                      serviceUuid: _bleServiceController.text
+                                          .trim(),
                                       charUuid: _bleCharController.text.trim(),
                                     );
                                   } else {
@@ -228,7 +277,11 @@ class _PrinterTestViewState extends State<PrinterTestView> {
                                       device: d,
                                     );
                                   }
-                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Saved printer selection')));
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Saved printer selection'),
+                                    ),
+                                  );
                                 },
                               ),
                             ],

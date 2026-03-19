@@ -123,6 +123,13 @@ class InvoiceDetailView extends GetView<InvoiceDetailController> {
                         _buildAmountRow('Tax', invoice.taxAmount),
                         const SizedBox(height: 12),
                       ],
+                      if (invoice.deliveryCharge > 0) ...[
+                        _buildAmountRow(
+                          'Delivery Charge',
+                          invoice.deliveryCharge,
+                        ),
+                        const SizedBox(height: 12),
+                      ],
                       const Divider(height: 24),
                       _buildAmountRow(
                         'Total',
@@ -162,11 +169,14 @@ class InvoiceDetailView extends GetView<InvoiceDetailController> {
                       if (invoice.dueDate != null) ...[
                         _buildInfoRow(
                           'Due Date',
-                          DateFormat('MMM dd, yyyy').format(invoice.dueDate!.toLocal()),
+                          DateFormat(
+                            'MMM dd, yyyy',
+                          ).format(invoice.dueDate!.toLocal()),
                         ),
                         const SizedBox(height: 12),
                       ],
-                      if (invoice.notes != null && invoice.notes!.isNotEmpty) ...[
+                      if (invoice.notes != null &&
+                          invoice.notes!.isNotEmpty) ...[
                         const Text(
                           'Notes:',
                           style: TextStyle(
@@ -188,46 +198,77 @@ class InvoiceDetailView extends GetView<InvoiceDetailController> {
               const SizedBox(height: 24),
 
               // Items Card
-              if (invoice.items.isNotEmpty) Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Items',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+              if (invoice.items.isNotEmpty)
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Items',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                      const Divider(height: 24),
-                      ...invoice.items.map((it) => Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 6.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(it.itemName ?? it.inventoryItemId, style: const TextStyle(fontWeight: FontWeight.w600)),
-                                  if (it.itemSku != null) Text('SKU: ${it.itemSku}', style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
-                                ],
-                              ),
+                        const Divider(height: 24),
+                        ...invoice.items.map(
+                          (it) => Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 6.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        it.itemName ?? it.inventoryItemId,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      if (it.itemSku != null)
+                                        Text(
+                                          'SKU: ${it.itemSku}',
+                                          style: TextStyle(
+                                            color: Colors.grey.shade600,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                                Text(
+                                  'x${it.quantitySold}',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  '\$${it.sellingPriceAtSale.toStringAsFixed(2)}',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  '\$${it.subtotal.toStringAsFixed(2)}',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
                             ),
-                            Text('x${it.quantitySold}', style: const TextStyle(fontWeight: FontWeight.w600)),
-                            const SizedBox(width: 12),
-                            Text('\$${it.sellingPriceAtSale.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.w600)),
-                            const SizedBox(width: 12),
-                            Text('\$${it.subtotal.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                          ],
+                          ),
                         ),
-                      )),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
 
               // Download PDF Button
               Obx(() {
@@ -242,11 +283,15 @@ class InvoiceDetailView extends GetView<InvoiceDetailController> {
                             height: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
                             ),
                           )
                         : const Icon(Icons.download),
-                    label: Text(isGenerating ? 'Generating PDF...' : 'Download PDF'),
+                    label: Text(
+                      isGenerating ? 'Generating PDF...' : 'Download PDF',
+                    ),
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       textStyle: const TextStyle(
@@ -283,7 +328,12 @@ class InvoiceDetailView extends GetView<InvoiceDetailController> {
     );
   }
 
-  Widget _buildAmountRow(String label, double amount, {bool isTotal = false, Color? color}) {
+  Widget _buildAmountRow(
+    String label,
+    double amount, {
+    bool isTotal = false,
+    Color? color,
+  }) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -315,18 +365,10 @@ class InvoiceDetailView extends GetView<InvoiceDetailController> {
           width: 120,
           child: Text(
             '$label:',
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 14,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
           ),
         ),
-        Expanded(
-          child: Text(
-            value,
-            style: const TextStyle(fontSize: 14),
-          ),
-        ),
+        Expanded(child: Text(value, style: const TextStyle(fontSize: 14))),
       ],
     );
   }

@@ -59,6 +59,7 @@ class ReportApiService extends GetxService {
           shopId: shopId ?? 'shop-mock-${index % 3}',
           saleDate: date,
           totalAmount: Random().nextDouble() * 200 + 50,
+          deliveryCharge: 0.0,
           items: [], // Simplified for this mock
           paymentType: 'cash',
           paymentStatus: 'succeeded',
@@ -85,7 +86,9 @@ class ReportApiService extends GetxService {
 
     if (response.isOk && response.body['data'] != null) {
       print('✅ [REPORT API] Parsing sales report response');
-      final salesReport = SalesReportResponse.fromJson(asMap(response.body['data']));
+      final salesReport = SalesReportResponse.fromJson(
+        asMap(response.body['data']),
+      );
       print(
         '✅ [REPORT API] Successfully parsed ${salesReport.sales.length} sales',
       );

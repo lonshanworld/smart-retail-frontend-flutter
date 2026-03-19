@@ -170,7 +170,7 @@ class _KpiItemData {
 class _KpiCard extends StatelessWidget {
   final _KpiItemData data;
 
-  const _KpiCard({super.key, required this.data});
+  const _KpiCard({required this.data});
 
   @override
   Widget build(BuildContext context) {

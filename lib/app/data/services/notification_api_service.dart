@@ -3,12 +3,16 @@ import 'package:smart_retail/app/core/config/app_config.dart';
 import 'package:smart_retail/app/data/models/notification_model.dart';
 import 'package:smart_retail/app/data/providers/api_constants.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
+import 'package:smart_retail/app/services/local_database_service.dart';
 import 'package:smart_retail/app/utils/response_utils.dart';
+import 'package:uuid/uuid.dart';
 
 class NotificationApiService extends GetxService {
   final GetConnect _connect = GetConnect(); // <<< CORRECTED: Use a new instance
   final AuthService _authService = Get.find<AuthService>();
   final AppConfig _appConfig = Get.find<AppConfig>();
+  final LocalDatabaseService _localDatabaseService =
+      Get.find<LocalDatabaseService>();
 
   String get _baseUrl => '${ApiConstants.baseUrl}/merchant/notifications';
 
@@ -18,6 +22,15 @@ class NotificationApiService extends GetxService {
       'Authorization': 'Bearer $token',
       'Content-Type': 'application/json',
     };
+  }
+
+  bool _shouldQueue(dynamic error) {
+    final text = error.toString().toLowerCase();
+    return _appConfig.localStorageOnly ||
+        text.contains('socketexception') ||
+        text.contains('failed host lookup') ||
+        text.contains('connection') ||
+        text.contains('timeout');
   }
 
   /// Fetches a paginated list of notifications.
@@ -142,19 +155,40 @@ class NotificationApiService extends GetxService {
 
   /// Marks a specific notification as read.
   Future<void> markAsRead(String notificationId) async {
+    final clientOperationId = const Uuid().v4();
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(milliseconds: 500));
       // In mock mode, we don't need to do anything, the controller handles the state.
       return;
     }
-    final response = await _connect.patch(
-      '$_baseUrl/$notificationId/read',
-      {},
-      headers: await _getHeaders(),
-    );
+    final payload = {'clientOperationId': clientOperationId};
+    try {
+      final headers = await _getHeaders();
+      headers['X-Client-Operation-Id'] = clientOperationId;
+      final response = await _connect.patch(
+        '$_baseUrl/$notificationId/read',
+        payload,
+        headers: headers,
+      );
 
-    if (response.statusCode != 200 || response.body['success'] != true) {
-      throw Exception(response.body?['message'] ?? 'Failed to mark as read');
+      if (response.statusCode != 200 || response.body['success'] != true) {
+        throw Exception(response.body?['message'] ?? 'Failed to mark as read');
+      }
+    } catch (e) {
+      if (_shouldQueue(e)) {
+        await _localDatabaseService.queueOperation({
+          'id': clientOperationId,
+          'client_operation_id': clientOperationId,
+          'entity_type': 'notification',
+          'action': 'update',
+          'method': 'PATCH',
+          'endpoint': '$_baseUrl/$notificationId/read',
+          'payload': payload,
+          'headers': {'X-Client-Operation-Id': clientOperationId},
+        });
+        return;
+      }
+      throw Exception(e.toString());
     }
   }
 }

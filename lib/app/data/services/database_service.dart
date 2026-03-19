@@ -440,5 +440,4 @@ class DatabaseService extends GetxService {
       print("Database closed.");
     }
   }
-
 }

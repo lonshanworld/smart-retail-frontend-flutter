@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:smart_retail/app/data/models/merchant_model.dart';
 import 'package:smart_retail/app/data/services/admin_merchant_service.dart';
 import 'package:smart_retail/app/routes/app_pages.dart';
-import 'package:smart_retail/app/utils/dialog_utils.dart';
+import 'package:smart_retail/app/utils/dialog_utils.dart';
 
 class AdminMerchantDetailController extends GetxController {
   final AdminMerchantService adminMerchantService;

@@ -874,7 +874,9 @@ class MerchantShopInventoryView
                     'expired_goods',
                     'return_to_supplier',
                   ].contains(movementType)) {
-                DialogUtils.showError('Stock quantity cannot go below zero for this adjustment type.');
+                DialogUtils.showError(
+                  'Stock quantity cannot go below zero for this adjustment type.',
+                );
                 return;
               }
 
@@ -917,474 +919,506 @@ class MerchantShopInventoryView
         child: LayoutBuilder(
           builder: (context, constraints) {
             final screen = MediaQuery.of(context).size;
-            final dialogWidth = screen.width < 700 ? screen.width * 0.94 : 650.0;
-            final dialogHeight = (screen.height * 0.88).clamp(480.0, 780.0).toDouble();
+            final dialogWidth = screen.width < 700
+                ? screen.width * 0.94
+                : 650.0;
+            final dialogHeight = (screen.height * 0.88)
+                .clamp(480.0, 780.0)
+                .toDouble();
 
             return SizedBox(
               width: dialogWidth,
               height: dialogHeight,
               child: Column(
                 mainAxisSize: MainAxisSize.max,
-            children: [
-              // Header
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppColors.merchant.shade400,
-                      AppColors.merchant.shade700,
-                    ],
-                  ),
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(4),
-                    topRight: Radius.circular(4),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.inventory, color: Colors.white, size: 28),
-                    const SizedBox(width: 12),
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Manage Shop Stock',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            'Add items or adjust quantities',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.white70,
-                            ),
-                          ),
+                children: [
+                  // Header
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          AppColors.merchant.shade400,
+                          AppColors.merchant.shade700,
                         ],
                       ),
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(4),
+                        topRight: Radius.circular(4),
+                      ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white),
-                      onPressed: () => Get.back(),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Shop Info
-              Container(
-                padding: const EdgeInsets.all(16),
-                color: Colors.grey.shade100,
-                child: Row(
-                  children: [
-                    Icon(Icons.store, color: AppColors.merchant, size: 20),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        controller.selectedShopDetails.value!.name,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.inventory,
+                          color: Colors.white,
+                          size: 28,
                         ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Search Bar
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: TextField(
-                  controller: searchController,
-                  decoration: InputDecoration(
-                    hintText: 'Search items...',
-                    prefixIcon: const Icon(Icons.search),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    suffixIcon: Obx(
-                      () => searchQuery.value.isNotEmpty
-                          ? IconButton(
-                              icon: const Icon(Icons.clear),
-                              onPressed: () {
-                                searchController.clear();
-                                searchQuery.value = '';
-                              },
-                            )
-                          : const SizedBox.shrink(),
-                    ),
-                  ),
-                  onChanged: (value) => searchQuery.value = value,
-                ),
-              ),
-
-              // Changes Summary
-              Obx(() {
-                final changes = quantityChanges.entries
-                    .where((e) => e.value != 0)
-                    .toList();
-                if (changes.isEmpty) return const SizedBox.shrink();
-
-                final increaseCount = changes.where((e) => e.value > 0).length;
-                final decreaseCount = changes.where((e) => e.value < 0).length;
-
-                return Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 16),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.shade50,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.blue.shade200),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.info_outline,
-                        color: Colors.blue.shade700,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          '${changes.length} item(s) to update: ${increaseCount > 0 ? '+$increaseCount' : ''} ${decreaseCount > 0 ? '-$decreaseCount' : ''}',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blue.shade700,
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Manage Shop Stock',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                'Add items or adjust quantities',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.white70,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
-                      TextButton(
-                        onPressed: () => quantityChanges.clear(),
-                        child: const Text('Clear All'),
-                      ),
-                    ],
+                        IconButton(
+                          icon: const Icon(Icons.close, color: Colors.white),
+                          onPressed: () => Get.back(),
+                        ),
+                      ],
+                    ),
                   ),
-                );
-              }),
 
-              const SizedBox(height: 8),
+                  // Shop Info
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    color: Colors.grey.shade100,
+                    child: Row(
+                      children: [
+                        Icon(Icons.store, color: AppColors.merchant, size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            controller.selectedShopDetails.value!.name,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
 
-              // Items List
-              Expanded(
-                child: Obx(() {
-                  if (controller.allMerchantInventory.isEmpty) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
+                  // Search Bar
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: TextField(
+                      controller: searchController,
+                      decoration: InputDecoration(
+                        hintText: 'Search items...',
+                        prefixIcon: const Icon(Icons.search),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        suffixIcon: Obx(
+                          () => searchQuery.value.isNotEmpty
+                              ? IconButton(
+                                  icon: const Icon(Icons.clear),
+                                  onPressed: () {
+                                    searchController.clear();
+                                    searchQuery.value = '';
+                                  },
+                                )
+                              : const SizedBox.shrink(),
+                        ),
+                      ),
+                      onChanged: (value) => searchQuery.value = value,
+                    ),
+                  ),
 
-                  final allItems = controller.allMerchantInventory;
-                  final shopItemIds = controller.shopInventoryList
-                      .map((item) => item.id)
-                      .toSet();
+                  // Changes Summary
+                  Obx(() {
+                    final changes = quantityChanges.entries
+                        .where((e) => e.value != 0)
+                        .toList();
+                    if (changes.isEmpty) return const SizedBox.shrink();
 
-                  final filteredItems = allItems.where((item) {
-                    if (searchQuery.value.isEmpty) return true;
-                    final query = searchQuery.value.toLowerCase();
-                    return item.name.toLowerCase().contains(query) ||
-                        (item.sku?.toLowerCase().contains(query) ?? false);
-                  }).toList();
+                    final increaseCount = changes
+                        .where((e) => e.value > 0)
+                        .length;
+                    final decreaseCount = changes
+                        .where((e) => e.value < 0)
+                        .length;
 
-                  if (filteredItems.isEmpty) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                    return Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.blue.shade200),
+                      ),
+                      child: Row(
                         children: [
                           Icon(
-                            Icons.search_off,
-                            size: 64,
-                            color: Colors.grey.shade400,
+                            Icons.info_outline,
+                            color: Colors.blue.shade700,
+                            size: 20,
                           ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'No items found',
-                            style: TextStyle(color: Colors.grey.shade600),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              '${changes.length} item(s) to update: ${increaseCount > 0 ? '+$increaseCount' : ''} ${decreaseCount > 0 ? '-$decreaseCount' : ''}',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blue.shade700,
+                              ),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () => quantityChanges.clear(),
+                            child: const Text('Clear All'),
                           ),
                         ],
                       ),
                     );
-                  }
+                  }),
 
-                  return ListView.builder(
-                    itemCount: filteredItems.length,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemBuilder: (context, index) {
-                      final item = filteredItems[index];
-                      final isInShop = shopItemIds.contains(item.id);
-                      final currentStock =
-                          controller.shopInventoryList
-                              .firstWhereOrNull((i) => i.id == item.id)
-                              ?.stockInfo
-                              ?.firstOrNull
-                              ?.quantity ??
-                          0;
+                  const SizedBox(height: 8),
 
-                      return Obx(() {
-                        final change = quantityChanges[item.id] ?? 0;
-                        final newStock = currentStock + change;
+                  // Items List
+                  Expanded(
+                    child: Obx(() {
+                      if (controller.allMerchantInventory.isEmpty) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
 
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 8),
-                          elevation: change != 0 ? 4 : 1,
-                          color: change != 0
-                              ? (change > 0
-                                    ? Colors.green.shade50
-                                    : Colors.red.shade50)
-                              : null,
-                          child: Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Row(
-                              children: [
-                                // Item Icon
-                                CircleAvatar(
-                                  backgroundColor: isInShop
-                                      ? AppColors.merchant.shade100
-                                      : Colors.grey.shade200,
-                                  child: Icon(
-                                    isInShop
-                                        ? Icons.inventory_2
-                                        : Icons.add_shopping_cart,
-                                    color: isInShop
-                                        ? AppColors.merchant
-                                        : Colors.grey.shade600,
-                                    size: 20,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
+                      final allItems = controller.allMerchantInventory;
+                      final shopItemIds = controller.shopInventoryList
+                          .map((item) => item.id)
+                          .toSet();
 
-                                // Item Info
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: Text(
-                                              item.name,
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 14,
-                                              ),
-                                            ),
-                                          ),
-                                          if (!isInShop)
-                                            Container(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    horizontal: 8,
-                                                    vertical: 2,
-                                                  ),
-                                              decoration: BoxDecoration(
-                                                color: Colors.orange.shade100,
-                                                borderRadius:
-                                                    BorderRadius.circular(4),
-                                                border: Border.all(
-                                                  color: Colors.orange.shade300,
-                                                ),
-                                              ),
-                                              child: Text(
-                                                'NEW',
-                                                style: TextStyle(
-                                                  fontSize: 10,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.orange.shade700,
-                                                ),
-                                              ),
-                                            ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Row(
-                                        children: [
-                                          if (isInShop) ...[
-                                            Text(
-                                              'Stock: $currentStock',
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.grey.shade700,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
-                                            if (change != 0) ...[
-                                              const SizedBox(width: 8),
-                                              Icon(
-                                                Icons.arrow_forward,
-                                                size: 12,
-                                                color: Colors.grey.shade600,
-                                              ),
-                                              const SizedBox(width: 8),
-                                              Text(
-                                                '$newStock',
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: change > 0
-                                                      ? Colors.green.shade700
-                                                      : Colors.red.shade700,
-                                                ),
-                                              ),
-                                            ],
-                                          ] else
-                                            Text(
-                                              'Not in shop',
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.grey.shade600,
-                                                fontStyle: FontStyle.italic,
-                                              ),
-                                            ),
-                                          if (item.sku != null) ...[
-                                            const SizedBox(width: 12),
-                                            Text(
-                                              'SKU: ${item.sku}',
-                                              style: TextStyle(
-                                                fontSize: 11,
-                                                color: Colors.grey.shade600,
-                                              ),
-                                            ),
-                                          ],
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
+                      final filteredItems = allItems.where((item) {
+                        if (searchQuery.value.isEmpty) return true;
+                        final query = searchQuery.value.toLowerCase();
+                        return item.name.toLowerCase().contains(query) ||
+                            (item.sku?.toLowerCase().contains(query) ?? false);
+                      }).toList();
 
-                                // Quantity Controls
-                                Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(
-                                      color: Colors.grey.shade300,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      // Decrease button
-                                      IconButton(
-                                        icon: const Icon(
-                                          Icons.remove,
-                                          size: 18,
-                                        ),
-                                        onPressed: () {
-                                          final current =
-                                              quantityChanges[item.id] ?? 0;
-                                          quantityChanges[item.id!] =
-                                              current - 1;
-                                        },
-                                        color: Colors.red,
-                                        tooltip: 'Decrease',
-                                        constraints: const BoxConstraints(
-                                          minWidth: 36,
-                                          minHeight: 36,
-                                        ),
-                                      ),
-
-                                      // Quantity Display
-                                      Container(
-                                        constraints: const BoxConstraints(
-                                          minWidth: 50,
-                                        ),
-                                        alignment: Alignment.center,
-                                        child: Text(
-                                          change == 0
-                                              ? '0'
-                                              : (change > 0
-                                                    ? '+$change'
-                                                    : '$change'),
-                                          style: TextStyle(
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.bold,
-                                            color: change == 0
-                                                ? Colors.grey.shade700
-                                                : (change > 0
-                                                      ? Colors.green.shade700
-                                                      : Colors.red.shade700),
-                                          ),
-                                        ),
-                                      ),
-
-                                      // Increase button
-                                      IconButton(
-                                        icon: const Icon(Icons.add, size: 18),
-                                        onPressed: () {
-                                          final current =
-                                              quantityChanges[item.id] ?? 0;
-                                          quantityChanges[item.id!] =
-                                              current + 1;
-                                        },
-                                        color: Colors.green,
-                                        tooltip: 'Increase',
-                                        constraints: const BoxConstraints(
-                                          minWidth: 36,
-                                          minHeight: 36,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
+                      if (filteredItems.isEmpty) {
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.search_off,
+                                size: 64,
+                                color: Colors.grey.shade400,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'No items found',
+                                style: TextStyle(color: Colors.grey.shade600),
+                              ),
+                            ],
                           ),
                         );
-                      });
-                    },
-                  );
-                }),
-              ),
+                      }
 
-              // Footer Actions
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  border: Border(top: BorderSide(color: Colors.grey.shade300)),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton(
-                      onPressed: () => Get.back(),
-                      child: const Text('Cancel'),
-                    ),
-                    const SizedBox(width: 12),
-                    Obx(() {
-                      final changes = quantityChanges.entries
-                          .where((e) => e.value != 0)
-                          .toList();
-                      return ElevatedButton.icon(
-                        onPressed: changes.isEmpty
-                            ? null
-                            : () {
-                                Get.back();
-                                _processStockChanges(quantityChanges);
-                              },
-                        icon: const Icon(Icons.check),
-                        label: Text('Apply Changes (${changes.length})'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.merchant,
-                          foregroundColor: Colors.white,
-                          disabledBackgroundColor: Colors.grey.shade300,
-                          // Avoid inherited infinite minimum width in unconstrained dialog measure passes.
-                          minimumSize: const Size(0, 44),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 12,
-                          ),
-                        ),
+                      return ListView.builder(
+                        itemCount: filteredItems.length,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemBuilder: (context, index) {
+                          final item = filteredItems[index];
+                          final isInShop = shopItemIds.contains(item.id);
+                          final currentStock =
+                              controller.shopInventoryList
+                                  .firstWhereOrNull((i) => i.id == item.id)
+                                  ?.stockInfo
+                                  ?.firstOrNull
+                                  ?.quantity ??
+                              0;
+
+                          return Obx(() {
+                            final change = quantityChanges[item.id] ?? 0;
+                            final newStock = currentStock + change;
+
+                            return Card(
+                              margin: const EdgeInsets.only(bottom: 8),
+                              elevation: change != 0 ? 4 : 1,
+                              color: change != 0
+                                  ? (change > 0
+                                        ? Colors.green.shade50
+                                        : Colors.red.shade50)
+                                  : null,
+                              child: Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: Row(
+                                  children: [
+                                    // Item Icon
+                                    CircleAvatar(
+                                      backgroundColor: isInShop
+                                          ? AppColors.merchant.shade100
+                                          : Colors.grey.shade200,
+                                      child: Icon(
+                                        isInShop
+                                            ? Icons.inventory_2
+                                            : Icons.add_shopping_cart,
+                                        color: isInShop
+                                            ? AppColors.merchant
+                                            : Colors.grey.shade600,
+                                        size: 20,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+
+                                    // Item Info
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Expanded(
+                                                child: Text(
+                                                  item.name,
+                                                  style: const TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 14,
+                                                  ),
+                                                ),
+                                              ),
+                                              if (!isInShop)
+                                                Container(
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 8,
+                                                        vertical: 2,
+                                                      ),
+                                                  decoration: BoxDecoration(
+                                                    color:
+                                                        Colors.orange.shade100,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          4,
+                                                        ),
+                                                    border: Border.all(
+                                                      color: Colors
+                                                          .orange
+                                                          .shade300,
+                                                    ),
+                                                  ),
+                                                  child: Text(
+                                                    'NEW',
+                                                    style: TextStyle(
+                                                      fontSize: 10,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      color: Colors
+                                                          .orange
+                                                          .shade700,
+                                                    ),
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Row(
+                                            children: [
+                                              if (isInShop) ...[
+                                                Text(
+                                                  'Stock: $currentStock',
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: Colors.grey.shade700,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                                if (change != 0) ...[
+                                                  const SizedBox(width: 8),
+                                                  Icon(
+                                                    Icons.arrow_forward,
+                                                    size: 12,
+                                                    color: Colors.grey.shade600,
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  Text(
+                                                    '$newStock',
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      color: change > 0
+                                                          ? Colors
+                                                                .green
+                                                                .shade700
+                                                          : Colors.red.shade700,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ] else
+                                                Text(
+                                                  'Not in shop',
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: Colors.grey.shade600,
+                                                    fontStyle: FontStyle.italic,
+                                                  ),
+                                                ),
+                                              if (item.sku != null) ...[
+                                                const SizedBox(width: 12),
+                                                Text(
+                                                  'SKU: ${item.sku}',
+                                                  style: TextStyle(
+                                                    fontSize: 11,
+                                                    color: Colors.grey.shade600,
+                                                  ),
+                                                ),
+                                              ],
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+
+                                    // Quantity Controls
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: Colors.grey.shade300,
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          // Decrease button
+                                          IconButton(
+                                            icon: const Icon(
+                                              Icons.remove,
+                                              size: 18,
+                                            ),
+                                            onPressed: () {
+                                              final current =
+                                                  quantityChanges[item.id] ?? 0;
+                                              quantityChanges[item.id!] =
+                                                  current - 1;
+                                            },
+                                            color: Colors.red,
+                                            tooltip: 'Decrease',
+                                            constraints: const BoxConstraints(
+                                              minWidth: 36,
+                                              minHeight: 36,
+                                            ),
+                                          ),
+
+                                          // Quantity Display
+                                          Container(
+                                            constraints: const BoxConstraints(
+                                              minWidth: 50,
+                                            ),
+                                            alignment: Alignment.center,
+                                            child: Text(
+                                              change == 0
+                                                  ? '0'
+                                                  : (change > 0
+                                                        ? '+$change'
+                                                        : '$change'),
+                                              style: TextStyle(
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.bold,
+                                                color: change == 0
+                                                    ? Colors.grey.shade700
+                                                    : (change > 0
+                                                          ? Colors
+                                                                .green
+                                                                .shade700
+                                                          : Colors
+                                                                .red
+                                                                .shade700),
+                                              ),
+                                            ),
+                                          ),
+
+                                          // Increase button
+                                          IconButton(
+                                            icon: const Icon(
+                                              Icons.add,
+                                              size: 18,
+                                            ),
+                                            onPressed: () {
+                                              final current =
+                                                  quantityChanges[item.id] ?? 0;
+                                              quantityChanges[item.id!] =
+                                                  current + 1;
+                                            },
+                                            color: Colors.green,
+                                            tooltip: 'Increase',
+                                            constraints: const BoxConstraints(
+                                              minWidth: 36,
+                                              minHeight: 36,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          });
+                        },
                       );
                     }),
-                  ],
-                ),
-              ),
+                  ),
+
+                  // Footer Actions
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      border: Border(
+                        top: BorderSide(color: Colors.grey.shade300),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          onPressed: () => Get.back(),
+                          child: const Text('Cancel'),
+                        ),
+                        const SizedBox(width: 12),
+                        Obx(() {
+                          final changes = quantityChanges.entries
+                              .where((e) => e.value != 0)
+                              .toList();
+                          return ElevatedButton.icon(
+                            onPressed: changes.isEmpty
+                                ? null
+                                : () {
+                                    Get.back();
+                                    _processStockChanges(quantityChanges);
+                                  },
+                            icon: const Icon(Icons.check),
+                            label: Text('Apply Changes (${changes.length})'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.merchant,
+                              foregroundColor: Colors.white,
+                              disabledBackgroundColor: Colors.grey.shade300,
+                              // Avoid inherited infinite minimum width in unconstrained dialog measure passes.
+                              minimumSize: const Size(0, 44),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 12,
+                              ),
+                            ),
+                          );
+                        }),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             );

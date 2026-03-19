@@ -186,7 +186,9 @@ class AdminAddEditMerchantController extends GetxController {
           // The previous screen will be responsible for showing the snackbar.
           Get.back(result: true);
         } else {
-          DialogUtils.showError("Could not save merchant. Please try again later.");
+          DialogUtils.showError(
+            "Could not save merchant. Please try again later.",
+          );
         }
       }
     } catch (e) {

@@ -44,11 +44,17 @@ class InvoiceDetailController extends GetxController {
         // Fallback: if items are empty, try fetching invoice by sale ID which may include items
         if (result.items.isEmpty && result.saleId.isNotEmpty) {
           try {
-            print('[InvoiceDetail] Items empty; attempting fallback fetch by saleId: ${result.saleId}');
-            final bySale = await _invoiceApiService.getInvoiceBySaleId(result.saleId);
+            print(
+              '[InvoiceDetail] Items empty; attempting fallback fetch by saleId: ${result.saleId}',
+            );
+            final bySale = await _invoiceApiService.getInvoiceBySaleId(
+              result.saleId,
+            );
             if (bySale != null && bySale.items.isNotEmpty) {
               invoice.value = bySale;
-              print('[InvoiceDetail] Fallback fetch succeeded, items count: ${bySale.items.length}');
+              print(
+                '[InvoiceDetail] Fallback fetch succeeded, items count: ${bySale.items.length}',
+              );
             } else {
               print('[InvoiceDetail] Fallback fetch returned no items');
             }
@@ -82,10 +88,12 @@ class InvoiceDetailController extends GetxController {
 
     try {
       isGeneratingPdf.value = true;
-      
-      final filePath = await InvoicePdfService.generateInvoicePdf(invoice.value!);
+
+      final filePath = await InvoicePdfService.generateInvoicePdf(
+        invoice.value!,
+      );
       print('[InvoiceDetail] PDF generated at: $filePath');
-      
+
       if (kIsWeb) {
         Get.snackbar(
           'Success',

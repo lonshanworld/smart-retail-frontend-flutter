@@ -8,7 +8,8 @@ import 'package:smart_retail/app/data/services/merchant_staff_api_service.dart';
 
 class StaffDetailController extends GetxController {
   final Rxn<User> staff = Rxn<User>();
-  final MerchantStaffApiService _staffApiService = Get.find<MerchantStaffApiService>();
+  final MerchantStaffApiService _staffApiService =
+      Get.find<MerchantStaffApiService>();
 
   final RxBool isCheckingDelete = false.obs;
   final RxBool isDeletable = false.obs;
@@ -52,19 +53,23 @@ class StaffDetailController extends GetxController {
           deleteBlockers[k] = v;
         } else if (v is String) {
           deleteBlockers[k] = int.tryParse(v) ?? 0;
-        }else {
-        }
+        } else {}
       });
       isDeletable.value = deletable;
       if (!deletable) {
-        final entries = deleteBlockers.entries.map((e) => '${e.key}: ${e.value}').join('\n');
-        DialogUtils.showError('Cannot delete staff. References found:\n$entries');
+        final entries = deleteBlockers.entries
+            .map((e) => '${e.key}: ${e.value}')
+            .join('\n');
+        DialogUtils.showError(
+          'Cannot delete staff. References found:\n$entries',
+        );
         return;
       }
 
       final confirm = await DialogUtils.showConfirmDialog(
         title: 'Delete Staff',
-        message: 'Are you sure you want to permanently delete ${s.name}? This action cannot be undone.',
+        message:
+            'Are you sure you want to permanently delete ${s.name}? This action cannot be undone.',
         confirmText: 'Delete',
         cancelText: 'Cancel',
         isDanger: true,

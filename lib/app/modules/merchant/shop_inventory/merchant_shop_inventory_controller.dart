@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:uuid/uuid.dart';
 import 'package:smart_retail/app/data/models/inventory_item_model.dart';
 import 'package:smart_retail/app/data/models/shop_model.dart';
 import 'package:smart_retail/app/data/models/stock_movement_model.dart';
@@ -149,11 +150,13 @@ class MerchantShopInventoryController extends GetxController {
 
     isSubmitting.value = true;
     try {
+      final clientOperationId = const Uuid().v4();
       await _apiService.adjustStock(
         shopId: selectedShop.value!.id!,
         itemId: item.id!,
         quantity: quantityChanged,
         reason: reason ?? movementType,
+        clientOperationId: clientOperationId,
       );
       DialogUtils.showSuccess('Stock for ${item.name} adjusted successfully.');
       await fetchShopInventory(showLoading: false);
@@ -244,11 +247,13 @@ class MerchantShopInventoryController extends GetxController {
             : 'inventory_correction';
 
         print('Adjusting existing item ${item.name} by $quantityChange');
+        final clientOperationId = const Uuid().v4();
         await _apiService.adjustStock(
           shopId: shopId,
           itemId: item.id!,
           quantity: quantityChange,
           reason: movementType,
+          clientOperationId: clientOperationId,
         );
       }
 

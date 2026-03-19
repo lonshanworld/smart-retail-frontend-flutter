@@ -18,5 +18,10 @@ class LineText {
   final int? weight;
   final int? linefeed;
 
-  LineText({required this.type, required this.content, this.align, this.weight, this.linefeed});
+  LineText(
+      {required this.type,
+      required this.content,
+      this.align,
+      this.weight,
+      this.linefeed});
 }

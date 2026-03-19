@@ -1,5 +1,6 @@
 import 'dart:typed_data';
-import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
+import 'package:flutter/foundation.dart'
+    show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:get/get.dart';
 import 'package:smart_retail/app/utils/dialog_utils.dart';
 
@@ -32,15 +33,23 @@ class BluetoothPrinterService extends GetxService {
       if (!kIsWeb) {
         final perms = <Permission>[];
         if (defaultTargetPlatform == TargetPlatform.android) {
-          perms.addAll([Permission.bluetoothScan, Permission.bluetoothConnect, Permission.locationWhenInUse]);
+          perms.addAll([
+            Permission.bluetoothScan,
+            Permission.bluetoothConnect,
+            Permission.locationWhenInUse,
+          ]);
         } else if (defaultTargetPlatform == TargetPlatform.iOS) {
           perms.addAll([Permission.bluetooth, Permission.locationWhenInUse]);
         }
         if (perms.isNotEmpty) {
           final statuses = await perms.request();
-          final denied = statuses.values.any((s) => s.isDenied || s.isPermanentlyDenied);
+          final denied = statuses.values.any(
+            (s) => s.isDenied || s.isPermanentlyDenied,
+          );
           if (denied) {
-            DialogUtils.showError('Bluetooth permission denied. Please enable permissions in settings.');
+            DialogUtils.showError(
+              'Bluetooth permission denied. Please enable permissions in settings.',
+            );
             return;
           }
         }
@@ -104,7 +113,9 @@ class BluetoothPrinterService extends GetxService {
         print('[BluetoothPrinter] Connect permission check failed: $e');
       }
       selectedDevice.value = device;
-      print('[BluetoothPrinter] Selected printer: ${device.name} (${device.address})');
+      print(
+        '[BluetoothPrinter] Selected printer: ${device.name} (${device.address})',
+      );
     } catch (e) {
       print('[BluetoothPrinter] Connect error: $e');
       DialogUtils.showError('Failed to select printer: $e');
@@ -135,14 +146,23 @@ class BluetoothPrinterService extends GetxService {
             child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.stretch,
               children: [
-                pw.Text('Sale Voucher', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold), textAlign: pw.TextAlign.center),
+                pw.Text(
+                  'Sale Voucher',
+                  style: pw.TextStyle(
+                    fontSize: 16,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                  textAlign: pw.TextAlign.center,
+                ),
                 pw.SizedBox(height: 6),
                 pw.Divider(),
                 pw.SizedBox(height: 6),
                 // Body: each input line as its own row
                 pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: lines.map((l) => pw.Text(l, style: pw.TextStyle(fontSize: 10))).toList(),
+                  children: lines
+                      .map((l) => pw.Text(l, style: pw.TextStyle(fontSize: 10)))
+                      .toList(),
                 ),
                 pw.Spacer(),
                 pw.Divider(),
@@ -151,9 +171,12 @@ class BluetoothPrinterService extends GetxService {
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
                     pw.Text('Thank you', style: pw.TextStyle(fontSize: 10)),
-                    pw.Text('${DateTime.now().toLocal()}', style: pw.TextStyle(fontSize: 8))
+                    pw.Text(
+                      '${DateTime.now().toLocal()}',
+                      style: pw.TextStyle(fontSize: 8),
+                    ),
                   ],
-                )
+                ),
               ],
             ),
           );
@@ -165,7 +188,10 @@ class BluetoothPrinterService extends GetxService {
   }
 
   /// Trigger a download/share of the voucher PDF on all platforms
-  Future<void> downloadVoucherPdf(String voucherText, {String filename = 'voucher.pdf'}) async {
+  Future<void> downloadVoucherPdf(
+    String voucherText, {
+    String filename = 'voucher.pdf',
+  }) async {
     try {
       final bytes = await generateVoucherPdf(voucherText);
       await Printing.sharePdf(bytes: bytes, filename: filename);
@@ -178,14 +204,20 @@ class BluetoothPrinterService extends GetxService {
   /// Print voucher: try Bluetooth ESC/POS first, fall back to PDF share/download
   Future<void> printVoucher(String voucherText) async {
     if (kIsWeb) {
-      await downloadVoucherPdf(voucherText, filename: 'voucher-${DateTime.now().millisecondsSinceEpoch}.pdf');
+      await downloadVoucherPdf(
+        voucherText,
+        filename: 'voucher-${DateTime.now().millisecondsSinceEpoch}.pdf',
+      );
       return;
     }
 
     final device = selectedDevice.value;
     if (device == null) {
       DialogUtils.showInfo('No printer connected — downloading PDF instead');
-      await downloadVoucherPdf(voucherText, filename: 'voucher-${DateTime.now().millisecondsSinceEpoch}.pdf');
+      await downloadVoucherPdf(
+        voucherText,
+        filename: 'voucher-${DateTime.now().millisecondsSinceEpoch}.pdf',
+      );
       return;
     }
 
@@ -193,9 +225,15 @@ class BluetoothPrinterService extends GetxService {
       final profile = await CapabilityProfile.load();
       final generator = Generator(PaperSize.mm58, profile);
       List<int> bytes = [];
-      bytes += generator.text('SALE VOUCHER', styles: PosStyles(align: PosAlign.center, bold: true));
+      bytes += generator.text(
+        'SALE VOUCHER',
+        styles: PosStyles(align: PosAlign.center, bold: true),
+      );
       bytes += generator.hr();
-      bytes += generator.text(voucherText, styles: PosStyles(align: PosAlign.left));
+      bytes += generator.text(
+        voucherText,
+        styles: PosStyles(align: PosAlign.left),
+      );
       bytes += generator.hr();
       bytes += generator.feed(2);
       bytes += generator.cut();
@@ -210,7 +248,10 @@ class BluetoothPrinterService extends GetxService {
     } catch (e) {
       print('[BluetoothPrinter] ESC/POS print failed: $e');
       DialogUtils.showError('Printing failed, downloading PDF instead');
-      await downloadVoucherPdf(voucherText, filename: 'voucher-${DateTime.now().millisecondsSinceEpoch}.pdf');
+      await downloadVoucherPdf(
+        voucherText,
+        filename: 'voucher-${DateTime.now().millisecondsSinceEpoch}.pdf',
+      );
     }
   }
 }

@@ -24,22 +24,22 @@ class InvoicePdfService {
               // Header
               _buildHeader(invoice),
               pw.SizedBox(height: 30),
-              
+
               // Invoice details
               _buildInvoiceInfo(invoice),
               pw.SizedBox(height: 20),
               // Items table
               if (invoice.items.isNotEmpty) _buildItemsTable(invoice),
               pw.SizedBox(height: 30),
-              
+
               // Divider
               pw.Divider(thickness: 2),
               pw.SizedBox(height: 20),
-              
+
               // Amount breakdown
               _buildAmountBreakdown(invoice),
               pw.SizedBox(height: 30),
-              
+
               // Footer
               pw.Spacer(),
               _buildFooter(invoice),
@@ -54,7 +54,10 @@ class InvoicePdfService {
       // For web, share the PDF using the printing package (works in many browsers)
       try {
         final bytes = await pdf.save();
-        await Printing.sharePdf(bytes: bytes, filename: '${invoice.invoiceNumber}.pdf');
+        await Printing.sharePdf(
+          bytes: bytes,
+          filename: '${invoice.invoiceNumber}.pdf',
+        );
         return 'web-shared';
       } catch (e) {
         // Fallback: still attempt to save bytes (some environments may not support share)
@@ -89,10 +92,7 @@ class InvoicePdfService {
             pw.SizedBox(height: 8),
             pw.Text(
               invoice.invoiceNumber,
-              style: pw.TextStyle(
-                fontSize: 18,
-                fontWeight: pw.FontWeight.bold,
-              ),
+              style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
             ),
           ],
         ),
@@ -117,21 +117,24 @@ class InvoicePdfService {
 
   static pw.Widget _buildInvoiceInfo(Invoice invoice) {
     final dateFormat = DateFormat('MMM dd, yyyy');
-    
+
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
         pw.Text(
           'Invoice Information',
-          style: pw.TextStyle(
-            fontSize: 16,
-            fontWeight: pw.FontWeight.bold,
-          ),
+          style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
         ),
         pw.SizedBox(height: 12),
-        _buildInfoRow('Invoice Date:', dateFormat.format(invoice.invoiceDate.toLocal())),
+        _buildInfoRow(
+          'Invoice Date:',
+          dateFormat.format(invoice.invoiceDate.toLocal()),
+        ),
         if (invoice.dueDate != null)
-          _buildInfoRow('Due Date:', dateFormat.format(invoice.dueDate!.toLocal())),
+          _buildInfoRow(
+            'Due Date:',
+            dateFormat.format(invoice.dueDate!.toLocal()),
+          ),
         _buildInfoRow('Sale ID:', invoice.saleId),
         _buildInfoRow('Shop ID:', invoice.shopId),
         if (invoice.customerId != null)
@@ -155,9 +158,7 @@ class InvoicePdfService {
               ),
             ),
           ),
-          pw.Expanded(
-            child: pw.Text(value),
-          ),
+          pw.Expanded(child: pw.Text(value)),
         ],
       ),
     );
@@ -169,58 +170,49 @@ class InvoicePdfService {
       children: [
         pw.Text(
           'Amount Breakdown',
-          style: pw.TextStyle(
-            fontSize: 16,
-            fontWeight: pw.FontWeight.bold,
-          ),
+          style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
         ),
         pw.SizedBox(height: 16),
-        
+
         // Subtotal
         _buildAmountRow('Subtotal:', invoice.subtotal),
         pw.SizedBox(height: 8),
-        
+
         // Discount
         if (invoice.discountAmount > 0) ...[
-          _buildAmountRow('Discount:', -invoice.discountAmount, isNegative: true),
+          _buildAmountRow(
+            'Discount:',
+            -invoice.discountAmount,
+            isNegative: true,
+          ),
           pw.SizedBox(height: 8),
         ],
-        
+
         // Tax
         if (invoice.taxAmount > 0) ...[
           _buildAmountRow('Tax:', invoice.taxAmount),
           pw.SizedBox(height: 8),
         ],
-        
+
         // Divider
         pw.Container(
           margin: const pw.EdgeInsets.symmetric(vertical: 12),
           height: 2,
           color: PdfColors.grey300,
         ),
-        
+
         // Total
-        _buildAmountRow(
-          'TOTAL:',
-          invoice.totalAmount,
-          isTotal: true,
-        ),
-        
+        _buildAmountRow('TOTAL:', invoice.totalAmount, isTotal: true),
+
         // Notes
         if (invoice.notes != null && invoice.notes!.isNotEmpty) ...[
           pw.SizedBox(height: 20),
           pw.Text(
             'Notes:',
-            style: pw.TextStyle(
-              fontWeight: pw.FontWeight.bold,
-              fontSize: 12,
-            ),
+            style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 12),
           ),
           pw.SizedBox(height: 6),
-          pw.Text(
-            invoice.notes!,
-            style: const pw.TextStyle(fontSize: 11),
-          ),
+          pw.Text(invoice.notes!, style: const pw.TextStyle(fontSize: 11)),
         ],
       ],
     );
@@ -247,7 +239,9 @@ class InvoicePdfService {
           style: pw.TextStyle(
             fontSize: isTotal ? 20 : 14,
             fontWeight: isTotal ? pw.FontWeight.bold : pw.FontWeight.bold,
-            color: isNegative ? PdfColors.green700 : (isTotal ? PdfColors.blue900 : PdfColors.black),
+            color: isNegative
+                ? PdfColors.green700
+                : (isTotal ? PdfColors.blue900 : PdfColors.black),
           ),
         ),
       ],
@@ -271,10 +265,7 @@ class InvoicePdfService {
         pw.SizedBox(height: 6),
         pw.Text(
           'Generated on ${DateFormat('MMM dd, yyyy HH:mm').format(DateTime.now())}',
-          style: const pw.TextStyle(
-            fontSize: 10,
-            color: PdfColors.grey600,
-          ),
+          style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey600),
         ),
       ],
     );
@@ -305,7 +296,10 @@ class InvoicePdfService {
           headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
           cellAlignment: pw.Alignment.centerLeft,
           headerDecoration: pw.BoxDecoration(color: PdfColors.grey300),
-          cellPadding: const pw.EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+          cellPadding: const pw.EdgeInsets.symmetric(
+            vertical: 6,
+            horizontal: 8,
+          ),
         ),
       ],
     );

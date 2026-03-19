@@ -103,7 +103,9 @@ class SaleDetailView extends GetView<SaleDetailController> {
             _buildTotalRow(
               'Subtotal',
               currencyFormat.format(
-                sale.totalAmount + (sale.discountAmount ?? 0),
+                sale.totalAmount +
+                    (sale.discountAmount ?? 0) -
+                    sale.deliveryCharge,
               ),
             ),
             if (sale.discountAmount != null && sale.discountAmount! > 0)
@@ -111,6 +113,11 @@ class SaleDetailView extends GetView<SaleDetailController> {
                 'Discount',
                 '- ${currencyFormat.format(sale.discountAmount)}',
                 color: Colors.green,
+              ),
+            if (sale.deliveryCharge > 0)
+              _buildTotalRow(
+                'Delivery Charge',
+                currencyFormat.format(sale.deliveryCharge),
               ),
             _buildTotalRow(
               'Final Total',
@@ -153,9 +160,7 @@ class SaleDetailView extends GetView<SaleDetailController> {
               ),
             ),
             const SizedBox(height: 12),
-            ...items
-                .map((item) => _buildItemTile(item, currencyFormat))
-                ,
+            ...items.map((item) => _buildItemTile(item, currencyFormat)),
           ],
         ),
       ),

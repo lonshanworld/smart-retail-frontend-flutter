@@ -11,8 +11,10 @@ class InvoiceApiService extends GetxService {
     return await _authService.getToken();
   }
 
-  final String _merchantInvoicesBase = "${ApiConstants.baseUrl}/merchant/invoices";
-  final String _shopInvoicesBasePrefix = "${ApiConstants.baseUrl}/shop/shops"; // append /:shopId/invoices
+  final String _merchantInvoicesBase =
+      "${ApiConstants.baseUrl}/merchant/invoices";
+  final String _shopInvoicesBasePrefix =
+      "${ApiConstants.baseUrl}/shop/shops"; // append /:shopId/invoices
   final String _staffInvoicesBase = "${ApiConstants.baseUrl}/staff/invoices";
 
   /// Fetches a paginated list of invoices for the merchant.
@@ -76,7 +78,9 @@ class InvoiceApiService extends GetxService {
       // Shop-level login (could be merchant or shop role that requires shopId)
       final sid = shopId ?? assignedShopId;
       if (sid == null || sid.isEmpty) {
-        print('[InvoiceApiService] No shopId available for shop role when listing invoices');
+        print(
+          '[InvoiceApiService] No shopId available for shop role when listing invoices',
+        );
         return null;
       }
       endpoint = '$_shopInvoicesBasePrefix/$sid/invoices';
@@ -95,7 +99,9 @@ class InvoiceApiService extends GetxService {
         query: queryParams,
       );
 
-      print('[InvoiceApiService] listInvoices response status: ${response.statusCode}');
+      print(
+        '[InvoiceApiService] listInvoices response status: ${response.statusCode}',
+      );
 
       if (response.statusCode == 200 && response.body != null) {
         final bodyMap = response.body as Map<String, dynamic>;
@@ -133,7 +139,9 @@ class InvoiceApiService extends GetxService {
   Future<Invoice?> getInvoiceById(String invoiceId) async {
     final token = await _getAuthToken();
     if (token == null) {
-      print('[InvoiceApiService] Auth token is null when fetching invoice by ID');
+      print(
+        '[InvoiceApiService] Auth token is null when fetching invoice by ID',
+      );
       return null;
     }
 
@@ -149,7 +157,9 @@ class InvoiceApiService extends GetxService {
       } else if (role == 'shop') {
         final sid = assignedShopId;
         if (sid == null || sid.isEmpty) {
-          print('[InvoiceApiService] No shopId available for shop role when fetching invoice by ID');
+          print(
+            '[InvoiceApiService] No shopId available for shop role when fetching invoice by ID',
+          );
           return null;
         }
         url = '$_shopInvoicesBasePrefix/$sid/invoices/$invoiceId';
@@ -162,7 +172,9 @@ class InvoiceApiService extends GetxService {
         headers: {'Authorization': 'Bearer $token'},
       );
 
-      print('[InvoiceApiService] getInvoiceById response status: ${response.statusCode}');
+      print(
+        '[InvoiceApiService] getInvoiceById response status: ${response.statusCode}',
+      );
       // Debug: print response body to help diagnose missing items
       try {
         print('[InvoiceApiService] response body: ${response.body}');
@@ -206,7 +218,9 @@ class InvoiceApiService extends GetxService {
   Future<Invoice?> getInvoiceBySaleId(String saleId) async {
     final token = await _getAuthToken();
     if (token == null) {
-      print('[InvoiceApiService] Auth token is null when fetching invoice by sale ID');
+      print(
+        '[InvoiceApiService] Auth token is null when fetching invoice by sale ID',
+      );
       return null;
     }
 
@@ -216,7 +230,9 @@ class InvoiceApiService extends GetxService {
         headers: {'Authorization': 'Bearer $token'},
       );
 
-      print('[InvoiceApiService] getInvoiceBySaleId response status: ${response.statusCode}');
+      print(
+        '[InvoiceApiService] getInvoiceBySaleId response status: ${response.statusCode}',
+      );
 
       if (response.statusCode == 200 && response.body != null) {
         final bodyMap = response.body as Map<String, dynamic>;

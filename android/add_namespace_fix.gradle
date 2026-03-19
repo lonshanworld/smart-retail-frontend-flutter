@@ -1,25 +1,113 @@
-// This script helps set a namespace for Android library/application modules
-// when the module's build file doesn't specify one. It uses the project's
-// group as a fallback value.
+// This script assigns a namespace for Android modules that don't define one.
+// It hooks into plugin application time so AGP can create variants successfully.
 
-// Use projectsEvaluated to avoid calling afterEvaluate when projects are already evaluated
-gradle.projectsEvaluated {
-    subprojects.each { project ->
-        if (project.hasProperty('android')) {
+def validNamespacePattern = ~/^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)+$/
+def enforcedCompileSdk = 34
+def enforcedBuildTools = "34.0.0"
+
+def buildFallbackNamespace = { Project project ->
+    def groupText = (project.group ?: '').toString().trim()
+    if (groupText ==~ validNamespacePattern) {
+        return groupText.toLowerCase()
+    }
+
+    def sanitizedName = project.name
+        .replaceAll(/[^A-Za-z0-9_]/, "_")
+        .replaceAll(/_+/, "_")
+        .toLowerCase()
+    if (!sanitizedName) {
+        sanitizedName = 'plugin'
+    }
+    return "com.smartretail.${sanitizedName}"
+}
+
+def ensureNamespace = { Project project ->
+    try {
+        def androidExt = project.extensions.findByName('android')
+        if (androidExt == null) {
+            return
+        }
+
+        def current = null
+        try {
+            current = androidExt.namespace
+        } catch (ignored) {
+            return
+        }
+
+        if (current == null || current.toString().trim().isEmpty()) {
+            def fallback = buildFallbackNamespace(project)
+            androidExt.namespace = fallback
+            println("[namespace-fix] Applied namespace '${fallback}' to project '${project.path}'")
+        }
+    } catch (ignored) {
+        // best-effort for third-party plugin projects
+    }
+}
+
+def enforceAndroidSdkLevels = { Project project ->
+    try {
+        def androidExt = project.extensions.findByName('android')
+        if (androidExt == null) {
+            return
+        }
+
+        // Enforce compileSdk for old plugin modules that still request API 30/31.
+        try {
+            def compileSdkValue = null
             try {
-                def androidExt = project.extensions.findByName('android')
-                if (androidExt != null) {
+                compileSdkValue = androidExt.compileSdk
+            } catch (ignored) {
+                // AGP variants can expose only compileSdkVersion(..)
+            }
+
+            if (compileSdkValue == null || compileSdkValue.toString().trim().isEmpty()) {
+                try {
+                    androidExt.compileSdk = enforcedCompileSdk
+                } catch (ignored) {
+                    androidExt.compileSdkVersion(enforcedCompileSdk)
+                }
+            } else {
+                def numeric = compileSdkValue.toString().replaceAll(/[^0-9]/, '')
+                if (numeric && numeric.toInteger() < enforcedCompileSdk) {
                     try {
-                        if (!androidExt.hasProperty('namespace') || androidExt.namespace == null || androidExt.namespace.toString().trim() == '') {
-                            androidExt.namespace = project.group ?: 'com.example'
-                        }
-                    } catch (inner) {
-                        // ignore if android extension shape differs
+                        androidExt.compileSdk = enforcedCompileSdk
+                    } catch (ignored) {
+                        androidExt.compileSdkVersion(enforcedCompileSdk)
                     }
                 }
-            } catch (e) {
-                // ignore failures
             }
+        } catch (ignored) {
+            // best-effort only
         }
+
+        // Keep build tools aligned so AGP doesn't pull legacy versions.
+        try {
+            def currentBuildTools = null
+            try {
+                currentBuildTools = androidExt.buildToolsVersion
+            } catch (ignored) {
+                // some plugin modules may not expose getter
+            }
+
+            if (currentBuildTools == null || currentBuildTools.toString().trim().isEmpty()) {
+                androidExt.buildToolsVersion(enforcedBuildTools)
+            }
+        } catch (ignored) {
+            // best-effort only
+        }
+    } catch (ignored) {
+        // best-effort for third-party plugin projects
+    }
+}
+
+subprojects { project ->
+    project.plugins.withId('com.android.library') {
+        ensureNamespace(project)
+        enforceAndroidSdkLevels(project)
+    }
+    project.plugins.withId('com.android.application') {
+        ensureNamespace(project)
+        enforceAndroidSdkLevels(project)
     }
 }

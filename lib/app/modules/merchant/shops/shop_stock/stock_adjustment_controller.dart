@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:uuid/uuid.dart';
 import 'package:smart_retail/app/utils/dialog_utils.dart';
 import 'package:smart_retail/app/data/services/shop_api_service.dart';
 import './shop_stock_controller.dart'; // To refresh the previous screen
@@ -49,7 +50,6 @@ class StockAdjustmentController extends GetxController {
     // shopName = args['shopName'] as String? ?? '';
   }
 
-
   Future<void> performAdjustment() async {
     if (!formKey.currentState!.validate()) {
       return;
@@ -78,6 +78,7 @@ class StockAdjustmentController extends GetxController {
         adjustmentType: selectedAdjustmentType.value!,
         quantityChange: quantityChange,
         reason: reasonController.text.isNotEmpty ? reasonController.text : null,
+        clientOperationId: const Uuid().v4(),
       );
 
       if (adjustedItem != null) {

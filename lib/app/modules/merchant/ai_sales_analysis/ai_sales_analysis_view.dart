@@ -126,10 +126,7 @@ class AiSalesAnalysisView extends GetView<AiSalesAnalysisController> {
   Widget _buildViewModeDropdown() {
     return Row(
       children: [
-        const Text(
-          'View:',
-          style: TextStyle(fontWeight: FontWeight.w600),
-        ),
+        const Text('View:', style: TextStyle(fontWeight: FontWeight.w600)),
         const SizedBox(width: 8),
         DropdownButton<AiResponseViewMode>(
           value: controller.viewMode.value,
@@ -181,9 +178,7 @@ class AiSalesAnalysisView extends GetView<AiSalesAnalysisController> {
             controller.sqlQuery.value.isEmpty
                 ? 'No SQL available.'
                 : controller.sqlQuery.value,
-            style: theme.textTheme.bodySmall?.copyWith(
-              fontFamily: 'monospace',
-            ),
+            style: theme.textTheme.bodySmall?.copyWith(fontFamily: 'monospace'),
           ),
           const SizedBox(height: 14),
           Text(
@@ -197,9 +192,7 @@ class AiSalesAnalysisView extends GetView<AiSalesAnalysisController> {
             controller.rawDataJson.value.isEmpty
                 ? '[]'
                 : controller.rawDataJson.value,
-            style: theme.textTheme.bodySmall?.copyWith(
-              fontFamily: 'monospace',
-            ),
+            style: theme.textTheme.bodySmall?.copyWith(fontFamily: 'monospace'),
           ),
         ],
       ),

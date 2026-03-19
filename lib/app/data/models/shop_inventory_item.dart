@@ -24,9 +24,12 @@ class ShopInventoryItem {
         json['product_id'] as String? ??
         json['id'] as String;
 
-    // Handle quantity - it's nested in 'stock' object
-    final stockData = json['stock'] as Map<String, dynamic>?;
-    final quantityValue = stockData?['quantity'] as num?;
+    // Handle quantity - support both top-level `quantity` and nested `stock.quantity`.
+    final quantityValue =
+        (json['quantity'] as num?) ??
+        (json['stock'] is Map<String, dynamic>
+            ? (json['stock'] as Map<String, dynamic>)['quantity'] as num?
+            : null);
     final quantity = quantityValue?.toInt() ?? 0;
 
     // Handle selling price - try multiple field names with null safety

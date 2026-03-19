@@ -173,7 +173,9 @@ class AddEditUserAdminController extends GetxController {
           );
         }
         Get.back(); // Go back to the previous screen
-        DialogUtils.showSuccess('User "${savedUser.name}" ${isEditMode.value ? "updated" : "created"} successfully!');
+        DialogUtils.showSuccess(
+          'User "${savedUser.name}" ${isEditMode.value ? "updated" : "created"} successfully!',
+        );
       } else {
         formError.value =
             "Failed to save user. The operation returned no result.";

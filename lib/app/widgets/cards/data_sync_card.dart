@@ -4,6 +4,7 @@ import 'package:smart_retail/app/services/sync_service.dart';
 import 'package:smart_retail/app/services/offline_sales_service.dart';
 import 'package:smart_retail/app/services/connectivity_service.dart';
 import 'package:smart_retail/app/services/cache_manager_service.dart';
+import 'package:smart_retail/app/core/config/app_config.dart';
 import 'package:smart_retail/app/widgets/dialogs/sync_progress_dialog.dart';
 import 'package:smart_retail/app/widgets/dialogs/sync_history_dialog.dart';
 import 'package:smart_retail/app/utils/dialog_utils.dart';
@@ -17,6 +18,7 @@ class DataSyncCard extends StatelessWidget {
     final offlineSalesService = Get.find<OfflineSalesService>();
     final connectivityService = Get.find<ConnectivityService>();
     final cacheManagerService = Get.find<CacheManagerService>();
+    final appConfig = Get.find<AppConfig>();
 
     return Card(
       margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -107,7 +109,9 @@ class DataSyncCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            hasOfflineSales
+                            appConfig.localStorageOnly
+                              ? 'Local storage only mode'
+                              : hasOfflineSales
                                 ? '$pending sale${pending != 1 ? 's' : ''} waiting to sync'
                                 : 'All data synced',
                             style: TextStyle(
@@ -140,12 +144,13 @@ class DataSyncCard extends StatelessWidget {
                 Expanded(
                   child: Obx(() {
                     final isOnline = connectivityService.isOnline.value;
+                    final cloudSyncDisabled = appConfig.localStorageOnly;
                     final isSyncing =
                         syncService.syncStatus.value.toString() ==
                         'SyncStatus.syncing';
 
                     return ElevatedButton.icon(
-                      onPressed: isSyncing || !isOnline
+                      onPressed: isSyncing || !isOnline || cloudSyncDisabled
                           ? null
                           : () {
                               _showSyncProgressDialog(context, syncService);
@@ -156,7 +161,11 @@ class DataSyncCard extends StatelessWidget {
                         size: 18,
                       ),
                       label: Text(
-                        isSyncing ? 'Syncing...' : 'Sync Now',
+                        isSyncing
+                            ? 'Syncing...'
+                            : cloudSyncDisabled
+                                ? 'Cloud Sync Off'
+                                : 'Sync Now',
                         style: TextStyle(fontWeight: FontWeight.w500),
                       ),
                       style: ElevatedButton.styleFrom(
@@ -257,7 +266,9 @@ class DataSyncCard extends StatelessWidget {
 
                           if (confirmed ?? false) {
                             await cacheManagerService.clearAllCache();
-                            DialogUtils.showInfo('Cache has been cleared successfully');
+                            DialogUtils.showInfo(
+                              'Cache has been cleared successfully',
+                            );
                           }
                         },
                         icon: Icon(Icons.delete_outline, size: 16),
@@ -288,7 +299,9 @@ class DataSyncCard extends StatelessWidget {
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'When offline, all sales are saved locally and will sync automatically once you reconnect.',
+                        appConfig.localStorageOnly
+                          ? 'Local storage only is enabled. Sales stay on this device and cloud sync is disabled.'
+                          : 'When offline, all sales are saved locally and will sync automatically once you reconnect.',
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey[700],

@@ -11,20 +11,26 @@ class PublicContactConfig {
   static String get contactPhone =>
       _env('PUBLIC_CONTACT_PHONE', fallback: '+621234567890');
 
-  static String get telegramUsername =>
-      _normalizeUsername(_env('PUBLIC_TELEGRAM_USERNAME', fallback: 'your_support_channel'));
+  static String get telegramUsername => _normalizeUsername(
+    _env('PUBLIC_TELEGRAM_USERNAME', fallback: 'your_support_channel'),
+  );
 
-  static String get telegramBotUsername =>
-      _normalizeUsername(_env('PUBLIC_TELEGRAM_BOT_USERNAME', fallback: 'your_support_bot'));
+  static String get telegramBotUsername => _normalizeUsername(
+    _env('PUBLIC_TELEGRAM_BOT_USERNAME', fallback: 'your_support_bot'),
+  );
 
   static String get telegramBotStartParam =>
       _env('PUBLIC_TELEGRAM_BOT_START', fallback: 'hello');
 
-  static String get supportEmailSubject =>
-      _env('PUBLIC_SUPPORT_EMAIL_SUBJECT', fallback: 'Smart Retail Support Request');
+  static String get supportEmailSubject => _env(
+    'PUBLIC_SUPPORT_EMAIL_SUBJECT',
+    fallback: 'Smart Retail Support Request',
+  );
 
-  static String get contactEmailSubject =>
-      _env('PUBLIC_CONTACT_EMAIL_SUBJECT', fallback: 'Smart Retail Contact Request');
+  static String get contactEmailSubject => _env(
+    'PUBLIC_CONTACT_EMAIL_SUBJECT',
+    fallback: 'Smart Retail Contact Request',
+  );
 
   static String _env(String key, {required String fallback}) {
     final value = (dotenv.env[key] ?? '').trim();
@@ -61,7 +67,9 @@ class PublicContactLauncher {
   }
 
   static Future<bool> openTelegramSupport() {
-    final uri = Uri.parse('https://t.me/${PublicContactConfig.telegramUsername}');
+    final uri = Uri.parse(
+      'https://t.me/${PublicContactConfig.telegramUsername}',
+    );
     return launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 

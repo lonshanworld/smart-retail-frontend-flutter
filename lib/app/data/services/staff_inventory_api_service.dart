@@ -4,6 +4,7 @@ import 'package:smart_retail/app/data/models/shop_inventory_item.dart';
 import 'package:smart_retail/app/data/providers/api_constants.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
 import 'package:smart_retail/app/utils/response_utils.dart';
+import 'package:uuid/uuid.dart';
 
 // This service handles inventory operations from the STAFF'S perspective for their assigned shop.
 class StaffInventoryApiService extends GetxService {
@@ -75,16 +76,24 @@ class StaffInventoryApiService extends GetxService {
   ///     ]
   ///   }
   ///   ```
-  Future<void> updateStock(List<Map<String, dynamic>> items) async {
+  Future<void> updateStock(
+    List<Map<String, dynamic>> items, {
+    String? clientOperationId,
+  }) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 2));
       print('Mock Staff Stock Update for ${items.length} items.');
       return;
     }
 
-    final response = await _connect.post('$_baseUrl/stock-in', {
-      'items': items,
-    }, headers: await _getHeaders());
+    final response = await _connect.post(
+      '$_baseUrl/stock-in',
+      {
+        'clientOperationId': clientOperationId ?? const Uuid().v4(),
+        'items': items,
+      },
+      headers: await _getHeaders(),
+    );
     if (!response.isOk) {
       throw Exception(response.body?['message'] ?? 'Failed to update stock');
     }

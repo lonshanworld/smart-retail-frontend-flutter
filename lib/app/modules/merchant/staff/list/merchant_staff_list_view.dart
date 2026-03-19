@@ -35,7 +35,7 @@ class MerchantStaffListView extends GetView<MerchantStaffListController> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         icon: const Icon(Icons.add),
-        label: const Text('Add Staff'),
+        label: const Text('Add Staff', style: TextStyle(color: Colors.white)),
         onPressed: () => controller.goToAddStaff(),
         backgroundColor: AppColors.merchant,
       ),

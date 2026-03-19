@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:smart_retail/app/data/services/auth_service.dart';
 import 'package:smart_retail/app/core/config/runtime_portal.dart';
 
 // Import all the pages
@@ -22,6 +23,8 @@ import 'package:smart_retail/app/modules/merchant/inventory/add_item/add_invento
 import 'package:smart_retail/app/modules/merchant/inventory/add_item/add_inventory_item_binding.dart';
 import 'package:smart_retail/app/modules/merchant/inventory/edit_item/edit_inventory_item_view.dart';
 import 'package:smart_retail/app/modules/merchant/inventory/edit_item/edit_inventory_item_binding.dart';
+import 'package:smart_retail/app/modules/merchant/catalog/catalog_view.dart';
+import 'package:smart_retail/app/modules/merchant/catalog/catalog_binding.dart';
 import 'package:smart_retail/app/modules/merchant/supplier_management/supplier_management_view.dart';
 import 'package:smart_retail/app/modules/merchant/supplier_management/supplier_management_binding.dart';
 import 'package:smart_retail/app/modules/merchant/shops/shops_view.dart';
@@ -115,6 +118,8 @@ import 'package:smart_retail/app/modules/shop_customers/shop_customers_view.dart
 import 'package:smart_retail/app/modules/shop_customers/shop_customers_binding.dart';
 import 'package:smart_retail/app/modules/shop_settings/shop_settings_view.dart';
 import 'package:smart_retail/app/modules/shop_settings/shop_settings_binding.dart';
+import 'package:smart_retail/app/modules/shop_support/shop_support_view.dart';
+import 'package:smart_retail/app/modules/shop_support/shop_support_binding.dart';
 
 import 'package:smart_retail/app/middlewares/auth_middleware.dart';
 import 'package:smart_retail/app/data/enums/user_role.dart';
@@ -150,14 +155,43 @@ class AppPages {
   static String get INITIAL => initialRoute;
 
   static String get initialRoute {
+    final authService = Get.isRegistered<AuthService>()
+        ? Get.find<AuthService>()
+        : null;
+
+    if (authService != null && authService.isAuthenticated) {
+      final authenticatedPortal =
+          ((RuntimePortal.value != null && RuntimePortal.value!.isNotEmpty)
+                  ? RuntimePortal.value!
+                  : (dotenv.env['DEPLOY_PORTAL'] ?? 'public'))
+              .toLowerCase()
+              .trim();
+
+      switch (authenticatedPortal) {
+        case 'admin':
+          return Routes.ADMIN_DASHBOARD;
+        case 'merchant':
+          return Routes.MERCHANT_DASHBOARD;
+        case 'staff':
+          return Routes.STAFF_DASHBOARD;
+        case 'shop':
+          return Routes.SHOP_DASHBOARD;
+        case 'public':
+        case 'customer':
+        case 'landing':
+        default:
+          break;
+      }
+    }
+
     final portalFromRuntime = RuntimePortal.value;
     const portalFromDefine = String.fromEnvironment('APP_PORTAL');
     final portal =
-      ((portalFromRuntime != null && portalFromRuntime.isNotEmpty)
-          ? portalFromRuntime
-          : portalFromDefine.isNotEmpty
+        ((portalFromRuntime != null && portalFromRuntime.isNotEmpty)
+                ? portalFromRuntime
+                : portalFromDefine.isNotEmpty
                 ? portalFromDefine
-          : (dotenv.env['DEPLOY_PORTAL'] ?? 'public'))
+                : (dotenv.env['DEPLOY_PORTAL'] ?? 'public'))
             .toLowerCase()
             .trim();
 
@@ -186,7 +220,10 @@ class AppPages {
       name: Routes.CUSTOMER_INTRO,
       page: () => const CustomerLandingView(),
     ),
-    GetPage(name: Routes.PUBLIC_FEATURES, page: () => const PublicFeaturesView()),
+    GetPage(
+      name: Routes.PUBLIC_FEATURES,
+      page: () => const PublicFeaturesView(),
+    ),
     GetPage(name: Routes.PUBLIC_ABOUT, page: () => const PublicAboutView()),
     GetPage(name: Routes.PUBLIC_SUPPORT, page: () => const PublicSupportView()),
     GetPage(name: Routes.PUBLIC_CONTACT, page: () => const PublicContactView()),
@@ -250,6 +287,12 @@ class AppPages {
       name: Routes.MERCHANT_INVENTORY,
       page: () => const MerchantStocksView(),
       binding: MerchantStocksBinding(),
+      middlewares: [AuthMiddleware(requiredRole: UserRole.merchant)],
+    ),
+    GetPage(
+      name: Routes.MERCHANT_CATALOG,
+      page: () => const CatalogView(),
+      binding: CatalogBinding(),
       middlewares: [AuthMiddleware(requiredRole: UserRole.merchant)],
     ),
     GetPage(
@@ -549,6 +592,14 @@ class AppPages {
       page: () => const ShopCustomersView(),
       // CORRECTED: Use the new binding
       binding: ShopCustomersBinding(),
+      middlewares: [
+        AuthMiddleware(requiredRoles: [UserRole.staff, UserRole.merchant]),
+      ],
+    ),
+    GetPage(
+      name: Routes.SHOP_SUPPORT,
+      page: () => const ShopSupportView(),
+      binding: ShopSupportBinding(),
       middlewares: [
         AuthMiddleware(requiredRoles: [UserRole.staff, UserRole.merchant]),
       ],

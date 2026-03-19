@@ -7,10 +7,14 @@ dynamic normalizeResponseBody(dynamic raw) {
   try {
     final encoded = jsonEncode(raw);
     final decoded = jsonDecode(encoded);
-    print('[response_utils] normalizeResponseBody: rawType=${raw.runtimeType}, normalizedType=${decoded.runtimeType}');
+    print(
+      '[response_utils] normalizeResponseBody: rawType=${raw.runtimeType}, normalizedType=${decoded.runtimeType}',
+    );
     return decoded;
   } catch (_) {
-    print('[response_utils] normalizeResponseBody: normalization failed for type=${raw.runtimeType}');
+    print(
+      '[response_utils] normalizeResponseBody: normalization failed for type=${raw.runtimeType}',
+    );
     return raw;
   }
 }
@@ -25,7 +29,9 @@ Map<String, dynamic> asMap(dynamic raw) {
     print('[response_utils] asMap: normalized map keys=${n.keys.length}');
     return Map<String, dynamic>.from(n);
   }
-  print('[response_utils] asMap: normalized is not Map (type=${n.runtimeType})');
+  print(
+    '[response_utils] asMap: normalized is not Map (type=${n.runtimeType})',
+  );
   return <String, dynamic>{};
 }
 
@@ -47,12 +53,16 @@ List<dynamic> asList(dynamic raw) {
     for (final k in candidateKeys) {
       if (n.containsKey(k) && n[k] is List) {
         final list = List<dynamic>.from(n[k]);
-        print('[response_utils] asList: extracted list from Map key="$k", length=${list.length}');
+        print(
+          '[response_utils] asList: extracted list from Map key="$k", length=${list.length}',
+        );
         return list;
       }
     }
   }
 
-  print('[response_utils] asList: normalized is not List (type=${n.runtimeType})');
+  print(
+    '[response_utils] asList: normalized is not List (type=${n.runtimeType})',
+  );
   return <dynamic>[];
 }

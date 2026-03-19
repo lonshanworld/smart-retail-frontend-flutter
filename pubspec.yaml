@@ -39,6 +39,7 @@ dependencies:
       url: https://github.com/lonshanworld/bluetooth_print.git
       ref: main
   google_fonts: ^8.0.2
+  flutter_secure_storage: ^10.0.0
 
 dev_dependencies:
   flutter_test:

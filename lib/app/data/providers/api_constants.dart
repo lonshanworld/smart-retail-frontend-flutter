@@ -5,7 +5,7 @@ class ApiConstants {
   // Example: flutter run --dart-define=API_BASE_URL=https://api.example.com/api/v1
   static const String _definedBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://smart-retail-backend-6ogv.onrender.com/',
+    defaultValue: '',
   );
 
   static String get baseUrl {
@@ -26,6 +26,6 @@ class ApiConstants {
     }
 
     // Last-resort local fallback for development.
-    return 'http://127.0.0.1:5000/api/v1';
+    return 'http://10.102.156.2:5000/api/v1';
   }
 }

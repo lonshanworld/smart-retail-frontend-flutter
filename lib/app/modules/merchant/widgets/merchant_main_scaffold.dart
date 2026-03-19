@@ -47,9 +47,15 @@ class _MerchantMainScaffoldState extends State<MerchantMainScaffold> {
     },
     {
       'route': Routes.MERCHANT_INVENTORY,
-      'label': 'Mater Inventory',
+      'label': 'Master Inventory',
       'icon': Icons.inventory_2_outlined,
       'selectedIcon': Icons.inventory_2,
+    },
+    {
+      'route': Routes.MERCHANT_CATALOG,
+      'label': 'Catalog',
+      'icon': Icons.category_outlined,
+      'selectedIcon': Icons.category,
     },
     {
       'route': Routes.MERCHANT_INVOICES,
@@ -467,77 +473,75 @@ class _MerchantMainScaffoldState extends State<MerchantMainScaffold> {
             colors: [AppColors.merchant.shade700, AppColors.merchant.shade900],
           ),
         ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Logo and brand
-              Container(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  children: [
-                    Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Icon(
-                        Icons.store_rounded,
-                        size: 32,
-                        color: AppColors.merchant,
-                      ),
+        child: Column(
+          children: [
+            // Logo and brand
+            Container(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                children: [
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Merchant Portal',
+                    child: Icon(
+                      Icons.store_rounded,
+                      size: 32,
+                      color: AppColors.merchant,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Merchant Portal',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(color: Colors.white24),
+            // Navigation items
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                itemCount: _merchantNavItems.length,
+                itemBuilder: (context, index) {
+                  final item = _merchantNavItems[index];
+                  final isSelected = selectedIndex == index;
+                  return ListTile(
+                    leading: Icon(
+                      isSelected ? item['selectedIcon'] : item['icon'],
+                      color: Colors.white,
+                    ),
+                    title: Text(
+                      item['label'],
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: isSelected
+                            ? FontWeight.w600
+                            : FontWeight.w400,
                       ),
                     ),
-                  ],
-                ),
+                    selected: isSelected,
+                    selectedTileColor: Colors.white.withValues(alpha: 0.15),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    onTap: () =>
+                        _onDestinationSelected(index, fromDrawer: true),
+                  );
+                },
               ),
-              const Divider(color: Colors.white24),
-              // Navigation items
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  itemCount: _merchantNavItems.length,
-                  itemBuilder: (context, index) {
-                    final item = _merchantNavItems[index];
-                    final isSelected = selectedIndex == index;
-                    return ListTile(
-                      leading: Icon(
-                        isSelected ? item['selectedIcon'] : item['icon'],
-                        color: Colors.white,
-                      ),
-                      title: Text(
-                        item['label'],
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: isSelected
-                              ? FontWeight.w600
-                              : FontWeight.w400,
-                        ),
-                      ),
-                      selected: isSelected,
-                      selectedTileColor: Colors.white.withValues(alpha: 0.15),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      onTap: () =>
-                          _onDestinationSelected(index, fromDrawer: true),
-                    );
-                  },
-                ),
-              ),
-              const Divider(color: Colors.white24),
-              _buildSidebarUserProfile(),
-            ],
-          ),
+            ),
+            const Divider(color: Colors.white24),
+            _buildSidebarUserProfile(),
+          ],
         ),
       ),
     );

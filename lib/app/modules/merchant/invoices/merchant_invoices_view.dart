@@ -15,7 +15,7 @@ class MerchantInvoicesView extends GetView<MerchantInvoicesController> {
         if (controller.isLoading.value) {
           return const Center(child: CircularProgressIndicator());
         }
-        
+
         if (controller.errorMessage.value != null) {
           return Center(
             child: Padding(
@@ -41,7 +41,7 @@ class MerchantInvoicesView extends GetView<MerchantInvoicesController> {
             ),
           );
         }
-        
+
         if (controller.invoices.isEmpty) {
           return Center(
             child: Column(
@@ -89,7 +89,9 @@ class MerchantInvoicesView extends GetView<MerchantInvoicesController> {
                         ),
                         IconButton(
                           icon: const Icon(Icons.chevron_right),
-                          onPressed: controller.currentPage.value < controller.totalPages.value
+                          onPressed:
+                              controller.currentPage.value <
+                                  controller.totalPages.value
                               ? controller.goToNextPage
                               : null,
                         ),
@@ -111,7 +113,9 @@ class MerchantInvoicesView extends GetView<MerchantInvoicesController> {
                       child: ListTile(
                         contentPadding: const EdgeInsets.all(16.0),
                         leading: CircleAvatar(
-                          backgroundColor: _getStatusColor(invoice.paymentStatus).withValues(alpha: 0.2),
+                          backgroundColor: _getStatusColor(
+                            invoice.paymentStatus,
+                          ).withValues(alpha: 0.2),
                           child: Icon(
                             Icons.receipt_long,
                             color: _getStatusColor(invoice.paymentStatus),

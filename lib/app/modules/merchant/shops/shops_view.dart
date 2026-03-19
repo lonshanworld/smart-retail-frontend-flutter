@@ -26,7 +26,10 @@ class ShopsView extends GetView<MerchantShopsController> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [AppColors.merchant.shade50.withValues(alpha: 0.3), Colors.white],
+            colors: [
+              AppColors.merchant.shade50.withValues(alpha: 0.3),
+              Colors.white,
+            ],
           ),
         ),
         child: Obx(() {
@@ -109,7 +112,9 @@ class ShopsView extends GetView<MerchantShopsController> {
                                 Clipboard.setData(
                                   ClipboardData(text: shop.id ?? ''),
                                 );
-                                DialogUtils.showInfo('Shop ID copied to clipboard');
+                                DialogUtils.showInfo(
+                                  'Shop ID copied to clipboard',
+                                );
                               },
                               tooltip: 'Copy Shop ID',
                             ),
@@ -120,14 +125,15 @@ class ShopsView extends GetView<MerchantShopsController> {
                               color: Colors.redAccent,
                               tooltip: 'Delete Shop',
                               onPressed: () async {
-                                final confirmed = await DialogUtils.showConfirmDialog(
-                                  title: 'Delete Shop',
-                                  message:
-                                      'Are you sure you want to permanently delete shop "${shop.name}"? This cannot be undone.',
-                                  confirmText: 'Delete',
-                                  cancelText: 'Cancel',
-                                  isDanger: true,
-                                );
+                                final confirmed =
+                                    await DialogUtils.showConfirmDialog(
+                                      title: 'Delete Shop',
+                                      message:
+                                          'Are you sure you want to permanently delete shop "${shop.name}"? This cannot be undone.',
+                                      confirmText: 'Delete',
+                                      cancelText: 'Cancel',
+                                      isDanger: true,
+                                    );
                                 if (confirmed == true && shop.id != null) {
                                   await controller.deleteShop(shop.id!);
                                 }

@@ -4,7 +4,9 @@ import 'package:smart_retail/app/data/models/user_model.dart';
 import 'package:smart_retail/app/data/models/shop_model.dart';
 import 'package:smart_retail/app/data/providers/api_constants.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
+import 'package:smart_retail/app/services/local_database_service.dart';
 import 'package:smart_retail/app/utils/response_utils.dart';
+import 'package:uuid/uuid.dart';
 
 class PaginatedStaffResponse {
   final List<User> staff;
@@ -36,6 +38,8 @@ class MerchantStaffApiService extends GetxService {
   final GetConnect _connect = Get.find<GetConnect>();
   final AuthService _authService = Get.find<AuthService>();
   final AppConfig _appConfig = Get.find<AppConfig>();
+  final LocalDatabaseService _localDatabaseService =
+      Get.find<LocalDatabaseService>();
 
   String get _baseUrl => '${ApiConstants.baseUrl}/merchant/staff';
   String get _shopsBaseUrl => '${ApiConstants.baseUrl}/merchant/shops';
@@ -46,6 +50,33 @@ class MerchantStaffApiService extends GetxService {
       'Authorization': 'Bearer $token',
       'Content-Type': 'application/json',
     };
+  }
+
+  bool _shouldQueue(dynamic error) {
+    final text = error.toString().toLowerCase();
+    return _appConfig.localStorageOnly ||
+        text.contains('socketexception') ||
+        text.contains('failed host lookup') ||
+        text.contains('connection') ||
+        text.contains('timeout');
+  }
+
+  Future<void> _queueMutation({
+    required String clientOperationId,
+    required String action,
+    required String endpoint,
+    required Map<String, dynamic> payload,
+  }) async {
+    await _localDatabaseService.queueOperation({
+      'id': clientOperationId,
+      'client_operation_id': clientOperationId,
+      'entity_type': 'staff',
+      'action': action,
+      'method': action == 'delete' ? 'DELETE' : (action == 'update' ? 'PUT' : 'POST'),
+      'endpoint': endpoint,
+      'payload': payload,
+      'headers': {'X-Client-Operation-Id': clientOperationId},
+    });
   }
 
   /// Fetches a paginated list of staff for the current merchant.
@@ -158,7 +189,9 @@ class MerchantStaffApiService extends GetxService {
     );
     if (response.isOk && response.body['data'] != null) {
       final rawList = asList(response.body['data']);
-      return rawList.map((i) => Shop.fromJson(Map<String, dynamic>.from(i))).toList();
+      return rawList
+          .map((i) => Shop.fromJson(Map<String, dynamic>.from(i)))
+          .toList();
     } else {
       throw Exception(response.body?['message'] ?? 'Failed to load shops');
     }
@@ -185,13 +218,15 @@ class MerchantStaffApiService extends GetxService {
   /// - __Status Code:__ 201
   /// - __Body (JSON):__ (The newly created User object for the staff member)
   Future<User> createStaff(Map<String, dynamic> data) async {
+    final clientOperationId = data['clientOperationId']?.toString() ?? const Uuid().v4();
+    final payload = Map<String, dynamic>.from(data)..['clientOperationId'] = clientOperationId;
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
       if (data['email'] == 'fail@test.com') {
         throw Exception('Mock Error: This email is already taken.');
       }
       final newUser = User(
-        id: 'new-staff-${DateTime.now().millisecondsSinceEpoch}',
+        id: clientOperationId,
         name: data['name'],
         email: data['email'],
         role: 'staff',
@@ -203,20 +238,43 @@ class MerchantStaffApiService extends GetxService {
       );
       return newUser;
     }
-    print('save staff reach here ?? $data');
+    try {
+      final headers = await _getHeaders();
+      headers['X-Client-Operation-Id'] = clientOperationId;
+      final response = await _connect.post(
+        _baseUrl,
+        payload,
+        headers: headers,
+      );
 
-    final response = await _connect.post(
-      _baseUrl,
-      data,
-      headers: await _getHeaders(),
-    );
-    print('after save staff and check response ${response.body}');
-
-    if (response.statusCode == 201 && response.body['data'] != null) {
-      return User.fromJson(asMap(response.body['data']));
-    } else {
+      if (response.statusCode == 201 && response.body['data'] != null) {
+        return User.fromJson(asMap(response.body['data']));
+      }
       throw Exception(
         response.body?['message'] ?? 'Failed to create staff member',
+      );
+    } catch (e) {
+      if (_shouldQueue(e)) {
+        await _queueMutation(
+          clientOperationId: clientOperationId,
+          action: 'create',
+          endpoint: _baseUrl,
+          payload: payload,
+        );
+        return User(
+          id: clientOperationId,
+          name: data['name'],
+          email: data['email'],
+          role: 'staff',
+          merchantId: 'pending',
+          assignedShopId: data['assignedShopId'],
+          isActive: true,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+      }
+      throw Exception(
+        e.toString().isNotEmpty ? e.toString() : 'Failed to create staff member',
       );
     }
   }
@@ -241,6 +299,8 @@ class MerchantStaffApiService extends GetxService {
   /// - __Status Code:__ 200
   /// - __Body (JSON):__ (The updated User object)
   Future<User> updateStaff(String staffId, Map<String, dynamic> data) async {
+    final clientOperationId = data['clientOperationId']?.toString() ?? const Uuid().v4();
+    final payload = Map<String, dynamic>.from(data)..['clientOperationId'] = clientOperationId;
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
       return User(
@@ -255,16 +315,42 @@ class MerchantStaffApiService extends GetxService {
         updatedAt: DateTime.now(),
       );
     }
-    final response = await _connect.put(
-      '$_baseUrl/$staffId',
-      data,
-      headers: await _getHeaders(),
-    );
-    if (response.isOk && response.body['data'] != null) {
-      return User.fromJson(asMap(response.body['data']));
-    } else {
+    try {
+      final headers = await _getHeaders();
+      headers['X-Client-Operation-Id'] = clientOperationId;
+      final response = await _connect.put(
+        '$_baseUrl/$staffId',
+        payload,
+        headers: headers,
+      );
+      if (response.isOk && response.body['data'] != null) {
+        return User.fromJson(asMap(response.body['data']));
+      }
       throw Exception(
         response.body?['message'] ?? 'Failed to update staff member',
+      );
+    } catch (e) {
+      if (_shouldQueue(e)) {
+        await _queueMutation(
+          clientOperationId: clientOperationId,
+          action: 'update',
+          endpoint: '$_baseUrl/$staffId',
+          payload: payload,
+        );
+        return User(
+          id: staffId,
+          name: data['name'] ?? 'Updated Staff',
+          email: data['email'] ?? 'pending@example.com',
+          role: 'staff',
+          isActive: data['isActive'] ?? true,
+          merchantId: 'pending',
+          assignedShopId: data['assignedShopId'],
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+      }
+      throw Exception(
+        e.toString().isNotEmpty ? e.toString() : 'Failed to update staff member',
       );
     }
   }
@@ -280,20 +366,38 @@ class MerchantStaffApiService extends GetxService {
   /// __Expected Response (Success):__
   /// - __Status Code:__ 200 or 204
   Future<void> deleteStaff(String staffId) async {
+    final clientOperationId = const Uuid().v4();
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
       // Simulate success
       return;
     }
 
-    final response = await _connect.delete(
-      '$_baseUrl/$staffId',
-      headers: await _getHeaders(),
-    );
+    try {
+      final headers = await _getHeaders();
+      headers['X-Client-Operation-Id'] = clientOperationId;
+      final response = await _connect.delete(
+        '$_baseUrl/$staffId',
+        headers: headers,
+      );
 
-    if (!response.isOk) {
+      if (!response.isOk) {
+        throw Exception(
+          response.body?['message'] ?? 'Failed to delete staff member',
+        );
+      }
+    } catch (e) {
+      if (_shouldQueue(e)) {
+        await _queueMutation(
+          clientOperationId: clientOperationId,
+          action: 'delete',
+          endpoint: '$_baseUrl/$staffId',
+          payload: {'staffId': staffId},
+        );
+        return;
+      }
       throw Exception(
-        response.body?['message'] ?? 'Failed to delete staff member',
+        e.toString().isNotEmpty ? e.toString() : 'Failed to delete staff member',
       );
     }
   }
@@ -312,7 +416,9 @@ class MerchantStaffApiService extends GetxService {
     if (response.isOk && response.body['status'] == 'success') {
       return Map<String, dynamic>.from(asMap(response.body['data']));
     } else {
-      throw Exception(response.body?['message'] ?? 'Failed to check deletable staff');
+      throw Exception(
+        response.body?['message'] ?? 'Failed to check deletable staff',
+      );
     }
   }
 }

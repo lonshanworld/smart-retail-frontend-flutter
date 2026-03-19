@@ -59,14 +59,21 @@ class BrandRef {
   final String id;
   final String name;
   final String? description;
+  final String? imageUrl;
 
-  BrandRef({required this.id, required this.name, this.description});
+  BrandRef({
+    required this.id,
+    required this.name,
+    this.description,
+    this.imageUrl,
+  });
 
   factory BrandRef.fromJson(Map<String, dynamic> json) {
     return BrandRef(
       id: json['id'] as String,
       name: json['name'] as String,
       description: json['description'] as String?,
+      imageUrl: json['imageUrl'] as String? ?? json['image_url'] as String?,
     );
   }
 }

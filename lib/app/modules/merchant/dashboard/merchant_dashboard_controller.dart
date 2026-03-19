@@ -60,14 +60,18 @@ class MerchantDashboardController extends GetxController {
     try {
       isLoadingDashboard.value = true;
       dashboardError.value = null;
-      print('[MerchantDashboardController] Fetching dashboard data for shop: ${selectedShop.value?.id}');
+      print(
+        '[MerchantDashboardController] Fetching dashboard data for shop: ${selectedShop.value?.id}',
+      );
 
       // Directly await the service and populate the summary. No delayed
       // slow-warning is shown on slow machines to avoid noisy popups.
       final summary = await _dashboardApiService.getMerchantDashboardSummary(
         shopId: selectedShop.value?.id,
       );
-      print('[MerchantDashboardController] Dashboard service returned: ${summary != null}');
+      print(
+        '[MerchantDashboardController] Dashboard service returned: ${summary != null}',
+      );
       dashboardSummary.value = summary;
       // Service handles snackbars for API errors.
     } catch (e, st) {

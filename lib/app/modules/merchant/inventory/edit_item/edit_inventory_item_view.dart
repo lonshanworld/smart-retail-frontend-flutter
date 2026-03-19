@@ -5,7 +5,7 @@ import './edit_inventory_item_controller.dart';
 import 'package:smart_retail/app/utils/dialog_utils.dart';
 
 class EditInventoryItemView extends GetView<EditInventoryItemController> {
-  const EditInventoryItemView({super.key});
+  const EditInventoryItemView({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -14,9 +14,8 @@ class EditInventoryItemView extends GetView<EditInventoryItemController> {
         title: const Text('Edit Inventory Item'),
         actions: [
           Obx(() {
-            if (controller.itemToEdit.value == null) {
+            if (controller.itemToEdit.value == null)
               return const SizedBox.shrink();
-            }
             return IconButton(
               icon: controller.isCheckingDelete.value
                   ? const SizedBox(

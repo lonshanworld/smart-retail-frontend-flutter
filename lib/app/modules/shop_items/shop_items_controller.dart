@@ -3,12 +3,21 @@ import 'package:get/get.dart';
 import 'package:smart_retail/app/utils/dialog_utils.dart';
 import 'package:smart_retail/app/data/models/shop_inventory_item.dart';
 import 'package:smart_retail/app/data/services/shop_items_api_service.dart';
+import 'package:smart_retail/app/data/services/inventory_api_service.dart';
+import 'package:smart_retail/app/data/models/inventory_item_model.dart';
 
 class ShopItemsController extends GetxController {
   final ShopItemsApiService _apiService = Get.find<ShopItemsApiService>();
 
   final RxBool isLoading = true.obs;
   final RxList<ShopInventoryItem> inventoryItems = <ShopInventoryItem>[].obs;
+  final RxList<CategoryWithSubcategories> categories =
+      <CategoryWithSubcategories>[].obs;
+  final RxList<SubcategoryRef> filteredSubcategories = <SubcategoryRef>[].obs;
+  final RxList<BrandRef> brands = <BrandRef>[].obs;
+  final RxnString selectedCategoryId = RxnString();
+  final RxnString selectedSubcategoryId = RxnString();
+  final RxnString selectedBrandId = RxnString();
   late final String shopId;
 
   @override
@@ -20,13 +29,28 @@ class ShopItemsController extends GetxController {
       DialogUtils.showError('Shop ID is required');
       return;
     }
+    _loadCatalogOptions();
     fetchInventoryItems();
+  }
+
+  Future<void> _loadCatalogOptions() async {
+    final inv = Get.find<InventoryApiService>();
+    final catalog = await inv.getCatalogOptions();
+    if (catalog == null) return;
+    categories.assignAll(catalog.categories);
+    brands.assignAll(catalog.brands);
+    filteredSubcategories.clear();
   }
 
   Future<void> fetchInventoryItems() async {
     try {
       isLoading.value = true;
-      final items = await _apiService.getShopItems(shopId: shopId);
+      final items = await _apiService.getShopItems(
+        shopId: shopId,
+        categoryId: selectedCategoryId.value,
+        subcategoryId: selectedSubcategoryId.value,
+        brandId: selectedBrandId.value,
+      );
       // Convert InventoryItem to ShopInventoryItem
       final shopItems = items.map((item) {
         final stock = item.stockInfo?.firstOrNull;

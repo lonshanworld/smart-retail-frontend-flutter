@@ -196,7 +196,9 @@ class AdminMerchantsController extends GetxController {
         }
       }
     } catch (e) {
-      DialogUtils.showError("Failed to update merchant status: ${e.toString()}");
+      DialogUtils.showError(
+        "Failed to update merchant status: ${e.toString()}",
+      );
     } finally {
       isProcessingAction.value = false;
     }

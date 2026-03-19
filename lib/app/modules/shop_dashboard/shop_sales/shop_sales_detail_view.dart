@@ -58,7 +58,10 @@ class ShopSalesDetailView extends StatelessWidget {
                         children: [
                           const Text(
                             'Sale ID',
-                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
                           ),
                           Text(
                             sale.id,
@@ -98,7 +101,10 @@ class ShopSalesDetailView extends StatelessWidget {
                         children: [
                           const Text(
                             'Date & Time',
-                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
                           ),
                           Text(
                             dateFormat.format(sale.saleDate),
@@ -114,7 +120,10 @@ class ShopSalesDetailView extends StatelessWidget {
                         children: [
                           const Text(
                             'Payment Type',
-                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
                           ),
                           Text(
                             sale.paymentType,
@@ -219,7 +228,9 @@ class ShopSalesDetailView extends StatelessWidget {
                                 ),
                               ),
                               Text(
-                                currencyFormat.format(item.sellingPriceAtSale),
+                                currencyFormat.format(
+                                  item.sellingPriceAtSale,
+                                ),
                                 style: const TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
@@ -341,7 +352,9 @@ class ShopSalesDetailView extends StatelessWidget {
                     _buildSummaryRow(
                       'Total Profit',
                       currencyFormat.format(totalProfit),
-                      valueColor: totalProfit >= 0 ? Colors.green : Colors.red,
+                      valueColor: totalProfit >= 0
+                          ? Colors.green
+                          : Colors.red,
                     ),
                   ],
                   const Divider(),

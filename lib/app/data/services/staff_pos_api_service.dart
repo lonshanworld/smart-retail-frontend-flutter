@@ -5,12 +5,18 @@ import 'package:smart_retail/app/data/models/promotion_model.dart';
 import 'package:smart_retail/app/data/models/sale_model.dart';
 import 'package:smart_retail/app/data/providers/api_constants.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
+import 'package:smart_retail/app/services/offline_sales_service.dart';
 import 'package:smart_retail/app/utils/response_utils.dart';
+import 'package:uuid/uuid.dart';
 
 class StaffPosApiService extends GetxService {
   final GetConnect _connect = Get.find<GetConnect>();
   final AuthService _authService = Get.find<AuthService>();
   final AppConfig _appConfig = Get.find<AppConfig>();
+  final OfflineSalesService? _offlineSalesService =
+      Get.isRegistered<OfflineSalesService>()
+          ? Get.find<OfflineSalesService>()
+          : null;
 
   String get _baseUrl => '${ApiConstants.baseUrl}/staff/pos';
 
@@ -67,7 +73,12 @@ class StaffPosApiService extends GetxService {
   /// __Expected Response (Success):__
   /// - __Status Code:__ 200
   /// - __Body (JSON):__ A list of `InventoryItem` objects.
-  Future<List<InventoryItem>> searchProducts(String searchTerm) async {
+  Future<List<InventoryItem>> searchProducts(
+    String searchTerm, {
+    String? categoryId,
+    String? subcategoryId,
+    String? brandId,
+  }) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(milliseconds: 300));
       if (searchTerm.isEmpty) {
@@ -87,7 +98,14 @@ class StaffPosApiService extends GetxService {
     final response = await _connect.get(
       '$_baseUrl/products',
       headers: await _getHeaders(),
-      query: {'searchTerm': searchTerm},
+      query: {
+        'searchTerm': searchTerm,
+        if (categoryId != null && categoryId.isNotEmpty)
+          'categoryId': categoryId,
+        if (subcategoryId != null && subcategoryId.isNotEmpty)
+          'subcategoryId': subcategoryId,
+        if (brandId != null && brandId.isNotEmpty) 'brandId': brandId,
+      },
     );
 
     if (response.isOk && response.body['data'] != null) {
@@ -172,9 +190,51 @@ class StaffPosApiService extends GetxService {
   /// - __Status Code:__ 201
   /// - __Body (JSON):__ The newly created `Sale` object.
   Future<Sale> checkout(Map<String, dynamic> saleData) async {
+    saleData['id'] ??= const Uuid().v4();
+    final clientSaleId = saleData['id'].toString();
+
+    if (_appConfig.localStorageOnly) {
+      final saleQueued = await _offlineSalesService?.processSale(saleData) ?? true;
+      if (saleQueued) {
+        final now = DateTime.now();
+        final saleItems = (saleData['items'] as List).map((item) {
+          final quantity = item['quantity'] as int;
+          final price = item['sellingPriceAtSale'] as double;
+          return SaleItem(
+            id: 'sale-item-${item['productId']}-${now.microsecondsSinceEpoch}',
+            saleId: clientSaleId,
+            inventoryItemId: item['productId'] as String,
+            quantitySold: quantity,
+            sellingPriceAtSale: price,
+            originalPriceAtSale: 0,
+            subtotal: quantity * price,
+            createdAt: now,
+            updatedAt: now,
+            itemName: '',
+            itemSku: null,
+          );
+        }).toList();
+
+        return Sale(
+          id: clientSaleId,
+          merchantId: 'local-storage-only',
+          shopId: saleData['shopId']?.toString() ?? 'pending-shop',
+          saleDate: now,
+          totalAmount: saleData['totalAmount'],
+          deliveryCharge: saleData['deliveryCharge'] ?? 0.0,
+          items: saleItems,
+          paymentType: saleData['paymentType'],
+          paymentStatus: 'pending',
+          createdAt: now,
+          updatedAt: now,
+        );
+      }
+      throw Exception('Local storage only mode is enabled but sale queueing failed');
+    }
+
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
-      final saleId = 'sale-${DateTime.now().millisecondsSinceEpoch}';
+      final saleId = clientSaleId;
       final now = DateTime.now();
 
       final saleItems = (saleData['items'] as List).map((item) {
@@ -206,6 +266,7 @@ class StaffPosApiService extends GetxService {
         shopId: 'shop-1', // Assuming a mock shop ID
         saleDate: now,
         totalAmount: saleData['totalAmount'],
+        deliveryCharge: saleData['deliveryCharge'] ?? 0.0,
         items: saleItems,
         paymentType: saleData['paymentType'],
         paymentStatus: 'succeeded',
@@ -228,8 +289,47 @@ class StaffPosApiService extends GetxService {
     if (response.statusCode == 201 && response.body['data'] != null) {
       return Sale.fromJson(asMap(response.body['data']));
     } else {
-      print('❌ [STAFF POS API] Checkout failed. Status: ${response.statusCode}');
+      print(
+        '❌ [STAFF POS API] Checkout failed. Status: ${response.statusCode}',
+      );
       print('❌ [STAFF POS API] Response body: ${response.bodyString}');
+      if (_offlineSalesService != null) {
+        final saleQueued = await _offlineSalesService.processSale(saleData);
+        if (saleQueued) {
+          final now = DateTime.now();
+          final saleItems = (saleData['items'] as List).map((item) {
+            final quantity = item['quantity'] as int;
+            final price = item['sellingPriceAtSale'] as double;
+            return SaleItem(
+              id: 'sale-item-${item['productId']}-${now.microsecondsSinceEpoch}',
+              saleId: clientSaleId,
+              inventoryItemId: item['productId'] as String,
+              quantitySold: quantity,
+              sellingPriceAtSale: price,
+              originalPriceAtSale: 0,
+              subtotal: quantity * price,
+              createdAt: now,
+              updatedAt: now,
+              itemName: '',
+              itemSku: null,
+            );
+          }).toList();
+
+          return Sale(
+            id: clientSaleId,
+            merchantId: 'mock-merchant',
+            shopId: saleData['shopId']?.toString() ?? 'pending-shop',
+            saleDate: now,
+            totalAmount: saleData['totalAmount'],
+            deliveryCharge: saleData['deliveryCharge'] ?? 0.0,
+            items: saleItems,
+            paymentType: saleData['paymentType'],
+            paymentStatus: 'pending',
+            createdAt: now,
+            updatedAt: now,
+          );
+        }
+      }
       throw Exception(response.body?['message'] ?? 'Checkout failed');
     }
   }

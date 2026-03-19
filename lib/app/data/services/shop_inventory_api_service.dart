@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:uuid/uuid.dart';
 import 'package:smart_retail/app/core/config/app_config.dart';
 import 'package:smart_retail/app/data/models/shop_inventory_item.dart';
 import 'package:smart_retail/app/data/models/inventory_item_model.dart';
@@ -31,7 +32,7 @@ class ShopInventoryApiService extends GetxService {
   ///
   /// __Request:__
   /// - __Method:__ GET
-  /// - __Endpoint:__ `/api/v1/shop/items?shopId={shopId}` (both merchant and staff use shop endpoint)
+  /// - __Endpoint:__ `/api/v1/shop/items?shopId={shopId}`
   ///
   /// __Expected Response (Success):__
   /// - __Status Code:__ 200
@@ -52,15 +53,14 @@ class ShopInventoryApiService extends GetxService {
       );
     }
 
-    // Both merchant and staff use the /shop/items endpoint
-    final String baseUrl = '${ApiConstants.baseUrl}/shop';
+    // Staff inventory page uses the /shop/items endpoint.
     print('🔍 [SHOP INVENTORY API] Fetching inventory for shopId: $shopId');
     print(
-      '🌐 [SHOP INVENTORY API] Using endpoint: $baseUrl/items?shopId=$shopId',
+      '🌐 [SHOP INVENTORY API] Using endpoint: $_shopBaseUrl/items?shopId=$shopId',
     );
 
     final response = await _connect.get(
-      '$baseUrl/items?shopId=$shopId',
+      '$_shopBaseUrl/items?shopId=$shopId',
       headers: await _getHeaders(),
     );
 
@@ -106,6 +106,7 @@ class ShopInventoryApiService extends GetxService {
     String shopId,
     String productId,
     int quantity,
+    {String? clientOperationId},
   ) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
@@ -113,6 +114,7 @@ class ShopInventoryApiService extends GetxService {
     }
 
     final payload = {
+      'clientOperationId': clientOperationId ?? const Uuid().v4(),
       'items': [
         {'productId': productId, 'quantity': quantity},
       ],
@@ -265,6 +267,7 @@ class ShopInventoryApiService extends GetxService {
   /// __Expected Response (Success):__
   /// - __Status Code:__ 200
   /// - __Body (JSON):__ A list of `StockMovement` objects.
+  /// - __Endpoint:__ `/api/v1/merchant/shops/{shopId}/inventory/{itemId}/history`
   Future<List<StockMovement>> getMovementHistory(
     String shopId,
     String itemId,
@@ -288,7 +291,7 @@ class ShopInventoryApiService extends GetxService {
     }
 
     final response = await _connect.get(
-      '$_merchantBaseUrl/$shopId/inventory/$itemId/movements',
+      '$_merchantBaseUrl/$shopId/inventory/$itemId/history',
       headers: await _getHeaders(),
     );
 
@@ -324,6 +327,7 @@ class ShopInventoryApiService extends GetxService {
     required String itemId,
     required int quantity,
     String? reason,
+    String? clientOperationId,
   }) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(milliseconds: 500));
@@ -331,6 +335,7 @@ class ShopInventoryApiService extends GetxService {
     }
 
     final payload = {
+      'clientOperationId': clientOperationId ?? const Uuid().v4(),
       'quantity': quantity,
       if (reason != null) 'reason': reason,
     };
@@ -366,13 +371,17 @@ class ShopInventoryApiService extends GetxService {
   Future<void> bulkStockIn({
     required String shopId,
     required List<Map<String, dynamic>> items,
+    String? clientOperationId,
   }) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(milliseconds: 500));
       return;
     }
 
-    final payload = {'items': items};
+    final payload = {
+      'clientOperationId': clientOperationId ?? const Uuid().v4(),
+      'items': items,
+    };
 
     print('bulkStockIn calling: $_merchantBaseUrl/$shopId/stock-in');
     print('bulkStockIn payload: $payload');

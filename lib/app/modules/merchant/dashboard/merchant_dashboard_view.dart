@@ -24,7 +24,10 @@ class MerchantDashboardView extends GetView<MerchantDashboardController> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [AppColors.primary.shade50.withValues(alpha: 0.3), Colors.white],
+            colors: [
+              AppColors.primary.shade50.withValues(alpha: 0.3),
+              Colors.white,
+            ],
           ),
         ),
         child: RefreshIndicator(
@@ -313,16 +316,16 @@ class MerchantDashboardView extends GetView<MerchantDashboardController> {
               ],
               onTap: () => Get.toNamed(Routes.MERCHANT_STAFF),
             ),
-                _buildActionCard(
-                  icon: Icons.print_rounded,
-                  title: 'Printer Settings',
-                  subtitle: 'Configure receipt printer',
-                  gradient: [
-                    AppColors.secondary.shade400,
-                    AppColors.secondary.shade600,
-                  ],
-                  onTap: () => Get.toNamed(Routes.MERCHANT_PRINTER_SETTINGS),
-                ),
+            _buildActionCard(
+              icon: Icons.print_rounded,
+              title: 'Printer Settings',
+              subtitle: 'Configure receipt printer',
+              gradient: [
+                AppColors.secondary.shade400,
+                AppColors.secondary.shade600,
+              ],
+              onTap: () => Get.toNamed(Routes.MERCHANT_PRINTER_SETTINGS),
+            ),
           ],
         ),
       ],

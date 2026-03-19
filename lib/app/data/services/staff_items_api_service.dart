@@ -71,7 +71,11 @@ class StaffItemsApiService extends GetxService {
   /// __Expected Response (Success):__
   /// - __Status Code:__ 200
   /// - __Body (JSON):__ A list of `InventoryItem` objects.
-  Future<List<InventoryItem>> getItems() async {
+  Future<List<InventoryItem>> getItems({
+    String? categoryId,
+    String? subcategoryId,
+    String? brandId,
+  }) async {
     // =========================================================================
     // MOCK IMPLEMENTATION
     // =========================================================================
@@ -81,7 +85,20 @@ class StaffItemsApiService extends GetxService {
     }
     // =========================================================================
 
-    final response = await _connect.get(_baseUrl, headers: await _getHeaders());
+    // Build query params if provided
+    String url = _baseUrl;
+    final params = <String, String>{};
+    if (categoryId != null && categoryId.isNotEmpty)
+      params['categoryId'] = categoryId;
+    if (subcategoryId != null && subcategoryId.isNotEmpty)
+      params['subcategoryId'] = subcategoryId;
+    if (brandId != null && brandId.isNotEmpty) params['brandId'] = brandId;
+    if (params.isNotEmpty) {
+      url =
+          '$_baseUrl?${params.entries.map((e) => '${Uri.encodeQueryComponent(e.key)}=${Uri.encodeQueryComponent(e.value)}').join('&')}';
+    }
+
+    final response = await _connect.get(url, headers: await _getHeaders());
     if (response.isOk && response.body['data'] != null) {
       final rawList = asList(response.body['data']);
       return rawList

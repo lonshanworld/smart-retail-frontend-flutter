@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:smart_retail/app/core/config/app_config.dart';
 import 'package:smart_retail/app/data/providers/api_constants.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
+import 'package:uuid/uuid.dart';
 
 // Represents a single item in a stock-in request
 class StockInItem {
@@ -52,7 +53,11 @@ class StockInApiService extends GetxService {
   /// __Expected Response (Success):__
   /// - __Status Code:__ 200 or 204
   /// - __Body:__ (Potentially a success message or empty)
-  Future<void> performStockIn(String shopId, List<StockInItem> items) async {
+  Future<void> performStockIn(
+    String shopId,
+    List<StockInItem> items, {
+    String? clientOperationId,
+  }) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 2));
       // Simulate a successful stock-in
@@ -61,6 +66,7 @@ class StockInApiService extends GetxService {
     }
 
     final body = {
+      'clientOperationId': clientOperationId ?? const Uuid().v4(),
       'shopId': shopId,
       'items': items.map((item) => item.toJson()).toList(),
     };

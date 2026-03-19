@@ -9,6 +9,7 @@ import 'package:smart_retail/app/data/models/promotion_model.dart';
 import 'package:smart_retail/app/data/models/sale_model.dart';
 import 'package:smart_retail/app/data/models/shop_model.dart';
 import 'package:smart_retail/app/data/services/bluetooth_printer_service.dart';
+import 'package:smart_retail/app/data/services/inventory_api_service.dart';
 import 'package:smart_retail/app/data/services/pos_api_service.dart';
 import 'package:smart_retail/app/data/services/merchant_shops_api_service.dart';
 import 'package:smart_retail/app/modules/shared/code_scanner/code_scanner_view.dart';
@@ -19,6 +20,7 @@ class PosController extends GetxController {
       Get.find<MerchantPosApiService>();
   final MerchantShopsApiService _shopsApiService =
       Get.find<MerchantShopsApiService>();
+  final InventoryApiService _inventoryApi = Get.find<InventoryApiService>();
   final BluetoothPrinterService _printerService =
       Get.find<BluetoothPrinterService>();
 
@@ -26,6 +28,9 @@ class PosController extends GetxController {
   var cartItems = <CartItem>[].obs;
   var isCheckingOut = false.obs;
   var errorMessage = RxnString();
+  final TextEditingController deliveryChargeController =
+      TextEditingController();
+  final RxDouble deliveryChargeAmount = 0.0.obs;
 
   var shopList = <Shop>[].obs;
   var isLoadingShops = true.obs;
@@ -39,6 +44,14 @@ class PosController extends GetxController {
   final TextEditingController customerNameController = TextEditingController();
   var searchResults = <InventoryItem>[].obs;
   var isSearching = false.obs;
+
+  final RxList<CategoryWithSubcategories> categories =
+      <CategoryWithSubcategories>[].obs;
+  final RxList<BrandRef> brands = <BrandRef>[].obs;
+  final RxList<SubcategoryRef> filteredSubcategories = <SubcategoryRef>[].obs;
+  final RxnString selectedCategoryId = RxnString();
+  final RxnString selectedSubcategoryId = RxnString();
+  final RxnString selectedBrandId = RxnString();
 
   // Computed properties for totals
   double get cartSubtotal =>
@@ -68,11 +81,14 @@ class PosController extends GetxController {
 
   double get taxAmount =>
       (cartSubtotal - discountAmount) * (effectiveTaxRatePercent / 100);
-  double get cartTotal => cartSubtotal - discountAmount + taxAmount;
+  double get deliveryCharge => deliveryChargeAmount.value;
+  double get cartTotal =>
+      cartSubtotal - discountAmount + taxAmount + deliveryCharge;
 
   @override
   void onInit() {
     super.onInit();
+    _loadCatalogOptions();
     fetchShops();
     // Use `ever` to react to shop selection changes.
     ever(selectedShop, (_) {
@@ -87,6 +103,28 @@ class PosController extends GetxController {
     );
   }
 
+  Future<void> _loadCatalogOptions() async {
+    final opts = await _inventoryApi.getCatalogOptions();
+    if (opts == null) return;
+    categories.assignAll(opts.categories);
+    brands.assignAll(opts.brands);
+  }
+
+  void setCategoryFilter(String? categoryId) {
+    selectedCategoryId.value = categoryId;
+    selectedSubcategoryId.value = null;
+    final cat = categories.firstWhereOrNull((c) => c.id == categoryId);
+    filteredSubcategories.assignAll(cat?.subcategories ?? const []);
+  }
+
+  void clearFilters() {
+    selectedCategoryId.value = null;
+    selectedSubcategoryId.value = null;
+    selectedBrandId.value = null;
+    filteredSubcategories.clear();
+    searchProducts(initialLoad: true);
+  }
+
   void fetchShops() async {
     try {
       isLoadingShops.value = true;
@@ -94,6 +132,7 @@ class PosController extends GetxController {
       shopList.assignAll(shops);
       if (shops.isNotEmpty) {
         selectedShop.value = shops.first;
+        _setDeliveryCharge(shops.first.deliveryCharge);
       }
     } catch (e) {
       DialogUtils.showError('Could not load shops: $e');
@@ -111,6 +150,7 @@ class PosController extends GetxController {
       cartItems.clear();
     }
     selectedShop.value = shop;
+    _setDeliveryCharge(shop.deliveryCharge);
 
     // Clear cart when shop changes
     selectedPromotion.value = null; // Clear selected promotion
@@ -204,6 +244,17 @@ class PosController extends GetxController {
     }
   }
 
+  void updateDeliveryCharge(String value) {
+    final parsedValue =
+        double.tryParse(value.replaceAll(',', '').trim()) ?? 0.0;
+    deliveryChargeAmount.value = parsedValue;
+  }
+
+  void _setDeliveryCharge(double value) {
+    deliveryChargeAmount.value = value;
+    deliveryChargeController.text = value.toStringAsFixed(2);
+  }
+
   void selectPromotion(Promotion? promo) {
     selectedPromotion.value = promo;
     cartItems.refresh(); // Trigger UI update for totals
@@ -226,6 +277,9 @@ class PosController extends GetxController {
       final results = await _posApiService.searchProducts(
         selectedShop.value!.id!,
         searchTerm,
+        categoryId: selectedCategoryId.value,
+        subcategoryId: selectedSubcategoryId.value,
+        brandId: selectedBrandId.value,
       );
       searchResults.assignAll(results);
     } catch (e) {
@@ -300,6 +354,7 @@ class PosController extends GetxController {
           .toList(),
       'totalAmount': cartTotal,
       'discountAmount': discountAmount,
+      'deliveryCharge': deliveryCharge,
       'appliedPromotionId': selectedPromotion.value?.id,
       'paymentType': 'cash',
       if (customerNameController.text.isNotEmpty)
@@ -357,6 +412,13 @@ class PosController extends GetxController {
               'Total: \$${sale.totalAmount.toStringAsFixed(2)}',
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
+            if (sale.deliveryCharge > 0) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Delivery Charge: \$${sale.deliveryCharge.toStringAsFixed(2)}',
+                style: const TextStyle(color: Colors.blueGrey),
+              ),
+            ],
           ],
         ),
         actions: [
@@ -384,6 +446,10 @@ class PosController extends GetxController {
     for (var item in sale.items) {
       voucherText += ' - ${item.itemName} x${item.quantitySold}\n';
     }
+    if (sale.deliveryCharge > 0) {
+      voucherText +=
+          'Delivery Charge: \$${sale.deliveryCharge.toStringAsFixed(2)}\n';
+    }
     voucherText +=
         '\n--------------------------\nTotal: \$${sale.totalAmount.toStringAsFixed(2)}\n\nThank you for your purchase!';
     return voucherText;
@@ -397,6 +463,8 @@ class PosController extends GetxController {
   @override
   void onClose() {
     searchController.dispose();
+    customerNameController.dispose();
+    deliveryChargeController.dispose();
     super.onClose();
   }
 }

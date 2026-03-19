@@ -8,7 +8,7 @@ class MerchantInvoicesController extends GetxController {
   final RxList<Invoice> invoices = <Invoice>[].obs;
   final RxBool isLoading = true.obs;
   final RxnString errorMessage = RxnString();
-  
+
   final RxInt currentPage = 1.obs;
   final RxInt totalPages = 1.obs;
   final RxInt totalItems = 0.obs;
@@ -28,25 +28,31 @@ class MerchantInvoicesController extends GetxController {
       if (resetPage) {
         currentPage.value = 1;
       }
-      
+
       isLoading.value = true;
       errorMessage.value = null;
-      
-      print('[MerchantInvoices] Fetching invoices... page: ${currentPage.value}');
-      
+
+      print(
+        '[MerchantInvoices] Fetching invoices... page: ${currentPage.value}',
+      );
+
       final response = await _invoiceApiService.listInvoices(
         page: currentPage.value,
         pageSize: pageSize,
         shopId: selectedShopId.value,
       );
-      
-      print('[MerchantInvoices] Response received: ${response != null ? '${response.items.length} invoices' : 'null'}');
-      
+
+      print(
+        '[MerchantInvoices] Response received: ${response != null ? '${response.items.length} invoices' : 'null'}',
+      );
+
       if (response != null) {
         invoices.assignAll(response.items);
         totalPages.value = response.totalPages;
         totalItems.value = response.totalItems;
-        print('[MerchantInvoices] Invoices assigned: ${invoices.length}, total: ${totalItems.value}');
+        print(
+          '[MerchantInvoices] Invoices assigned: ${invoices.length}, total: ${totalItems.value}',
+        );
       } else {
         invoices.clear();
         errorMessage.value = 'Failed to load invoices';

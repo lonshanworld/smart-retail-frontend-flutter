@@ -7,11 +7,15 @@ import 'package:smart_retail/app/data/models/merchant_model.dart';
 import 'package:smart_retail/app/data/models/user_model.dart';
 import 'package:smart_retail/app/data/providers/api_constants.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
+import 'package:smart_retail/app/services/local_database_service.dart';
+import 'package:uuid/uuid.dart';
 
 class AdminMerchantService extends GetxService {
   final GetConnect _connect = GetConnect(timeout: const Duration(seconds: 30));
   final AuthService _authService = Get.find<AuthService>();
   final AppConfig _appConfig = Get.find<AppConfig>();
+  final LocalDatabaseService _localDatabaseService =
+      Get.find<LocalDatabaseService>();
 
   final String _adminMerchantsBaseUrl =
       "${ApiConstants.baseUrl}/admin/merchants";
@@ -39,6 +43,35 @@ class AdminMerchantService extends GetxService {
       );
     }
     DialogUtils.showError(errorMessage);
+  }
+
+  bool _shouldQueue(dynamic error) {
+    final text = error.toString().toLowerCase();
+    return _appConfig.localStorageOnly ||
+        text.contains('socketexception') ||
+        text.contains('failed host lookup') ||
+        text.contains('connection') ||
+        text.contains('timeout');
+  }
+
+  Future<void> _queueOperation({
+    required String clientOperationId,
+    required String entityType,
+    required String action,
+    required String endpoint,
+    required Map<String, dynamic> payload,
+    String method = 'POST',
+  }) async {
+    await _localDatabaseService.queueOperation({
+      'id': clientOperationId,
+      'client_operation_id': clientOperationId,
+      'entity_type': entityType,
+      'action': action,
+      'method': method,
+      'endpoint': endpoint,
+      'payload': payload,
+      'headers': {'X-Client-Operation-Id': clientOperationId},
+    });
   }
 
   /// Fetches a paginated list of merchants.
@@ -221,21 +254,44 @@ class AdminMerchantService extends GetxService {
     }
     final token = await _getAuthToken();
     if (token == null) return null;
-    print("check data before sending $userData");
-    final response = await _connect.post(
-      _adminUsersBaseUrl,
-      userData..['role'] = 'MERCHANT',
-      headers: {'Authorization': 'Bearer $token'},
-    );
-    print('check merchant create response ${response.body}');
-    if (response.statusCode! < 300) {
-      print('check merchant create after status check ${response.body}');
-      final user = User.fromJsonWithShop(asMap(response.body['data']));
-      print('check after json $user');
-      return user;
-    } else {
+    final clientOperationId = userData['clientOperationId']?.toString() ??
+        const Uuid().v4();
+    final payload = Map<String, dynamic>.from(userData)
+      ..['role'] = 'MERCHANT'
+      ..['clientOperationId'] = clientOperationId;
+
+    try {
+      final response = await _connect.post(
+        _adminUsersBaseUrl,
+        payload,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'X-Client-Operation-Id': clientOperationId,
+        },
+      );
+      if (response.statusCode! < 300) {
+        final user = User.fromJsonWithShop(asMap(response.body['data']));
+        return user;
+      }
       _handleError(response, "creating user as merchant");
       return null;
+    } catch (e) {
+      if (_shouldQueue(e)) {
+        await _queueOperation(
+          clientOperationId: clientOperationId,
+          entityType: 'admin_merchant_user',
+          action: 'create',
+          endpoint: _adminUsersBaseUrl,
+          payload: payload,
+        );
+        return User.fromJson({
+          ...payload,
+          'id': clientOperationId,
+          'createdAt': DateTime.now().toIso8601String(),
+          'updatedAt': DateTime.now().toIso8601String(),
+        });
+      }
+      rethrow;
     }
   }
 
@@ -265,16 +321,43 @@ class AdminMerchantService extends GetxService {
     }
     final token = await _getAuthToken();
     if (token == null) return null;
-    final response = await _connect.put(
-      '$_adminUsersBaseUrl/$userId',
-      updates,
-      headers: {'Authorization': 'Bearer $token'},
-    );
-    if (response.statusCode == 200) {
-      return User.fromJson(asMap(response.body['data']));
-    } else {
+    final clientOperationId = updates['clientOperationId']?.toString() ??
+        const Uuid().v4();
+    final payload = Map<String, dynamic>.from(updates)
+      ..['clientOperationId'] = clientOperationId;
+
+    try {
+      final response = await _connect.put(
+        '$_adminUsersBaseUrl/$userId',
+        payload,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'X-Client-Operation-Id': clientOperationId,
+        },
+      );
+      if (response.statusCode == 200) {
+        return User.fromJson(asMap(response.body['data']));
+      }
       _handleError(response, "updating user/merchant details for $userId");
       return null;
+    } catch (e) {
+      if (_shouldQueue(e)) {
+        await _queueOperation(
+          clientOperationId: clientOperationId,
+          entityType: 'admin_merchant_user',
+          action: 'update',
+          endpoint: '$_adminUsersBaseUrl/$userId',
+          payload: payload,
+          method: 'PUT',
+        );
+        return User.fromJson({
+          ...payload,
+          'id': userId,
+          'role': 'merchant',
+          'updatedAt': DateTime.now().toIso8601String(),
+        });
+      }
+      rethrow;
     }
   }
 
@@ -302,17 +385,36 @@ class AdminMerchantService extends GetxService {
     }
     final token = await _getAuthToken();
     if (token == null) return false;
-    final response = await _connect.put(
-      '$_adminUsersBaseUrl/$userId',
-      {'isActive': isActive},
-      headers: {'Authorization': 'Bearer $token'},
-    );
-    if (response.statusCode == 200 && response.body['status'] == 'success') {
-      DialogUtils.showSuccess("Merchant status updated successfully.");
-      return true;
-    } else {
+    final clientOperationId = const Uuid().v4();
+    final payload = {'isActive': isActive, 'clientOperationId': clientOperationId};
+    try {
+      final response = await _connect.put(
+        '$_adminUsersBaseUrl/$userId',
+        payload,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'X-Client-Operation-Id': clientOperationId,
+        },
+      );
+      if (response.statusCode == 200 && response.body['status'] == 'success') {
+        DialogUtils.showSuccess("Merchant status updated successfully.");
+        return true;
+      }
       _handleError(response, "updating merchant status");
       return false;
+    } catch (e) {
+      if (_shouldQueue(e)) {
+        await _queueOperation(
+          clientOperationId: clientOperationId,
+          entityType: 'admin_merchant_user',
+          action: 'update',
+          endpoint: '$_adminUsersBaseUrl/$userId',
+          payload: payload,
+          method: 'PUT',
+        );
+        return true;
+      }
+      rethrow;
     }
   }
 
@@ -334,16 +436,34 @@ class AdminMerchantService extends GetxService {
     }
     final token = await _getAuthToken();
     if (token == null) return false;
-    final response = await _connect.delete(
-      '$_adminUsersBaseUrl/$userId',
-      headers: {'Authorization': 'Bearer $token'},
-    );
-    if (response.statusCode == 200 && response.body['status'] == 'success') {
-      DialogUtils.showSuccess("User $userId deleted successfully.");
-      return true;
-    } else {
+    final clientOperationId = const Uuid().v4();
+    try {
+      final response = await _connect.delete(
+        '$_adminUsersBaseUrl/$userId',
+        headers: {
+          'Authorization': 'Bearer $token',
+          'X-Client-Operation-Id': clientOperationId,
+        },
+      );
+      if (response.statusCode == 200 && response.body['status'] == 'success') {
+        DialogUtils.showSuccess("User $userId deleted successfully.");
+        return true;
+      }
       _handleError(response, "deleting user $userId");
       return false;
+    } catch (e) {
+      if (_shouldQueue(e)) {
+        await _queueOperation(
+          clientOperationId: clientOperationId,
+          entityType: 'admin_merchant_user',
+          action: 'delete',
+          endpoint: '$_adminUsersBaseUrl/$userId',
+          payload: {'userId': userId},
+          method: 'DELETE',
+        );
+        return true;
+      }
+      rethrow;
     }
   }
 }

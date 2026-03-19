@@ -91,7 +91,8 @@ Future<void> startSmartRetailApp({
       } catch (_) {
         // ignore normalization failures; fall through to return original response
       }
-      return response;
+          final authService = Get.put(AuthService());
+          await authService.initialize();
     });
   } catch (_) {}
   Get.lazyPut<DatabaseService>(() => DatabaseService());
@@ -166,7 +167,9 @@ class MyApp extends StatelessWidget {
       initialRoute: AppPages.INITIAL,
       getPages: AppPages.routes,
       builder: (context, child) {
-        return child ?? const SizedBox.shrink();
+        return SafeArea(
+            child: child ?? const SizedBox.shrink(),
+        );
       },
     );
   }

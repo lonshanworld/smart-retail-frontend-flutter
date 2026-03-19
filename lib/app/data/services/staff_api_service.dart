@@ -141,7 +141,9 @@ class StaffApiService extends GetxService {
     );
     if (response.isOk && response.body['data'] != null) {
       final rawList = asList(response.body['data']);
-      return rawList.map((i) => Salary.fromJson(Map<String, dynamic>.from(i))).toList();
+      return rawList
+          .map((i) => Salary.fromJson(Map<String, dynamic>.from(i)))
+          .toList();
     } else {
       throw Exception(
         response.body?['message'] ?? 'Failed to fetch salary history',
@@ -192,7 +194,9 @@ class StaffApiService extends GetxService {
     if (response.statusCode! < 300) {
       print('✅ [STAFF API] Parsing dashboard data...');
       print('   Data: ${response.body['data']}');
-      return StaffDashboardSummaryResponse.fromJson(asMap(response.body['data']));
+      return StaffDashboardSummaryResponse.fromJson(
+        asMap(response.body['data']),
+      );
     } else {
       throw Exception(
         response.body?['message'] ?? 'Failed to get staff dashboard summary',

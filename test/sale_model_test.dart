@@ -49,9 +49,9 @@ void main() {
             'createdAt': now,
             'updatedAt': now,
             'itemName': 'Thing',
-            'itemSku': 'T-01'
-          }
-        ]
+            'itemSku': 'T-01',
+          },
+        ],
       };
 
       final sale = Sale.fromJson(json);

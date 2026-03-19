@@ -6,6 +6,7 @@ import 'package:smart_retail/app/data/models/sale_model.dart';
 import 'package:smart_retail/app/data/providers/api_constants.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
 import 'package:smart_retail/app/utils/response_utils.dart';
+import 'package:uuid/uuid.dart';
 
 class ShopPosApiService extends GetxService {
   final GetConnect _connect = Get.find<GetConnect>();
@@ -216,8 +217,11 @@ class ShopPosApiService extends GetxService {
   /// - __Body (JSON):__ (A list of `InventoryItem` objects matching the search)
   Future<List<InventoryItem>> searchProducts(
     String shopId,
-    String searchTerm,
-  ) async {
+    String searchTerm, {
+    String? categoryId,
+    String? subcategoryId,
+    String? brandId,
+  }) async {
     // =========================================================================
     // MOCK IMPLEMENTATION
     // =========================================================================
@@ -243,7 +247,13 @@ class ShopPosApiService extends GetxService {
     // Determine the correct endpoint based on user role
     final userRole = _authService.user.value?.role;
     final String endpoint;
-    final Map<String, dynamic> queryParams = {'searchTerm': searchTerm};
+    final Map<String, dynamic> queryParams = {
+      'searchTerm': searchTerm,
+      if (categoryId != null && categoryId.isNotEmpty) 'categoryId': categoryId,
+      if (subcategoryId != null && subcategoryId.isNotEmpty)
+        'subcategoryId': subcategoryId,
+      if (brandId != null && brandId.isNotEmpty) 'brandId': brandId,
+    };
 
     if (userRole == 'merchant') {
       // Merchants accessing shop dashboard use merchant endpoint with shopId
@@ -438,12 +448,15 @@ class ShopPosApiService extends GetxService {
   /// - __Status Code:__ 201
   /// - __Body (JSON):__ (The newly created `Sale` object)
   Future<Sale> checkout(String shopId, Map<String, dynamic> saleData) async {
+    saleData['id'] ??= const Uuid().v4();
+    final clientSaleId = saleData['id'].toString();
+
     // =========================================================================
     // MOCK IMPLEMENTATION
     // =========================================================================
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
-      final saleId = 'sale-${DateTime.now().millisecondsSinceEpoch}';
+      final saleId = clientSaleId;
       final now = DateTime.now();
 
       final saleItems = (saleData['items'] as List).map((item) {
@@ -475,6 +488,7 @@ class ShopPosApiService extends GetxService {
         shopId: shopId,
         saleDate: now,
         totalAmount: saleData['totalAmount'],
+        deliveryCharge: saleData['deliveryCharge'] ?? 0.0,
         items: saleItems,
         paymentType: saleData['paymentType'],
         paymentStatus: 'succeeded',

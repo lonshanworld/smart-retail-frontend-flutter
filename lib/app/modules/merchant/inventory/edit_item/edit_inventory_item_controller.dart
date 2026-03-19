@@ -158,11 +158,9 @@ class EditInventoryItemController extends GetxController {
       blockers.forEach((k, v) {
         if (v is int) {
           deleteBlockers[k] = v;
-        } else if (v is String){
-           deleteBlockers[k] = int.tryParse(v) ?? 0;
-        }else{
-          
-        }        
+        } else if (v is String) {
+          deleteBlockers[k] = int.tryParse(v) ?? 0;
+        } else {}
       });
       isDeletable.value = deletable;
       if (!deletable) {

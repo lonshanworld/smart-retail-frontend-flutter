@@ -25,7 +25,10 @@ class InventoryView extends GetView<InventoryController> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [AppColors.merchant.shade50.withValues(alpha: 0.3), Colors.white],
+            colors: [
+              AppColors.merchant.shade50.withValues(alpha: 0.3),
+              Colors.white,
+            ],
           ),
         ),
         child: Obx(() {
@@ -104,7 +107,8 @@ class InventoryView extends GetView<InventoryController> {
                     Expanded(
                       child: Obx(
                         () => DropdownButtonFormField<String>(
-                          initialValue: controller.selectedCategoryFilterId.value,
+                          initialValue:
+                              controller.selectedCategoryFilterId.value,
                           decoration: const InputDecoration(
                             labelText: 'Category filter',
                             border: OutlineInputBorder(),
@@ -130,7 +134,8 @@ class InventoryView extends GetView<InventoryController> {
                     Expanded(
                       child: Obx(
                         () => DropdownButtonFormField<String>(
-                          initialValue: controller.selectedSubcategoryFilterId.value,
+                          initialValue:
+                              controller.selectedSubcategoryFilterId.value,
                           decoration: const InputDecoration(
                             labelText: 'Subcategory filter',
                             border: OutlineInputBorder(),
@@ -538,4 +543,3 @@ class InventoryView extends GetView<InventoryController> {
     });
   }
 }
-

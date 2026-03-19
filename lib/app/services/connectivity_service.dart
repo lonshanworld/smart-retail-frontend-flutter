@@ -79,5 +79,4 @@ class ConnectivityService extends GetxService {
   void stopMonitoring() {
     // Connectivity is automatically monitored through the stream
   }
-
 }

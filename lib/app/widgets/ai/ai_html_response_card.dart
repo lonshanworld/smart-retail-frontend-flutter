@@ -83,12 +83,8 @@ class AiHtmlResponseCard extends StatelessWidget {
                   border: Border.all(color: theme.colorScheme.outlineVariant),
                   backgroundColor: theme.colorScheme.surfaceContainerLowest,
                 ),
-                '.ai-chart': Style(
-                  margin: Margins.only(top: 10, bottom: 10),
-                ),
-                '.ai-chart-row': Style(
-                  margin: Margins.only(bottom: 8),
-                ),
+                '.ai-chart': Style(margin: Margins.only(top: 10, bottom: 10)),
+                '.ai-chart-row': Style(margin: Margins.only(bottom: 8)),
                 '.ai-chart-label': Style(
                   fontSize: FontSize(12),
                   color: theme.colorScheme.onSurfaceVariant,
@@ -108,10 +104,7 @@ class AiHtmlResponseCard extends StatelessWidget {
                 ),
               },
             )
-          : Text(
-              fallbackText,
-              style: theme.textTheme.bodyMedium,
-            ),
+          : Text(fallbackText, style: theme.textTheme.bodyMedium),
     );
   }
 }

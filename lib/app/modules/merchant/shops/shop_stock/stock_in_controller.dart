@@ -63,7 +63,7 @@ class StockInController extends GetxController {
           }
         }
         DialogUtils.showInfo(
-          'Successfully added $quantityAdded to $itemName. New quantity: ${stockedItem.quantity}'
+          'Successfully added $quantityAdded to $itemName. New quantity: ${stockedItem.quantity}',
         );
       } else {
         errorMessage.value = 'Failed to stock in item. Please try again.';

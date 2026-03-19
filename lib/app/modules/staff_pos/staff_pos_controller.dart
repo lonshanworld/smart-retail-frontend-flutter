@@ -8,6 +8,7 @@ import 'package:smart_retail/app/data/models/promotion_model.dart';
 import 'package:smart_retail/app/data/models/sale_model.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
 import 'package:smart_retail/app/data/services/bluetooth_printer_service.dart';
+import 'package:smart_retail/app/data/services/inventory_api_service.dart';
 import 'package:smart_retail/app/data/services/staff_pos_api_service.dart';
 import 'package:smart_retail/app/modules/shared/code_scanner/code_scanner_view.dart';
 import 'package:smart_retail/app/widgets/app_colors.dart';
@@ -22,6 +23,10 @@ class StaffPosController extends GetxController {
   final AuthService? _authService = Get.isRegistered<AuthService>()
       ? Get.find<AuthService>()
       : null;
+  final InventoryApiService? _inventoryApi =
+      Get.isRegistered<InventoryApiService>()
+      ? Get.find<InventoryApiService>()
+      : null;
   // Make the printer service optional for unit tests where Bluetooth
   // functionality isn't registered. Use `Get.isRegistered` to avoid
   // throwing during controller construction in test environments.
@@ -33,11 +38,22 @@ class StaffPosController extends GetxController {
   var cartItems = <CartItem>[].obs;
   var isCheckingOut = false.obs;
   var errorMessage = RxnString();
+  final TextEditingController deliveryChargeController =
+      TextEditingController();
+  final RxDouble deliveryChargeAmount = 0.0.obs;
 
   final TextEditingController searchController = TextEditingController();
   final TextEditingController customerNameController = TextEditingController();
   var searchResults = <InventoryItem>[].obs;
   var isSearching = false.obs;
+
+  final RxList<CategoryWithSubcategories> categories =
+      <CategoryWithSubcategories>[].obs;
+  final RxList<BrandRef> brands = <BrandRef>[].obs;
+  final RxList<SubcategoryRef> filteredSubcategories = <SubcategoryRef>[].obs;
+  final RxnString selectedCategoryId = RxnString();
+  final RxnString selectedSubcategoryId = RxnString();
+  final RxnString selectedBrandId = RxnString();
 
   // Promotion state
   var availablePromotions = <Promotion>[].obs;
@@ -73,11 +89,14 @@ class StaffPosController extends GetxController {
 
   double get taxAmount =>
       (cartSubtotal - discountAmount) * (effectiveTaxRatePercent / 100);
-  double get cartTotal => cartSubtotal - discountAmount + taxAmount;
+  double get deliveryCharge => deliveryChargeAmount.value;
+  double get cartTotal =>
+      cartSubtotal - discountAmount + taxAmount + deliveryCharge;
 
   @override
   void onInit() {
     super.onInit();
+    _loadCatalogOptions();
     // Only call remote services if the API service is registered.
     if (_apiService != null) {
       fetchActivePromotions();
@@ -87,11 +106,35 @@ class StaffPosController extends GetxController {
       availablePromotions.clear();
       searchResults.clear();
     }
+    _setDeliveryCharge(_authService?.currentShop.value?.deliveryCharge ?? 0.0);
     debounce(
       searchController.obs,
       (_) => searchProducts(),
       time: const Duration(milliseconds: 500),
     );
+  }
+
+  Future<void> _loadCatalogOptions() async {
+    if (_inventoryApi == null) return;
+    final opts = await _inventoryApi.getCatalogOptions();
+    if (opts == null) return;
+    categories.assignAll(opts.categories);
+    brands.assignAll(opts.brands);
+  }
+
+  void setCategoryFilter(String? categoryId) {
+    selectedCategoryId.value = categoryId;
+    selectedSubcategoryId.value = null;
+    final cat = categories.firstWhereOrNull((c) => c.id == categoryId);
+    filteredSubcategories.assignAll(cat?.subcategories ?? const []);
+  }
+
+  void clearFilters() {
+    selectedCategoryId.value = null;
+    selectedSubcategoryId.value = null;
+    selectedBrandId.value = null;
+    filteredSubcategories.clear();
+    searchProducts(initialLoad: true);
   }
 
   Future<void> fetchActivePromotions() async {
@@ -114,6 +157,17 @@ class StaffPosController extends GetxController {
     selectedPromotion.value = promotion;
   }
 
+  void updateDeliveryCharge(String value) {
+    final parsedValue =
+        double.tryParse(value.replaceAll(',', '').trim()) ?? 0.0;
+    deliveryChargeAmount.value = parsedValue;
+  }
+
+  void _setDeliveryCharge(double value) {
+    deliveryChargeAmount.value = value;
+    deliveryChargeController.text = value.toStringAsFixed(2);
+  }
+
   void searchProducts({bool initialLoad = false}) async {
     final searchTerm = searchController.text;
     if (searchTerm.isEmpty && !initialLoad) {
@@ -125,7 +179,12 @@ class StaffPosController extends GetxController {
       if (_apiService == null) {
         searchResults.clear();
       } else {
-        final results = await _apiService.searchProducts(searchTerm);
+        final results = await _apiService.searchProducts(
+          searchTerm,
+          categoryId: selectedCategoryId.value,
+          subcategoryId: selectedSubcategoryId.value,
+          brandId: selectedBrandId.value,
+        );
         searchResults.assignAll(results);
       }
     } catch (e) {
@@ -194,6 +253,7 @@ class StaffPosController extends GetxController {
           )
           .toList(),
       'totalAmount': cartTotal, // Use the computed total
+      'deliveryCharge': deliveryCharge,
       'paymentType': 'cash', // Defaulting to cash for this example
       if (customerNameController.text.isNotEmpty)
         'customerName': customerNameController.text,
@@ -240,6 +300,7 @@ class StaffPosController extends GetxController {
           shopId: 'local-shop',
           saleDate: now,
           totalAmount: cartTotal,
+          deliveryCharge: deliveryCharge,
           appliedPromotionId: selectedPromotion.value?.id,
           discountAmount: discountAmount,
           paymentType: 'cash',
@@ -284,6 +345,7 @@ class StaffPosController extends GetxController {
           )
           .toList(),
       'totalAmount': cartTotal,
+      'deliveryCharge': deliveryCharge,
       'paymentType': 'cash',
     };
 
@@ -320,6 +382,13 @@ class StaffPosController extends GetxController {
               'Total: \$${sale.totalAmount.toStringAsFixed(2)}',
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
+            if (sale.deliveryCharge > 0) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Delivery Charge: \$${sale.deliveryCharge.toStringAsFixed(2)}',
+                style: const TextStyle(color: AppColors.success),
+              ),
+            ],
           ],
         ),
         actions: [
@@ -359,6 +428,10 @@ class StaffPosController extends GetxController {
     for (var item in sale.items) {
       voucherText += ' - ${item.itemName} x${item.quantitySold}\n';
     }
+    if (sale.deliveryCharge > 0) {
+      voucherText +=
+          'Delivery Charge: \$${sale.deliveryCharge.toStringAsFixed(2)}\n';
+    }
     voucherText +=
         '\n--------------------------\nTotal: \$${sale.totalAmount.toStringAsFixed(2)}\n\nThank you for your purchase!';
     return voucherText;
@@ -376,6 +449,8 @@ class StaffPosController extends GetxController {
   @override
   void onClose() {
     searchController.dispose();
+    customerNameController.dispose();
+    deliveryChargeController.dispose();
     super.onClose();
   }
 }

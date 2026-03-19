@@ -4,13 +4,17 @@ import 'package:smart_retail/app/core/config/app_config.dart';
 import 'package:smart_retail/app/data/models/shop_customer_model.dart';
 import 'package:smart_retail/app/data/providers/api_constants.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
+import 'package:smart_retail/app/services/local_database_service.dart';
 import 'package:smart_retail/app/utils/response_utils.dart';
+import 'package:uuid/uuid.dart';
 
 // CORRECTED: The class name is plural to match what the controller and binding expect.
 class ShopCustomersApiService extends GetxService {
   final GetConnect _connect = Get.find<GetConnect>();
   final AuthService _authService = Get.find<AuthService>();
   final AppConfig _appConfig = Get.find<AppConfig>();
+  final LocalDatabaseService _localDatabaseService =
+      Get.find<LocalDatabaseService>();
 
   String get _baseUrl => '${ApiConstants.baseUrl}/shop/customers';
 
@@ -20,6 +24,35 @@ class ShopCustomersApiService extends GetxService {
       'Authorization': 'Bearer $token',
       'Content-Type': 'application/json',
     };
+  }
+
+  bool _shouldQueue(dynamic error) {
+    final text = error.toString().toLowerCase();
+    return _appConfig.localStorageOnly ||
+        text.contains('socketexception') ||
+        text.contains('failed host lookup') ||
+        text.contains('connection') ||
+        text.contains('timeout');
+  }
+
+  Future<void> _queueOperation({
+    required String clientOperationId,
+    required String entityType,
+    required String action,
+    required String endpoint,
+    required Map<String, dynamic> payload,
+    String method = 'POST',
+  }) async {
+    await _localDatabaseService.queueOperation({
+      'id': clientOperationId,
+      'client_operation_id': clientOperationId,
+      'entity_type': entityType,
+      'action': action,
+      'method': method,
+      'endpoint': endpoint,
+      'payload': payload,
+      'headers': {'X-Client-Operation-Id': clientOperationId},
+    });
   }
 
   /// Fetches a list of customers for a specific shop.
@@ -162,9 +195,16 @@ class ShopCustomersApiService extends GetxService {
       return newCustomer;
     }
 
+    final clientOperationId = customerData['clientOperationId']?.toString() ??
+        const Uuid().v4();
+
     try {
       // Add shopId to the request body
-      final requestBody = {...customerData, 'shopId': shopId};
+      final requestBody = {
+        ...customerData,
+        'shopId': shopId,
+        'clientOperationId': clientOperationId,
+      };
 
       developer.log(
         '🌐 [ShopCustomersApiService] POST Request URL: $_baseUrl/',
@@ -178,7 +218,10 @@ class ShopCustomersApiService extends GetxService {
       final response = await _connect.post(
         _baseUrl,
         requestBody,
-        headers: await _getHeaders(),
+        headers: {
+          ...await _getHeaders(),
+          'X-Client-Operation-Id': clientOperationId,
+        },
       );
 
       developer.log(
@@ -212,6 +255,27 @@ class ShopCustomersApiService extends GetxService {
         error: e,
         stackTrace: stackTrace,
       );
+      if (_shouldQueue(e)) {
+        final requestBody = {
+          ...customerData,
+          'shopId': shopId,
+          'clientOperationId': clientOperationId,
+        };
+        await _queueOperation(
+          clientOperationId: clientOperationId,
+          entityType: 'shop_customer',
+          action: 'create',
+          endpoint: _baseUrl,
+          payload: requestBody,
+        );
+        return ShopCustomer.fromJson({
+          ...requestBody,
+          'id': clientOperationId,
+          'merchantId': 'pending-merchant',
+          'createdAt': DateTime.now().toIso8601String(),
+          'updatedAt': DateTime.now().toIso8601String(),
+        });
+      }
       rethrow;
     }
   }

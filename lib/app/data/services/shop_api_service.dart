@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart'; // For kDebugMode
 import 'package:get/get.dart';
+import 'package:uuid/uuid.dart';
 import 'package:smart_retail/app/utils/dialog_utils.dart';
 import 'package:smart_retail/app/core/config/app_config.dart';
 import 'package:smart_retail/app/utils/response_utils.dart';
@@ -10,17 +11,24 @@ import 'package:smart_retail/app/data/models/sale_model.dart';
 import 'package:smart_retail/app/data/models/staff_dashboard_model.dart';
 import 'package:smart_retail/app/data/providers/api_constants.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
+import 'package:smart_retail/app/services/local_database_service.dart';
+import 'package:smart_retail/app/services/offline_sales_service.dart';
 
 class ShopApiService extends GetxService {
   final GetConnect _connect = GetConnect(timeout: const Duration(seconds: 30));
   final AuthService _authService = Get.find<AuthService>();
   final AppConfig _appConfig = Get.find<AppConfig>();
+    final LocalDatabaseService _localDatabaseService =
+      Get.find<LocalDatabaseService>();
+    final OfflineSalesService? _offlineSalesService =
+      Get.isRegistered<OfflineSalesService>()
+        ? Get.find<OfflineSalesService>()
+        : null;
 
   Future<String?> _getAuthToken() async {
     return await _authService.getToken();
   }
 
-  final String _merchantBaseUrl = "${ApiConstants.baseUrl}/merchant";
   final String _adminBaseUrl = "${ApiConstants.baseUrl}/admin";
   final String _staffBaseUrl = "${ApiConstants.baseUrl}/staff";
 
@@ -40,6 +48,35 @@ class ShopApiService extends GetxService {
       );
     }
     DialogUtils.showError(errorMessage);
+  }
+
+  bool _shouldQueue(dynamic error) {
+    final text = error.toString().toLowerCase();
+    return _appConfig.localStorageOnly ||
+        text.contains('socketexception') ||
+        text.contains('failed host lookup') ||
+        text.contains('connection') ||
+        text.contains('timeout');
+  }
+
+  Future<void> _queueOperation({
+    required String clientOperationId,
+    required String entityType,
+    required String action,
+    required String endpoint,
+    required Map<String, dynamic> payload,
+    String method = 'POST',
+  }) async {
+    await _localDatabaseService.queueOperation({
+      'id': clientOperationId,
+      'client_operation_id': clientOperationId,
+      'entity_type': entityType,
+      'action': action,
+      'method': method,
+      'endpoint': endpoint,
+      'payload': payload,
+      'headers': {'X-Client-Operation-Id': clientOperationId},
+    });
   }
 
   // --- Shop Management (Merchant) ---
@@ -70,18 +107,46 @@ class ShopApiService extends GetxService {
     final token = await _getAuthToken();
     final currentUserId = _authService.userId;
     if (token == null) return null;
-    print('check shop create $shop');
-    final response = await _connect.post(
-      _merchantShopsBaseUrl,
-      shop.toJsonForCreate(currentUserId.value!),
-      headers: {'Authorization': 'Bearer $token'},
-    );
-    print('after create ${response.body}');
-    if (response.statusCode! < 300) {
-      return Shop.fromJson(asMap(response.body['data']));
-    } else {
+    final clientOperationId = const Uuid().v4();
+    final payload = {
+      ...shop.toJsonForCreate(currentUserId.value!),
+      'clientOperationId': clientOperationId,
+    };
+
+    try {
+      final response = await _connect.post(
+        _merchantShopsBaseUrl,
+        payload,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'X-Client-Operation-Id': clientOperationId,
+        },
+      );
+      if (response.statusCode! < 300) {
+        return Shop.fromJson(asMap(response.body['data']));
+      }
       _handleError(response, "shop creation");
       return null;
+    } catch (e) {
+      if (_shouldQueue(e)) {
+        await _queueOperation(
+          clientOperationId: clientOperationId,
+          entityType: 'shop',
+          action: 'create',
+          endpoint: _merchantShopsBaseUrl,
+          payload: payload,
+        );
+        return Shop(
+          id: clientOperationId,
+          merchantId: currentUserId.value ?? '',
+          name: shop.name,
+          address: shop.address,
+          isPrimary: shop.isPrimary,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+      }
+      rethrow;
     }
   }
 
@@ -128,7 +193,9 @@ class ShopApiService extends GetxService {
     print('check merchant shop list ${response.body}');
     if (response.statusCode == 200 && response.body['status'] == 'success') {
       List<dynamic> shopListJson = asList(response.body['data']);
-      return shopListJson.map((json) => Shop.fromJson(Map<String, dynamic>.from(json))).toList();
+      return shopListJson
+          .map((json) => Shop.fromJson(Map<String, dynamic>.from(json)))
+          .toList();
     } else {
       _handleError(response, "listing shops");
       return [];
@@ -155,6 +222,7 @@ class ShopApiService extends GetxService {
         name: 'Shop $shopId',
         address: 'Address $shopId',
         createdAt: DateTime.now(),
+        deliveryCharge: 0.0,
         updatedAt: DateTime.now(),
       );
     }
@@ -198,16 +266,45 @@ class ShopApiService extends GetxService {
     }
     final token = await _getAuthToken();
     if (token == null) return null;
-    final response = await _connect.put(
-      '$_merchantShopsBaseUrl/$shopId',
-      updates,
-      headers: {'Authorization': 'Bearer $token'},
-    );
-    if (response.statusCode == 200 && response.body['status'] == 'success') {
-      return Shop.fromJson(asMap(response.body['data']));
-    } else {
+    final clientOperationId = updates['clientOperationId']?.toString() ??
+        const Uuid().v4();
+    final payload = Map<String, dynamic>.from(updates)
+      ..['clientOperationId'] = clientOperationId;
+
+    try {
+      final response = await _connect.put(
+        '$_merchantShopsBaseUrl/$shopId',
+        payload,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'X-Client-Operation-Id': clientOperationId,
+        },
+      );
+      if (response.statusCode == 200 && response.body['status'] == 'success') {
+        return Shop.fromJson(asMap(response.body['data']));
+      }
       _handleError(response, "updating shop $shopId");
       return null;
+    } catch (e) {
+      if (_shouldQueue(e)) {
+        await _queueOperation(
+          clientOperationId: clientOperationId,
+          entityType: 'shop',
+          action: 'update',
+          endpoint: '$_merchantShopsBaseUrl/$shopId',
+          payload: payload,
+          method: 'PUT',
+        );
+        return Shop(
+          id: shopId,
+          merchantId: '',
+          name: payload['name']?.toString() ?? '',
+          address: payload['address']?.toString() ?? '',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+      }
+      rethrow;
     }
   }
 
@@ -237,16 +334,42 @@ class ShopApiService extends GetxService {
     }
     final token = await _getAuthToken();
     if (token == null) return null;
-    final response = await _connect.patch(
-      '$_merchantShopsBaseUrl/$shopId/set-primary',
-      {},
-      headers: {'Authorization': 'Bearer $token'},
-    );
-    if (response.statusCode == 200 && response.body['status'] == 'success') {
-      return Shop.fromJson(asMap(response.body['data']));
-    } else {
+    final clientOperationId = const Uuid().v4();
+    try {
+      final response = await _connect.patch(
+        '$_merchantShopsBaseUrl/$shopId/set-primary',
+        {'clientOperationId': clientOperationId},
+        headers: {
+          'Authorization': 'Bearer $token',
+          'X-Client-Operation-Id': clientOperationId,
+        },
+      );
+      if (response.statusCode == 200 && response.body['status'] == 'success') {
+        return Shop.fromJson(asMap(response.body['data']));
+      }
       _handleError(response, "setting shop $shopId as primary");
       return null;
+    } catch (e) {
+      if (_shouldQueue(e)) {
+        await _queueOperation(
+          clientOperationId: clientOperationId,
+          entityType: 'shop',
+          action: 'update',
+          endpoint: '$_merchantShopsBaseUrl/$shopId/set-primary',
+          payload: {'clientOperationId': clientOperationId},
+          method: 'PATCH',
+        );
+        return Shop(
+          id: shopId,
+          merchantId: '',
+          name: 'Primary Shop',
+          address: 'Pending primary update',
+          isPrimary: true,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+      }
+      rethrow;
     }
   }
 
@@ -267,15 +390,33 @@ class ShopApiService extends GetxService {
     }
     final token = await _getAuthToken();
     if (token == null) return false;
-    final response = await _connect.delete(
-      '$_merchantShopsBaseUrl/$shopId',
-      headers: {'Authorization': 'Bearer $token'},
-    );
-    if (response.statusCode == 200 && response.body['status'] == 'success') {
-      return true;
-    } else {
+    final clientOperationId = const Uuid().v4();
+    try {
+      final response = await _connect.delete(
+        '$_merchantShopsBaseUrl/$shopId',
+        headers: {
+          'Authorization': 'Bearer $token',
+          'X-Client-Operation-Id': clientOperationId,
+        },
+      );
+      if (response.statusCode == 200 && response.body['status'] == 'success') {
+        return true;
+      }
       _handleError(response, "deleting shop $shopId");
       return false;
+    } catch (e) {
+      if (_shouldQueue(e)) {
+        await _queueOperation(
+          clientOperationId: clientOperationId,
+          entityType: 'shop',
+          action: 'delete',
+          endpoint: '$_merchantShopsBaseUrl/$shopId',
+          payload: {'shopId': shopId},
+          method: 'DELETE',
+        );
+        return true;
+      }
+      rethrow;
     }
   }
 
@@ -383,7 +524,8 @@ class ShopApiService extends GetxService {
     );
 
     if (response.statusCode == 200 && response.body['status'] == 'success') {
-      if (response.body['data'] is Map<String, dynamic> || response.body['data'] != null) {
+      if (response.body['data'] is Map<String, dynamic> ||
+          response.body['data'] != null) {
         return PaginatedAdminShopsResponse.fromJson(
           asMap(response.body['data']),
         );
@@ -428,16 +570,44 @@ class ShopApiService extends GetxService {
     }
     final token = await _getAuthToken();
     if (token == null) return null;
-    final response = await _connect.post(
-      '$_adminBaseUrl/shops',
-      shop.toJsonForAdminCreate(),
-      headers: {'Authorization': 'Bearer $token'},
-    );
-    if (response.statusCode == 201 && response.body['status'] == 'success') {
-      return Shop.fromJson(asMap(response.body['data']));
-    } else {
+    final clientOperationId = const Uuid().v4();
+    final payload = {
+      ...shop.toJsonForAdminCreate(),
+      'clientOperationId': clientOperationId,
+    };
+    try {
+      final response = await _connect.post(
+        '$_adminBaseUrl/shops',
+        payload,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'X-Client-Operation-Id': clientOperationId,
+        },
+      );
+      if (response.statusCode == 201 && response.body['status'] == 'success') {
+        return Shop.fromJson(asMap(response.body['data']));
+      }
       _handleError(response, "admin creating shop");
       return null;
+    } catch (e) {
+      if (_shouldQueue(e)) {
+        await _queueOperation(
+          clientOperationId: clientOperationId,
+          entityType: 'admin_shop',
+          action: 'create',
+          endpoint: '$_adminBaseUrl/shops',
+          payload: payload,
+        );
+        return Shop(
+          id: clientOperationId,
+          merchantId: payload['merchantId']?.toString() ?? '',
+          name: shop.name,
+          address: shop.address,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+      }
+      rethrow;
     }
   }
 
@@ -507,16 +677,44 @@ class ShopApiService extends GetxService {
     }
     final token = await _getAuthToken();
     if (token == null) return null;
-    final response = await _connect.put(
-      '$_adminBaseUrl/shops/$shopId',
-      updates,
-      headers: {'Authorization': 'Bearer $token'},
-    );
-    if (response.statusCode == 200 && response.body['status'] == 'success') {
-      return Shop.fromJson(asMap(response.body['data']));
-    } else {
+    final clientOperationId = updates['clientOperationId']?.toString() ??
+        const Uuid().v4();
+    final payload = Map<String, dynamic>.from(updates)
+      ..['clientOperationId'] = clientOperationId;
+    try {
+      final response = await _connect.put(
+        '$_adminBaseUrl/shops/$shopId',
+        payload,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'X-Client-Operation-Id': clientOperationId,
+        },
+      );
+      if (response.statusCode == 200 && response.body['status'] == 'success') {
+        return Shop.fromJson(asMap(response.body['data']));
+      }
       _handleError(response, "admin updating shop $shopId");
       return null;
+    } catch (e) {
+      if (_shouldQueue(e)) {
+        await _queueOperation(
+          clientOperationId: clientOperationId,
+          entityType: 'admin_shop',
+          action: 'update',
+          endpoint: '$_adminBaseUrl/shops/$shopId',
+          payload: payload,
+          method: 'PUT',
+        );
+        return Shop(
+          id: shopId,
+          merchantId: '',
+          name: payload['name']?.toString() ?? '',
+          address: payload['address']?.toString() ?? '',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+      }
+      rethrow;
     }
   }
 
@@ -537,15 +735,33 @@ class ShopApiService extends GetxService {
     }
     final token = await _getAuthToken();
     if (token == null) return false;
-    final response = await _connect.delete(
-      '$_adminBaseUrl/shops/$shopId',
-      headers: {'Authorization': 'Bearer $token'},
-    );
-    if (response.statusCode == 200 && response.body['status'] == 'success') {
-      return true;
-    } else {
+    final clientOperationId = const Uuid().v4();
+    try {
+      final response = await _connect.delete(
+        '$_adminBaseUrl/shops/$shopId',
+        headers: {
+          'Authorization': 'Bearer $token',
+          'X-Client-Operation-Id': clientOperationId,
+        },
+      );
+      if (response.statusCode == 200 && response.body['status'] == 'success') {
+        return true;
+      }
       _handleError(response, "admin deleting shop $shopId");
       return false;
+    } catch (e) {
+      if (_shouldQueue(e)) {
+        await _queueOperation(
+          clientOperationId: clientOperationId,
+          entityType: 'admin_shop',
+          action: 'delete',
+          endpoint: '$_adminBaseUrl/shops/$shopId',
+          payload: {'shopId': shopId},
+          method: 'DELETE',
+        );
+        return true;
+      }
+      rethrow;
     }
   }
 
@@ -572,16 +788,35 @@ class ShopApiService extends GetxService {
     }
     final token = await _getAuthToken();
     if (token == null) return false;
-    final response = await _connect.put(
-      '$_adminBaseUrl/shops/$shopId/status',
-      {'isActive': isActive},
-      headers: {'Authorization': 'Bearer $token'},
-    );
-    if (response.statusCode == 200 && response.body['status'] == 'success') {
-      return true;
-    } else {
+    final clientOperationId = const Uuid().v4();
+    final payload = {'isActive': isActive, 'clientOperationId': clientOperationId};
+    try {
+      final response = await _connect.put(
+        '$_adminBaseUrl/shops/$shopId/status',
+        payload,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'X-Client-Operation-Id': clientOperationId,
+        },
+      );
+      if (response.statusCode == 200 && response.body['status'] == 'success') {
+        return true;
+      }
       _handleError(response, "admin setting shop $shopId status to $isActive");
       return false;
+    } catch (e) {
+      if (_shouldQueue(e)) {
+        await _queueOperation(
+          clientOperationId: clientOperationId,
+          entityType: 'admin_shop',
+          action: 'update',
+          endpoint: '$_adminBaseUrl/shops/$shopId/status',
+          payload: payload,
+          method: 'PUT',
+        );
+        return true;
+      }
+      rethrow;
     }
   }
 
@@ -789,6 +1024,7 @@ class ShopApiService extends GetxService {
     String shopId,
     String inventoryItemId,
     int quantityAdded,
+    {String? clientOperationId},
   ) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
@@ -806,20 +1042,51 @@ class ShopApiService extends GetxService {
     }
     final token = await _getAuthToken();
     if (token == null) return null;
-    final body = {'quantityAdded': quantityAdded};
-    final response = await _connect.post(
-      '$_merchantShopsBaseUrl/$shopId/inventory/$inventoryItemId/stock-in',
-      body,
-      headers: {'Authorization': 'Bearer $token'},
-    );
-    if (response.statusCode == 200 && response.body['status'] == 'success') {
-      return ShopStockItem.fromJson(asMap(response.body['data']));
-    } else {
+    clientOperationId ??= const Uuid().v4();
+    final body = {
+      'clientOperationId': clientOperationId,
+      'quantityAdded': quantityAdded,
+    };
+    try {
+      final response = await _connect.post(
+        '$_merchantShopsBaseUrl/$shopId/inventory/$inventoryItemId/stock-in',
+        body,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'X-Client-Operation-Id': clientOperationId,
+        },
+      );
+      if (response.statusCode == 200 && response.body['status'] == 'success') {
+        return ShopStockItem.fromJson(asMap(response.body['data']));
+      }
       _handleError(
         response,
         "stocking in item $inventoryItemId for shop $shopId",
       );
       return null;
+    } catch (e) {
+      if (_shouldQueue(e)) {
+        await _queueOperation(
+          clientOperationId: clientOperationId,
+          entityType: 'shop_stock',
+          action: 'create',
+          endpoint:
+              '$_merchantShopsBaseUrl/$shopId/inventory/$inventoryItemId/stock-in',
+          payload: body,
+        );
+        return ShopStockItem(
+          id: clientOperationId,
+          shopId: shopId,
+          inventoryItemId: inventoryItemId,
+          quantity: quantityAdded,
+          lastStockedInAt: DateTime.now(),
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          itemName: 'Pending item',
+          itemUnitPrice: 0,
+        );
+      }
+      rethrow;
     }
   }
 
@@ -848,6 +1115,7 @@ class ShopApiService extends GetxService {
     required String adjustmentType,
     required int quantityChange,
     String? reason,
+    String? clientOperationId,
   }) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
@@ -865,23 +1133,53 @@ class ShopApiService extends GetxService {
     }
     final token = await _getAuthToken();
     if (token == null) return null;
+    final resolvedClientOperationId = clientOperationId ?? const Uuid().v4();
     final Map<String, dynamic> body = {
+      'clientOperationId': resolvedClientOperationId,
       'adjustmentType': adjustmentType,
       'quantityChange': quantityChange,
     };
     if (reason != null && reason.isNotEmpty) {
       body['reason'] = reason;
     }
-    final response = await _connect.patch(
-      '$_merchantShopsBaseUrl/$shopId/inventory/$inventoryItemId/adjust-stock',
-      body,
-      headers: {'Authorization': 'Bearer $token'},
-    );
-    if (response.statusCode == 200 && response.body['status'] == 'success') {
-      return ShopStockItem.fromJson(asMap(response.body['data']));
-    } else {
+    try {
+      final response = await _connect.patch(
+        '$_merchantShopsBaseUrl/$shopId/inventory/$inventoryItemId/adjust-stock',
+        body,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'X-Client-Operation-Id': resolvedClientOperationId,
+        },
+      );
+      if (response.statusCode == 200 && response.body['status'] == 'success') {
+        return ShopStockItem.fromJson(asMap(response.body['data']));
+      }
       _handleError(response, "adjusting stock for item $inventoryItemId");
       return null;
+    } catch (e) {
+      if (_shouldQueue(e)) {
+        await _queueOperation(
+          clientOperationId: resolvedClientOperationId,
+          entityType: 'shop_stock',
+          action: 'update',
+          endpoint:
+              '$_merchantShopsBaseUrl/$shopId/inventory/$inventoryItemId/adjust-stock',
+          payload: body,
+          method: 'PATCH',
+        );
+        return ShopStockItem(
+          id: resolvedClientOperationId,
+          shopId: shopId,
+          inventoryItemId: inventoryItemId,
+          quantity: quantityChange,
+          lastStockedInAt: DateTime.now(),
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          itemName: 'Pending item',
+          itemUnitPrice: 0,
+        );
+      }
+      rethrow;
     }
   }
 
@@ -908,6 +1206,7 @@ class ShopApiService extends GetxService {
         merchantId: '1',
         saleDate: DateTime.now(),
         totalAmount: 100.0,
+        deliveryCharge: 0.0,
         paymentType: saleData.paymentType,
         paymentStatus: 'succeeded',
         createdAt: DateTime.now(),
@@ -918,18 +1217,55 @@ class ShopApiService extends GetxService {
 
     final token = await _getAuthToken();
     if (token == null) return null;
+    final clientSaleId = saleData.id ?? const Uuid().v4();
+    final payload = {
+      ...saleData.toJson(),
+      'id': clientSaleId,
+      'clientSaleId': clientSaleId,
+    };
 
-    final response = await _connect.post(
-      _merchantSalesBaseUrl,
-      saleData.toJson(),
-      headers: {'Authorization': 'Bearer $token'},
-    );
+    try {
+      final response = await _connect.post(
+        _merchantSalesBaseUrl,
+        payload,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'X-Client-Operation-Id': clientSaleId,
+        },
+      );
 
-    if (response.statusCode == 201 && response.body['status'] == 'success') {
-      return Sale.fromJson(asMap(response.body['data']));
-    } else {
+      if (response.statusCode == 201 && response.body['status'] == 'success') {
+        return Sale.fromJson(asMap(response.body['data']));
+      }
       _handleError(response, "creating sale");
       return null;
+    } catch (e) {
+      if (_offlineSalesService != null) {
+        await _offlineSalesService.processSale(payload);
+        return Sale(
+          id: clientSaleId,
+          shopId: saleData.shopId,
+          merchantId: '',
+          saleDate: DateTime.now(),
+          totalAmount: saleData.totalAmount,
+          deliveryCharge: saleData.deliveryCharge,
+          paymentType: saleData.paymentType,
+          paymentStatus: 'pending',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          items: const [],
+        );
+      }
+      if (_shouldQueue(e)) {
+        await _queueOperation(
+          clientOperationId: clientSaleId,
+          entityType: 'merchant_sale',
+          action: 'create',
+          endpoint: _merchantSalesBaseUrl,
+          payload: payload,
+        );
+      }
+      rethrow;
     }
   }
 
@@ -1004,6 +1340,7 @@ class ShopApiService extends GetxService {
         merchantId: '1',
         saleDate: DateTime.now(),
         totalAmount: 100.0,
+        deliveryCharge: 0.0,
         paymentType: 'card',
         paymentStatus: 'succeeded',
         createdAt: DateTime.now(),
@@ -1049,6 +1386,7 @@ class ShopApiService extends GetxService {
         merchantName: 'Mock Merchant',
         originalTotal: 100.0,
         discountAmount: 10.0,
+        deliveryCharge: 0.0,
         finalTotal: 90.0,
         paymentType: 'card',
         paymentStatus: 'succeeded',

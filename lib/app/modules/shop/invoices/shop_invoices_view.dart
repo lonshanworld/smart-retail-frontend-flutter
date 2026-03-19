@@ -20,7 +20,10 @@ class ShopInvoicesView extends GetView<ShopInvoicesController> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [AppColors.shop.shade50.withValues(alpha: 0.3), Colors.white],
+            colors: [
+              AppColors.shop.shade50.withValues(alpha: 0.3),
+              Colors.white,
+            ],
           ),
         ),
         child: Obx(() {
@@ -127,7 +130,9 @@ class ShopInvoicesView extends GetView<ShopInvoicesController> {
                 Expanded(
                   child: ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                    itemCount: invoices.length + (controller.hasMorePages.value ? 1 : 0),
+                    itemCount:
+                        invoices.length +
+                        (controller.hasMorePages.value ? 1 : 0),
                     itemBuilder: (context, index) {
                       if (index == invoices.length) {
                         controller.loadMoreInvoices();
@@ -185,14 +190,20 @@ class ShopInvoicesView extends GetView<ShopInvoicesController> {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.info.shade500,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Text(
                     invoice.paymentStatus.toUpperCase(),
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
@@ -209,7 +220,11 @@ class ShopInvoicesView extends GetView<ShopInvoicesController> {
                 ),
                 Text(
                   '\$${invoice.totalAmount.toStringAsFixed(2)}',
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
+                  ),
                 ),
               ],
             ),

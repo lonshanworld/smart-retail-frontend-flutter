@@ -19,7 +19,10 @@ class OfflineBindings extends Bindings {
       // Register the noop implementation under the LocalDatabaseService
       // type so callers using Get.find<LocalDatabaseService>() continue
       // to work on web without initializing sqflite.
-      Get.put<LocalDatabaseService>(NoopLocalDatabaseService(), permanent: true);
+      Get.put<LocalDatabaseService>(
+        NoopLocalDatabaseService(),
+        permanent: true,
+      );
     } else {
       Get.put<LocalDatabaseService>(LocalDatabaseService(), permanent: true);
     }

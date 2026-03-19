@@ -5,6 +5,7 @@ class Shop {
   String? address;
   String? phone;
   double taxRate;
+  double deliveryCharge;
   bool? isActive;
   bool? isPrimary;
   DateTime createdAt;
@@ -17,6 +18,7 @@ class Shop {
     this.address,
     this.phone,
     this.taxRate = 5.0,
+    this.deliveryCharge = 0.0,
     this.isActive,
     this.isPrimary,
     required this.createdAt,
@@ -35,6 +37,10 @@ class Shop {
           (json['taxRate'] as num?)?.toDouble() ??
           (json['tax_rate'] as num?)?.toDouble() ??
           5.0,
+      deliveryCharge:
+          (json['deliveryCharge'] as num?)?.toDouble() ??
+          (json['delivery_charge'] as num?)?.toDouble() ??
+          0.0,
       isActive: json['isActive'] as bool? ?? json['is_active'] as bool?,
       isPrimary: json['isPrimary'] as bool? ?? json['is_primary'] as bool?,
       createdAt: DateTime.parse(
@@ -58,6 +64,7 @@ class Shop {
       'address': address,
       'phone': phone,
       'taxRate': taxRate,
+      'deliveryCharge': deliveryCharge,
       'isActive': isActive,
       'isPrimary': isPrimary,
       'createdAt': createdAt.toIso8601String(),
@@ -72,6 +79,7 @@ class Shop {
       if (address != null && address!.isNotEmpty) 'address': address,
       if (phone != null && phone!.isNotEmpty) 'phone': phone,
       'taxRate': taxRate,
+      'deliveryCharge': deliveryCharge,
     };
   }
 
@@ -102,6 +110,7 @@ class Shop {
       data['phone'] = phone;
     } else {}
     data['taxRate'] = taxRate;
+    data['deliveryCharge'] = deliveryCharge;
     return data;
   }
 
@@ -146,6 +155,7 @@ class Shop {
       isActive: map['isActive'] == 1,
       isPrimary: map['isPrimary'] == 1,
       taxRate: (map['taxRate'] as num?)?.toDouble() ?? 5.0,
+      deliveryCharge: (map['deliveryCharge'] as num?)?.toDouble() ?? 0.0,
       createdAt: DateTime.parse(map['createdAt'] as String),
       updatedAt: DateTime.parse(map['updatedAt'] as String),
     );
@@ -159,6 +169,7 @@ class Shop {
       'address': address,
       'phone': phone,
       'taxRate': taxRate,
+      'deliveryCharge': deliveryCharge,
       'isActive': isActive == true ? 1 : 0,
       'isPrimary': isPrimary == true ? 1 : 0,
       'createdAt': createdAt.toIso8601String(),
@@ -175,6 +186,7 @@ class Shop {
     bool? isActive,
     bool? isPrimary,
     double? taxRate,
+    double? deliveryCharge,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -187,6 +199,7 @@ class Shop {
       isActive: isActive ?? this.isActive,
       isPrimary: isPrimary ?? this.isPrimary,
       taxRate: taxRate ?? this.taxRate,
+      deliveryCharge: deliveryCharge ?? this.deliveryCharge,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

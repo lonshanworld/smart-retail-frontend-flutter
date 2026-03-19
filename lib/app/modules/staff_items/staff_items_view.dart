@@ -19,6 +19,10 @@ class StaffItemsView extends GetView<StaffItemsController> {
 
     return StaffMainScaffold(
       title: 'Shop Products',
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showFilterDialog(context),
+        child: const Icon(Icons.filter_alt_outlined),
+      ),
       body: Column(
         children: [
           // Search Bar
@@ -116,24 +120,30 @@ class StaffItemsView extends GetView<StaffItemsController> {
                       ],
                     ),
                   ),
-                    DataCell(
-                      Builder(builder: (context) {
+                  DataCell(
+                    Builder(
+                      builder: (context) {
                         try {
                           final auth = Get.find<AuthService>();
                           final shopId = auth.shopId.value;
                           int? qty;
-                          if (item.stockInfo != null && item.stockInfo!.isNotEmpty) {
+                          if (item.stockInfo != null &&
+                              item.stockInfo!.isNotEmpty) {
                             final match = item.stockInfo!.firstWhere(
-                                (s) => s.shopId == shopId,
-                                orElse: () => item.stockInfo!.first);
+                              (s) => s.shopId == shopId,
+                              orElse: () => item.stockInfo!.first,
+                            );
                             qty = match.quantity;
                           }
-                          return qty != null ? Text(qty.toString()) : const Text('-');
+                          return qty != null
+                              ? Text(qty.toString())
+                              : const Text('-');
                         } catch (e) {
                           return const Text('-');
                         }
-                      }),
+                      },
                     ),
+                  ),
                   DataCell(Text(item.sku ?? 'N/A')),
                   DataCell(Text(item.category ?? 'Uncategorized')),
                   DataCell(
@@ -165,10 +175,12 @@ class StaffItemsView extends GetView<StaffItemsController> {
                         try {
                           final auth = Get.find<AuthService>();
                           final shopId = auth.shopId.value;
-                          if (item.stockInfo != null && item.stockInfo!.isNotEmpty) {
+                          if (item.stockInfo != null &&
+                              item.stockInfo!.isNotEmpty) {
                             final match = item.stockInfo!.firstWhere(
-                                (s) => s.shopId == shopId,
-                                orElse: () => item.stockInfo!.first);
+                              (s) => s.shopId == shopId,
+                              orElse: () => item.stockInfo!.first,
+                            );
                             return match.quantity.toString();
                           }
                           return '-';
@@ -195,6 +207,82 @@ class StaffItemsView extends GetView<StaffItemsController> {
           ),
         ],
       ),
+    );
+  }
+
+  void _showFilterDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text('Filter Items'),
+          content: Obx(
+            () => Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DropdownButtonFormField<String>(
+                  initialValue: controller.selectedCategoryId.value,
+                  decoration: const InputDecoration(labelText: 'Category'),
+                  items: controller.categories
+                      .map(
+                        (c) => DropdownMenuItem<String>(
+                          value: c.id,
+                          child: Text(c.name),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: controller.setCategory,
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  initialValue: controller.selectedSubcategoryId.value,
+                  decoration: const InputDecoration(labelText: 'Subcategory'),
+                  items: controller.subcategories
+                      .map(
+                        (s) => DropdownMenuItem<String>(
+                          value: s.id,
+                          child: Text(s.name),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (val) =>
+                      controller.selectedSubcategoryId.value = val,
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  initialValue: controller.selectedBrandId.value,
+                  decoration: const InputDecoration(labelText: 'Brand'),
+                  items: controller.brands
+                      .map(
+                        (b) => DropdownMenuItem<String>(
+                          value: b.id,
+                          child: Text(b.name),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (val) => controller.selectedBrandId.value = val,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                controller.clearFilters();
+                Navigator.of(ctx).pop();
+              },
+              child: const Text('Clear'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                controller.fetchItems();
+                Navigator.of(ctx).pop();
+              },
+              child: const Text('Apply'),
+            ),
+          ],
+        );
+      },
     );
   }
 }

@@ -7,12 +7,16 @@ import 'package:smart_retail/app/data/models/shop_model.dart';
 import 'package:smart_retail/app/data/models/inventory_item_model.dart';
 import 'package:smart_retail/app/data/providers/api_constants.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
+import 'package:smart_retail/app/services/local_database_service.dart';
 import 'package:smart_retail/app/utils/response_utils.dart';
+import 'package:uuid/uuid.dart';
 
 class PromotionApiService extends GetxService {
   final GetConnect _connect = Get.find<GetConnect>();
   final AuthService _authService = Get.find<AuthService>();
   final AppConfig _appConfig = Get.find<AppConfig>();
+  final LocalDatabaseService _localDatabaseService =
+      Get.find<LocalDatabaseService>();
 
   String get _promotionsUrl => '${ApiConstants.baseUrl}/merchant/promotions';
   String get _shopsUrl => '${ApiConstants.baseUrl}/merchant/shops';
@@ -23,6 +27,33 @@ class PromotionApiService extends GetxService {
       'Authorization': 'Bearer $token',
       'Content-Type': 'application/json',
     };
+  }
+
+  bool _shouldQueue(dynamic error) {
+    final text = error.toString().toLowerCase();
+    return _appConfig.localStorageOnly ||
+        text.contains('socketexception') ||
+        text.contains('failed host lookup') ||
+        text.contains('connection') ||
+        text.contains('timeout');
+  }
+
+  Future<void> _queueMutation({
+    required String clientOperationId,
+    required String action,
+    required String endpoint,
+    required Map<String, dynamic> payload,
+  }) async {
+    await _localDatabaseService.queueOperation({
+      'id': clientOperationId,
+      'client_operation_id': clientOperationId,
+      'entity_type': 'promotion',
+      'action': action,
+      'method': action == 'delete' ? 'DELETE' : (action == 'update' ? 'PUT' : 'POST'),
+      'endpoint': endpoint,
+      'payload': payload,
+      'headers': {'X-Client-Operation-Id': clientOperationId},
+    });
   }
 
   /// Fetches shops for the merchant.
@@ -89,7 +120,9 @@ class PromotionApiService extends GetxService {
       final raw = response.body['data'];
       final normalized = _normalizeData(raw);
       return (normalized as List)
-          .map((json) => InventoryItem.fromJson(Map<String, dynamic>.from(json)))
+          .map(
+            (json) => InventoryItem.fromJson(Map<String, dynamic>.from(json)),
+          )
           .toList();
     } else {
       throw Exception(
@@ -199,6 +232,8 @@ class PromotionApiService extends GetxService {
   /// - __Status Code:__ 201
   /// - __Body (JSON):__ (The newly created promotion object)
   Future<Promotion> createPromotion(Map<String, dynamic> data) async {
+    final clientOperationId = data['clientOperationId']?.toString() ?? const Uuid().v4();
+    final payload = Map<String, dynamic>.from(data)..['clientOperationId'] = clientOperationId;
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
       return Promotion.fromJson(
@@ -209,20 +244,36 @@ class PromotionApiService extends GetxService {
           ..['updatedAt'] = DateTime.now().toIso8601String(),
       );
     }
-    final response = await _connect.post(
-      _promotionsUrl,
-      data,
-      headers: await _getHeaders(),
-    );
+    try {
+      final headers = await _getHeaders();
+      headers['X-Client-Operation-Id'] = clientOperationId;
+      final response = await _connect.post(_promotionsUrl, payload, headers: headers);
 
-    if (response.statusCode == 201 && response.body['success'] == true) {
-      final raw = response.body['data'];
-      final normalized = _normalizeData(raw);
-      return Promotion.fromJson(Map<String, dynamic>.from(normalized));
-    } else {
+      if (response.statusCode == 201 && response.body['success'] == true) {
+        final raw = response.body['data'];
+        final normalized = _normalizeData(raw);
+        return Promotion.fromJson(Map<String, dynamic>.from(normalized));
+      }
       throw Exception(
         response.body?['message'] ?? 'Failed to create promotion',
       );
+    } catch (e) {
+      if (_shouldQueue(e)) {
+        await _queueMutation(
+          clientOperationId: clientOperationId,
+          action: 'create',
+          endpoint: _promotionsUrl,
+          payload: payload,
+        );
+        return Promotion.fromJson({
+          ...payload,
+          'id': clientOperationId,
+          'merchantId': 'pending',
+          'createdAt': DateTime.now().toIso8601String(),
+          'updatedAt': DateTime.now().toIso8601String(),
+        });
+      }
+      throw Exception(e.toString());
     }
   }
 
@@ -242,6 +293,8 @@ class PromotionApiService extends GetxService {
     String id,
     Map<String, dynamic> data,
   ) async {
+    final clientOperationId = data['clientOperationId']?.toString() ?? const Uuid().v4();
+    final payload = Map<String, dynamic>.from(data)..['clientOperationId'] = clientOperationId;
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
       return Promotion.fromJson(
@@ -252,18 +305,34 @@ class PromotionApiService extends GetxService {
           ..['updatedAt'] = DateTime.now().toIso8601String(),
       );
     }
-    final response = await _connect.put(
-      '$_promotionsUrl/$id',
-      data,
-      headers: await _getHeaders(),
-    );
+    try {
+      final headers = await _getHeaders();
+      headers['X-Client-Operation-Id'] = clientOperationId;
+      final response = await _connect.put('$_promotionsUrl/$id', payload, headers: headers);
 
-    if (response.statusCode == 200 && response.body['success'] == true) {
-      return Promotion.fromJson(asMap(response.body['data']));
-    } else {
+      if (response.statusCode == 200 && response.body['success'] == true) {
+        return Promotion.fromJson(asMap(response.body['data']));
+      }
       throw Exception(
         response.body?['message'] ?? 'Failed to update promotion',
       );
+    } catch (e) {
+      if (_shouldQueue(e)) {
+        await _queueMutation(
+          clientOperationId: clientOperationId,
+          action: 'update',
+          endpoint: '$_promotionsUrl/$id',
+          payload: payload,
+        );
+        return Promotion.fromJson({
+          ...payload,
+          'id': id,
+          'merchantId': 'pending',
+          'createdAt': DateTime.now().toIso8601String(),
+          'updatedAt': DateTime.now().toIso8601String(),
+        });
+      }
+      throw Exception(e.toString());
     }
   }
 
@@ -295,19 +364,32 @@ class PromotionApiService extends GetxService {
   /// - __Status Code:__ 200
   /// - __Body (JSON):__ Success message
   Future<void> deletePromotion(String id) async {
+    final clientOperationId = const Uuid().v4();
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(milliseconds: 500));
       return;
     }
-    final response = await _connect.delete(
-      '$_promotionsUrl/$id',
-      headers: await _getHeaders(),
-    );
+    try {
+      final headers = await _getHeaders();
+      headers['X-Client-Operation-Id'] = clientOperationId;
+      final response = await _connect.delete('$_promotionsUrl/$id', headers: headers);
 
-    if (response.statusCode != 200 || response.body['success'] != true) {
-      throw Exception(
-        response.body?['message'] ?? 'Failed to delete promotion',
-      );
+      if (response.statusCode != 200 || response.body['success'] != true) {
+        throw Exception(
+          response.body?['message'] ?? 'Failed to delete promotion',
+        );
+      }
+    } catch (e) {
+      if (_shouldQueue(e)) {
+        await _queueMutation(
+          clientOperationId: clientOperationId,
+          action: 'delete',
+          endpoint: '$_promotionsUrl/$id',
+          payload: {'promotionId': id},
+        );
+        return;
+      }
+      throw Exception(e.toString());
     }
   }
 
@@ -324,6 +406,7 @@ class PromotionApiService extends GetxService {
   /// - __Status Code:__ 200
   /// - __Body (JSON):__ (The updated promotion object)
   Future<Promotion> togglePromotionStatus(String id, bool isActive) async {
+    final clientOperationId = const Uuid().v4();
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(milliseconds: 500));
       return Promotion(
@@ -342,16 +425,40 @@ class PromotionApiService extends GetxService {
         updatedAt: DateTime.now(),
       );
     }
-    final response = await _connect.put('$_promotionsUrl/$id', {
-      'isActive': isActive,
-    }, headers: await _getHeaders());
+    final payload = {'isActive': isActive, 'clientOperationId': clientOperationId};
+    try {
+      final headers = await _getHeaders();
+      headers['X-Client-Operation-Id'] = clientOperationId;
+      final response = await _connect.put('$_promotionsUrl/$id', payload, headers: headers);
 
-    if (response.statusCode == 200 && response.body['success'] == true) {
-      return Promotion.fromJson(asMap(response.body['data']));
-    } else {
+      if (response.statusCode == 200 && response.body['success'] == true) {
+        return Promotion.fromJson(asMap(response.body['data']));
+      }
       throw Exception(
         response.body?['message'] ?? 'Failed to toggle promotion status',
       );
+    } catch (e) {
+      if (_shouldQueue(e)) {
+        await _queueMutation(
+          clientOperationId: clientOperationId,
+          action: 'update',
+          endpoint: '$_promotionsUrl/$id',
+          payload: payload,
+        );
+        return Promotion(
+          id: id,
+          name: 'Pending Promotion',
+          description: null,
+          type: 'percentage',
+          value: 0,
+          merchantId: 'pending',
+          conditions: {},
+          isActive: isActive,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+      }
+      throw Exception(e.toString());
     }
   }
 }

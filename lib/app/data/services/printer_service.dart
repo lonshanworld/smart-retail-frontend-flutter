@@ -35,7 +35,9 @@ class PrinterService extends GetxService {
       devices.clear();
       for (var d in list) {
         // plugin's BluetoothDevice exposes `address` and `name`
-        devices.add(PrinterDevice(name: d.name ?? 'Unknown', id: d.address ?? ''));
+        devices.add(
+          PrinterDevice(name: d.name ?? 'Unknown', id: d.address ?? ''),
+        );
       }
     });
 
@@ -112,7 +114,9 @@ class PrinterService extends GetxService {
   }
 
   /// Scan for Bluetooth printers for [timeout]. Returns the discovered devices.
-  Future<List<PrinterDevice>> scan({Duration timeout = const Duration(seconds: 4)}) async {
+  Future<List<PrinterDevice>> scan({
+    Duration timeout = const Duration(seconds: 4),
+  }) async {
     await ensurePermissions();
     devices.clear();
     try {
@@ -127,14 +131,22 @@ class PrinterService extends GetxService {
   }
 
   /// BLE scan using flutter_reactive_ble. Returns discovered BLE devices.
-  Future<List<PrinterDevice>> scanBle({Duration timeout = const Duration(seconds: 4)}) async {
+  Future<List<PrinterDevice>> scanBle({
+    Duration timeout = const Duration(seconds: 4),
+  }) async {
     await ensurePermissions();
     bleDevices.clear();
     final results = <PrinterDevice>[];
     try {
-      final stream = _ble.scanForDevices(withServices: const [], scanMode: ScanMode.lowLatency);
+      final stream = _ble.scanForDevices(
+        withServices: const [],
+        scanMode: ScanMode.lowLatency,
+      );
       _bleScanSub = stream.listen((d) {
-        final pd = PrinterDevice(name: d.name.isEmpty ? 'Unknown' : d.name, id: d.id);
+        final pd = PrinterDevice(
+          name: d.name.isEmpty ? 'Unknown' : d.name,
+          id: d.id,
+        );
         // avoid duplicates
         if (!bleDevices.any((e) => e.id == pd.id)) {
           bleDevices.add(pd);
@@ -150,7 +162,10 @@ class PrinterService extends GetxService {
   }
 
   /// Connect to a device by id (address or identifier)
-  Future<bool> connect(PrinterDevice device, {Duration wait = const Duration(seconds: 3)}) async {
+  Future<bool> connect(
+    PrinterDevice device, {
+    Duration wait = const Duration(seconds: 3),
+  }) async {
     try {
       // bluetooth_print expects a BluetoothDevice object from its model
       final bd = BluetoothDevice();
@@ -172,16 +187,23 @@ class PrinterService extends GetxService {
     try {
       await _bleScanSub?.cancel();
       _bleConnectionSub?.cancel();
-      _bleConnectionSub = _ble.connectToDevice(id: device.id).listen((event) {
-        // handle state changes if needed
-        if (event.connectionState == DeviceConnectionState.connected) {
-          _connectedBleDeviceId = device.id;
-        } else if (event.connectionState == DeviceConnectionState.disconnected) {
-          if (_connectedBleDeviceId == device.id) _connectedBleDeviceId = null;
-        }
-      }, onError: (e) {
-        _connectedBleDeviceId = null;
-      });
+      _bleConnectionSub = _ble
+          .connectToDevice(id: device.id)
+          .listen(
+            (event) {
+              // handle state changes if needed
+              if (event.connectionState == DeviceConnectionState.connected) {
+                _connectedBleDeviceId = device.id;
+              } else if (event.connectionState ==
+                  DeviceConnectionState.disconnected) {
+                if (_connectedBleDeviceId == device.id)
+                  _connectedBleDeviceId = null;
+              }
+            },
+            onError: (e) {
+              _connectedBleDeviceId = null;
+            },
+          );
       // wait a bit for connection
       await Future.delayed(const Duration(seconds: 2));
       return _connectedBleDeviceId == device.id;
@@ -219,9 +241,31 @@ class PrinterService extends GetxService {
 
     // Build LineText objects as expected by bluetooth_print.printReceipt
     final List<LineText> data = [];
-    data.add(LineText(type: LineText.TYPE_TEXT, content: '*** Test Receipt ***', align: LineText.ALIGN_CENTER, weight: 1, linefeed: 1));
-    data.add(LineText(type: LineText.TYPE_TEXT, content: 'Timestamp: ${DateTime.now()}', align: LineText.ALIGN_LEFT, linefeed: 1));
-    data.add(LineText(type: LineText.TYPE_TEXT, content: 'Thank you for testing', align: LineText.ALIGN_LEFT, linefeed: 1));
+    data.add(
+      LineText(
+        type: LineText.TYPE_TEXT,
+        content: '*** Test Receipt ***',
+        align: LineText.ALIGN_CENTER,
+        weight: 1,
+        linefeed: 1,
+      ),
+    );
+    data.add(
+      LineText(
+        type: LineText.TYPE_TEXT,
+        content: 'Timestamp: ${DateTime.now()}',
+        align: LineText.ALIGN_LEFT,
+        linefeed: 1,
+      ),
+    );
+    data.add(
+      LineText(
+        type: LineText.TYPE_TEXT,
+        content: 'Thank you for testing',
+        align: LineText.ALIGN_LEFT,
+        linefeed: 1,
+      ),
+    );
     // empty lines to feed
     data.add(LineText(type: LineText.TYPE_TEXT, content: '\n\n', linefeed: 1));
 
@@ -245,7 +289,9 @@ class PrinterService extends GetxService {
     try {
       // bluetooth_print does not expose a raw-bytes API; attempt to send as text
       final String text = utf8.decode(bytes, allowMalformed: true);
-      final List<LineText> data = [LineText(type: LineText.TYPE_TEXT, content: text, linefeed: 1)];
+      final List<LineText> data = [
+        LineText(type: LineText.TYPE_TEXT, content: text, linefeed: 1),
+      ];
       await _bp.printReceipt(<String, dynamic>{}, data);
       return true;
     } catch (e) {
@@ -257,7 +303,11 @@ class PrinterService extends GetxService {
   /// BLE: print a simple text message as bytes to a writable characteristic.
   /// This is a basic fallback — for robust ESC-POS printing supply the correct
   /// service/characteristic UUIDs and chunk ESC-POS bytes appropriately.
-  Future<bool> blePrintTest({required PrinterDevice device, required Uuid serviceId, required Uuid charId}) async {
+  Future<bool> blePrintTest({
+    required PrinterDevice device,
+    required Uuid serviceId,
+    required Uuid charId,
+  }) async {
     if (_connectedBleDeviceId != device.id) {
       final ok = await connectBle(device);
       if (!ok) return false;
@@ -276,13 +326,18 @@ class PrinterService extends GetxService {
 
       const chunkSize = 180;
       for (var offset = 0; offset < bytes.length; offset += chunkSize) {
-        final end = (offset + chunkSize) > bytes.length ? bytes.length : offset + chunkSize;
+        final end = (offset + chunkSize) > bytes.length
+            ? bytes.length
+            : offset + chunkSize;
         final chunk = bytes.sublist(offset, end);
-        await _ble.writeCharacteristicWithResponse(QualifiedCharacteristic(
-          serviceId: serviceId,
-          characteristicId: charId,
-          deviceId: device.id,
-        ), value: chunk);
+        await _ble.writeCharacteristicWithResponse(
+          QualifiedCharacteristic(
+            serviceId: serviceId,
+            characteristicId: charId,
+            deviceId: device.id,
+          ),
+          value: chunk,
+        );
         await Future.delayed(const Duration(milliseconds: 50));
       }
       return true;
@@ -293,9 +348,20 @@ class PrinterService extends GetxService {
   }
 
   /// Save the last used selection to local storage so user doesn't need to reselect.
-  Future<void> saveLastSelection({required String transport, required PrinterDevice device, String? serviceUuid, String? charUuid}) async {
+  Future<void> saveLastSelection({
+    required String transport,
+    required PrinterDevice device,
+    String? serviceUuid,
+    String? charUuid,
+  }) async {
     try {
-      final sel = PrinterSelection(transport: transport, deviceId: device.id, deviceName: device.name, serviceUuid: serviceUuid, charUuid: charUuid);
+      final sel = PrinterSelection(
+        transport: transport,
+        deviceId: device.id,
+        deviceName: device.name,
+        serviceUuid: serviceUuid,
+        charUuid: charUuid,
+      );
       await PrinterStorage.saveSelection(sel);
     } catch (e) {
       print('saveLastSelection error: $e');

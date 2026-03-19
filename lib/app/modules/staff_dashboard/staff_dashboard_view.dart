@@ -24,7 +24,10 @@ class StaffDashboardView extends GetView<StaffDashboardController> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [AppColors.staff.shade50.withValues(alpha: 0.3), Colors.white],
+            colors: [
+              AppColors.staff.shade50.withValues(alpha: 0.3),
+              Colors.white,
+            ],
           ),
         ),
         child: Obx(() {
@@ -492,4 +495,3 @@ class StaffDashboardView extends GetView<StaffDashboardController> {
     );
   }
 }
-

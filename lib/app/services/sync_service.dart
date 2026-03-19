@@ -6,10 +6,12 @@ import 'package:uuid/uuid.dart';
 import '../models/sync_models.dart';
 import 'connectivity_service.dart';
 import 'local_database_service.dart';
+import 'offline_mode_manager.dart';
 
 class SyncService extends GetxService {
   final Rx<SyncStatus> syncStatus = SyncStatus.idle.obs;
   final Rx<int> pendingSalesCount = 0.obs;
+  final Rx<int> pendingOperationsCount = 0.obs;
   final Rx<DateTime?> lastSyncTime = Rx<DateTime?>(null);
   final Rx<List<SyncLog>> syncHistory = Rx<List<SyncLog>>([]);
   final Rx<String> lastSyncMessage = 'Ready'.obs;
@@ -18,6 +20,7 @@ class SyncService extends GetxService {
 
   late ConnectivityService _connectivityService;
   late LocalDatabaseService _localDatabaseService;
+  late OfflineModeManager _offlineModeManager;
   late AuthService _authService;
 
   @override
@@ -29,6 +32,7 @@ class SyncService extends GetxService {
   void _initServices() {
     _connectivityService = Get.find<ConnectivityService>();
     _localDatabaseService = Get.find<LocalDatabaseService>();
+    _offlineModeManager = Get.find<OfflineModeManager>();
     _authService = Get.find<AuthService>();
 
     // Listen to connectivity changes
@@ -50,12 +54,18 @@ class SyncService extends GetxService {
 
     // Initialize pending sales count
     _updatePendingSalesCount();
+    _updatePendingOperationsCount();
     _loadSyncHistory();
   }
 
   Future<void> _updatePendingSalesCount() async {
     final count = await _localDatabaseService.getPendingSalesCount();
     pendingSalesCount.value = count;
+  }
+
+  Future<void> _updatePendingOperationsCount() async {
+    final count = await _localDatabaseService.getPendingOperationsCount();
+    pendingOperationsCount.value = count;
   }
 
   Future<void> _loadSyncHistory({int limit = 10}) async {
@@ -68,6 +78,12 @@ class SyncService extends GetxService {
   }
 
   Future<bool> syncPendingSales() async {
+    if (_offlineModeManager.isLocalStorageOnly) {
+      syncStatus.value = SyncStatus.idle;
+      lastSyncMessage.value = 'Local storage only mode: cloud sync disabled';
+      return true;
+    }
+
     // Get pending sales
     final pendingSales = await _localDatabaseService.getPendingSales();
     if (pendingSales.isEmpty) {
@@ -174,6 +190,74 @@ class SyncService extends GetxService {
       lastSyncMessage.value = 'Sync error: $e';
       print('[SyncService] Error during sync: $e');
       failedCount.value = pendingSales.length;
+      return false;
+    }
+  }
+
+  Future<bool> syncPendingOperations() async {
+    if (_offlineModeManager.isLocalStorageOnly) {
+      lastSyncMessage.value = 'Local storage only mode: cloud sync disabled';
+      return true;
+    }
+
+    final pendingOperations = await _localDatabaseService.getPendingOperations();
+    if (pendingOperations.isEmpty) {
+      await _updatePendingOperationsCount();
+      return true;
+    }
+
+    try {
+      syncStatus.value = SyncStatus.syncing;
+      lastSyncMessage.value = 'Preparing mutation sync...';
+
+      for (final operation in pendingOperations) {
+        final opId = operation['id']?.toString() ?? '';
+        if (opId.isEmpty) {
+          continue;
+        }
+
+        try {
+          final success = await _sendOperationToBackend(operation);
+          if (success) {
+            await _localDatabaseService.markOperationAsSynced(opId);
+            await _logSyncAttempt(
+              entityId: opId,
+              action: operation['action']?.toString() ?? 'mutation',
+              status: 'success',
+              syncBatchId: operation['client_operation_id']?.toString(),
+              entityType: operation['entity_type']?.toString() ?? 'mutation',
+            );
+          } else {
+            await _localDatabaseService.markOperationFailed(opId, 'Failed to sync mutation');
+            await _logSyncAttempt(
+              entityId: opId,
+              action: operation['action']?.toString() ?? 'mutation',
+              status: 'failed',
+              errorMessage: 'Failed to sync mutation',
+              syncBatchId: operation['client_operation_id']?.toString(),
+              entityType: operation['entity_type']?.toString() ?? 'mutation',
+            );
+          }
+        } catch (e) {
+          await _localDatabaseService.markOperationFailed(opId, e.toString());
+          await _logSyncAttempt(
+            entityId: opId,
+            action: operation['action']?.toString() ?? 'mutation',
+            status: 'failed',
+            errorMessage: e.toString(),
+            syncBatchId: operation['client_operation_id']?.toString(),
+            entityType: operation['entity_type']?.toString() ?? 'mutation',
+          );
+        }
+      }
+
+      await _updatePendingOperationsCount();
+      lastSyncMessage.value = 'Queued mutations processed';
+      syncStatus.value = SyncStatus.success;
+      return true;
+    } catch (e) {
+      syncStatus.value = SyncStatus.error;
+      lastSyncMessage.value = 'Mutation sync error: $e';
       return false;
     }
   }
@@ -294,15 +378,22 @@ class SyncService extends GetxService {
   }
 
   Future<BatchSyncResponse?> manualSync() async {
+    if (_offlineModeManager.isLocalStorageOnly) {
+      lastSyncMessage.value = 'Cloud sync is disabled in local storage only mode';
+      syncStatus.value = SyncStatus.idle;
+      return null;
+    }
+
     if (!_connectivityService.isOnline.value) {
       lastSyncMessage.value = 'Cannot sync: No internet connection';
       syncStatus.value = SyncStatus.error;
       return null;
     }
 
-    final success = await syncPendingSales();
+    final salesSuccess = await syncPendingSales();
+    final opsSuccess = await syncPendingOperations();
 
-    if (success) {
+    if (salesSuccess || opsSuccess) {
       await _loadSyncHistory();
     }
 
@@ -324,10 +415,11 @@ class SyncService extends GetxService {
     required String status,
     String? errorMessage,
     String? syncBatchId,
+    String entityType = 'sale',
   }) async {
     final log = {
       'id': const Uuid().v4(),
-      'entity_type': 'sale',
+      'entity_type': entityType,
       'entity_id': entityId,
       'action': action,
       'status': status,
@@ -351,6 +443,43 @@ class SyncService extends GetxService {
     lastSyncMessage.value = 'Ready';
     syncedCount.value = 0;
     failedCount.value = 0;
+    pendingOperationsCount.value = 0;
   }
 
+  Future<bool> _sendOperationToBackend(Map<String, dynamic> operation) async {
+    final connect = Get.find<GetConnect>();
+    final token = _authService.authToken.value;
+    final endpoint = operation['endpoint']?.toString() ?? '';
+    final method = operation['method']?.toString().toUpperCase() ?? 'POST';
+    final payloadRaw = operation['payload'];
+    final headersRaw = operation['headers'];
+
+    if (endpoint.isEmpty) {
+      return false;
+    }
+
+    final payload = payloadRaw is String && payloadRaw.isNotEmpty
+        ? asMap(payloadRaw)
+        : (payloadRaw is Map ? Map<String, dynamic>.from(payloadRaw) : <String, dynamic>{});
+    final headers = <String, String>{
+      if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+      if (headersRaw is String && headersRaw.isNotEmpty) ...Map<String, String>.from(asMap(headersRaw).map((key, value) => MapEntry(key.toString(), value.toString()))),
+      'Content-Type': 'application/json',
+      'X-Client-Operation-Id': operation['client_operation_id']?.toString() ?? operation['clientOperationId']?.toString() ?? '',
+    };
+
+    final url = endpoint.startsWith('http') ? endpoint : '${ApiConstants.baseUrl}$endpoint';
+    switch (method) {
+      case 'POST':
+        return (await connect.post(url, payload, headers: headers)).isOk;
+      case 'PUT':
+        return (await connect.put(url, payload, headers: headers)).isOk;
+      case 'PATCH':
+        return (await connect.patch(url, payload, headers: headers)).isOk;
+      case 'DELETE':
+        return (await connect.delete(url, headers: headers)).isOk;
+      default:
+        return false;
+    }
+  }
 }

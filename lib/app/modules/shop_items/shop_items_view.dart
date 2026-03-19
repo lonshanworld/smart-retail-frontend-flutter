@@ -22,6 +22,94 @@ class ShopItemsView extends GetView<ShopItemsController> {
         }
         return _buildItemsList();
       }),
+      floatingActionButton: FloatingActionButton(
+        child: const Icon(Icons.filter_list),
+        onPressed: () => _showFilterDialog(context),
+      ),
+    );
+  }
+
+  void _showFilterDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text('Filter Items'),
+          content: Obx(() {
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DropdownButtonFormField<String>(
+                  initialValue: controller.selectedCategoryId.value,
+                  decoration: const InputDecoration(labelText: 'Category'),
+                  items: controller.categories
+                      .map(
+                        (c) =>
+                            DropdownMenuItem(value: c.id, child: Text(c.name)),
+                      )
+                      .toList(),
+                  onChanged: (val) {
+                    controller.selectedCategoryId.value = val;
+                    // update filtered subcategories
+                    final cat = controller.categories.firstWhereOrNull(
+                      (c) => c.id == val,
+                    );
+                    controller.filteredSubcategories.assignAll(
+                      cat?.subcategories ?? const [],
+                    );
+                    controller.selectedSubcategoryId.value = null;
+                  },
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  initialValue: controller.selectedSubcategoryId.value,
+                  decoration: const InputDecoration(labelText: 'Subcategory'),
+                  items: controller.filteredSubcategories
+                      .map(
+                        (s) =>
+                            DropdownMenuItem(value: s.id, child: Text(s.name)),
+                      )
+                      .toList(),
+                  onChanged: (val) =>
+                      controller.selectedSubcategoryId.value = val,
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  initialValue: controller.selectedBrandId.value,
+                  decoration: const InputDecoration(labelText: 'Brand'),
+                  items: controller.brands
+                      .map(
+                        (b) =>
+                            DropdownMenuItem(value: b.id, child: Text(b.name)),
+                      )
+                      .toList(),
+                  onChanged: (val) => controller.selectedBrandId.value = val,
+                ),
+              ],
+            );
+          }),
+          actions: [
+            TextButton(
+              onPressed: () {
+                controller.selectedCategoryId.value = null;
+                controller.selectedSubcategoryId.value = null;
+                controller.selectedBrandId.value = null;
+                controller.filteredSubcategories.clear();
+                controller.fetchInventoryItems();
+                Navigator.of(ctx).pop();
+              },
+              child: const Text('Clear'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                controller.fetchInventoryItems();
+                Navigator.of(ctx).pop();
+              },
+              child: const Text('Apply'),
+            ),
+          ],
+        );
+      },
     );
   }
 

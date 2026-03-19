@@ -35,6 +35,9 @@ class ShopDashboardController extends GetxController {
           '🔍 [SHOP DASHBOARD CONTROLLER] Merchant - Shop ID from params: $shopId',
         );
 
+        shopId ??= user?.assignedShopId;
+        shopId ??= _authService.currentShop.value?.id;
+
         if (shopId == null) {
           throw Exception('Shop ID is required for merchants');
         }

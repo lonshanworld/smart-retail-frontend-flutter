@@ -21,8 +21,7 @@ class ApiException implements Exception {
 
 /// Exception for authentication failures (e.g., 401 Unauthorized, missing token).
 class ApiAuthException extends ApiException {
-  ApiAuthException(super.message, {super.details})
-    : super(statusCode: 401);
+  ApiAuthException(super.message, {super.details}) : super(statusCode: 401);
 }
 
 /// Exception for authorization failures (e.g., 403 Forbidden).
@@ -36,9 +35,7 @@ class ApiValidationException extends ApiException {
   final Map<String, dynamic>? errors; // Field-specific validation errors
 
   ApiValidationException(super.message, {this.errors, super.details})
-    : super(
-        statusCode: 400,
-      ); // Default to 400, can be 422
+    : super(statusCode: 400); // Default to 400, can be 422
 
   @override
   String toString() {
@@ -52,8 +49,7 @@ class ApiValidationException extends ApiException {
 
 /// Exception for when a resource is not found (e.g., 404 Not Found).
 class ApiNotFoundException extends ApiException {
-  ApiNotFoundException(super.message, {super.details})
-    : super(statusCode: 404);
+  ApiNotFoundException(super.message, {super.details}) : super(statusCode: 404);
 }
 
 /// Exception for general server-side errors (e.g., 500 Internal Server Error).

@@ -443,77 +443,75 @@ class _StaffMainScaffoldState extends State<StaffMainScaffold> {
             colors: [AppColors.staff.shade700, AppColors.staff.shade900],
           ),
         ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Logo and brand
-              Container(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  children: [
-                    Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Icon(
-                        Icons.badge_rounded,
-                        size: 32,
-                        color: AppColors.staff,
-                      ),
+        child: Column(
+          children: [
+            // Logo and brand
+            Container(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                children: [
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Staff Portal',
+                    child: Icon(
+                      Icons.badge_rounded,
+                      size: 32,
+                      color: AppColors.staff,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Staff Portal',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(color: Colors.white24),
+            // Navigation items
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                itemCount: _staffNavItems.length,
+                itemBuilder: (context, index) {
+                  final item = _staffNavItems[index];
+                  final isSelected = selectedIndex == index;
+                  return ListTile(
+                    leading: Icon(
+                      isSelected ? item['selectedIcon'] : item['icon'],
+                      color: Colors.white,
+                    ),
+                    title: Text(
+                      item['label'],
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: isSelected
+                            ? FontWeight.w600
+                            : FontWeight.w400,
                       ),
                     ),
-                  ],
-                ),
+                    selected: isSelected,
+                    selectedTileColor: Colors.white.withValues(alpha: 0.15),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    onTap: () =>
+                        _onDestinationSelected(index, fromDrawer: true),
+                  );
+                },
               ),
-              const Divider(color: Colors.white24),
-              // Navigation items
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  itemCount: _staffNavItems.length,
-                  itemBuilder: (context, index) {
-                    final item = _staffNavItems[index];
-                    final isSelected = selectedIndex == index;
-                    return ListTile(
-                      leading: Icon(
-                        isSelected ? item['selectedIcon'] : item['icon'],
-                        color: Colors.white,
-                      ),
-                      title: Text(
-                        item['label'],
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: isSelected
-                              ? FontWeight.w600
-                              : FontWeight.w400,
-                        ),
-                      ),
-                      selected: isSelected,
-                      selectedTileColor: Colors.white.withValues(alpha: 0.15),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      onTap: () =>
-                          _onDestinationSelected(index, fromDrawer: true),
-                    );
-                  },
-                ),
-              ),
-              const Divider(color: Colors.white24),
-              _buildSidebarUserProfile(),
-            ],
-          ),
+            ),
+            const Divider(color: Colors.white24),
+            _buildSidebarUserProfile(),
+          ],
         ),
       ),
     );

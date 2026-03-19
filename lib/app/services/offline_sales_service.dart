@@ -1,15 +1,18 @@
 import 'package:get/get.dart';
+import 'package:smart_retail/app/core/config/app_config.dart';
 import 'package:smart_retail/app/data/providers/api_constants.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
 import '../models/sync_models.dart';
 import 'local_database_service.dart';
 import 'connectivity_service.dart';
 import 'offline_mode_manager.dart';
+import 'package:uuid/uuid.dart';
 
 class OfflineSalesService extends GetxService {
   late LocalDatabaseService _localDatabaseService;
   late ConnectivityService _connectivityService;
   late OfflineModeManager _offlineModeManager;
+  late AppConfig _appConfig;
   late GetConnect _connect;
   late AuthService _authService;
 
@@ -27,6 +30,7 @@ class OfflineSalesService extends GetxService {
     _localDatabaseService = Get.find<LocalDatabaseService>();
     _connectivityService = Get.find<ConnectivityService>();
     _offlineModeManager = Get.find<OfflineModeManager>();
+    _appConfig = Get.find<AppConfig>();
     _connect = Get.find<GetConnect>();
     _authService = Get.find<AuthService>();
 
@@ -45,10 +49,16 @@ class OfflineSalesService extends GetxService {
   /// Returns true if sale was processed successfully
   Future<bool> processSale(Map<String, dynamic> saleData) async {
     try {
+      saleData['id'] ??= const Uuid().v4();
+
       // Check if device can process sales
       if (!_offlineModeManager.canProcessSales()) {
         print('[OfflineSales] Cannot process sales at the moment');
         return false;
+      }
+
+      if (_appConfig.localStorageOnly) {
+        return await _queueSaleOffline(saleData);
       }
 
       // If online, attempt to send immediately
@@ -67,6 +77,10 @@ class OfflineSalesService extends GetxService {
   /// Process sale immediately when online
   Future<bool> _processSaleOnline(Map<String, dynamic> saleData) async {
     try {
+      if (_appConfig.localStorageOnly) {
+        return await _queueSaleOffline(saleData);
+      }
+
       print('[OfflineSales] Processing sale online...');
 
       final token = _authService.authToken.value;
