@@ -448,9 +448,12 @@ class PromotionApiService extends GetxService {
         return Promotion(
           id: id,
           name: 'Pending Promotion',
-          description: null,
+          description: '',
           type: 'percentage',
           value: 0,
+          minSpend: 0,
+          startDate: DateTime.now(),
+          endDate: DateTime.now(),
           merchantId: 'pending',
           conditions: {},
           isActive: isActive,

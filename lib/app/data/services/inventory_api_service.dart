@@ -322,8 +322,9 @@ class InventoryApiService extends GetxService {
       if (imageUrl != null && imageUrl.isNotEmpty) 'imageUrl': imageUrl,
     };
 
+    dynamic response;
     try {
-      final response = await _connect.post(
+      response = await _connect.post(
         '$_catalogBaseUrl/brands',
         payload,
         headers: {
@@ -332,7 +333,7 @@ class InventoryApiService extends GetxService {
         },
       );
 
-      if (response.statusCode == 201 && response.body['status'] == 'success') {
+      if (response != null && response.statusCode == 201 && response.body['status'] == 'success') {
         return {'ok': true, 'message': 'Brand created'};
       }
     } catch (e) {
@@ -349,9 +350,9 @@ class InventoryApiService extends GetxService {
       rethrow;
     }
 
-    final msg = (response.body is Map && response.body['message'] != null)
+    final msg = (response != null && response.body is Map && response.body['message'] != null)
         ? response.body['message'].toString()
-        : (response.bodyString ?? 'Failed to create brand');
+        : ((response != null && response.bodyString != null) ? response.bodyString : 'Failed to create brand');
     return {'ok': false, 'message': msg};
   }
 

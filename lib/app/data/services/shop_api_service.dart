@@ -1024,7 +1024,7 @@ class ShopApiService extends GetxService {
     String shopId,
     String inventoryItemId,
     int quantityAdded,
-    {String? clientOperationId},
+    {String? clientOperationId}
   ) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
@@ -1217,9 +1217,10 @@ class ShopApiService extends GetxService {
 
     final token = await _getAuthToken();
     if (token == null) return null;
-    final clientSaleId = saleData.id ?? const Uuid().v4();
+    final Map<String, dynamic> saleMap = saleData.toJson();
+    final clientSaleId = saleMap['id'] ?? const Uuid().v4();
     final payload = {
-      ...saleData.toJson(),
+      ...saleMap,
       'id': clientSaleId,
       'clientSaleId': clientSaleId,
     };
@@ -1247,8 +1248,8 @@ class ShopApiService extends GetxService {
           shopId: saleData.shopId,
           merchantId: '',
           saleDate: DateTime.now(),
-          totalAmount: saleData.totalAmount,
-          deliveryCharge: saleData.deliveryCharge,
+          totalAmount: 0.0,
+          deliveryCharge: 0.0,
           paymentType: saleData.paymentType,
           paymentStatus: 'pending',
           createdAt: DateTime.now(),

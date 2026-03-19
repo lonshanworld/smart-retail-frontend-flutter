@@ -106,7 +106,7 @@ class ShopInventoryApiService extends GetxService {
     String shopId,
     String productId,
     int quantity,
-    {String? clientOperationId},
+    {String? clientOperationId}
   ) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
@@ -399,3 +399,4 @@ class ShopInventoryApiService extends GetxService {
     }
   }
 }
+
