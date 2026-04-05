@@ -1,5 +1,6 @@
-import 'package:connectivity_plus/connectivity_plus.dart';
+﻿import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:get/get.dart';
+import 'package:smart_retail/app/utils/app_logger.dart';
 
 class ConnectivityService extends GetxService {
   final Connectivity _connectivity = Connectivity();
@@ -29,7 +30,7 @@ class ConnectivityService extends GetxService {
       final result = await _connectivity.checkConnectivity();
       _updateConnectionStatus(result);
     } catch (e) {
-      print('Error checking connectivity: $e');
+      getLogger('app').info('Error checking connectivity: $e');
       isOnline.value = true; // Assume online on error
     }
   }
@@ -56,7 +57,7 @@ class ConnectivityService extends GetxService {
       final results = await _connectivity.checkConnectivity();
       return results.isNotEmpty && !results.contains(ConnectivityResult.none);
     } catch (e) {
-      print('Error checking connection: $e');
+      getLogger('app').info('Error checking connection: $e');
       return true; // Assume online on error
     }
   }
@@ -80,3 +81,4 @@ class ConnectivityService extends GetxService {
     // Connectivity is automatically monitored through the stream
   }
 }
+

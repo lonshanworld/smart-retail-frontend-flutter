@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:convert';
@@ -9,6 +9,7 @@ import 'package:bluetooth_print/bluetooth_print.dart';
 import 'package:bluetooth_print/bluetooth_print_model.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import 'package:smart_retail/app/data/services/printer_storage.dart';
+import 'package:smart_retail/app/utils/app_logger.dart';
 
 class PrinterDevice {
   final String name;
@@ -63,7 +64,7 @@ class PrinterService extends GetxService {
     try {
       return await PrinterStorage.loadSelection();
     } catch (e) {
-      print('getSavedSelection error: $e');
+      getLogger('app').info('getSavedSelection error: $e');
       return null;
     }
   }
@@ -82,7 +83,7 @@ class PrinterService extends GetxService {
         return await connect(dev);
       }
     } catch (e) {
-      print('quickConnectSaved error: $e');
+      getLogger('app').info('quickConnectSaved error: $e');
       return false;
     }
   }
@@ -92,7 +93,7 @@ class PrinterService extends GetxService {
     try {
       await PrinterStorage.clearSelection();
     } catch (e) {
-      print('clearSavedSelection error: $e');
+      getLogger('app').info('clearSavedSelection error: $e');
     }
   }
 
@@ -196,8 +197,9 @@ class PrinterService extends GetxService {
                 _connectedBleDeviceId = device.id;
               } else if (event.connectionState ==
                   DeviceConnectionState.disconnected) {
-                if (_connectedBleDeviceId == device.id)
+                if (_connectedBleDeviceId == device.id) {
                   _connectedBleDeviceId = null;
+                }
               }
             },
             onError: (e) {
@@ -235,7 +237,7 @@ class PrinterService extends GetxService {
   /// This avoids raw ESC/POS bytes and should work across many printers for testing.
   Future<bool> printTestReceipt() async {
     if (!_connected) {
-      print('Printer not connected');
+      getLogger('app').info('Printer not connected');
       return false;
     }
 
@@ -273,7 +275,7 @@ class PrinterService extends GetxService {
       await _bp.printReceipt(<String, dynamic>{}, data);
       return true;
     } catch (e) {
-      print('printTestReceipt error: $e');
+      getLogger('app').info('printTestReceipt error: $e');
       return false;
     }
   }
@@ -283,7 +285,7 @@ class PrinterService extends GetxService {
   /// or raw payloads depending on the plugin capabilities. Here we attempt to send as 'raw' base64.
   Future<bool> printBytes(Uint8List bytes) async {
     if (!_connected) {
-      print('Printer not connected');
+      getLogger('app').info('Printer not connected');
       return false;
     }
     try {
@@ -295,13 +297,13 @@ class PrinterService extends GetxService {
       await _bp.printReceipt(<String, dynamic>{}, data);
       return true;
     } catch (e) {
-      print('printBytes error: $e');
+      getLogger('app').info('printBytes error: $e');
       return false;
     }
   }
 
   /// BLE: print a simple text message as bytes to a writable characteristic.
-  /// This is a basic fallback — for robust ESC-POS printing supply the correct
+  /// This is a basic fallback â€” for robust ESC-POS printing supply the correct
   /// service/characteristic UUIDs and chunk ESC-POS bytes appropriately.
   Future<bool> blePrintTest({
     required PrinterDevice device,
@@ -342,7 +344,7 @@ class PrinterService extends GetxService {
       }
       return true;
     } catch (e) {
-      print('blePrintTest error: $e');
+      getLogger('app').info('blePrintTest error: $e');
       return false;
     }
   }
@@ -364,7 +366,8 @@ class PrinterService extends GetxService {
       );
       await PrinterStorage.saveSelection(sel);
     } catch (e) {
-      print('saveLastSelection error: $e');
+      getLogger('app').info('saveLastSelection error: $e');
     }
   }
 }
+

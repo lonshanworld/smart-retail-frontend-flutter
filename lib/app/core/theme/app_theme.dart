@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'app_theme_colors.dart';
-import 'package:google_fonts/google_fonts.dart';
+// Using bundled local fonts to support offline mode (do not fetch at runtime)
 
 class AppTheme {
   static ThemeData get light {
@@ -21,12 +21,14 @@ class AppTheme {
         );
 
     return ThemeData(
+      fontFamily: 'Manrope',
       useMaterial3: true,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: AppThemeColors.background,
-      textTheme: GoogleFonts.poppinsTextTheme().apply(
+      textTheme: ThemeData.light().textTheme.apply(
         bodyColor: AppThemeColors.textPrimary,
         displayColor: AppThemeColors.textPrimary,
+        fontFamily: 'Manrope',
       ),
       appBarTheme: const AppBarTheme(
         elevation: 0,

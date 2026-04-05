@@ -1,4 +1,4 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 import 'package:smart_retail/app/utils/dialog_utils.dart';
 import 'package:smart_retail/app/core/config/app_config.dart';
 import 'package:smart_retail/app/data/models/user_model.dart';
@@ -9,9 +9,12 @@ import 'package:smart_retail/app/routes/app_pages.dart';
 import 'package:smart_retail/app/data/models/admin_paginated_users_response.dart'; // <<< ADDED
 import 'package:smart_retail/app/data/models/user_selection_item.dart'; // <<< ADDED
 import 'package:smart_retail/app/utils/response_utils.dart';
+import 'package:smart_retail/app/services/local_database_service.dart';
+import 'package:uuid/uuid.dart';
+import 'package:smart_retail/app/utils/app_logger.dart';
 
 class UserApiService extends GetxService {
-  final _connect = GetConnect(timeout: const Duration(seconds: 30));
+  final _connect = Get.find<GetConnect>();
   late final AuthService _authService;
   final AppConfig _appConfig = Get.find<AppConfig>();
 
@@ -28,7 +31,7 @@ class UserApiService extends GetxService {
             currentRoute != Routes.SHOP_LOGIN && // Corrected
             !(_authService.isLoggingOut.value)) {
           _authService.setIsLoggingOut(true);
-          print(
+          getLogger('app').info(
             "UserApiService: Detected 401 Unauthorized. Logging out and redirecting to login.",
           );
           await _authService.logout();
@@ -49,7 +52,7 @@ class UserApiService extends GetxService {
   Future<Map<String, String>> _getAuthHeaders() async {
     final token = await _authService.getToken();
     if (token == null) {
-      print(
+      getLogger('app').info(
         "UserApiService: Auth token is null. API calls will likely result in 401.",
       );
       return {'Content-Type': 'application/json'};
@@ -89,6 +92,19 @@ class UserApiService extends GetxService {
         role: 'Staff',
         shopName: 'Main Street Branch (Mock)',
       );
+    }
+
+    if (_appConfig.localStorageOnly) {
+      try {
+        final uid = await _authService.getUserId();
+        if (uid == null) return null;
+        final row = await Get.find<LocalDatabaseService>().getUserById(uid);
+        if (row == null) return null;
+        return UserProfile.fromJson(row);
+      } catch (e) {
+        getLogger('app').info('[UserApiService] Local user profile fetch failed: $e');
+        return null;
+      }
     }
 
     final token = await _authService.getToken();
@@ -157,10 +173,15 @@ class UserApiService extends GetxService {
       ];
       return users;
     }
+    if (_appConfig.localStorageOnly) {
+      final rows = await Get.find<LocalDatabaseService>().listAllUsers(role: roleFilter);
+      return rows.map((r) => User.fromJson(r)).toList();
+    }
+
     final headers = await _getAuthHeaders();
-    print('has headers key? : $headers');
+    getLogger('app').info('has headers key? : $headers');
     if (!headers.containsKey('Authorization')) {
-      print(
+      getLogger('app').info(
         "UserApiService (getUsers): Authorization token is missing. Expecting 401 response.",
       );
     }
@@ -169,7 +190,7 @@ class UserApiService extends GetxService {
     if (roleFilter != null && roleFilter.isNotEmpty) {
       queryParams['role'] = roleFilter;
     }
-    print("UserApiService: Fetching users from $url with params: $queryParams");
+    getLogger('app').info("UserApiService: Fetching users from $url with params: $queryParams");
     final response = await _connect.get(
       url,
       headers: headers,
@@ -187,7 +208,7 @@ class UserApiService extends GetxService {
                 AdminPaginatedUsersResponse.fromJson(paginatedData);
             return paginatedResponse.users; // <<< CORRECTED (was .items)
           } catch (e) {
-            print(
+            getLogger('app').info(
               "UserApiService: Error parsing AdminPaginatedUsersResponse from responseMap['data']: $e",
             );
             throw Exception(
@@ -201,7 +222,7 @@ class UserApiService extends GetxService {
                 AdminPaginatedUsersResponse.fromJson(responseMap);
             return paginatedResponse.users; // <<< CORRECTED (was .items)
           } catch (e) {
-            print(
+            getLogger('app').info(
               "UserApiService: getUsers response.body is a Map but doesn't match expected paginated structures (wrapped or direct): ${response.bodyString}",
             );
             throw Exception(
@@ -215,13 +236,13 @@ class UserApiService extends GetxService {
               .map((item) => User.fromJson(item as Map<String, dynamic>))
               .toList();
         } catch (e) {
-          print("UserApiService: Error parsing direct list of users: $e");
+          getLogger('app').info("UserApiService: Error parsing direct list of users: $e");
           throw Exception(
             "Failed to load users: Error parsing direct list response.",
           );
         }
       } else {
-        print(
+        getLogger('app').info(
           "UserApiService: getUsers response.body is not a Map or List: ${response.bodyString}",
         );
         throw Exception(
@@ -229,12 +250,12 @@ class UserApiService extends GetxService {
         );
       }
     } else if (response.statusCode == 401) {
-      print(
+      getLogger('app').info(
         "UserApiService (getUsers): Received 401, interceptor handles logout.",
       );
       throw Exception("Session expired. Please log in again.");
     } else {
-      print(
+      getLogger('app').info(
         "UserApiService: Error fetching users. Status: ${response.statusCode}, Body: ${response.bodyString}",
       );
       final errorMessage =
@@ -271,14 +292,20 @@ class UserApiService extends GetxService {
         updatedAt: DateTime.now(),
       );
     }
+    if (_appConfig.localStorageOnly) {
+      final row = await Get.find<LocalDatabaseService>().getUserById(userId);
+      if (row != null) return User.fromJson(row);
+      throw Exception('User not found');
+    }
+
     final headers = await _getAuthHeaders();
     if (!headers.containsKey('Authorization')) {
-      print(
+      getLogger('app').info(
         "UserApiService (getUserById): Authorization token is missing. Expecting 401 response.",
       );
     }
     final url = "$_usersBaseUrl/$userId";
-    print("UserApiService: Fetching user by ID from $url");
+    getLogger('app').info("UserApiService: Fetching user by ID from $url");
     final response = await _connect.get(url, headers: headers);
 
     if (response.statusCode == 200 && response.body != null) {
@@ -289,7 +316,7 @@ class UserApiService extends GetxService {
         // Direct user object
         return User.fromJson(asMap(response.body));
       } else {
-        print(
+        getLogger('app').info(
           "UserApiService: getUserById response body is not a Map or does not contain 'data' key: ${response.bodyString}",
         );
         throw Exception(
@@ -297,12 +324,12 @@ class UserApiService extends GetxService {
         );
       }
     } else if (response.statusCode == 401) {
-      print(
+      getLogger('app').info(
         "UserApiService (getUserById): Received 401, interceptor handles logout.",
       );
       throw Exception("Session expired. Please log in again.");
     } else {
-      print(
+      getLogger('app').info(
         "UserApiService: Error fetching user by ID. Status: ${response.statusCode}, Body: ${response.bodyString}",
       );
       final errorMessage =
@@ -341,13 +368,19 @@ class UserApiService extends GetxService {
       await Future.delayed(const Duration(seconds: 1));
       return User.fromJson(userDataWithPassword..['id'] = 'new-user-id');
     }
+    if (_appConfig.localStorageOnly) {
+      final db = Get.find<LocalDatabaseService>();
+      await db.createUserLocal(userDataWithPassword);
+      return User.fromJson(userDataWithPassword..['id'] = userDataWithPassword['id'] ?? const Uuid().v4());
+    }
+
     final headers = await _getAuthHeaders();
     if (!headers.containsKey('Authorization')) {
-      print(
+      getLogger('app').info(
         "UserApiService (createUser): Authorization token is missing. Expecting 401 response.",
       );
     }
-    print(
+    getLogger('app').info(
       "UserApiService: Creating user at $_usersBaseUrl with payload: $userDataWithPassword",
     );
     final response = await _connect.post(
@@ -364,12 +397,12 @@ class UserApiService extends GetxService {
         return User.fromJson(asMap(response.body));
       }
     } else if (response.statusCode == 401) {
-      print(
+      getLogger('app').info(
         "UserApiService (createUser): Received 401, interceptor handles logout.",
       );
       throw Exception("Session expired. Please log in again.");
     } else {
-      print(
+      getLogger('app').info(
         "UserApiService: Error creating user. Status: ${response.statusCode}, Body: ${response.bodyString}",
       );
       final errorMessage =
@@ -400,14 +433,20 @@ class UserApiService extends GetxService {
       await Future.delayed(const Duration(seconds: 1));
       return User.fromJson(userData..['id'] = userId);
     }
+    if (_appConfig.localStorageOnly) {
+      final db = Get.find<LocalDatabaseService>();
+      await db.upsertUser({...userData, 'id': userId});
+      return User.fromJson({...userData, 'id': userId});
+    }
+
     final headers = await _getAuthHeaders();
     if (!headers.containsKey('Authorization')) {
-      print(
+      getLogger('app').info(
         "UserApiService (updateUser): Authorization token is missing. Expecting 401 response.",
       );
     }
     final url = "$_usersBaseUrl/$userId";
-    print("UserApiService: Updating user at $url with payload: $userData");
+    getLogger('app').info("UserApiService: Updating user at $url with payload: $userData");
 
     final response = await _connect.put(url, userData, headers: headers);
 
@@ -419,12 +458,12 @@ class UserApiService extends GetxService {
         return User.fromJson(asMap(response.body));
       }
     } else if (response.statusCode == 401) {
-      print(
+      getLogger('app').info(
         "UserApiService (updateUser): Received 401, interceptor handles logout.",
       );
       throw Exception("Session expired. Please log in again.");
     } else {
-      print(
+      getLogger('app').info(
         "UserApiService: Error updating user. Status: ${response.statusCode}, Body: ${response.bodyString}",
       );
       final errorMessage =
@@ -453,27 +492,33 @@ class UserApiService extends GetxService {
       await Future.delayed(const Duration(seconds: 1));
       return;
     }
+    if (_appConfig.localStorageOnly) {
+      final db = Get.find<LocalDatabaseService>();
+      await db.database.then((d) => d.delete('users', where: 'id = ?', whereArgs: [userId]));
+      return;
+    }
+
     final headers = await _getAuthHeaders();
     if (!headers.containsKey('Authorization')) {
-      print(
+      getLogger('app').info(
         "UserApiService (deleteUser): Authorization token is missing. Expecting 401 response.",
       );
     }
     final url = "$_usersBaseUrl/$userId";
-    print("UserApiService: Deleting user at $url");
+    getLogger('app').info("UserApiService: Deleting user at $url");
     final response = await _connect.delete(url, headers: headers);
 
     if (response.statusCode == 204 || response.statusCode == 200) {
       // 204 No Content is common for delete
-      print("UserApiService: User $userId deleted successfully.");
+      getLogger('app').info("UserApiService: User $userId deleted successfully.");
       return;
     } else if (response.statusCode == 401) {
-      print(
+      getLogger('app').info(
         "UserApiService (deleteUser): Received 401, interceptor handles logout.",
       );
       throw Exception("Session expired. Please log in again.");
     } else {
-      print(
+      getLogger('app').info(
         "UserApiService: Error deleting user. Status: ${response.statusCode}, Body: ${response.bodyString}",
       );
       final errorMessage =
@@ -503,73 +548,40 @@ class UserApiService extends GetxService {
       await Future.delayed(const Duration(seconds: 1));
       return [];
     }
+    if (_appConfig.localStorageOnly) {
+      final rows = await Get.find<LocalDatabaseService>().listAllUsers(role: 'merchant');
+      return rows.map((r) => UserSelectionItem.fromJson(r)).toList();
+    }
+
     final headers = await _getAuthHeaders();
     if (!headers.containsKey('Authorization')) {
-      print(
+      getLogger('app').info(
         "UserApiService (getMerchantsForSelection): Authorization token is missing. Expecting 401 response.",
       );
     }
-    print(
+    getLogger('app').info(
       "UserApiService: Fetching merchants for selection from $_merchantsSelectionUrl",
     );
     final response = await _connect.get(
       _merchantsSelectionUrl,
       headers: headers,
     );
-
     if (response.statusCode == 200 && response.body != null) {
-      if (response.body is Map<String, dynamic>) {
-        final Map<String, dynamic> responseMap = response.body;
-        if (responseMap.containsKey('data') && responseMap['data'] is List) {
-          final rawList = asList(responseMap['data']);
-          return rawList
-              .map(
-                (item) =>
-                    UserSelectionItem.fromJson(Map<String, dynamic>.from(item)),
-              )
+      try {
+        if (response.body is List) {
+          return (response.body as List)
+              .map((r) => UserSelectionItem.fromJson(Map<String, dynamic>.from(r)))
               .toList();
-        } else if (response.body is List) {
-          // If the backend sends a direct list
-          final rawList = asList(response.body);
-          return rawList
-              .map(
-                (item) =>
-                    UserSelectionItem.fromJson(Map<String, dynamic>.from(item)),
-              )
-              .toList();
-        } else {
-          print(
-            "UserApiService: getMerchantsForSelection received Map but 'data' is not a List or the body is not a direct List: ${response.bodyString}",
-          );
-          throw Exception(
-            "Failed to load merchants: Unexpected response format. Expected List or Map with 'data' as List.",
-          );
+        } else if (response.body is Map && response.body['data'] != null) {
+          final raw = asList(response.body['data']);
+          return raw.map((r) => UserSelectionItem.fromJson(Map<String, dynamic>.from(r))).toList();
         }
-      } else {
-        print(
-          "UserApiService: getMerchantsForSelection response.body is not a Map or List: ${response.bodyString}",
-        );
-        throw Exception(
-          "Failed to load merchants: Unexpected response type. Expected Map or List.",
-        );
+      } catch (e) {
+        getLogger('app').info('[UserApiService] Failed to parse merchants-for-selection: $e');
       }
-    } else if (response.statusCode == 401) {
-      print(
-        "UserApiService (getMerchantsForSelection): Received 401, interceptor handles logout.",
-      );
-      throw Exception("Session expired. Please log in again.");
-    } else {
-      print(
-        "UserApiService: Error fetching merchants for selection. Status: ${response.statusCode}, Body: ${response.bodyString}",
-      );
-      final errorMessage =
-          response.body?['message'] ??
-          response.body?['error'] ??
-          response.statusText ??
-          "Unknown error";
-      throw Exception(
-        "Failed to load merchants for selection. Status: ${response.statusCode}, Message: $errorMessage",
-      );
     }
+    // Fallback: return empty list to avoid network dependence
+    return [];
   }
 }
+

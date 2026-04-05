@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:smart_retail/app/core/config/app_config.dart';
+import 'package:smart_retail/app/data/services/sales_analysis_api_service.dart';
 import 'package:smart_retail/app/modules/merchant/ai_sales_analysis/ai_sales_analysis_controller.dart';
 import 'package:smart_retail/app/modules/merchant/widgets/merchant_main_scaffold.dart';
 import 'package:smart_retail/app/widgets/ai/ai_chart_series_card.dart';
@@ -16,6 +18,8 @@ class AiSalesAnalysisView extends GetView<AiSalesAnalysisController> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
+            _buildProviderSelector(context),
+            const SizedBox(height: 12),
             _buildQuickQuestions(),
             const SizedBox(height: 16),
             _buildPromptInput(),
@@ -23,6 +27,59 @@ class AiSalesAnalysisView extends GetView<AiSalesAnalysisController> {
             Expanded(child: _buildResponseArea(context)),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildProviderSelector(BuildContext context) {
+    return Obx(
+      () => Row(
+        children: [
+          const Text(
+            'AI Provider:',
+            style: TextStyle(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(width: 12),
+          DropdownButton<AiAnalysisProvider>(
+            value: controller.selectedProvider.value,
+            onChanged: (value) {
+              if (value != null) {
+                controller.setProvider(value);
+              }
+            },
+            items: const [
+              DropdownMenuItem(
+                value: AiAnalysisProvider.auto,
+                child: Text('Auto'),
+              ),
+              DropdownMenuItem(
+                value: AiAnalysisProvider.gemini,
+                child: Text('Gemini'),
+              ),
+              DropdownMenuItem(
+                value: AiAnalysisProvider.openrouter,
+                child: Text('OpenRouter'),
+              ),
+              DropdownMenuItem(
+                value: AiAnalysisProvider.openai,
+                child: Text('ChatGPT / OpenAI'),
+              ),
+            ],
+          ),
+          const Spacer(),
+          Obx(
+            () => controller.isLoading.value
+                ? const SizedBox.shrink()
+                : Text(
+                    Get.find<AppConfig>().localStorageOnly
+                        ? 'Local storage only: offline fallback is active'
+                        : 'Remote AI is available',
+                    style: Theme.of(
+                      context,
+                    ).textTheme.labelMedium?.copyWith(color: Colors.grey[700]),
+                  ),
+          ),
+        ],
       ),
     );
   }

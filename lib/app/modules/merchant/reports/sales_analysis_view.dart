@@ -1,12 +1,16 @@
+import 'dart:math';
+
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:smart_retail/app/data/models/sale_model.dart';
+import 'package:smart_retail/app/constants/currency.dart';
 import 'package:smart_retail/app/data/models/shop_model.dart';
 import 'package:smart_retail/app/modules/merchant/reports/sales_analysis_controller.dart';
 import 'package:smart_retail/app/modules/merchant/widgets/merchant_main_scaffold.dart';
 import 'package:smart_retail/app/widgets/app_colors.dart';
 import 'package:smart_retail/app/widgets/responsive_data_table.dart';
+import 'package:smart_retail/app/modules/merchant/reports/report_analysis_utils.dart';
 
 class SalesAnalysisView extends GetView<SalesAnalysisController> {
   const SalesAnalysisView({super.key});
@@ -14,38 +18,51 @@ class SalesAnalysisView extends GetView<SalesAnalysisController> {
   @override
   Widget build(BuildContext context) {
     return MerchantMainScaffold(
-      title: 'Reports', // CORRECTED: Changed String to Text Widget
-      body: Column(
-        children: [
-          _buildFilterBar(context),
-          const Divider(),
-          Expanded(
-            child: Obx(() {
-              if (controller.isLoading.value) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (controller.errorMessage.value != null) {
-                return Center(
-                  child: Text('Error: ${controller.errorMessage.value}'),
-                );
-              }
-              if (controller.sales.isEmpty) {
-                return const Center(
-                  child: Text('No sales data found for the selected period.'),
-                );
-              }
-              return _buildSalesDataTable();
-            }),
+      title: 'Reports',
+      body: Obx(() {
+        if (controller.isLoading.value) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (controller.errorMessage.value != null) {
+          return Center(child: Text('Error: ${controller.errorMessage.value}'));
+        }
+
+        final snapshot = controller.analysisSnapshot.value;
+        if (snapshot == null) {
+          return const Center(
+            child: Text('No sales data found for the selected period.'),
+          );
+        }
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(8, 8, 8, 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildFilterBar(context),
+              const SizedBox(height: 16),
+              _buildKpiGrid(snapshot),
+              const SizedBox(height: 16),
+              _buildTrendCard(snapshot),
+              const SizedBox(height: 16),
+              _buildSummaryRow(snapshot),
+              const SizedBox(height: 16),
+              _buildTopProductsTable(snapshot.topProducts),
+              const SizedBox(height: 16),
+              _buildInventoryInsights(snapshot),
+              const SizedBox(height: 16),
+              _buildRecommendations(snapshot.recommendations),
+            ],
           ),
-        ],
-      ),
+        );
+      }),
     );
   }
 
   Widget _buildFilterBar(BuildContext context) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.all(8.0),
+      padding: const EdgeInsets.only(bottom: 8.0),
       child: Row(
         children: [
           _buildPeriodDropdown(),
@@ -150,112 +167,505 @@ class SalesAnalysisView extends GetView<SalesAnalysisController> {
     );
   }
 
-  Widget _buildSalesDataTable() {
-    return ResponsiveDataTable<Sale>(
-      items: controller.sales,
-      columns: const [
-        DataColumn(
-          label: Text('Date', style: TextStyle(fontWeight: FontWeight.bold)),
-        ),
-        DataColumn(
-          label: Text('Shop', style: TextStyle(fontWeight: FontWeight.bold)),
-        ),
-        DataColumn(
-          label: Text('Items', style: TextStyle(fontWeight: FontWeight.bold)),
-        ),
-        DataColumn(
-          label: Text('Total', style: TextStyle(fontWeight: FontWeight.bold)),
-        ),
-        DataColumn(
-          label: Text('Profit', style: TextStyle(fontWeight: FontWeight.bold)),
-        ),
-      ],
-      buildCells: (sale) => [
-        DataCell(
-          Row(
-            children: [
-              Icon(
-                Icons.calendar_today,
-                size: 16,
-                color: AppColors.merchant.shade300,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(DateFormat.yMd().add_jm().format(sale.createdAt)),
-              ),
-            ],
-          ),
-          onTap: () => controller.goToSaleDetail(sale),
-        ),
-        DataCell(
-          Text(sale.shopId),
-          onTap: () => controller.goToSaleDetail(sale),
-        ),
-        DataCell(
-          Tooltip(
-            message: sale.items.map((e) => e.itemName).join(', '),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: AppColors.merchant.shade50,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                '${sale.items.length} item${sale.items.length != 1 ? 's' : ''}',
-                style: TextStyle(
-                  color: AppColors.merchant.shade700,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
+  Widget _buildKpiGrid(BusinessAnalysisSnapshot snapshot) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth > 1100
+            ? 6
+            : constraints.maxWidth > 800
+            ? 3
+            : 2;
+        return Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            _metricCard(
+              'Revenue',
+              _money(snapshot.revenue),
+              Icons.payments_outlined,
+              Colors.teal,
+              columns,
             ),
-          ),
-          onTap: () => controller.goToSaleDetail(sale),
-        ),
-        DataCell(
-          Text(
-            '\$${sale.totalAmount.toStringAsFixed(2)}',
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          onTap: () => controller.goToSaleDetail(sale),
-        ),
-        DataCell(
-          Text(
-            '\$${sale.totalProfit.toStringAsFixed(2)}',
-            style: const TextStyle(
-              color: Colors.green,
-              fontWeight: FontWeight.bold,
+            _metricCard(
+              'Profit',
+              _money(snapshot.profit),
+              Icons.trending_up,
+              Colors.green,
+              columns,
             ),
-          ),
-          onTap: () => controller.goToSaleDetail(sale),
-        ),
-      ],
-      buildMobileCard: (sale) => DataRowCard(
-        leading: CircleAvatar(
-          backgroundColor: AppColors.merchant.shade100,
-          child: Icon(Icons.receipt_long, color: AppColors.merchant, size: 20),
-        ),
-        title: DateFormat.yMd().add_jm().format(sale.createdAt),
-        subtitle: sale.shopId,
-        details: [
-          DetailRow(
-            icon: Icons.shopping_cart,
-            label: 'Items',
-            value: sale.items.map((e) => e.itemName).join(', '),
-          ),
-          DetailRow(
-            icon: Icons.attach_money,
-            label: 'Total',
-            value: '\$${sale.totalAmount.toStringAsFixed(2)}',
-          ),
-          DetailRow(
-            icon: Icons.trending_up,
-            label: 'Profit',
-            value: '\$${sale.totalProfit.toStringAsFixed(2)}',
+            _metricCard(
+              'Margin',
+              '${(snapshot.margin * 100).toStringAsFixed(1)}%',
+              Icons.percent,
+              Colors.indigo,
+              columns,
+            ),
+            _metricCard(
+              'Orders',
+              snapshot.totalSales.toString(),
+              Icons.receipt_long_outlined,
+              Colors.blue,
+              columns,
+            ),
+            _metricCard(
+              'Units sold',
+              snapshot.totalUnitsSold.toString(),
+              Icons.shopping_cart_outlined,
+              Colors.orange,
+              columns,
+            ),
+            _metricCard(
+              'Avg order',
+              _money(snapshot.averageOrderValue),
+              Icons.summarize_outlined,
+              Colors.purple,
+              columns,
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  String _money(double value) => formatCurrency(value);
+
+  String _compactMoney(double value) =>
+      '$currencySymbol ${NumberFormat.compact().format(value)}';
+
+  Widget _metricCard(
+    String label,
+    String value,
+    IconData icon,
+    Color accent,
+    int columns,
+  ) {
+    return Container(
+      width: columns == 2 ? double.infinity : 220,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: accent.withValues(alpha: 0.15)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
           ),
         ],
-        onTap: () => controller.goToSaleDetail(sale),
       ),
-      headingRowColor: AppColors.merchant.shade50,
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: accent.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: accent),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(fontSize: 12, color: Colors.black54),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTrendCard(BusinessAnalysisSnapshot snapshot) {
+    return Card(
+      elevation: 0,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Revenue and profit trend',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '${snapshot.trendGroupingLabel} trend for ${DateFormat.yMMMd().format(snapshot.startDate)} - ${DateFormat.yMMMd().format(snapshot.endDate)}',
+              style: const TextStyle(color: Colors.black54),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              height: 280,
+              child: snapshot.trendPoints.isEmpty
+                  ? const Center(child: Text('No trend data for this period.'))
+                  : LineChart(
+                      _buildTrendChart(
+                        snapshot.trendPoints,
+                        snapshot.trendGroupingLabel,
+                      ),
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  LineChartData _buildTrendChart(
+    List<TrendPoint> points,
+    String groupingLabel,
+  ) {
+    final maxY = max(
+      points.fold<double>(0, (value, point) => max(value, point.revenue)),
+      points.fold<double>(0, (value, point) => max(value, point.profit)),
+    );
+    return LineChartData(
+      gridData: const FlGridData(show: false),
+      borderData: FlBorderData(show: false),
+      titlesData: FlTitlesData(
+        leftTitles: AxisTitles(
+          sideTitles: SideTitles(
+            showTitles: true,
+            reservedSize: 44,
+            getTitlesWidget: (value, meta) => Text(
+              _compactMoney(value),
+              style: const TextStyle(fontSize: 10),
+            ),
+          ),
+        ),
+        bottomTitles: AxisTitles(
+          sideTitles: SideTitles(
+            showTitles: true,
+            reservedSize: 32,
+            interval: max(1, (points.length / 4).ceil().toDouble()),
+            getTitlesWidget: (value, meta) {
+              final index = value.toInt();
+              if (index < 0 || index >= points.length) {
+                return const SizedBox.shrink();
+              }
+              return Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: Text(
+                  _trendAxisLabel(points[index], groupingLabel),
+                  style: const TextStyle(fontSize: 10),
+                ),
+              );
+            },
+          ),
+        ),
+        topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        rightTitles: const AxisTitles(
+          sideTitles: SideTitles(showTitles: false),
+        ),
+      ),
+      lineBarsData: [
+        LineChartBarData(
+          spots: points.asMap().entries.map((entry) {
+            return FlSpot(entry.key.toDouble(), entry.value.revenue);
+          }).toList(),
+          isCurved: true,
+          color: Colors.teal,
+          barWidth: 3,
+          dotData: const FlDotData(show: false),
+        ),
+        LineChartBarData(
+          spots: points.asMap().entries.map((entry) {
+            return FlSpot(entry.key.toDouble(), entry.value.profit);
+          }).toList(),
+          isCurved: true,
+          color: Colors.green,
+          barWidth: 3,
+          dotData: const FlDotData(show: false),
+        ),
+      ],
+      minY: 0,
+      maxY: maxY <= 0 ? 10 : maxY * 1.2,
+    );
+  }
+
+  String _trendAxisLabel(TrendPoint point, String groupingLabel) {
+    switch (groupingLabel) {
+      case 'Week':
+        return 'Wk ${DateFormat.MMMd().format(point.date)}';
+      case 'Month':
+        return DateFormat.yMMM().format(point.date);
+      case 'Item':
+        return point.label ?? point.date.toIso8601String();
+      case 'Day':
+      default:
+        return DateFormat.Md().format(point.date);
+    }
+  }
+
+  Widget _buildSummaryRow(BusinessAnalysisSnapshot snapshot) {
+    return Wrap(
+      spacing: 12,
+      runSpacing: 12,
+      children: [
+        _summaryChip('Active products', snapshot.activeProducts.toString()),
+        _summaryChip('Unsold', snapshot.unsoldProductsCount.toString()),
+        _summaryChip(
+          'Slow moving',
+          snapshot.slowMovingProductsCount.toString(),
+        ),
+        _summaryChip('Low stock', snapshot.lowStockProductsCount.toString()),
+      ],
+    );
+  }
+
+  Widget _summaryChip(String label, String value) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.merchant.shade50,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        '$label: $value',
+        style: TextStyle(
+          color: AppColors.merchant.shade900,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTopProductsTable(List<ProductPerformance> products) {
+    return Card(
+      elevation: 0,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Top products',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 16),
+            ResponsiveDataTable<ProductPerformance>(
+              items: products,
+              columns: const [
+                DataColumn(
+                  label: Text(
+                    'Product',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                DataColumn(
+                  label: Text(
+                    'Units',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                DataColumn(
+                  label: Text(
+                    'Revenue',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                DataColumn(
+                  label: Text(
+                    'Profit',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                DataColumn(
+                  label: Text(
+                    'Stock',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+              buildCells: (product) => [
+                DataCell(Text(product.name)),
+                DataCell(Text(product.unitsSold.toString())),
+                DataCell(Text(_money(product.revenue))),
+                DataCell(Text(_money(product.profit))),
+                DataCell(Text(product.currentStock.toString())),
+              ],
+              buildMobileCard: (product) => DataRowCard(
+                leading: CircleAvatar(
+                  backgroundColor: AppColors.merchant.shade100,
+                  child: Icon(
+                    Icons.inventory_2,
+                    color: AppColors.merchant,
+                    size: 20,
+                  ),
+                ),
+                title: product.name,
+                subtitle: 'Units sold: ${product.unitsSold}',
+                details: [
+                  DetailRow(
+                    icon: Icons.payments_outlined,
+                    label: 'Revenue',
+                    value: _money(product.revenue),
+                  ),
+                  DetailRow(
+                    icon: Icons.trending_up,
+                    label: 'Profit',
+                    value: _money(product.profit),
+                  ),
+                  DetailRow(
+                    icon: Icons.warehouse_outlined,
+                    label: 'Stock',
+                    value: product.currentStock.toString(),
+                  ),
+                ],
+              ),
+              headingRowColor: AppColors.merchant.shade50,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInventoryInsights(BusinessAnalysisSnapshot snapshot) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isNarrow = constraints.maxWidth < 900;
+        final unsold = _buildInsightTable(
+          'Unsold inventory',
+          snapshot.unsoldProducts,
+        );
+        final slowMovers = _buildInsightTable(
+          'Slow movers',
+          snapshot.slowMovingProducts,
+        );
+
+        if (isNarrow) {
+          return Column(
+            children: [unsold, const SizedBox(height: 16), slowMovers],
+          );
+        }
+
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: unsold),
+            const SizedBox(width: 16),
+            Expanded(child: slowMovers),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildInsightTable(String title, List<ProductPerformance> items) {
+    return Card(
+      elevation: 0,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 16),
+            if (items.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 32),
+                child: Center(child: Text('No items to show.')),
+              )
+            else
+              Column(
+                children: items
+                    .map(
+                      (item) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: CircleAvatar(
+                            backgroundColor: AppColors.merchant.shade100,
+                            child: Icon(
+                              Icons.inventory_2_outlined,
+                              color: AppColors.merchant,
+                            ),
+                          ),
+                          title: Text(item.name),
+                          subtitle: Text(
+                            'Stock ${item.currentStock} • Sold ${item.unitsSold} • Age ${item.ageDays} days',
+                          ),
+                          trailing: Text(
+                            _money(item.profit),
+                            style: const TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                      ),
+                    )
+                    .toList(),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRecommendations(List<BusinessRecommendation> recommendations) {
+    return Card(
+      elevation: 0,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Actionable recommendations',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 16),
+            if (recommendations.isEmpty)
+              const Text('No immediate actions detected from this period.')
+            else
+              Column(
+                children: recommendations
+                    .map(
+                      (recommendation) => Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: CircleAvatar(
+                            backgroundColor: AppColors.merchant.shade100,
+                            child: Icon(
+                              recommendation.icon,
+                              color: AppColors.merchant,
+                            ),
+                          ),
+                          title: Text(recommendation.title),
+                          subtitle: Text(recommendation.detail),
+                        ),
+                      ),
+                    )
+                    .toList(),
+              ),
+          ],
+        ),
+      ),
     );
   }
 }

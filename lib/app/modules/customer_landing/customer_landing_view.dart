@@ -235,10 +235,22 @@ class CustomerLandingView extends StatelessWidget {
                       icon: Icons.apartment_outlined,
                       onTap: () => Get.toNamed(Routes.PUBLIC_ABOUT),
                     ),
-                    _RoleButton(
-                      label: 'Merchant Login',
-                      icon: Icons.storefront_rounded,
-                      onTap: () => Get.toNamed(Routes.MERCHANT_LOGIN),
+                    // _RoleButton(
+                    //   label: 'Merchant Login',
+                    //   icon: Icons.storefront_rounded,
+                    //   onTap: () => Get.toNamed(Routes.MERCHANT_LOGIN),
+                    // ),
+                    FilledButton.icon(
+                      onPressed: () => Get.toNamed(Routes.MERCHANT_LOGIN),
+                      icon: const Icon(Icons.business_center_rounded),
+                      label: const Text('Merchant Login'),
+                      style: FilledButton.styleFrom(backgroundColor: const Color(0xFF1D4ED8), foregroundColor: Colors.white),
+                    ),
+                    FilledButton.icon(
+                      onPressed: () => Get.toNamed(Routes.STAFF_LOGIN),
+                      icon: const Icon(Icons.badge_rounded),
+                      label: const Text('Staff Login'),
+                      style: FilledButton.styleFrom(backgroundColor: const Color(0xFFEA580C), foregroundColor: Colors.white),
                     ),
                   ],
                 ),
@@ -644,12 +656,12 @@ class CustomerLandingView extends StatelessWidget {
                 label: const Text('Merchant Login'),
                 style: FilledButton.styleFrom(backgroundColor: const Color(0xFF1D4ED8), foregroundColor: Colors.white),
               ),
-              FilledButton.icon(
-                onPressed: () => Get.toNamed(Routes.SHOP_LOGIN),
-                icon: const Icon(Icons.storefront_rounded),
-                label: const Text('Shop Login'),
-                style: FilledButton.styleFrom(backgroundColor: const Color(0xFF15803D), foregroundColor: Colors.white),
-              ),
+              // FilledButton.icon(
+              //   onPressed: () => Get.toNamed(Routes.SHOP_LOGIN),
+              //   icon: const Icon(Icons.storefront_rounded),
+              //   label: const Text('Shop Login'),
+              //   style: FilledButton.styleFrom(backgroundColor: const Color(0xFF15803D), foregroundColor: Colors.white),
+              // ),
               FilledButton.icon(
                 onPressed: () => Get.toNamed(Routes.STAFF_LOGIN),
                 icon: const Icon(Icons.badge_rounded),

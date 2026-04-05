@@ -55,19 +55,30 @@ class SalesForecastResponse {
 
 class AiAnalysis {
   final String summary;
+  final String analysisHtml;
   final List<String> positiveFactors;
   final List<String> negativeFactors;
 
   AiAnalysis({
     required this.summary,
+    this.analysisHtml = '',
     required this.positiveFactors,
     required this.negativeFactors,
   });
 
   factory AiAnalysis.fromJson(Map<String, dynamic> json) => AiAnalysis(
     summary: json["summary"],
-    positiveFactors: List<String>.from(json["positiveFactors"].map((x) => x)),
-    negativeFactors: List<String>.from(json["negativeFactors"].map((x) => x)),
+    analysisHtml: json["analysisHtml"] ?? json["analysis_html"] ?? '',
+    positiveFactors: List<String>.from(
+      (json["positiveFactors"] ?? json["positive_factors"] ?? const []).map(
+        (x) => x,
+      ),
+    ),
+    negativeFactors: List<String>.from(
+      (json["negativeFactors"] ?? json["negative_factors"] ?? const []).map(
+        (x) => x,
+      ),
+    ),
   );
 }
 

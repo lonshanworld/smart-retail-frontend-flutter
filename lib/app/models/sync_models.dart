@@ -1,4 +1,5 @@
-import 'package:equatable/equatable.dart';
+﻿import 'package:equatable/equatable.dart';
+import 'package:smart_retail/app/utils/app_logger.dart';
 
 // ============ SYNC STATUS ENUM ============
 enum SyncStatus { idle, syncing, success, error }
@@ -255,7 +256,8 @@ List<dynamic> _parseJsonString(String jsonString) {
       return [];
     }
   } catch (e) {
-    print('Error parsing JSON: $e');
+    getLogger('app').info('Error parsing JSON: $e');
   }
   return [];
 }
+

@@ -343,7 +343,7 @@ class ShopInventoryView extends GetView<ShopInventoryController> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    movement.movementType.replaceAll('_', ' ').capitalizeFirst!,
+                    movement.movementType,
                     style: const TextStyle(fontWeight: FontWeight.w500),
                   ),
                 ),
@@ -423,7 +423,7 @@ class ShopInventoryView extends GetView<ShopInventoryController> {
               size: 20,
             ),
           ),
-          title: movement.movementType.replaceAll('_', ' ').capitalizeFirst!,
+          title: movement.movementType,
           subtitle: movement.formattedMovementDate,
           details: [
             DetailRow(
@@ -464,17 +464,14 @@ class ShopInventoryView extends GetView<ShopInventoryController> {
   void _showAdjustStockDialog(InventoryItem item) {
     final TextEditingController quantityController = TextEditingController();
     final TextEditingController reasonController = TextEditingController();
-    String movementType = 'inventory_correction';
+    String movementType = 'adjustment';
     final RxInt quantityChange = 0.obs;
 
-    final List<String> movementTypes = [
-      'stock_in',
-      'inventory_correction',
-      'damaged_goods',
-      'expired_goods',
-      'theft_loss',
-      'return_to_supplier',
-    ];
+    final Map<String, String> movementTypes = {
+      'stock_in': 'Stock in',
+      'adjustment': 'Stock adjustment',
+      'return': 'Return',
+    };
 
     DialogUtils.showCustomDialog(
       dialog: AlertDialog(
@@ -493,12 +490,10 @@ class ShopInventoryView extends GetView<ShopInventoryController> {
                   labelText: 'Adjustment Type',
                   border: OutlineInputBorder(),
                 ),
-                items: movementTypes.map((String value) {
+                items: movementTypes.entries.map((entry) {
                   return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(
-                      value.replaceAll('_', ' ').capitalizeFirst ?? value,
-                    ),
+                    value: entry.key,
+                    child: Text(entry.value),
                   );
                 }).toList(),
                 onChanged: (String? newValue) {
@@ -555,13 +550,7 @@ class ShopInventoryView extends GetView<ShopInventoryController> {
               }
               if (((item.stockInfo?.firstOrNull?.quantity ?? 0) + qtyChanged) <
                       0 &&
-                  ![
-                    'sale',
-                    'damaged_goods',
-                    'theft_loss',
-                    'expired_goods',
-                    'return_to_supplier',
-                  ].contains(movementType)) {
+                  movementType == 'stock_in') {
                 DialogUtils.showError(
                   'Stock quantity cannot go below zero for this adjustment type.',
                   snackPosition: SnackPosition.BOTTOM,

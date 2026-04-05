@@ -1,17 +1,21 @@
 import 'package:get/get.dart';
+import 'package:smart_retail/app/services/local_database_service.dart';
 import 'package:smart_retail/app/core/config/app_config.dart';
 import 'package:smart_retail/app/data/models/user_model.dart';
 import 'package:smart_retail/app/data/providers/api_constants.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
 import 'package:smart_retail/app/utils/response_utils.dart';
+import 'package:flutter/foundation.dart';
 
 /// AdminAdminsApiService - Service for managing admin users.
 ///
 /// This service handles fetching, creating, updating, and deleting admin users
 /// through API calls. It will use mock data for development environments.
-class AdminAdminsApiService extends GetConnect {
+class AdminAdminsApiService extends GetxService {
+  final GetConnect _connect = Get.find<GetConnect>();
   final AppConfig _appConfig = Get.find<AppConfig>();
   final AuthService _authService = Get.find<AuthService>();
+  final LocalDatabaseService _localDatabaseService = Get.find<LocalDatabaseService>();
   String get _baseUrl => '${ApiConstants.baseUrl}/admin/admins';
 
   Future<Map<String, String>> _getHeaders() async {
@@ -54,11 +58,24 @@ class AdminAdminsApiService extends GetConnect {
       return Future.delayed(const Duration(seconds: 1), () => _mockAdmins);
     }
 
-    final response = await get(
+    // Conservative guard: if running in local-only mode, return local users
+    // if available; otherwise return an empty list to avoid network access.
+    if (_appConfig.localStorageOnly) {
+      try {
+        final rows = await _localDatabaseService.listAllUsers(role: 'admin');
+        final start = (page - 1) * limit;
+        final pageItems = rows.skip(start).take(limit).map((r) => User.fromJson(r)).toList();
+        return pageItems;
+      } catch (e) {
+        return <User>[];
+      }
+    }
+
+    final response = await _connect.get(
       '$_baseUrl?page=$page&limit=$limit',
       headers: await _getHeaders(),
     );
-    print('check response for admin list $response');
+    debugPrint('check response for admin list $response');
     if (response.isOk &&
         response.body != null &&
         response.body['data'] != null) {

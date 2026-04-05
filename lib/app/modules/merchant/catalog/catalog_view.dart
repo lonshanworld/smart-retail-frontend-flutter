@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:smart_retail/app/utils/dialog_utils.dart';
 import 'package:smart_retail/app/data/models/inventory_item_model.dart';
 import 'package:smart_retail/app/modules/merchant/catalog/catalog_controller.dart';
 import 'package:smart_retail/app/modules/merchant/widgets/merchant_main_scaffold.dart';
@@ -243,21 +244,26 @@ Future<void> _showCategoryDialog(
           onPressed: () => Navigator.of(ctx).pop(),
           child: const Text('Cancel'),
         ),
-        ElevatedButton(
+            ElevatedButton(
           onPressed: () async {
             final name = nameCtrl.text.trim();
             if (name.isEmpty) return;
-            if (category == null) {
-              await controller.createCategory(name, descCtrl.text.trim());
-            } else {
-              await controller.updateCategory(
-                category.id,
-                name,
-                descCtrl.text.trim(),
-              );
-            }
-            if (context.mounted) {
-              Navigator.of(ctx).pop();
+            // Close dialog first to avoid build-context issues
+            try {
+              if (Navigator.of(ctx).canPop()) Navigator.of(ctx).pop();
+            } catch (_) {}
+            try {
+              if (category == null) {
+                await controller.createCategory(name, descCtrl.text.trim());
+              } else {
+                await controller.updateCategory(
+                  category.id,
+                  name,
+                  descCtrl.text.trim(),
+                );
+              }
+            } catch (e) {
+              DialogUtils.showError(e.toString());
             }
           },
           child: const Text('Save'),
@@ -289,7 +295,7 @@ class _BrandAvatar extends StatelessWidget {
           width: 40,
           height: 40,
           fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => Center(child: Text(initial)),
+          errorBuilder: (context, error, stackTrace) => Center(child: Text(initial)),
         ),
       ),
     );
@@ -357,22 +363,27 @@ Future<void> _showSubcategoryDialog(
               onPressed: () async {
                 final name = nameCtrl.text.trim();
                 if (name.isEmpty || selectedCategoryId.isEmpty) return;
-                if (subcategory == null) {
-                  await controller.createSubcategory(
-                    selectedCategoryId,
-                    name,
-                    descCtrl.text.trim(),
-                  );
-                } else {
-                  await controller.updateSubcategory(
-                    subcategory.id,
-                    selectedCategoryId,
-                    name,
-                    descCtrl.text.trim(),
-                  );
-                }
-                if (context.mounted) {
-                  Navigator.of(ctx).pop();
+                // Close dialog first
+                try {
+                  if (Navigator.of(ctx).canPop()) Navigator.of(ctx).pop();
+                } catch (_) {}
+                try {
+                  if (subcategory == null) {
+                    await controller.createSubcategory(
+                      selectedCategoryId,
+                      name,
+                      descCtrl.text.trim(),
+                    );
+                  } else {
+                    await controller.updateSubcategory(
+                      subcategory.id,
+                      selectedCategoryId,
+                      name,
+                      descCtrl.text.trim(),
+                    );
+                  }
+                } catch (e) {
+                  DialogUtils.showError(e.toString());
                 }
               },
               child: const Text('Save'),
@@ -393,7 +404,6 @@ Future<void> _showBrandDialog(
   final descCtrl = TextEditingController(text: brand?.description ?? '');
   final imageCtrl = TextEditingController(text: brand?.imageUrl ?? '');
 
-  bool isSaving = false;
   String? backendError;
 
   await showDialog(
@@ -441,48 +451,42 @@ Future<void> _showBrandDialog(
               child: const Text('Cancel'),
             ),
             ElevatedButton(
-              onPressed: isSaving
-                  ? null
-                  : () async {
+              onPressed: () async {
                       final name = nameCtrl.text.trim();
                       if (name.isEmpty) return;
-                      setState(() => isSaving = true);
-                      bool ok = false;
-                      if (brand == null) {
-                        final res = await controller.createBrandRaw(
-                          name,
-                          descCtrl.text.trim(),
-                          imageUrl: imageCtrl.text.trim(),
-                        );
-                        final okRes = res['ok'] == true;
-                        final msg =
-                            res['message']?.toString() ??
-                            'Failed to create brand';
-                        if (!okRes) {
-                          setState(() => backendError = msg);
-                          ok = false;
+                      // Close dialog immediately
+                      try {
+                        if (Navigator.of(ctx).canPop()) Navigator.of(ctx).pop();
+                      } catch (_) {}
+                      try {
+                        if (brand == null) {
+                          final res = await controller.createBrandRaw(
+                            name,
+                            descCtrl.text.trim(),
+                            imageUrl: imageCtrl.text.trim(),
+                          );
+                          final okRes = res['ok'] == true;
+                          final msg =
+                              res['message']?.toString() ??
+                              'Failed to create brand';
+                          if (!okRes) {
+                            DialogUtils.showError(msg);
+                          } else {
+                            DialogUtils.showSuccess(msg);
+                          }
                         } else {
-                          ok = true;
+                          final ok = await controller.updateBrand(
+                            brand.id,
+                            name,
+                            descCtrl.text.trim(),
+                          );
+                          if (!ok) DialogUtils.showError('Failed to update brand');
                         }
-                      } else {
-                        ok = await controller.updateBrand(
-                          brand.id,
-                          name,
-                          descCtrl.text.trim(),
-                        );
-                      }
-                      setState(() => isSaving = false);
-                      if (ok && context.mounted) {
-                        Navigator.of(ctx).pop();
+                      } catch (e) {
+                        DialogUtils.showError(e.toString());
                       }
                     },
-              child: isSaving
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text('Save'),
+              child: const Text('Save'),
             ),
           ],
         );

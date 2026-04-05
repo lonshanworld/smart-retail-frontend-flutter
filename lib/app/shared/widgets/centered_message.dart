@@ -30,7 +30,7 @@ class CenteredMessage extends StatelessWidget {
                 size: 60,
                 color: Theme.of(
                   context,
-                ).textTheme.bodySmall?.color?.withOpacity(0.6),
+                ).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
               ),
               const SizedBox(height: 16),
             ],
@@ -40,7 +40,7 @@ class CenteredMessage extends StatelessWidget {
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 color: Theme.of(
                   context,
-                ).textTheme.bodySmall?.color?.withOpacity(0.8),
+                ).textTheme.bodySmall?.color?.withValues(alpha: 0.8),
               ),
             ),
             if (onRetry != null) ...[

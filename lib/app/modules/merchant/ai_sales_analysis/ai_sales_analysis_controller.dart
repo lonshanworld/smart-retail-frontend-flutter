@@ -9,6 +9,7 @@ class AiSalesAnalysisController extends GetxController {
       Get.find<SalesAnalysisApiService>();
 
   final TextEditingController promptController = TextEditingController();
+  final Rx<AiAnalysisProvider> selectedProvider = AiAnalysisProvider.auto.obs;
   final RxBool isLoading = false.obs;
   final RxnString errorMessage = RxnString();
   final RxString analysisResult = ''.obs;
@@ -21,6 +22,10 @@ class AiSalesAnalysisController extends GetxController {
 
   void setViewMode(AiResponseViewMode mode) {
     viewMode.value = mode;
+  }
+
+  void setProvider(AiAnalysisProvider provider) {
+    selectedProvider.value = provider;
   }
 
   void askQuestion(String question) {
@@ -39,7 +44,10 @@ class AiSalesAnalysisController extends GetxController {
     errorMessage.value = null;
     debugPrint('🤖 [AI SALES ANALYSIS] Sending prompt: $prompt');
     try {
-      final result = await _apiService.getSalesAnalysis(prompt);
+      final result = await _apiService.getSalesAnalysis(
+        prompt,
+        provider: selectedProvider.value,
+      );
       debugPrint('🤖 [AI SALES ANALYSIS] Received result: $result');
       analysisResult.value = result.analysisText;
       analysisHtml.value = result.analysisHtml;
@@ -47,6 +55,7 @@ class AiSalesAnalysisController extends GetxController {
       chartSeries.assignAll(result.chartSeries);
       sqlQuery.value = result.sql;
       rawDataJson.value = result.rawDataJson;
+      debugPrint('🤖 [AI SALES ANALYSIS] Provider used: ${result.provider}');
     } catch (e) {
       errorMessage.value = e.toString();
       analysisResult.value = ''; // Clear previous results on error

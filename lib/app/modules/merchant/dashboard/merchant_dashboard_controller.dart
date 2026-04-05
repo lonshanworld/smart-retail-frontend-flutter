@@ -1,10 +1,11 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 import 'package:smart_retail/app/data/models/merchant_dashboard_summary_model.dart';
 import 'package:smart_retail/app/data/models/shop_model.dart';
 import 'package:smart_retail/app/data/services/admin_dashboard_service.dart';
 import 'package:smart_retail/app/data/services/shop_api_service.dart';
 
 import 'package:smart_retail/app/utils/dialog_utils.dart';
+import 'package:smart_retail/app/utils/app_logger.dart';
 
 class MerchantDashboardController extends GetxController {
   final ShopApiService _shopApiService = Get.find<ShopApiService>();
@@ -45,7 +46,7 @@ class MerchantDashboardController extends GetxController {
     } catch (e) {
       shopError.value = "Failed to load shops: ${e.toString()}";
       DialogUtils.showError(shopError.value!);
-      print("Error fetching shops: $e");
+      getLogger('app').info("Error fetching shops: $e");
     } finally {
       isLoadingShops.value = false;
     }
@@ -60,7 +61,7 @@ class MerchantDashboardController extends GetxController {
     try {
       isLoadingDashboard.value = true;
       dashboardError.value = null;
-      print(
+      getLogger('app').info(
         '[MerchantDashboardController] Fetching dashboard data for shop: ${selectedShop.value?.id}',
       );
 
@@ -69,7 +70,7 @@ class MerchantDashboardController extends GetxController {
       final summary = await _dashboardApiService.getMerchantDashboardSummary(
         shopId: selectedShop.value?.id,
       );
-      print(
+      getLogger('app').info(
         '[MerchantDashboardController] Dashboard service returned: ${summary != null}',
       );
       dashboardSummary.value = summary;
@@ -77,10 +78,11 @@ class MerchantDashboardController extends GetxController {
     } catch (e, st) {
       dashboardError.value = "Failed to load dashboard data: ${e.toString()}";
       DialogUtils.showError(dashboardError.value!);
-      print("Error fetching dashboard data: $e");
-      print(st);
+      getLogger('app').info("Error fetching dashboard data: $e");
+      getLogger('app').info(st);
     } finally {
       isLoadingDashboard.value = false;
     }
   }
 }
+

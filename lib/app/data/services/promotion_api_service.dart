@@ -29,6 +29,33 @@ class PromotionApiService extends GetxService {
     };
   }
 
+  Future<String?> _resolveMerchantIdForLocal() async {
+    final user = _authService.user.value;
+    if (user == null) return null;
+
+    String? merchantId = user.merchantId;
+
+    if (merchantId != null && merchantId.isNotEmpty) {
+      return merchantId;
+    }
+
+    if (user.role == 'merchant' && user.id.isNotEmpty) {
+      return user.id;
+    }
+
+    if (user.assignedShopId != null && user.assignedShopId!.isNotEmpty) {
+      final shop = await _localDatabaseService.getShopById(user.assignedShopId!);
+      if (shop != null) {
+        merchantId = (shop['merchantId'] ?? shop['merchant_id'])?.toString();
+        if (merchantId != null && merchantId.isNotEmpty) {
+          return merchantId;
+        }
+      }
+    }
+
+    return null;
+  }
+
   bool _shouldQueue(dynamic error) {
     final text = error.toString().toLowerCase();
     return _appConfig.localStorageOnly ||
@@ -75,6 +102,16 @@ class PromotionApiService extends GetxService {
         ),
       );
     }
+    if (_appConfig.localStorageOnly) {
+      final merchantId = await _resolveMerchantIdForLocal();
+      final rows = merchantId == null || merchantId.isEmpty
+        ? await _localDatabaseService.getAll('shops')
+        : await _localDatabaseService.listShopsForMerchant(merchantId);
+      return rows
+          .map((r) => Shop.fromJson(r))
+          .toList();
+    }
+
     final response = await _connect.get(
       _shopsUrl,
       headers: await _getHeaders(),
@@ -112,6 +149,11 @@ class PromotionApiService extends GetxService {
         ),
       );
     }
+    if (_appConfig.localStorageOnly) {
+      final rows = await _localDatabaseService.getInventoryForShopLocal(shopId);
+      return rows.map((r) => InventoryItem.fromJson(r)).toList();
+    }
+
     final response = await _connect.get(
       '$_shopsUrl/$shopId/products',
       headers: await _getHeaders(),
@@ -149,6 +191,7 @@ class PromotionApiService extends GetxService {
     int page = 1,
     int pageSize = 10,
   }) async {
+    print('[PromotionApiService] getPromotions page=$page pageSize=$pageSize');
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
       final items = [
@@ -192,6 +235,28 @@ class PromotionApiService extends GetxService {
         totalPages: 1,
       );
     }
+    if (_appConfig.localStorageOnly) {
+      final merchantId = await _resolveMerchantIdForLocal();
+      if (merchantId == null || merchantId.isEmpty) {
+        throw Exception('Merchant ID not available in local mode');
+      }
+      print('[PromotionApiService] getPromotions localStorageOnly for merchantId=$merchantId');
+      final rows = await _localDatabaseService.listPromotionsForMerchant(merchantId, onlyActive: false);
+      print('[PromotionApiService] getPromotions local rows=${rows.length}');
+      final promotions = rows.map((r) => Promotion.fromJson(r)).toList();
+      final total = promotions.length;
+      final start = (page - 1) * pageSize;
+      final end = (start + pageSize) > total ? total : (start + pageSize);
+      final pageItems = start < total ? promotions.sublist(start, end) : <Promotion>[];
+      print('[PromotionApiService] getPromotions local pageItems=${pageItems.length} total=$total');
+      return PaginatedPromotionsResponse(
+        items: pageItems,
+        totalItems: total,
+        currentPage: page,
+        totalPages: (total / pageSize).ceil(),
+      );
+    }
+
     final response = await _connect.get(
       _promotionsUrl,
       headers: await _getHeaders(),
@@ -245,6 +310,32 @@ class PromotionApiService extends GetxService {
       );
     }
     try {
+      if (_appConfig.localStorageOnly) {
+        final merchantId = _authService.user.value?.merchantId;
+        if (merchantId == null || merchantId.isEmpty) {
+          throw Exception('Merchant ID not available in local mode');
+        }
+        payload['merchantId'] = payload['merchantId'] ?? payload['merchant_id'] ?? merchantId;
+        payload['merchant_id'] = payload['merchant_id'] ?? payload['merchantId'];
+        payload['isActive'] = payload['isActive'] ?? true;
+        payload['active'] = payload['active'] ?? payload['isActive'];
+        payload['is_active'] = payload['is_active'] ?? payload['active'];
+
+        print('[PromotionApiService] local createPromotion payload: $payload');
+        await _localDatabaseService.upsertPromotion(payload);
+
+        final createdPromotion = Promotion.fromJson({
+          ...payload,
+          'id': payload['id'] ?? clientOperationId,
+          'merchantId': payload['merchantId'],
+          'merchant_id': payload['merchant_id'],
+          'createdAt': DateTime.now().toIso8601String(),
+          'updatedAt': DateTime.now().toIso8601String(),
+        });
+        print('[PromotionApiService] local createPromotion stored: ${createdPromotion.id}, merchantId: ${createdPromotion.merchantId}, isActive: ${createdPromotion.isActive}');
+        return createdPromotion;
+      }
+
       final headers = await _getHeaders();
       headers['X-Client-Operation-Id'] = clientOperationId;
       final response = await _connect.post(_promotionsUrl, payload, headers: headers);
@@ -306,6 +397,22 @@ class PromotionApiService extends GetxService {
       );
     }
     try {
+      if (_appConfig.localStorageOnly) {
+        final merchantId = _authService.user.value?.merchantId;
+        if (merchantId == null || merchantId.isEmpty) {
+          throw Exception('Merchant ID not available in local mode');
+        }
+        await _localDatabaseService.upsertPromotion({...payload, 'id': id});
+        return Promotion.fromJson({
+          ...payload,
+          'id': id,
+          'merchantId': payload['merchantId'] ?? payload['merchant_id'] ?? merchantId,
+          'merchant_id': payload['merchant_id'] ?? payload['merchantId'] ?? merchantId,
+          'createdAt': DateTime.now().toIso8601String(),
+          'updatedAt': DateTime.now().toIso8601String(),
+        });
+      }
+
       final headers = await _getHeaders();
       headers['X-Client-Operation-Id'] = clientOperationId;
       final response = await _connect.put('$_promotionsUrl/$id', payload, headers: headers);
@@ -370,6 +477,12 @@ class PromotionApiService extends GetxService {
       return;
     }
     try {
+      if (_appConfig.localStorageOnly) {
+        await _localDatabaseService.database.then((db) => db.delete('promotions', where: 'id = ?', whereArgs: [id]));
+        await _localDatabaseService.database.then((db) => db.delete('promotion_products', where: 'promotion_id = ?', whereArgs: [id]));
+        return;
+      }
+
       final headers = await _getHeaders();
       headers['X-Client-Operation-Id'] = clientOperationId;
       final response = await _connect.delete('$_promotionsUrl/$id', headers: headers);
@@ -427,6 +540,29 @@ class PromotionApiService extends GetxService {
     }
     final payload = {'isActive': isActive, 'clientOperationId': clientOperationId};
     try {
+      if (_appConfig.localStorageOnly) {
+        final merchantId = _authService.user.value?.merchantId;
+        if (merchantId == null || merchantId.isEmpty) {
+          throw Exception('Merchant ID not available in local mode');
+        }
+        await _localDatabaseService.upsertPromotion({'id': id, 'is_active': isActive ? 1 : 0});
+        return Promotion(
+          id: id,
+          name: 'Local Promotion',
+          description: '',
+          type: 'percentage',
+          value: 0,
+          minSpend: 0,
+          startDate: DateTime.now(),
+          endDate: DateTime.now(),
+          merchantId: merchantId,
+          conditions: {},
+          isActive: isActive,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+      }
+
       final headers = await _getHeaders();
       headers['X-Client-Operation-Id'] = clientOperationId;
       final response = await _connect.put('$_promotionsUrl/$id', payload, headers: headers);

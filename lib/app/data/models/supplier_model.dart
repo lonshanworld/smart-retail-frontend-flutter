@@ -24,20 +24,20 @@ class Supplier {
   });
 
   factory Supplier.fromJson(Map<String, dynamic> json) => Supplier(
-    id: json["id"],
-    merchantId: json["merchantId"],
-    name: json["name"],
-    contactName: json["contactName"],
-    contactEmail: json["contactEmail"],
-    contactPhone: json["contactPhone"],
-    address: json["address"],
-    notes: json["notes"],
-    createdAt: json["createdAt"] == null
+    id: json["id"]?.toString(),
+    merchantId: (json["merchantId"] ?? json["merchant_id"] ?? '').toString(),
+    name: (json["name"] ?? '').toString(),
+    contactName: (json["contactName"] ?? json["contact_name"])?.toString(),
+    contactEmail: (json["contactEmail"] ?? json["contact_email"])?.toString(),
+    contactPhone: (json["contactPhone"] ?? json["contact_phone"])?.toString(),
+    address: (json["address"] ?? json["supplier_address"])?.toString(),
+    notes: (json["notes"] ?? json["supplier_notes"])?.toString(),
+    createdAt: (json["createdAt"] ?? json["created_at"]) == null
         ? null
-        : DateTime.parse(json["createdAt"]),
-    updatedAt: json["updatedAt"] == null
+      : DateTime.parse((json["createdAt"] ?? json["created_at"]).toString()),
+    updatedAt: (json["updatedAt"] ?? json["updated_at"]) == null
         ? null
-        : DateTime.parse(json["updatedAt"]),
+      : DateTime.parse((json["updatedAt"] ?? json["updated_at"]).toString()),
   );
 
   Map<String, dynamic> toJson() => {

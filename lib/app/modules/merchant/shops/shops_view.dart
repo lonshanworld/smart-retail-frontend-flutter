@@ -105,6 +105,13 @@ class ShopsView extends GetView<MerchantShopsController> {
                               ),
                             ),
                             IconButton(
+                              icon: const Icon(Icons.edit_outlined, size: 16),
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                              tooltip: 'Edit Shop',
+                              onPressed: () => controller.goToEditShop(shop),
+                            ),
+                            IconButton(
                               icon: const Icon(Icons.copy, size: 16),
                               padding: EdgeInsets.zero,
                               constraints: const BoxConstraints(),

@@ -15,12 +15,7 @@ class ImagePlaceholder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      // Optional: Add a background color or border to make it look more like a placeholder box
-      // color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
-      // decoration: BoxDecoration(
-      //   border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.5)),
-      //   borderRadius: BorderRadius.circular(4),
-      // ),
+    
       width: size ?? 60, // Match ListTile leading size or allow override
       height: size ?? 60,
       child: Center(

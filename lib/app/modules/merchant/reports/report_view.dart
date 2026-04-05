@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:smart_retail/app/data/models/inventory_item_model.dart';
 import 'package:smart_retail/app/data/models/report_model.dart';
 import 'package:smart_retail/app/data/models/shop_model.dart';
+import 'package:smart_retail/app/widgets/ai/ai_html_response_card.dart';
 import './report_controller.dart';
 
 class ReportView extends GetView<ReportController> {
@@ -210,12 +211,18 @@ class ReportView extends GetView<ReportController> {
           children: [
             Text('AI-Powered Analysis', style: Get.textTheme.titleLarge),
             const Divider(height: 20),
-            Text(
-              analysis.summary,
-              style: Get.textTheme.bodyMedium?.copyWith(
-                fontStyle: FontStyle.italic,
+            if (analysis.analysisHtml.isNotEmpty)
+              AiHtmlResponseCard(
+                html: analysis.analysisHtml,
+                fallbackText: analysis.summary,
+              )
+            else
+              Text(
+                analysis.summary,
+                style: Get.textTheme.bodyMedium?.copyWith(
+                  fontStyle: FontStyle.italic,
+                ),
               ),
-            ),
             const SizedBox(height: 20),
             if (analysis.positiveFactors.isNotEmpty) ...[
               const Text(

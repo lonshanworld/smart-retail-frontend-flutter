@@ -113,9 +113,15 @@ class PromotionAddEditView extends GetView<PromotionAddEditController> {
       if (controller.isLoadingShops.value) {
         return const Center(child: CircularProgressIndicator());
       }
+      if (controller.shopList.isEmpty) {
+        return const Padding(
+          padding: EdgeInsets.symmetric(vertical: 8.0),
+          child: Text('No shops available. Create a shop first in local mode.'),
+        );
+      }
       return DropdownButtonFormField<Shop>(
         initialValue: controller.selectedShop.value,
-        hint: const Text('1. Select a Shop'),
+        hint: const Text('Select a Shop'),
         items: controller.shopList
             .map((s) => DropdownMenuItem(value: s, child: Text(s.name)))
             .toList(),

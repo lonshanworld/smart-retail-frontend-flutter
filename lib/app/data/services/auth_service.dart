@@ -1,7 +1,8 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get/get.dart';
+import 'package:bcrypt/bcrypt.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smart_retail/app/core/config/app_config.dart';
@@ -10,6 +11,9 @@ import 'package:smart_retail/app/data/models/user_model.dart';
 import 'package:smart_retail/app/data/providers/api_constants.dart';
 import 'package:smart_retail/app/core/config/runtime_portal.dart';
 import 'package:smart_retail/app/routes/app_pages.dart';
+import 'package:smart_retail/app/services/local_database_service.dart';
+import 'package:uuid/uuid.dart';
+import 'package:smart_retail/app/utils/app_logger.dart';
 
 enum AuthSessionMode { remember, alwaysLogin }
 
@@ -53,7 +57,7 @@ class AuthService extends GetxService {
   final RxBool isLoggingOut = false.obs;
   Future<void>? _initializeFuture;
 
-  final _connect = GetConnect(timeout: const Duration(seconds: 30));
+  final _connect = Get.find<GetConnect>();
   final AppConfig _appConfig = Get.find<AppConfig>();
 
   AuthSessionMode get _sessionMode =>
@@ -87,6 +91,48 @@ class AuthService extends GetxService {
       (defaultTargetPlatform == TargetPlatform.android ||
           defaultTargetPlatform == TargetPlatform.iOS);
 
+  bool _passwordMatchesLocal(String password, String? storedHash) {
+    if (storedHash == null || storedHash.isEmpty) {
+      return false;
+    }
+
+    try {
+      return BCrypt.checkpw(password, storedHash);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  bool _looksLikeBcryptHash(String? value) {
+    if (value == null || value.isEmpty) {
+      return false;
+    }
+    return RegExp(r'^\$2[aby]\$\d\d\$').hasMatch(value);
+  }
+
+  Future<String?> _ensureLocalPasswordHash(
+    LocalDatabaseService db,
+    Map<String, dynamic> userRow,
+  ) async {
+    final storedHash = userRow['password_hash']?.toString();
+    if (storedHash == null || storedHash.isEmpty) {
+      return null;
+    }
+
+    if (_looksLikeBcryptHash(storedHash)) {
+      return storedHash;
+    }
+
+    final upgradedHash = BCrypt.hashpw(storedHash, BCrypt.gensalt());
+    final userId = userRow['id']?.toString();
+    if (userId != null && userId.isNotEmpty) {
+      final upgradedRow = Map<String, dynamic>.from(userRow)
+        ..['password_hash'] = upgradedHash;
+      await db.upsertUser(upgradedRow);
+    }
+    return upgradedHash;
+  }
+
   Future<void> initialize() {
     return _initializeFuture ??= _loadAuthDataFromStorage();
   }
@@ -110,7 +156,7 @@ class AuthService extends GetxService {
     authToken.value = await _readString(_tokenKey);
 
     final userJson = await _readString(_userKey);
-    print('checking auth user json $userJson');
+    getLogger('app').info('checking auth user json $userJson');
     if (userJson != null) {
       try {
         user.value = User.fromJson(jsonDecode(userJson));
@@ -118,7 +164,9 @@ class AuthService extends GetxService {
         userId.value = user.value?.id;
         shopId.value = user.value?.assignedShopId;
       } catch (e) {
-        print("AuthService: Failed to decode user from JSON. Error: $e");
+        getLogger(
+          'app',
+        ).info("AuthService: Failed to decode user from JSON. Error: $e");
         await clearAuthData();
       }
     }
@@ -128,7 +176,9 @@ class AuthService extends GetxService {
       try {
         currentShop.value = Shop.fromJson(jsonDecode(shopJson));
       } catch (e) {
-        print("AuthService: Failed to decode shop from JSON. Error: $e");
+        getLogger(
+          'app',
+        ).info("AuthService: Failed to decode shop from JSON. Error: $e");
         await clearAuthData();
       }
     }
@@ -159,7 +209,7 @@ class AuthService extends GetxService {
     userId.value = userData.id;
     shopId.value = userData.assignedShopId;
 
-    print(
+    getLogger('app').info(
       "AuthService: Auth data SAVED. Role: ${userData.role}, Email: ${userData.email}",
     );
   }
@@ -179,7 +229,9 @@ class AuthService extends GetxService {
       }
       await _saveAuthData(token, userData, shopData: shopData);
     } catch (e) {
-      print('[AuthService] Failed to save auth data from payload: $e');
+      getLogger(
+        'app',
+      ).info('[AuthService] Failed to save auth data from payload: $e');
       rethrow;
     }
   }
@@ -188,6 +240,23 @@ class AuthService extends GetxService {
   Future<String?> getUserId() async => userId.value;
   Future<String?> getUserRole() async => userRole.value;
   Future<String?> getShopId() async => shopId.value;
+
+  Future<void> updateCurrentShop(Shop? shop) async {
+    if (_appConfig.localStorageOnly) {
+      return;
+    }
+    currentShop.value = shop;
+    if (!_shouldPersistAuthData) {
+      return;
+    }
+
+    if (shop == null) {
+      await _removeString(_shopKey);
+      return;
+    }
+
+    await _writeString(_shopKey, jsonEncode(shop.toJson()));
+  }
 
   bool get isAuthenticated => authToken.value != null;
 
@@ -241,12 +310,12 @@ class AuthService extends GetxService {
     userId.value = null;
     shopId.value = null;
     errorMessage.value = '';
-    print("AuthService: Auth data CLEARED.");
+    getLogger('app').info("AuthService: Auth data CLEARED.");
   }
 
   Future<void> logout() async {
     await clearAuthData();
-    print("AuthService: User logged out, auth data cleared.");
+    getLogger('app').info("AuthService: User logged out, auth data cleared.");
   }
 
   /// Login for Shop-specific staff users.
@@ -300,6 +369,30 @@ class AuthService extends GetxService {
       return false;
     }
 
+    // If running in local-storage-only mode, avoid calling network and
+    // attempt a local DB-based authentication first.
+    if (_appConfig.localStorageOnly) {
+      final db = Get.find<LocalDatabaseService>();
+      final u = await db.findUserByEmail(email, role: 'staff');
+      if (u != null) {
+        final storedHash = await _ensureLocalPasswordHash(db, u);
+        final matches = _passwordMatchesLocal(password, storedHash);
+        if (matches &&
+            (u['assigned_shop_id'] == shopId ||
+                u['assigned_shop_id'] == null)) {
+          final mockUser = User.fromJson(u);
+          final mockShop = await db.getShopById(shopId);
+          await _saveAuthData(
+            'local_${const Uuid().v4()}',
+            mockUser,
+            shopData: mockShop != null ? Shop.fromJson(mockShop) : null,
+          );
+          return true;
+        }
+      }
+      return false;
+    }
+
     final response = await _connect.post(
       '${ApiConstants.baseUrl}/auth/shop-login',
       {'shopId': shopId, 'email': email, 'password': password},
@@ -318,6 +411,28 @@ class AuthService extends GetxService {
         return true;
       }
     }
+    // Local-only mode: authenticate against local users table
+    if (_appConfig.localStorageOnly) {
+      final db = Get.find<LocalDatabaseService>();
+      final u = await db.findUserByEmail(email, role: 'staff');
+      if (u != null) {
+        final storedHash = u['password_hash'] as String?;
+        final matches = _passwordMatchesLocal(password, storedHash);
+        if (matches &&
+            (u['assigned_shop_id'] == shopId ||
+                u['assigned_shop_id'] == null)) {
+          final mockUser = User.fromJson(u);
+          final mockShop = await db.getShopById(shopId);
+          await _saveAuthData(
+            'local_${const Uuid().v4()}',
+            mockUser,
+            shopData: mockShop != null ? Shop.fromJson(mockShop) : null,
+          );
+          return true;
+        }
+      }
+    }
+
     return false;
   }
 
@@ -404,15 +519,43 @@ class AuthService extends GetxService {
     final loginUrl = "${ApiConstants.baseUrl}/auth/login";
     final payload = {'email': email, 'password': password, 'userType': role};
 
+    // If configured as local-storage-only, avoid network calls and try local DB auth.
+    if (_appConfig.localStorageOnly) {
+      try {
+        final db = Get.find<LocalDatabaseService>();
+        final u = await db.findUserByEmail(email, role: role);
+        if (u != null) {
+          final storedHash = await _ensureLocalPasswordHash(db, u);
+          final matches = _passwordMatchesLocal(password, storedHash);
+          if (matches) {
+            final mockUser = User.fromJson(u);
+            await _saveAuthData('local_${const Uuid().v4()}', mockUser);
+            return true;
+          }
+        }
+      } catch (e) {
+        if (kDebugMode)
+          getLogger(
+            'app',
+          ).info('[AUTH_SERVICE] Local auth fallback failed: $e');
+      }
+      // If local auth failed, return false without attempting network.
+      errorMessage.value = 'Local authentication failed.';
+      return false;
+    }
+
     try {
       final response = await _connect.post(loginUrl, payload);
-      print("[AUTH_SERVICE] Login response: ${response.body}");
+      if (kDebugMode)
+        getLogger(
+          'app',
+        ).info("[AUTH_SERVICE] Login response: ${response.body}");
 
       if (response.statusCode == 200 && response.body != null) {
         final responseData = response.body;
         final token = responseData['accessToken'];
         final userData = responseData['user'];
-        print('check response body in auth service ${response.body}');
+
         if (token is String &&
             token.isNotEmpty &&
             userData is Map<String, dynamic>) {
@@ -428,106 +571,66 @@ class AuthService extends GetxService {
           } else if (loggedInUser.role == 'staff') {
             Get.offAllNamed(Routes.STAFF_DASHBOARD);
           }
+
           return true;
         }
       }
-      // Defensive parsing: response.body can be a Map (JSON) or a plain String (error HTML/text).
-      String msg;
-      if (response.body is Map && response.body['message'] != null) {
-        msg = response.body['message'].toString();
-      } else if (response.body != null) {
-        msg = response.body.toString();
-      } else {
-        msg = 'Login failed';
-      }
-      errorMessage.value = '$msg (Status: ${response.statusCode})';
-      return false;
-    } catch (e, stackTrace) {
-      print("[AUTH_SERVICE] Login exception: $e\n$stackTrace");
-      errorMessage.value = 'An unexpected error occurred during login.';
-      return false;
-    }
-  }
 
-  /// Logs in a merchant with shop verification.
-  /// This method verifies that the merchant owns the specified shop during login.
-  ///
-  /// __Parameters:__
-  /// - `shopId`: The ID of the shop the merchant wants to access
-  /// - `email`: Merchant's email
-  /// - `password`: Merchant's password
-  ///
-  /// __Returns:__
-  /// - `true` if login is successful and merchant owns the shop
-  /// - `false` if login fails or merchant doesn't own the shop
-  Future<bool> loginMerchantToShop(
-    String shopId,
-    String email,
-    String password,
-  ) async {
-    if (_appConfig.isDevelopment) {
-      await Future.delayed(const Duration(seconds: 1));
-      final merchantEmail = dotenv.env['MERCHANT_EMAIL'];
-      final merchantPassword = dotenv.env['MERCHANT_PASSWORD'];
-
-      if (email == merchantEmail && password == merchantPassword) {
-        // In development, assume merchant owns the shop
-        final mockUser = User(
-          id: 'mock-merchant-id',
-          name: 'Mock Merchant',
-          email: email,
-          role: 'merchant',
-          assignedShopId: shopId,
-        );
-        await _saveAuthData('mock_merchant_token', mockUser);
-        return true;
-      }
-      errorMessage.value = 'Invalid merchant credentials';
-      return false;
-    }
-
-    errorMessage.value = '';
-    final loginUrl = "${ApiConstants.baseUrl}/auth/login";
-    final payload = {
-      'email': email,
-      'password': password,
-      'userType': 'merchant',
-      'shopId': shopId, // Include shopId for backend verification
-    };
-
-    try {
-      final response = await _connect.post(loginUrl, payload);
-      print("[AUTH_SERVICE] Merchant shop login response: ${response.body}");
-
-      if (response.statusCode == 200 && response.body != null) {
-        final responseData = response.body;
-        final token = responseData['accessToken'];
-        final userData = responseData['user'];
-
-        if (token is String &&
-            token.isNotEmpty &&
-            userData is Map<String, dynamic>) {
-          final loggedInUser = User.fromJson(userData).copyWith(
-            assignedShopId: shopId,
-          );
-
-          // Verify the user is actually a merchant
-          if (loggedInUser.role != 'merchant') {
-            errorMessage.value = 'User is not a merchant';
-            return false;
+      // If backend login failed or returned unexpected payload, try local-only fallback
+      if (_appConfig.localStorageOnly) {
+        try {
+          final db = Get.find<LocalDatabaseService>();
+          final u = await db.findUserByEmail(email, role: role);
+          if (u != null) {
+            final storedHash = await _ensureLocalPasswordHash(db, u);
+            final matches = _passwordMatchesLocal(password, storedHash);
+            if (matches) {
+              final mockUser = User.fromJson(u);
+              await _saveAuthData('local_${const Uuid().v4()}', mockUser);
+              return true;
+            }
           }
-
-          await _saveAuthData(token, loggedInUser);
-          return true;
+        } catch (e) {
+          if (kDebugMode)
+            getLogger(
+              'app',
+            ).info('[AUTH_SERVICE] Local auth fallback failed: $e');
         }
       }
 
-      String msg =
-          response.body?['message'] ?? 'Login failed or shop access denied';
+      final msg = response.body is Map
+          ? response.body['message'] ?? 'Login failed'
+          : 'Login failed';
       errorMessage.value = '$msg (Status: ${response.statusCode})';
       return false;
     } catch (e, stackTrace) {
-      print("[AUTH_SERVICE] Merchant shop login exception: $e\n$stackTrace");
+      if (kDebugMode)
+        getLogger(
+          'app',
+        ).info("[AUTH_SERVICE] Login exception: $e\n$stackTrace");
+
+      // Attempt local-only fallback on exception when configured
+      if (_appConfig.localStorageOnly) {
+        try {
+          final db = Get.find<LocalDatabaseService>();
+          final u = await db.findUserByEmail(email, role: role);
+          if (u != null) {
+            final storedHash = await _ensureLocalPasswordHash(db, u);
+            final matches = _passwordMatchesLocal(password, storedHash);
+            if (matches) {
+              final mockUser = User.fromJson(u);
+              await _saveAuthData('local_${const Uuid().v4()}', mockUser);
+              return true;
+            }
+          }
+        } catch (ee) {
+          if (kDebugMode)
+            getLogger(
+              'app',
+            ).info('[AUTH_SERVICE] Local auth fallback failed: $ee');
+        }
+      }
+
       errorMessage.value = 'An unexpected error occurred during login.';
       return false;
     }

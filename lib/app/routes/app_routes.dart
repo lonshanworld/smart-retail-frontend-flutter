@@ -38,6 +38,8 @@ abstract class Routes {
   static const MERCHANT_STAFF_DETAIL = '/merchant/staff/detail';
   static const MERCHANT_POS = '/merchant/pos';
   static const MERCHANT_REPORTS = '/merchant/reports';
+  static const MERCHANT_BUSINESS_ANALYSIS = '/merchant/business-analysis';
+  static const MERCHANT_PROFIT_BREAKDOWN = '/merchant/profit-breakdown';
   static const MERCHANT_AI_SALES_ANALYSIS = '/merchant/ai-sales-analysis';
   static const MERCHANT_NOTIFICATIONS = '/merchant/notifications';
   static const MERCHANT_PROFILE = '/merchant/profile';

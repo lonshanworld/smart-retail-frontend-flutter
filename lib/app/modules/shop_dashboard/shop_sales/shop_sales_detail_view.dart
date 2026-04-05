@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:smart_retail/app/constants/currency.dart';
 import 'package:smart_retail/app/data/models/sale_model.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
 import 'package:smart_retail/app/widgets/app_colors.dart';
@@ -12,7 +13,7 @@ class ShopSalesDetailView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currencyFormat = NumberFormat.currency(symbol: '\$');
+    final currencyFormat = NumberFormat.currency(symbol: currencySymbol);
     final dateFormat = DateFormat.yMd().add_jm();
 
     // Calculate totals
@@ -58,10 +59,7 @@ class ShopSalesDetailView extends StatelessWidget {
                         children: [
                           const Text(
                             'Sale ID',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey,
-                            ),
+                            style: TextStyle(fontSize: 12, color: Colors.grey),
                           ),
                           Text(
                             sale.id,
@@ -101,10 +99,7 @@ class ShopSalesDetailView extends StatelessWidget {
                         children: [
                           const Text(
                             'Date & Time',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey,
-                            ),
+                            style: TextStyle(fontSize: 12, color: Colors.grey),
                           ),
                           Text(
                             dateFormat.format(sale.saleDate),
@@ -120,10 +115,7 @@ class ShopSalesDetailView extends StatelessWidget {
                         children: [
                           const Text(
                             'Payment Type',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey,
-                            ),
+                            style: TextStyle(fontSize: 12, color: Colors.grey),
                           ),
                           Text(
                             sale.paymentType,
@@ -228,9 +220,7 @@ class ShopSalesDetailView extends StatelessWidget {
                                 ),
                               ),
                               Text(
-                                currencyFormat.format(
-                                  item.sellingPriceAtSale,
-                                ),
+                                currencyFormat.format(item.sellingPriceAtSale),
                                 style: const TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
@@ -352,9 +342,7 @@ class ShopSalesDetailView extends StatelessWidget {
                     _buildSummaryRow(
                       'Total Profit',
                       currencyFormat.format(totalProfit),
-                      valueColor: totalProfit >= 0
-                          ? Colors.green
-                          : Colors.red,
+                      valueColor: totalProfit >= 0 ? Colors.green : Colors.red,
                     ),
                   ],
                   const Divider(),

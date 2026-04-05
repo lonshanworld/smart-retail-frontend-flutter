@@ -1,4 +1,4 @@
-// lib/app/modules/admin/users/users_admin_controller.dart
+﻿// lib/app/modules/admin/users/users_admin_controller.dart
 import 'package:flutter/material.dart'; // Added for AlertDialog
 import 'package:get/get.dart';
 import 'package:smart_retail/app/utils/dialog_utils.dart';
@@ -6,6 +6,7 @@ import 'package:smart_retail/app/data/models/user_model.dart';
 import 'package:smart_retail/app/data/services/user_api_service.dart';
 import 'package:smart_retail/app/routes/app_pages.dart';
 import 'package:smart_retail/app/utils/string_extensions.dart'; // Provides Routes class
+import 'package:smart_retail/app/utils/app_logger.dart';
 
 class UsersAdminController extends GetxController {
   final UserApiService _userApiService = Get.find<UserApiService>();
@@ -30,16 +31,16 @@ class UsersAdminController extends GetxController {
       final roleToFetch =
           role ??
           (selectedRoleFilter.value.isEmpty ? null : selectedRoleFilter.value);
-      print(
+      getLogger('app').info(
         "UsersAdminController: Fetching users with role filter: $roleToFetch",
       );
       final fetchedUsers = await _userApiService.getUsers(
         roleFilter: roleToFetch,
       );
       users.assignAll(fetchedUsers);
-      print("UsersAdminController: Fetched ${users.length} users.");
+      getLogger('app').info("UsersAdminController: Fetched ${users.length} users.");
     } catch (e) {
-      print("UsersAdminController: Error fetching users: $e");
+      getLogger('app').info("UsersAdminController: Error fetching users: $e");
       errorMessage.value = "Error fetching users: ${e.toString()}";
       users.clear();
     } finally {
@@ -53,19 +54,19 @@ class UsersAdminController extends GetxController {
   }
 
   void goToAddUserPage() {
-    print("UsersAdminController: Navigating to Add/Edit User Page in ADD mode");
+    getLogger('app').info("UsersAdminController: Navigating to Add/Edit User Page in ADD mode");
     Get.toNamed(Routes.ADMIN_ADD_EDIT_USER);
   }
 
   void goToEditUserPage(User user) {
-    print(
+    getLogger('app').info(
       "UsersAdminController: Navigating to Add/Edit User Page for ${user.name} in EDIT mode",
     );
     Get.toNamed(Routes.ADMIN_ADD_EDIT_USER, arguments: user);
   }
 
   void goToUserDetailsPage(User user) {
-    print(
+    getLogger('app').info(
       "UsersAdminController: Navigating to User Details Page for ${user.name}",
     );
     Get.toNamed(Routes.ADMIN_USER_DETAIL, arguments: user.id);
@@ -92,14 +93,14 @@ class UsersAdminController extends GetxController {
     );
 
     if (confirmDelete == true) {
-      print("UsersAdminController: Attempting to delete user $userId");
+      getLogger('app').info("UsersAdminController: Attempting to delete user $userId");
       isLoading.value = true;
       try {
         await _userApiService.deleteUser(userId);
         DialogUtils.showSuccess("User $userName deleted successfully.");
         fetchUsers(); // Refresh the list
       } catch (e) {
-        print("UsersAdminController: Error deleting user $userId: $e");
+        getLogger('app').info("UsersAdminController: Error deleting user $userId: $e");
         DialogUtils.showError(
           "Failed to delete user $userName: ${e.toString()}",
         );
@@ -137,7 +138,7 @@ class UsersAdminController extends GetxController {
     );
 
     if (confirmToggle == true) {
-      print("UsersAdminController: Attempting to $actionText user ${user.id}");
+      getLogger('app').info("UsersAdminController: Attempting to $actionText user ${user.id}");
       isUpdatingStatus.value = true;
       try {
         await _userApiService.updateUser(user.id, {'isActive': newStatus});
@@ -146,7 +147,7 @@ class UsersAdminController extends GetxController {
         );
         fetchUsers();
       } catch (e) {
-        print(
+        getLogger('app').info(
           "UsersAdminController: Error ${actionText}ing user ${user.id}: $e",
         );
         DialogUtils.showError(
@@ -167,3 +168,4 @@ class UsersAdminController extends GetxController {
 //     return "${this[0].toUpperCase()}${substring(1)}";
 //   }
 // }
+

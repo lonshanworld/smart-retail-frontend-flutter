@@ -1,8 +1,10 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 import 'package:smart_retail/app/core/config/app_config.dart';
 import 'package:smart_retail/app/data/providers/api_constants.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
 import 'package:smart_retail/app/utils/response_utils.dart';
+import 'package:smart_retail/app/services/local_database_service.dart';
+import 'package:smart_retail/app/utils/app_logger.dart';
 
 // Model for the dashboard summary data
 class ShopDashboardSummary {
@@ -29,6 +31,7 @@ class ShopDashboardApiService extends GetxService {
   final GetConnect _connect = Get.find<GetConnect>();
   final AuthService _authService = Get.find<AuthService>();
   final AppConfig _appConfig = Get.find<AppConfig>();
+  final LocalDatabaseService _localDb = Get.find<LocalDatabaseService>();
 
   String get _baseUrl => '${ApiConstants.baseUrl}/shop';
 
@@ -68,19 +71,58 @@ class ShopDashboardApiService extends GetxService {
   ///   }
   ///   ```
   Future<ShopDashboardSummary> getDashboardSummary({String? shopId}) async {
-    print('🔍 [SHOP DASHBOARD] Fetching dashboard summary...');
+    getLogger('app').info('ðŸ” [SHOP DASHBOARD] Fetching dashboard summary...');
     if (shopId != null) {
-      print('📦 [SHOP DASHBOARD] Shop ID: $shopId');
+      getLogger('app').info('ðŸ“¦ [SHOP DASHBOARD] Shop ID: $shopId');
     }
 
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
       // Return mock data for development environment
-      print('✅ [SHOP DASHBOARD] Returning mock data (development mode)');
+      getLogger('app').info('âœ… [SHOP DASHBOARD] Returning mock data (development mode)');
       return ShopDashboardSummary(
         salesToday: 1450.75,
         transactionsToday: 23,
         lowStockItems: 5,
+      );
+    }
+
+    // Local-only mode: compute dashboard summary from local DB
+    if (_appConfig.localStorageOnly) {
+      final effectiveShopId = shopId ?? await _authService.getShopId();
+      if (effectiveShopId == null) throw Exception('No shop selected');
+
+      final now = DateTime.now();
+      final startOfDay = DateTime(now.year, now.month, now.day).toIso8601String();
+      final nowIso = now.toIso8601String();
+
+      final db = await _localDb.database;
+      final salesRows = await db.rawQuery(
+        'SELECT * FROM sales WHERE shop_id = ? AND sale_date >= ? AND sale_date <= ?',
+        [effectiveShopId, startOfDay, nowIso],
+      );
+
+      double salesToday = 0.0;
+      for (var r in salesRows) {
+        salesToday += (r['total_amount'] as num?)?.toDouble() ?? 0.0;
+      }
+
+      final transactionsToday = salesRows.length;
+
+      // Count low stock items by comparing stock quantity to low_stock_threshold
+      final invRows = await _localDb.getInventoryForShopLocal(effectiveShopId);
+      int lowStockItems = 0;
+      for (var ir in invRows) {
+        final stockInfo = ir['stockInfo'] as List<dynamic>? ?? [];
+        final qty = stockInfo.isNotEmpty ? (stockInfo.first['quantity'] as int?) ?? 0 : 0;
+        final threshold = (ir['low_stock_threshold'] as int?) ?? (ir['lowStockThreshold'] as int?) ?? 0;
+        if (threshold > 0 && qty <= threshold) lowStockItems++;
+      }
+
+      return ShopDashboardSummary(
+        salesToday: salesToday,
+        transactionsToday: transactionsToday,
+        lowStockItems: lowStockItems,
       );
     }
 
@@ -92,8 +134,8 @@ class ShopDashboardApiService extends GetxService {
 
     final response = await _connect.get(url, headers: await _getHeaders());
 
-    print('📥 [SHOP DASHBOARD] Response status: ${response.statusCode}');
-    print('📥 [SHOP DASHBOARD] Response body: ${response.body}');
+    getLogger('app').info('ðŸ“¥ [SHOP DASHBOARD] Response status: ${response.statusCode}');
+    getLogger('app').info('ðŸ“¥ [SHOP DASHBOARD] Response body: ${response.body}');
 
     if (response.statusCode == null) {
       throw Exception(
@@ -104,7 +146,7 @@ class ShopDashboardApiService extends GetxService {
     if (response.statusCode! < 300 &&
         response.body != null &&
         response.body['success'] == true) {
-      print('✅ [SHOP DASHBOARD] Parsing dashboard data...');
+      getLogger('app').info('âœ… [SHOP DASHBOARD] Parsing dashboard data...');
       return ShopDashboardSummary.fromJson(asMap(response.body['data']));
     } else {
       throw Exception(
@@ -113,3 +155,4 @@ class ShopDashboardApiService extends GetxService {
     }
   }
 }
+

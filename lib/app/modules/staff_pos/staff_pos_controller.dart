@@ -1,6 +1,7 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'dart:convert';
+import 'package:smart_retail/app/core/config/app_config.dart';
 import 'package:smart_retail/app/utils/dialog_utils.dart';
 import 'package:smart_retail/app/data/models/cart_item_model.dart';
 import 'package:smart_retail/app/data/models/inventory_item_model.dart';
@@ -9,19 +10,25 @@ import 'package:smart_retail/app/data/models/sale_model.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
 import 'package:smart_retail/app/data/services/bluetooth_printer_service.dart';
 import 'package:smart_retail/app/data/services/inventory_api_service.dart';
+import 'package:smart_retail/app/data/services/shop_api_service.dart';
 import 'package:smart_retail/app/data/services/staff_pos_api_service.dart';
 import 'package:smart_retail/app/modules/shared/code_scanner/code_scanner_view.dart';
 import 'package:smart_retail/app/widgets/app_colors.dart';
+import 'package:smart_retail/app/utils/app_logger.dart';
 
 class StaffPosController extends GetxController {
-  // Make the API service optional in unit tests to avoid requiring full
-  // networking stack during small unit tests. When not registered,
-  // controller will operate in degraded mode (no remote calls).
+ 
   final StaffPosApiService? _apiService = Get.isRegistered<StaffPosApiService>()
       ? Get.find<StaffPosApiService>()
       : null;
   final AuthService? _authService = Get.isRegistered<AuthService>()
       ? Get.find<AuthService>()
+      : null;
+    final ShopApiService? _shopApiService = Get.isRegistered<ShopApiService>()
+      ? Get.find<ShopApiService>()
+      : null;
+    final AppConfig? _appConfig = Get.isRegistered<AppConfig>()
+      ? Get.find<AppConfig>()
       : null;
   final InventoryApiService? _inventoryApi =
       Get.isRegistered<InventoryApiService>()
@@ -59,6 +66,7 @@ class StaffPosController extends GetxController {
   var availablePromotions = <Promotion>[].obs;
   var selectedPromotion = Rxn<Promotion>();
   var isLoadingPromotions = false.obs;
+  final RxDouble shopTaxRate = 5.0.obs;
 
   // Computed properties for totals
   double get cartSubtotal =>
@@ -70,16 +78,19 @@ class StaffPosController extends GetxController {
       return 0.0;
     }
     final promo = selectedPromotion.value!;
-    if (promo.type == 'percentage') {
+    final type = promo.type.toLowerCase();
+    if (type == 'percentage' || type == 'percent') {
       return cartSubtotal * (promo.value / 100);
-    } else if (promo.type == 'fixed_amount') {
+    } else if (type == 'fixed_amount' || type == 'fixed' || type == 'amount') {
+      return promo.value;
+    }
+    if (promo.value > 0) {
       return promo.value;
     }
     return 0.0;
   }
 
-  double get effectiveTaxRatePercent =>
-      _authService?.currentShop.value?.taxRate ?? 5.0;
+  double get effectiveTaxRatePercent => shopTaxRate.value;
 
   String get taxRateLabel {
     final rate = effectiveTaxRatePercent;
@@ -106,7 +117,7 @@ class StaffPosController extends GetxController {
       availablePromotions.clear();
       searchResults.clear();
     }
-    _setDeliveryCharge(_authService?.currentShop.value?.deliveryCharge ?? 0.0);
+    _loadShopContext();
     debounce(
       searchController.obs,
       (_) => searchProducts(),
@@ -121,6 +132,40 @@ class StaffPosController extends GetxController {
     categories.assignAll(opts.categories);
     brands.assignAll(opts.brands);
   }
+
+  Future<void> _loadShopContext() async {
+    if (_authService == null) return;
+    if (_appConfig?.localStorageOnly != true) {
+      shopTaxRate.value = _authService.currentShop.value?.taxRate ?? 5.0;
+      _setDeliveryCharge(_authService.currentShop.value?.deliveryCharge ?? 0.0);
+      return;
+    }
+
+    final shopId = await _authService.getShopId() ?? _authService.shopId.value;
+    if (_shopApiService == null || shopId == null || shopId.isEmpty) {
+      shopTaxRate.value = 5.0;
+      _setDeliveryCharge(0.0);
+      return;
+    }
+
+    final freshShop = await _shopApiService.getShopById(shopId);
+    if (freshShop == null) {
+      shopTaxRate.value = 5.0;
+      _setDeliveryCharge(0.0);
+      return;
+    }
+
+    shopTaxRate.value = freshShop.taxRate;
+    _setDeliveryCharge(freshShop.deliveryCharge);
+  }
+
+  CartItem? getCartItemByProductId(String productId) {
+  try {
+    return cartItems.firstWhere((item) => item.product.id == productId);
+  } catch (_) {
+    return null;
+  }
+}
 
   void setCategoryFilter(String? categoryId) {
     selectedCategoryId.value = categoryId;
@@ -204,16 +249,62 @@ class StaffPosController extends GetxController {
     searchProducts();
   }
 
+  int? _availableStockForProduct(InventoryItem product) {
+    final currentShopId = _authService?.currentShop.value?.id;
+    final stockInfo = product.stockInfo;
+
+    if (stockInfo != null && stockInfo.isNotEmpty) {
+      if (currentShopId != null) {
+        final matchedStock = stockInfo.firstWhereOrNull(
+          (stock) => stock.shopId == currentShopId,
+        );
+        if (matchedStock != null) {
+          return matchedStock.quantity;
+        }
+      }
+
+      if (stockInfo.length == 1) {
+        return stockInfo.first.quantity;
+      }
+    }
+
+    return null;
+  }
+
+  void _showStockLimitWarning(InventoryItem product, int available) {
+    final message = available <= 0
+        ? '${product.name} is out of stock for this shop.'
+        : 'Only $available unit${available == 1 ? '' : 's'} of ${product.name} left in this shop.';
+    DialogUtils.showWarning(
+      message,
+      title: 'Stock is gone',
+      snackPosition: SnackPosition.BOTTOM,
+    );
+  }
+
+  bool _canIncreaseQuantity(InventoryItem product, int requestedQuantity) {
+    final available = _availableStockForProduct(product);
+    return available == null || requestedQuantity <= available;
+  }
+
   void addToCart(InventoryItem product) {
     final existingIndex = cartItems.indexWhere(
       (item) => item.product.id == product.id,
     );
+    final requestedQuantity =
+        existingIndex != -1 ? cartItems[existingIndex].quantity.value + 1 : 1;
+    if (!_canIncreaseQuantity(product, requestedQuantity)) {
+      _showStockLimitWarning(product, _availableStockForProduct(product) ?? 0);
+      return;
+    }
     if (existingIndex != -1) {
       cartItems[existingIndex].quantity.value++;
+      cartItems[existingIndex].quantity.refresh();
     } else {
       cartItems.add(CartItem(product: product, initialQuantity: 1));
     }
-    cartItems.refresh(); // Needed to trigger update for calculated totals
+    cartItems.refresh();
+    update(); // Needed to trigger update for calculated totals
   }
 
   void clearCart() {
@@ -221,6 +312,14 @@ class StaffPosController extends GetxController {
   }
 
   void incrementCartItem(CartItem cartItem) {
+    final requestedQuantity = cartItem.quantity.value + 1;
+    if (!_canIncreaseQuantity(cartItem.product, requestedQuantity)) {
+      _showStockLimitWarning(
+        cartItem.product,
+        _availableStockForProduct(cartItem.product) ?? 0,
+      );
+      return;
+    }
     cartItem.quantity.value++;
     cartItems.refresh();
   }
@@ -239,6 +338,15 @@ class StaffPosController extends GetxController {
       DialogUtils.showError('Cannot checkout with an empty cart.');
       return;
     }
+
+    for (final item in cartItems) {
+      final available = _availableStockForProduct(item.product);
+      if (available != null && item.quantity.value > available) {
+        _showStockLimitWarning(item.product, available);
+        errorMessage.value = 'Cart quantity exceeds available stock.';
+        return;
+      }
+    }
     isCheckingOut.value = true;
     errorMessage.value = null;
 
@@ -253,6 +361,7 @@ class StaffPosController extends GetxController {
           )
           .toList(),
       'totalAmount': cartTotal, // Use the computed total
+      'taxAmount': taxAmount,
       'deliveryCharge': deliveryCharge,
       'paymentType': 'cash', // Defaulting to cash for this example
       if (customerNameController.text.isNotEmpty)
@@ -266,9 +375,9 @@ class StaffPosController extends GetxController {
     // Debug: log checkout payload
     try {
       final payloadJson = jsonEncode(saleData);
-      print('DEBUG: Staff POS checkout payload: $payloadJson');
+      getLogger('app').info('DEBUG: Staff POS checkout payload: $payloadJson');
     } catch (e) {
-      print('DEBUG: Failed to encode checkout payload: $e');
+      getLogger('app').info('DEBUG: Failed to encode checkout payload: $e');
     }
 
     try {
@@ -310,12 +419,15 @@ class StaffPosController extends GetxController {
           items: saleItems,
         );
 
+        if (Get.width < 800 && (Get.isBottomSheetOpen ?? false)) {
+          Get.back();
+        }
         _showSuccessDialog(result);
         clearCart();
         customerNameController.clear();
       } else {
         final Sale result = await _apiService.checkout(saleData);
-        print(
+        getLogger('app').info(
           'DEBUG: Staff POS checkout response received: saleId=${result.id} total=${result.totalAmount}',
         );
         // Use the standardized success dialog
@@ -454,3 +566,4 @@ class StaffPosController extends GetxController {
     super.onClose();
   }
 }
+

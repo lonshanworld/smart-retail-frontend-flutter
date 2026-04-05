@@ -1,4 +1,4 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 import 'package:smart_retail/app/core/config/app_config.dart';
 import 'package:smart_retail/app/data/models/inventory_item_model.dart';
 import 'package:smart_retail/app/data/models/promotion_model.dart';
@@ -8,82 +8,20 @@ import 'package:smart_retail/app/data/services/auth_service.dart';
 import 'package:smart_retail/app/services/offline_sales_service.dart';
 import 'package:smart_retail/app/services/connectivity_service.dart';
 import 'package:smart_retail/app/services/cache_manager_service.dart';
+import 'package:smart_retail/app/services/local_database_service.dart';
 import 'package:smart_retail/app/utils/response_utils.dart';
 import 'package:uuid/uuid.dart';
+import 'package:smart_retail/app/utils/app_logger.dart';
 
 class MerchantPosApiService extends GetxService {
   final GetConnect _connect = Get.find<GetConnect>();
   final AuthService _authService = Get.find<AuthService>();
   final AppConfig _appConfig = Get.find<AppConfig>();
+  final LocalDatabaseService _localDatabaseService =
+      Get.find<LocalDatabaseService>();
 
   final Map<String, List<InventoryItem>> _mockProductsByShop = {
-    'shop-0': [
-      InventoryItem(
-        id: 'prod_001',
-        merchantId: 'mock-merchant',
-        name: 'Espresso',
-        sku: 'BEV-001',
-        sellingPrice: 2.50,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      ),
-      InventoryItem(
-        id: 'prod_002',
-        merchantId: 'mock-merchant',
-        name: 'Latte',
-        sku: 'BEV-002',
-        sellingPrice: 3.50,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      ),
-      InventoryItem(
-        id: 'prod_101',
-        merchantId: 'mock-merchant',
-        name: 'Croissant',
-        sku: 'PST-001',
-        sellingPrice: 2.95,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      ),
-      InventoryItem(
-        id: 'prod_201',
-        merchantId: 'mock-merchant',
-        name: 'Ham & Cheese Sandwich',
-        sku: 'SND-001',
-        sellingPrice: 7.50,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      ),
-    ],
-    'shop-1': [
-      InventoryItem(
-        id: 'prod_102',
-        merchantId: 'mock-merchant',
-        name: 'Chocolate Muffin',
-        sku: 'PST-002',
-        sellingPrice: 3.25,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      ),
-      InventoryItem(
-        id: 'prod_103',
-        merchantId: 'mock-merchant',
-        name: 'Blueberry Scone',
-        sku: 'PST-003',
-        sellingPrice: 3.50,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      ),
-      InventoryItem(
-        id: 'prod_301',
-        merchantId: 'mock-merchant',
-        name: 'Bag of Coffee Beans (12oz)',
-        sku: 'MER-001',
-        sellingPrice: 14.99,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      ),
-    ],
+
     'shop-2': [], // An empty shop for testing
   };
 
@@ -130,7 +68,7 @@ class MerchantPosApiService extends GetxService {
       cacheManagerService = Get.find<CacheManagerService>();
       connectivityService = Get.find<ConnectivityService>();
     } catch (e) {
-      print('[POS API] Cache services not initialized');
+      getLogger('app').info('[POS API] Cache services not initialized');
     }
 
     // =========================================================================
@@ -155,20 +93,41 @@ class MerchantPosApiService extends GetxService {
     }
     // =========================================================================
 
-    if (_appConfig.localStorageOnly && cacheManagerService != null) {
-      print('[POS API] Local storage only mode - returning cached products');
-      final cachedProducts = await cacheManagerService.getCachedProducts(
-        'merchant-${_authService.hashCode}',
-      );
+    if (_appConfig.localStorageOnly) {
+      getLogger(
+        'app',
+      ).info('[POS API] Local storage only mode - returning local products');
+      try {
+        final products = await _localDatabaseService.getInventoryForShopLocal(
+          shopId,
+        );
+        var inventoryItems = products
+            .map((p) => InventoryItem.fromJson(p))
+            .toList();
 
-      if (cachedProducts != null && cachedProducts.isNotEmpty) {
-        final products = cachedProducts.map((p) => InventoryItem.fromJson(p)).toList();
-
-        if (searchTerm.isEmpty) {
-          return products;
+        if (categoryId != null && categoryId.isNotEmpty) {
+          inventoryItems = inventoryItems
+              .where(
+                (p) => p.categoryId == categoryId || p.category == categoryId,
+              )
+              .toList();
+        }
+        if (subcategoryId != null && subcategoryId.isNotEmpty) {
+          inventoryItems = inventoryItems
+              .where((p) => p.subcategoryId == subcategoryId)
+              .toList();
+        }
+        if (brandId != null && brandId.isNotEmpty) {
+          inventoryItems = inventoryItems
+              .where((p) => p.brandId == brandId)
+              .toList();
         }
 
-        return products
+        if (searchTerm.isEmpty) {
+          return inventoryItems;
+        }
+
+        return inventoryItems
             .where(
               (p) =>
                   p.name.toLowerCase().contains(searchTerm.toLowerCase()) ||
@@ -176,8 +135,15 @@ class MerchantPosApiService extends GetxService {
                       false),
             )
             .toList();
+      } catch (e) {
+        getLogger('app').info('[POS API] Local searchProducts failed: $e');
+        return [];
       }
+    }
 
+    // Conservative guard: if local-only is set but cacheManagerService wasn't
+    // available above, avoid making network calls and return empty list.
+    if (_appConfig.localStorageOnly) {
       return [];
     }
 
@@ -220,12 +186,14 @@ class MerchantPosApiService extends GetxService {
         );
       }
     } catch (e) {
-      print('[POS API] Error fetching products: $e');
+      getLogger('app').info('[POS API] Error fetching products: $e');
 
       // Try to return cached products if offline
       bool isOnline = connectivityService?.isOnline.value ?? true;
       if (!isOnline && cacheManagerService != null) {
-        print('[POS API] ⚠️  Returning cached products (offline mode)');
+        getLogger(
+          'app',
+        ).info('[POS API] âš ï¸  Returning cached products (offline mode)');
         final cachedProducts = await cacheManagerService.getCachedProducts(
           'merchant-${_authService.hashCode}', // Temporary merchant ID
         );
@@ -281,14 +249,18 @@ class MerchantPosApiService extends GetxService {
       cacheManagerService = Get.find<CacheManagerService>();
       connectivityService = Get.find<ConnectivityService>();
     } catch (e) {
-      print('[POS API] Cache services not initialized');
+      getLogger('app').info('[POS API] Cache services not initialized');
     }
 
-    print('🔍 [POS API] Requesting promotions for shop: $shopId');
+    getLogger(
+      'app',
+    ).info('ðŸ” [POS API] Requesting promotions for shop: $shopId');
 
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(milliseconds: 300));
-      print('✅ [POS API] Development mode - returning 2 mock promotions');
+      getLogger(
+        'app',
+      ).info('âœ… [POS API] Development mode - returning 2 mock promotions');
       return [
         Promotion(
           id: 'promo-1',
@@ -323,21 +295,24 @@ class MerchantPosApiService extends GetxService {
       ];
     }
 
-    if (_appConfig.localStorageOnly && cacheManagerService != null) {
-      print('[POS API] Local storage only mode - returning cached promotions');
-      final cachedPromotions = await cacheManagerService.getCachedPromotions(
-        'merchant-${_authService.hashCode}',
-      );
-
-      if (cachedPromotions != null && cachedPromotions.isNotEmpty) {
-        return cachedPromotions.map((p) => Promotion.fromJson(p)).toList();
+    if (_appConfig.localStorageOnly) {
+      getLogger(
+        'app',
+      ).info('[POS API] Local storage only mode - returning local promotions');
+      try {
+        final promotions = await _localDatabaseService
+            .listActivePromotionsForShop(shopId);
+        return promotions.map((p) => Promotion.fromJson(p)).toList();
+      } catch (e) {
+        getLogger('app').info('[POS API] Local getActivePromotions failed: $e');
+        return [];
       }
-
-      return [];
     }
 
     try {
-      print('📡 [POS API] Calling: $_baseUrl/promotions?shopId=$shopId');
+      getLogger(
+        'app',
+      ).info('ðŸ“¡ [POS API] Calling: $_baseUrl/promotions?shopId=$shopId');
 
       final response = await _connect.get(
         '$_baseUrl/promotions',
@@ -345,16 +320,18 @@ class MerchantPosApiService extends GetxService {
         query: {'shopId': shopId},
       );
 
-      print('📥 [POS API] Response status: ${response.statusCode}');
-      print('📥 [POS API] Response body: ${response.body}');
+      getLogger(
+        'app',
+      ).info('ðŸ“¥ [POS API] Response status: ${response.statusCode}');
+      getLogger('app').info('ðŸ“¥ [POS API] Response body: ${response.body}');
 
       if (response.isOk && response.body['data'] != null) {
         final rawList = asList(response.body['data']);
         final promotions = rawList
             .map((p) => Promotion.fromJson(Map<String, dynamic>.from(p)))
             .toList();
-        print(
-          '✅ [POS API] Successfully parsed ${promotions.length} promotion(s)',
+        getLogger('app').info(
+          'âœ… [POS API] Successfully parsed ${promotions.length} promotion(s)',
         );
 
         // Cache the promotions for offline use
@@ -362,10 +339,10 @@ class MerchantPosApiService extends GetxService {
           final toCache = rawList
               .map((e) => Map<String, dynamic>.from(e as Map))
               .toList();
-          await cacheManagerService.cachePromotions(
-            toCache,
-            'merchant-${_authService.hashCode}', // Temporary merchant ID
-          );
+          final merchantId = _authService.user.value?.merchantId;
+          if (merchantId != null && merchantId.isNotEmpty) {
+            await cacheManagerService.cachePromotions(toCache, merchantId);
+          }
         }
 
         if (promotions.isNotEmpty) {
@@ -373,34 +350,39 @@ class MerchantPosApiService extends GetxService {
             final minSpendText = promo.minSpend > 0
                 ? 'min: \$${promo.minSpend.toStringAsFixed(2)}'
                 : 'no minimum';
-            print(
-              '   • ${promo.name}: ${promo.type} ${promo.value} ($minSpendText)',
+            getLogger('app').info(
+              '   â€¢ ${promo.name}: ${promo.type} ${promo.value} ($minSpendText)',
             );
           }
         } else {
-          print('⚠️  [POS API] Response contained empty promotions array');
+          getLogger(
+            'app',
+          ).info('âš ï¸  [POS API] Response contained empty promotions array');
         }
 
         return promotions;
       } else {
         final errorMsg =
             response.body?['message'] ?? 'Failed to fetch promotions';
-        print('❌ [POS API] Error: $errorMsg');
+        getLogger('app').info('âŒ [POS API] Error: $errorMsg');
         throw Exception(errorMsg);
       }
     } catch (e) {
-      print('[POS API] Error fetching promotions: $e');
+      getLogger('app').info('[POS API] Error fetching promotions: $e');
 
-      // Try to return cached promotions if offline
+      // Try to return cached promotions if offline and merchantId is available
       bool isOnline = connectivityService?.isOnline.value ?? true;
       if (!isOnline && cacheManagerService != null) {
-        print('[POS API] ⚠️  Returning cached promotions (offline mode)');
-        final cachedPromotions = await cacheManagerService.getCachedPromotions(
-          'merchant-${_authService.hashCode}', // Temporary merchant ID
-        );
-
-        if (cachedPromotions != null && cachedPromotions.isNotEmpty) {
-          return cachedPromotions.map((p) => Promotion.fromJson(p)).toList();
+        getLogger(
+          'app',
+        ).info('[POS API] âš ï¸  Returning cached promotions (offline mode)');
+        final merchantId = _authService.user.value?.merchantId;
+        if (merchantId != null && merchantId.isNotEmpty) {
+          final cachedPromotions = await cacheManagerService
+              .getCachedPromotions(merchantId);
+          if (cachedPromotions != null && cachedPromotions.isNotEmpty) {
+            return cachedPromotions.map((p) => Promotion.fromJson(p)).toList();
+          }
         }
       }
 
@@ -447,21 +429,23 @@ class MerchantPosApiService extends GetxService {
     try {
       offlineSalesService = Get.find<OfflineSalesService>();
     } catch (e) {
-      print('⚠️  [POS API] OfflineSalesService not initialized yet');
+      getLogger(
+        'app',
+      ).info('âš ï¸  [POS API] OfflineSalesService not initialized yet');
     }
 
     try {
       connectivityService = Get.find<ConnectivityService>();
     } catch (e) {
-      print(
-        '⚠️  [POS API] ConnectivityService not initialized yet, assuming online',
+      getLogger('app').info(
+        'âš ï¸  [POS API] ConnectivityService not initialized yet, assuming online',
       );
     }
 
     // =========================================================================
-    // MOCK IMPLEMENTATION
+    // MOCK IMPLEMENTATION (development only)
     // =========================================================================
-    if (_appConfig.localStorageOnly || _appConfig.isDevelopment) {
+    if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
 
       final saleId = clientSaleId;
@@ -499,55 +483,254 @@ class MerchantPosApiService extends GetxService {
     // =========================================================================
 
     if (_appConfig.localStorageOnly) {
-      if (offlineSalesService != null) {
-        print('[POS API] Local storage only mode - queueing sale locally');
-        final saleQueued = await offlineSalesService.processSale(saleData);
+      Map<String, dynamic>? safeSaleData;
+      try {
+        final localDb = Get.find<LocalDatabaseService>();
 
-        if (saleQueued) {
-          final saleId = clientSaleId;
-          final now = DateTime.now();
+        final merchantId =
+            _authService.user.value?.merchantId ??
+            _authService.user.value?.id ??
+            'local-merchant';
 
-          final saleItems = (saleData['items'] as List).map((item) {
-            final quantity = item['quantity'] as int;
-            final price = item['sellingPriceAtSale'] as double;
-            return SaleItem(
-              id: 'sale-item-${item['productId']}-${now.microsecondsSinceEpoch}',
-              saleId: saleId,
-              inventoryItemId: item['productId'] as String,
-              quantitySold: quantity,
-              sellingPriceAtSale: price,
-              subtotal: quantity * price,
-              createdAt: now,
-              updatedAt: now,
-            );
-          }).toList();
+        safeSaleData = <String, dynamic>{
+          'id': clientSaleId,
+          'client_sale_id': clientSaleId,
+          'shop_id': shopId,
+          'merchant_id': merchantId,
+          'sale_date': DateTime.now().toIso8601String(),
+          'total_amount': (saleData['totalAmount'] as num?)?.toDouble() ?? 0.0,
+          'discount_amount':
+              (saleData['discountAmount'] as num?)?.toDouble() ?? 0.0,
+          'applied_promotion_id': saleData['appliedPromotionId'],
+          'delivery_charge':
+              (saleData['deliveryCharge'] as num?)?.toDouble() ?? 0.0,
+          'payment_type': saleData['paymentType'] ?? 'cash',
+          'payment_status': 'succeeded',
+          'customer_id': saleData['customerId'] ?? saleData['customer_id'],
+          'created_at': DateTime.now().toIso8601String(),
+          'updated_at': DateTime.now().toIso8601String(),
+        };
 
-          return Sale(
-            id: saleId,
-            merchantId: 'local-storage-only',
-            shopId: shopId,
-            saleDate: now,
-            totalAmount: saleData['totalAmount'],
-            deliveryCharge: saleData['deliveryCharge'] ?? 0.0,
-            items: saleItems,
-            paymentType: saleData['paymentType'],
-            paymentStatus: 'pending',
-            createdAt: now,
-            updatedAt: now,
-          );
+        getLogger(
+          'app',
+        ).info('DEBUG: Local storage sale payload to insert: $safeSaleData');
+        getLogger(
+          'app',
+        ).info('DEBUG: Original saleData at checkout: $saleData');
+
+        final createdSaleId = await localDb.createSaleLocal(safeSaleData);
+        getLogger('app').info('DEBUG: Created local sale id: $createdSaleId');
+
+        final saleRow = await localDb.getSaleById(createdSaleId);
+
+        // Save line items as separate sale_items in local DB if it supports it
+        final itemRows = (saleData['items'] as List<dynamic>?) ?? [];
+        for (var itemIndex = 0; itemIndex < itemRows.length; itemIndex++) {
+          final itemData = itemRows[itemIndex];
+          if (itemData is Map<String, dynamic>) {
+            final itemId =
+                itemData['productId']?.toString() ??
+                '${DateTime.now().microsecondsSinceEpoch}_$itemIndex';
+            final quantity = (itemData['quantity'] as num?)?.toInt() ?? 0;
+            // Accept multiple possible keys for item name coming from different UI/flows
+            final extractedName = (itemData['itemName'] ?? itemData['item_name'] ?? itemData['name'] ?? itemData['productName'] ?? itemData['product_name'] ?? itemData['title'])?.toString() ?? '';
+            final saleItemData = {
+              'id': 'sale_item_${itemId}_$createdSaleId',
+              'sale_id': createdSaleId,
+              'inventory_item_id': itemId,
+              'item_name': extractedName,
+              'item_sku': itemData['itemSku'] ?? itemData['sku'] ?? '',
+              'quantity_sold': quantity,
+              'selling_price_at_sale':
+                  (itemData['sellingPriceAtSale'] as num?)?.toDouble() ?? (itemData['price'] as num?)?.toDouble() ?? 0.0,
+              'original_price_at_sale':
+                  (itemData['originalPriceAtSale'] as num?)?.toDouble(),
+              'subtotal':
+                  quantity *
+                  ((itemData['sellingPriceAtSale'] as num?)?.toDouble() ?? (itemData['price'] as num?)?.toDouble() ?? 0.0),
+              'created_at': DateTime.now().toIso8601String(),
+              'updated_at': DateTime.now().toIso8601String(),
+            };
+            if ((saleItemData['item_name'] as String).isEmpty) {
+              try {
+                // Attempt to lookup inventory item name from local inventory cache
+                final invs = await localDb.getInventoryForShopLocal(shopId);
+                final match = invs.firstWhere(
+                  (i) => (i['id'] ?? i['inventory_item_id'])?.toString() == itemId,
+                  orElse: () => {},
+                );
+                final found = (match['name'] ?? match['name'])?.toString() ?? '';
+                if (found.isNotEmpty) {
+                  saleItemData['item_name'] = found;
+                } else {
+                  getLogger('app').info('[POS] saleItem missing name for itemData: $itemData');
+                }
+              } catch (e) {
+                getLogger('app').info('[POS] saleItem name lookup failed: $e');
+              }
+            }
+            await localDb.createSaleItemLocal(saleItemData);
+
+            // Adjust local shop stock down for the sold item (mirror backend inventory decrement).
+            if (quantity > 0) {
+              await localDb.adjustStockLocal(
+                shopId: shopId,
+                itemId: itemId,
+                quantity: -quantity,
+                actorId: _authService.user.value?.id,
+              );
+            }
+          }
         }
-      }
 
-      throw Exception(
-        'Local storage only mode is enabled but sale queueing failed',
-      );
+        final itemsRows = await localDb.getSaleItemsForSale(createdSaleId);
+        final saleItems = itemsRows.map((row) {
+          final quantitySold = (row['quantity_sold'] as num?)?.toInt() ?? 0;
+          final sellingPriceAtSale =
+              (row['selling_price_at_sale'] as num?)?.toDouble() ?? 0.0;
+          final originalPriceAtSale = (row['original_price_at_sale'] as num?)
+              ?.toDouble();
+          final subtotal =
+              (row['subtotal'] as num?)?.toDouble() ??
+              (quantitySold * sellingPriceAtSale);
+          final createdAtValue = row['created_at'] as String?;
+          final updatedAtValue = row['updated_at'] as String?;
+
+          return SaleItem(
+            id: row['id']?.toString() ?? '',
+            saleId: row['sale_id']?.toString() ?? '',
+            inventoryItemId: row['inventory_item_id']?.toString() ?? '',
+            quantitySold: quantitySold,
+            sellingPriceAtSale: sellingPriceAtSale,
+            originalPriceAtSale: originalPriceAtSale,
+            subtotal: subtotal,
+            createdAt: createdAtValue != null
+                ? DateTime.parse(createdAtValue)
+                : DateTime.now(),
+            updatedAt: updatedAtValue != null
+                ? DateTime.parse(updatedAtValue)
+                : DateTime.now(),
+            itemName: row['item_name']?.toString(),
+            itemSku: row['item_sku']?.toString(),
+          );
+        }).toList();
+
+        final now = DateTime.now();
+
+        // Also persist a local invoice entry so invoices page can display local-only transactions.
+        final invoiceId = 'invoice_${createdSaleId}';
+        final invoiceItems = saleItems
+            .map(
+              (s) => {
+                'id': s.id,
+                'saleId': s.saleId,
+                'inventoryItemId': s.inventoryItemId,
+                'itemName': s.itemName,
+                'itemSku': s.itemSku,
+                'quantitySold': s.quantitySold,
+                'sellingPriceAtSale': s.sellingPriceAtSale,
+                'subtotal': s.subtotal,
+              },
+            )
+            .toList();
+        final subtotal =
+            (saleData['items'] as List<dynamic>?)?.fold<double>(0.0, (
+              sum,
+              item,
+            ) {
+              if (item is Map<String, dynamic>) {
+                final qty = (item['quantity'] as num?)?.toDouble() ?? 0.0;
+                final price =
+                    (item['sellingPriceAtSale'] as num?)?.toDouble() ?? 0.0;
+                return sum + (qty * price);
+              }
+              return sum;
+            }) ??
+            0.0;
+
+        final discountAmount = (saleData['discountAmount'] as num?)?.toDouble() ?? 0.0;
+        final deliveryCharge = (saleData['deliveryCharge'] as num?)?.toDouble() ?? 0.0;
+        final totalAmount = (saleData['totalAmount'] as num?)?.toDouble() ?? 0.0;
+        final explicitTaxAmount = (saleData['taxAmount'] as num?)?.toDouble();
+        final derivedTaxAmount = totalAmount - subtotal + discountAmount - deliveryCharge;
+
+        await localDb.createInvoiceLocal({
+          'id': invoiceId,
+          'saleId': createdSaleId,
+          'invoiceNumber': 'INV-${DateTime.now().millisecondsSinceEpoch}',
+          'merchantId': merchantId,
+          'shopId': shopId,
+          'customerId': saleData['customerId'] ?? saleData['customer_id'],
+          'invoiceDate': now.toIso8601String(),
+          'dueDate': null,
+          'subtotal': subtotal,
+            'discountAmount': discountAmount,
+            'taxAmount': explicitTaxAmount ?? (derivedTaxAmount < 0 ? 0.0 : derivedTaxAmount),
+            'deliveryCharge': deliveryCharge,
+            'totalAmount': totalAmount,
+          'paymentStatus': 'succeeded',
+          'notes': saleData['notes'] ?? '',
+          'createdAt': now.toIso8601String(),
+          'updatedAt': now.toIso8601String(),
+          'items': invoiceItems,
+        });
+
+        return Sale(
+          id: saleRow?['id'] ?? createdSaleId,
+          merchantId: saleRow?['merchant_id'] ?? merchantId,
+          shopId: saleRow?['shop_id'] ?? shopId,
+          saleDate: DateTime.parse(
+            saleRow?['sale_date'] ?? now.toIso8601String(),
+          ),
+          totalAmount:
+              (saleRow?['total_amount'] as num?)?.toDouble() ??
+              (saleData['totalAmount'] as num?)?.toDouble() ??
+              0.0,
+          discountAmount:
+              (saleRow?['discount_amount'] as num?)?.toDouble() ??
+              (saleData['discountAmount'] as num?)?.toDouble() ??
+              0.0,
+          deliveryCharge:
+              (saleRow?['delivery_charge'] as num?)?.toDouble() ??
+              (saleData['deliveryCharge'] as num?)?.toDouble() ??
+              0.0,
+          items: saleItems,
+          appliedPromotionId:
+              saleRow?['applied_promotion_id'] as String? ??
+              saleData['appliedPromotionId'] as String?,
+          paymentType:
+              saleRow?['payment_type'] ?? saleData['paymentType'] ?? 'cash',
+          paymentStatus: saleRow?['payment_status'] ?? 'succeeded',
+          createdAt: DateTime.parse(
+            saleRow?['created_at'] ?? now.toIso8601String(),
+          ),
+          updatedAt: DateTime.parse(
+            saleRow?['updated_at'] ?? now.toIso8601String(),
+          ),
+        );
+      } catch (e, stackTrace) {
+        final debugMsg =
+            StringBuffer(
+                'Local storage only mode is enabled but saving sale failed: $e',
+              )
+              ..writeln('\nSafe sale data: ${safeSaleData ?? 'unknown'}')
+              ..writeln('Original checkout payload: $saleData')
+              ..writeln('Stack trace: $stackTrace');
+        final debugMsgString = debugMsg.toString();
+        getLogger('app').info('DEBUG: $debugMsgString');
+        // Printer-friendly output for emulator / terminal copy
+        print('DEBUG: $debugMsgString');
+        throw Exception(debugMsgString);
+      }
     }
 
     // Check connectivity
     bool isOnline = connectivityService?.isOnline.value ?? true;
 
     if (!isOnline && offlineSalesService != null) {
-      print('[POS API] 🔴 Device is offline - queueing sale for later sync');
+      getLogger(
+        'app',
+      ).info('[POS API] ðŸ”´ Device is offline - queueing sale for later sync');
 
       // Queue the sale for offline processing
       final saleQueued = await offlineSalesService.processSale(saleData);
@@ -586,7 +769,9 @@ class MerchantPosApiService extends GetxService {
           updatedAt: now,
         );
 
-        print('[POS API] ✅ Sale queued successfully (will sync when online)');
+        getLogger('app').info(
+          '[POS API] âœ… Sale queued successfully (will sync when online)',
+        );
         return offlineSale;
       } else {
         throw Exception('Failed to queue sale for offline processing');
@@ -594,7 +779,9 @@ class MerchantPosApiService extends GetxService {
     }
 
     // If online, attempt to send to backend
-    print('[POS API] 🟢 Device is online - sending sale to backend');
+    getLogger(
+      'app',
+    ).info('[POS API] ðŸŸ¢ Device is online - sending sale to backend');
     try {
       final response = await _connect.post(
         '$_baseUrl/checkout',
@@ -603,26 +790,32 @@ class MerchantPosApiService extends GetxService {
       );
 
       if (response.statusCode == 201 && response.body['data'] != null) {
-        print('[POS API] ✅ Sale processed successfully online');
+        getLogger(
+          'app',
+        ).info('[POS API] âœ… Sale processed successfully online');
         return Sale.fromJson(asMap(response.body['data']));
       } else {
         final errorMsg = response.body?['message'] ?? 'Checkout failed';
-        print('[POS API] ❌ Backend returned error: $errorMsg');
+        getLogger(
+          'app',
+        ).info('[POS API] âŒ Backend returned error: $errorMsg');
 
         // If backend fails, queue for offline retry if service is available
         if (offlineSalesService != null) {
-          print('[POS API] ⚠️  Queuing sale for retry...');
+          getLogger('app').info('[POS API] âš ï¸  Queuing sale for retry...');
           await offlineSalesService.processSale(saleData);
         }
 
         throw Exception(errorMsg);
       }
     } catch (e) {
-      print('[POS API] ❌ Error sending sale to backend: $e');
+      getLogger('app').info('[POS API] âŒ Error sending sale to backend: $e');
 
       // On network error, queue for offline retry if service is available
       if (offlineSalesService != null) {
-        print('[POS API] ⚠️  Queuing sale for offline retry...');
+        getLogger(
+          'app',
+        ).info('[POS API] âš ï¸  Queuing sale for offline retry...');
         await offlineSalesService.processSale(saleData);
       }
 

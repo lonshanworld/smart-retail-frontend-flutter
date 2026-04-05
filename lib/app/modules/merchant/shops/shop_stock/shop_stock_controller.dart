@@ -1,9 +1,10 @@
-import 'dart:async'; // Required for Timer
+﻿import 'dart:async'; // Required for Timer
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:smart_retail/app/data/models/shop_stock_model.dart';
 import 'package:smart_retail/app/data/services/shop_api_service.dart';
 import 'package:smart_retail/app/routes/app_pages.dart'; // For navigation
+import 'package:smart_retail/app/utils/app_logger.dart';
 
 class ShopStockController extends GetxController {
   final ShopApiService _shopApiService = Get.find<ShopApiService>();
@@ -57,7 +58,7 @@ class ShopStockController extends GetxController {
         errorMessage.value = "Failed to fetch shop inventory.";
       }
     } catch (e) {
-      print("Error fetching shop stock for shop $shopId: $e");
+      getLogger('app').info("Error fetching shop stock for shop $shopId: $e");
       errorMessage.value = "An error occurred. Please try again.";
     } finally {
       if (showLoading) {
@@ -136,3 +137,4 @@ class Debouncer {
     _timer?.cancel();
   }
 }
+

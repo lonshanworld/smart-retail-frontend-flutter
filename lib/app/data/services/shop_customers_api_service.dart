@@ -95,6 +95,10 @@ class ShopCustomersApiService extends GetxService {
     }
 
     try {
+      if (_appConfig.localStorageOnly) {
+        final rows = await _localDatabaseService.listCustomersForShop(shopId);
+        return rows.map((r) => ShopCustomer.fromJson(r)).toList();
+      }
       // Using search endpoint with empty query to get all customers for a shop
       final url = '$_baseUrl/search?shopId=$shopId&query=';
       developer.log(
@@ -199,6 +203,22 @@ class ShopCustomersApiService extends GetxService {
         const Uuid().v4();
 
     try {
+      if (_appConfig.localStorageOnly) {
+        final requestBody = {
+          ...customerData,
+          'shop_id': shopId,
+          'shopId': shopId,
+          'clientOperationId': clientOperationId,
+        };
+        await _localDatabaseService.createCustomerLocal(requestBody);
+        return ShopCustomer.fromJson({
+          ...requestBody,
+          'id': clientOperationId,
+          'merchantId': 'local',
+          'createdAt': DateTime.now().toIso8601String(),
+          'updatedAt': DateTime.now().toIso8601String(),
+        });
+      }
       // Add shopId to the request body
       final requestBody = {
         ...customerData,

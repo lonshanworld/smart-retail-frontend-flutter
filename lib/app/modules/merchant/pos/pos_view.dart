@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:smart_retail/app/constants/currency.dart';
 import 'package:smart_retail/app/data/models/cart_item_model.dart';
 import 'package:smart_retail/app/data/models/shop_model.dart';
 import 'package:smart_retail/app/modules/merchant/pos/pos_controller.dart';
@@ -214,6 +215,7 @@ class PosView extends GetView<PosController> {
       if (controller.isSearching.value && controller.searchResults.isEmpty) {
         return const Center(child: CircularProgressIndicator());
       }
+
       if (controller.searchResults.isEmpty) {
         return const Center(child: Text('No products found.'));
       }
@@ -229,44 +231,95 @@ class PosView extends GetView<PosController> {
         itemCount: controller.searchResults.length,
         itemBuilder: (context, index) {
           final product = controller.searchResults[index];
-          return Card(
-            clipBehavior: Clip.antiAlias,
-            child: InkWell(
-              onTap: () => controller.addToCart(product),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Expanded(
-                    child: Container(
-                      color: Colors.grey[200],
-                      child: const Icon(
-                        Icons.image_outlined,
-                        size: 50,
-                        color: Colors.grey,
+
+          return Stack(
+            children: [
+              /// Product Card (static)
+              Card(
+                clipBehavior: Clip.antiAlias,
+                child: InkWell(
+                  onTap: () {
+                    controller.addToCart(product);
+                  },
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        child: Container(
+                          color: Colors.grey[200],
+                          child: const Icon(
+                            Icons.image_outlined,
+                            size: 50,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          product.name,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                        child: Text(
+                          NumberFormat.currency(
+                            symbol: currencySymbol,
+                          ).format(product.sellingPrice),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                  ),
+                ),
+              ),
+
+              /// ✅ Reactive overlay ONLY
+              Obx(() {
+                final cartItem = controller.getCartItemByProductId(product.id!);
+
+                if (cartItem == null || cartItem.quantity.value == 0) {
+                  return const SizedBox();
+                }
+
+                return Stack(
+                  children: [
+                    Positioned.fill(
+                      child: IgnorePointer(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.green.withOpacity(0.28),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Text(
-                      product.name,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.green.shade800,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Text(
+                          cartItem.quantity.value.toString(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                    child: Text(
-                      NumberFormat.currency(
-                        symbol: '\$',
-                      ).format(product.sellingPrice),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                ],
-              ),
-            ),
+                  ],
+                );
+              }),
+            ],
           );
         },
       );
@@ -274,7 +327,7 @@ class PosView extends GetView<PosController> {
   }
 
   Widget _buildCartPanel() {
-    final currencyFormatter = NumberFormat.currency(symbol: '\$');
+    final currencyFormatter = NumberFormat.currency(symbol: currencySymbol);
     return Container(
       color: Get.theme.scaffoldBackgroundColor,
       padding: const EdgeInsets.all(16),
@@ -346,7 +399,7 @@ class PosView extends GetView<PosController> {
   }
 
   Widget _buildCartItemTile(CartItem cartItem) {
-    final currencyFormatter = NumberFormat.currency(symbol: '\$');
+    final currencyFormatter = NumberFormat.currency(symbol: currencySymbol);
     return ListTile(
       contentPadding: EdgeInsets.zero,
       title: Text(
@@ -377,7 +430,7 @@ class PosView extends GetView<PosController> {
   }
 
   Widget _buildTotals() {
-    final currencyFormatter = NumberFormat.currency(symbol: '\$');
+    final currencyFormatter = NumberFormat.currency(symbol: currencySymbol);
     return Obx(
       () => Column(
         children: [
@@ -406,18 +459,20 @@ class PosView extends GetView<PosController> {
               ],
             ),
           ],
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Tax (${controller.taxRateLabel}%)',
-                style: Get.textTheme.bodyLarge,
-              ),
-              Text(
-                currencyFormatter.format(controller.taxAmount),
-                style: Get.textTheme.bodyLarge,
-              ),
-            ],
+          Obx(
+            () => Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Tax (${controller.taxRateLabel}%)',
+                  style: Get.textTheme.bodyLarge,
+                ),
+                Text(
+                  currencyFormatter.format(controller.taxAmount),
+                  style: Get.textTheme.bodyLarge,
+                ),
+              ],
+            ),
           ),
           if (controller.deliveryCharge > 0) ...[
             Row(
@@ -432,17 +487,19 @@ class PosView extends GetView<PosController> {
             ),
           ],
           const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Total', style: Get.textTheme.headlineSmall),
-              Text(
-                currencyFormatter.format(controller.cartTotal),
-                style: Get.textTheme.headlineSmall?.copyWith(
-                  color: Get.theme.colorScheme.primary,
+          Obx(
+            () => Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Total', style: Get.textTheme.headlineSmall),
+                Text(
+                  currencyFormatter.format(controller.cartTotal),
+                  style: Get.textTheme.headlineSmall?.copyWith(
+                    color: Get.theme.colorScheme.primary,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),

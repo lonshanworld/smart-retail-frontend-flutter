@@ -1,4 +1,4 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 import 'package:smart_retail/app/core/config/app_config.dart';
 import 'package:smart_retail/app/data/models/supplier_model.dart';
 import 'package:smart_retail/app/data/providers/api_constants.dart';
@@ -6,6 +6,8 @@ import 'package:smart_retail/app/data/services/auth_service.dart';
 import 'package:smart_retail/app/services/local_database_service.dart';
 import 'package:smart_retail/app/utils/response_utils.dart';
 import 'package:uuid/uuid.dart';
+import 'package:flutter/foundation.dart';
+import 'package:smart_retail/app/utils/app_logger.dart';
 
 class SupplierApiService extends GetxService {
   final GetConnect _connect = Get.find<GetConnect>();
@@ -15,6 +17,10 @@ class SupplierApiService extends GetxService {
       Get.find<LocalDatabaseService>();
 
   String get _baseUrl => '${ApiConstants.baseUrl}/merchant/suppliers';
+
+  String? _currentMerchantId() {
+    return _authService.user.value?.merchantId ?? _authService.user.value?.id;
+  }
 
   Future<Map<String, String>> _getHeaders() async {
     final token = await _authService.getToken();
@@ -83,6 +89,10 @@ class SupplierApiService extends GetxService {
       ];
     }
 
+    if (_appConfig.localStorageOnly) {
+      return getSuppliersLocal();
+    }
+
     final response = await _connect.get(_baseUrl, headers: await _getHeaders());
 
     if (response.isOk && response.body['data'] != null) {
@@ -93,6 +103,27 @@ class SupplierApiService extends GetxService {
     } else {
       throw Exception(response.body?['message'] ?? 'Failed to load suppliers');
     }
+  }
+
+  /// Local-only supplier list
+  Future<List<Supplier>> getSuppliersLocal() async {
+    final db = await _localDatabaseService.database;
+    final merchantId = _currentMerchantId();
+    final where = merchantId != null ? 'merchant_id = ?' : null;
+    final rows = where != null ? await db.query('suppliers', where: where, whereArgs: [merchantId], orderBy: 'created_at DESC, updated_at DESC, id DESC') : await db.query('suppliers', orderBy: 'created_at DESC, updated_at DESC, id DESC');
+    final List<Supplier> suppliers = rows.map<Supplier>((r) => Supplier.fromJson({
+      'id': r['id'],
+      'merchantId': r['merchant_id'],
+      'name': r['name'],
+      'contactName': r['contact_name'],
+      'contactEmail': r['contact_email'],
+      'contactPhone': r['contact_phone'],
+      'address': r['address'],
+      'notes': r['notes'],
+      'createdAt': r['created_at'],
+      'updatedAt': r['updated_at'],
+    })).toList();
+    return suppliers;
   }
 
   /// Creates a new supplier.
@@ -119,7 +150,22 @@ class SupplierApiService extends GetxService {
       );
     }
 
+    // (local-only handling occurs inside the main try block below)
+
     try {
+      if (_appConfig.localStorageOnly) {
+        // persist locally and return
+        final toSave = Map<String, dynamic>.from(payload);
+        toSave['id'] = payload['id'] ?? clientOperationId;
+        toSave['merchant_id'] =
+            toSave['merchantId'] ?? toSave['merchant_id'] ?? _currentMerchantId();
+        await _localDatabaseService.upsertSupplier(toSave);
+        return Supplier.fromJson({
+          ...toSave,
+          'id': toSave['id'],
+          'merchantId': toSave['merchant_id'] ?? toSave['merchantId'] ?? 'local',
+        });
+      }
       final headers = await _getHeaders();
       headers['X-Client-Operation-Id'] = clientOperationId;
       final response = await _connect.post(_baseUrl, payload, headers: headers);
@@ -156,7 +202,15 @@ class SupplierApiService extends GetxService {
       await Future.delayed(const Duration(seconds: 1));
       return true;
     }
-
+    if (_appConfig.localStorageOnly) {
+      try {
+        final db = await _localDatabaseService.database;
+        await db.delete('suppliers', where: 'id = ?', whereArgs: [supplierId]);
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }
     try {
       final headers = await _getHeaders();
       headers['X-Client-Operation-Id'] = clientOperationId;
@@ -168,9 +222,11 @@ class SupplierApiService extends GetxService {
           (response.body == null || response.body['status'] == 'success')) {
         return true;
       }
-      print(
-        'Error deleting supplier $supplierId: ${response.statusCode} - ${response.bodyString}',
-      );
+      if (kDebugMode) {
+        getLogger('app').info(
+          'Error deleting supplier $supplierId: ${response.statusCode} - ${response.bodyString}',
+        );
+      }
       return false;
     } catch (e) {
       if (_shouldQueue(e)) {
@@ -186,3 +242,4 @@ class SupplierApiService extends GetxService {
     }
   }
 }
+

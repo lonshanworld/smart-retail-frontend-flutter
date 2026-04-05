@@ -10,6 +10,7 @@ class MerchantMainScaffold extends StatefulWidget {
   final String title;
   final Widget? floatingActionButton;
   final FloatingActionButtonLocation? floatingActionButtonLocation;
+  final bool showBackbutton;
 
   const MerchantMainScaffold({
     super.key,
@@ -17,6 +18,7 @@ class MerchantMainScaffold extends StatefulWidget {
     required this.title,
     this.floatingActionButton,
     this.floatingActionButtonLocation,
+    this.showBackbutton = false,
   });
 
   @override
@@ -88,11 +90,23 @@ class _MerchantMainScaffoldState extends State<MerchantMainScaffold> {
       'selectedIcon': Icons.analytics,
     },
     {
-      'route': Routes.MERCHANT_AI_SALES_ANALYSIS,
-      'label': 'AI Analysis',
-      'icon': Icons.auto_awesome_outlined,
-      'selectedIcon': Icons.auto_awesome,
+      'route': Routes.MERCHANT_PROFIT_BREAKDOWN,
+      'label': 'Profit Breakdown',
+      'icon': Icons.account_balance_wallet_outlined,
+      'selectedIcon': Icons.account_balance_wallet,
     },
+    {
+      'route': Routes.MERCHANT_BUSINESS_ANALYSIS,
+      'label': 'Business Analysis',
+      'icon': Icons.query_stats_outlined,
+      'selectedIcon': Icons.query_stats,
+    },
+    // {
+    //   'route': Routes.MERCHANT_AI_SALES_ANALYSIS,
+    //   'label': 'AI Analysis',
+    //   'icon': Icons.auto_awesome_outlined,
+    //   'selectedIcon': Icons.auto_awesome,
+    // },
     {
       'route': Routes.MERCHANT_PROFILE,
       'label': 'Profile',
@@ -146,6 +160,12 @@ class _MerchantMainScaffoldState extends State<MerchantMainScaffold> {
                   backgroundColor: AppColors.merchant,
                   foregroundColor: Colors.white,
                   elevation: 0,
+                  leading: widget.showBackbutton
+                      ? IconButton(
+                          icon: const Icon(Icons.arrow_back),
+                          onPressed: () => Navigator.of(context).pop(),
+                        )
+                      : null,
                 )
               : null,
           drawer: isMobile ? _buildModernDrawer() : null,
@@ -451,7 +471,9 @@ class _MerchantMainScaffoldState extends State<MerchantMainScaffold> {
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
-                    side: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+                    side: BorderSide(
+                      color: Colors.white.withValues(alpha: 0.3),
+                    ),
                   ),
                 ),
               ),

@@ -57,13 +57,22 @@ class PaymentApiService extends GetxService {
     String? customerId,
   }) async {
     // =========================================================================
-    // MOCK IMPLEMENTATION
+    // MOCK / LOCAL-ONLY IMPLEMENTATION
     // =========================================================================
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
       // In a real scenario, this would be a unique secret from Stripe
       return 'pi_mock_secret_${DateTime.now().millisecondsSinceEpoch}';
     }
+
+    // When running in local-storage-only mode we must not call the backend.
+    // Return a locally-generated mock client secret so the checkout flow can proceed.
+    if (_appConfig.localStorageOnly) {
+      // Small delay to mimic network latency
+      await Future.delayed(const Duration(milliseconds: 300));
+      return 'pi_local_secret_${DateTime.now().millisecondsSinceEpoch}';
+    }
+
     // =========================================================================
 
     final payload = {

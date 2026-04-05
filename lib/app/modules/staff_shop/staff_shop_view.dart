@@ -81,6 +81,12 @@ class StaffShopView extends GetView<StaffShopController> {
                       ),
                       const SizedBox(height: 16),
                       _buildDetailRow(
+                        Icons.percent,
+                        'Tax Rate',
+                        '${shop.taxRate.toStringAsFixed(shop.taxRate.truncateToDouble() == shop.taxRate ? 0 : 2)}%',
+                      ),
+                      const SizedBox(height: 16),
+                      _buildDetailRow(
                         Icons.business_outlined,
                         'Merchant ID',
                         shop.merchantId,

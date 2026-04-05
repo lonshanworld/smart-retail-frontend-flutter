@@ -1,4 +1,4 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 import 'package:smart_retail/app/utils/dialog_utils.dart';
 import 'package:smart_retail/app/core/config/app_config.dart';
 import 'package:smart_retail/app/data/models/user_model.dart';
@@ -9,9 +9,10 @@ import 'package:smart_retail/app/data/models/user_selection_item.dart'; // <<< A
 import 'package:smart_retail/app/utils/response_utils.dart';
 import 'package:smart_retail/app/services/local_database_service.dart';
 import 'package:uuid/uuid.dart';
+import 'package:smart_retail/app/utils/app_logger.dart';
 
 class AdminUserService extends GetxService {
-  final GetConnect _connect = GetConnect(timeout: const Duration(seconds: 30));
+  final GetConnect _connect = Get.find<GetConnect>();
   final AuthService _authService = Get.find<AuthService>();
   final AppConfig _appConfig = Get.find<AppConfig>();
   final LocalDatabaseService _localDatabaseService =
@@ -22,7 +23,7 @@ class AdminUserService extends GetxService {
   Future<Map<String, String>?> _getAuthHeaders() async {
     final token = _authService.authToken.value;
     if (token == null) {
-      print("Auth token is null in AdminUserService");
+      getLogger('app').info("Auth token is null in AdminUserService");
       return null;
     }
     return {
@@ -141,12 +142,39 @@ class AdminUserService extends GetxService {
       query: queryParams,
       headers: headers,
     );
+    if (_appConfig.localStorageOnly) {
+      try {
+        final rows = await _localDatabaseService.listAllUsers(role: role);
+        // Apply isActive and searchTerm filters locally
+        var filtered = rows;
+        if (isActive != null) {
+          filtered = filtered.where((r) => ((r['is_active'] as int?) ?? 1) == (isActive ? 1 : 0)).toList();
+        }
+        if (searchTerm != null && searchTerm.isNotEmpty) {
+          final q = searchTerm.toLowerCase();
+          filtered = filtered.where((r) => (r['name'] as String?)?.toLowerCase().contains(q) == true || (r['email'] as String?)?.toLowerCase().contains(q) == true).toList();
+        }
+        final total = filtered.length;
+        final start = (page - 1) * pageSize;
+        final pageItems = filtered.skip(start).take(pageSize).map((r) => User.fromJson(r)).toList();
+        return AdminPaginatedUsersResponse(
+          users: pageItems,
+          currentPage: page,
+          totalPages: (total / pageSize).ceil(),
+          pageSize: pageSize,
+          totalCount: total,
+        );
+      } catch (e) {
+        getLogger('app').info('[AdminUserService] Local listUsers error: $e');
+        return null;
+      }
+    }
 
     if (response.statusCode == 200 && response.body['status'] == 'success') {
       // Use defensive normalization for the response data
       return AdminPaginatedUsersResponse.fromJson(asMap(response.body['data']));
     } else {
-      print(
+      getLogger('app').info(
         'Error listing users: ${response.statusCode} - ${response.bodyString}',
       );
       DialogUtils.showError(
@@ -179,8 +207,20 @@ class AdminUserService extends GetxService {
         const Uuid().v4();
     final payload = Map<String, dynamic>.from(userData)
       ..['clientOperationId'] = clientOperationId;
-
     try {
+      if (_appConfig.localStorageOnly) {
+        final toSave = Map<String, dynamic>.from(payload);
+        toSave['id'] = toSave['id'] ?? clientOperationId;
+        toSave['is_active'] = toSave['is_active'] ?? 1;
+        await _localDatabaseService.createUserLocal(toSave);
+        return User.fromJson({
+          ...toSave,
+          'id': toSave['id'],
+          'createdAt': DateTime.now().toIso8601String(),
+          'updatedAt': DateTime.now().toIso8601String(),
+        });
+      }
+
       final response = await _connect.post(
         _adminUsersBaseUrl,
         payload,
@@ -192,7 +232,7 @@ class AdminUserService extends GetxService {
       if (response.statusCode! < 300) {
         return User.fromJson(asMap(response.body['data']['user']));
       }
-      print(
+      getLogger('app').info(
         'Error creating user: ${response.statusCode} - ${response.bodyString}',
       );
       DialogUtils.showError(
@@ -242,6 +282,16 @@ class AdminUserService extends GetxService {
         updatedAt: DateTime.now(),
       );
     }
+    if (_appConfig.localStorageOnly) {
+      try {
+        final row = await _localDatabaseService.getUserById(userId);
+        return row == null ? null : User.fromJson(row);
+      } catch (e) {
+        getLogger('app').info('[AdminUserService] Local getUserById error: $e');
+        return null;
+      }
+    }
+
     final headers = await _getAuthHeaders();
     if (headers == null) return null;
 
@@ -253,7 +303,7 @@ class AdminUserService extends GetxService {
     if (response.statusCode == 200 && response.body['status'] == 'success') {
       return User.fromJson(asMap(response.body['data']));
     } else {
-      print(
+      getLogger('app').info(
         'Error fetching user $userId: ${response.statusCode} - ${response.bodyString}',
       );
       DialogUtils.showError(
@@ -288,6 +338,16 @@ class AdminUserService extends GetxService {
       ..['clientOperationId'] = clientOperationId;
 
     try {
+      if (_appConfig.localStorageOnly) {
+        final toSave = Map<String, dynamic>.from(payload)..['id'] = userId;
+        await _localDatabaseService.upsertUser(toSave);
+        return User.fromJson({
+          ...toSave,
+          'id': userId,
+          'updatedAt': DateTime.now().toIso8601String(),
+        });
+      }
+
       final response = await _connect.put(
         '$_adminUsersBaseUrl/$userId',
         payload,
@@ -300,7 +360,7 @@ class AdminUserService extends GetxService {
       if (response.statusCode == 200 && response.body['status'] == 'success') {
         return User.fromJson(asMap(response.body['data']));
       }
-      print(
+      getLogger('app').info(
         'Error updating user $userId: ${response.statusCode} - ${response.bodyString}',
       );
       DialogUtils.showError(
@@ -346,6 +406,12 @@ class AdminUserService extends GetxService {
     if (headers == null) return false;
     final clientOperationId = const Uuid().v4();
     try {
+      if (_appConfig.localStorageOnly) {
+        // soft-delete locally (deactivate)
+        await _localDatabaseService.upsertUser({'id': userId, 'is_active': 0});
+        return true;
+      }
+
       final response = await _connect.delete(
         '$_adminUsersBaseUrl/$userId',
         headers: {
@@ -360,7 +426,7 @@ class AdminUserService extends GetxService {
         );
         return true;
       }
-      print(
+      getLogger('app').info(
         'Error deactivating user $userId: ${response.statusCode} - ${response.bodyString}',
       );
       DialogUtils.showError(
@@ -411,6 +477,19 @@ class AdminUserService extends GetxService {
     if (headers == null) return null;
     final clientOperationId = const Uuid().v4();
     try {
+      if (_appConfig.localStorageOnly) {
+        await _localDatabaseService.upsertUser({'id': userId, 'is_active': 1});
+        return User.fromJson({
+          'id': userId,
+          'name': 'Local User',
+          'email': '',
+          'role': 'merchant',
+          'isActive': true,
+          'createdAt': DateTime.now().toIso8601String(),
+          'updatedAt': DateTime.now().toIso8601String(),
+        });
+      }
+
       final response = await _connect.put(
         '$_adminUsersBaseUrl/$userId/activate',
         {},
@@ -426,7 +505,7 @@ class AdminUserService extends GetxService {
         );
         return User.fromJson(asMap(response.body['data']));
       }
-      print(
+      getLogger('app').info(
         'Error activating user $userId: ${response.statusCode} - ${response.bodyString}',
       );
       DialogUtils.showError(
@@ -474,12 +553,17 @@ class AdminUserService extends GetxService {
     }
     final headers = await _getAuthHeaders();
     if (headers == null) return false;
-
     // IMPORTANT: Confirm this is the correct endpoint for permanent deletion on your backend.
     // It might be something like '$userId/force' or with a query parameter like '?permanent=true'.
     // For now, I'm using a common pattern: '$userId/permanent-delete'
     final clientOperationId = const Uuid().v4();
     try {
+      if (_appConfig.localStorageOnly) {
+        // Permanently remove local user record
+        await _localDatabaseService.database.then((db) => db.delete('users', where: 'id = ?', whereArgs: [userId]));
+        return true;
+      }
+
       final response = await _connect.delete(
         '$_adminUsersBaseUrl/$userId/permanent-delete',
         headers: {
@@ -494,7 +578,7 @@ class AdminUserService extends GetxService {
         );
         return true;
       }
-      print(
+      getLogger('app').info(
         'Error permanently deleting user $userId: ${response.statusCode} - ${response.bodyString}',
       );
       DialogUtils.showError(
@@ -545,6 +629,19 @@ class AdminUserService extends GetxService {
       headers: headers,
     );
 
+    if (_appConfig.localStorageOnly) {
+      try {
+        final rows = await _localDatabaseService.listAllUsers(role: 'merchant');
+        return rows.map((r) => UserSelectionItem(
+          id: r['id'].toString(),
+          name: r['name']?.toString() ?? r['email']?.toString() ?? '',
+        )).toList();
+      } catch (e) {
+        getLogger('app').info('[AdminUserService] Local getMerchantsForSelection failed: $e');
+        return [];
+      }
+    }
+
     if (response.statusCode == 200 && response.body['status'] == 'success') {
       final rawList = asList(response.body['data']);
       return rawList
@@ -554,7 +651,7 @@ class AdminUserService extends GetxService {
           )
           .toList();
     } else {
-      print(
+      getLogger('app').info(
         'Error fetching merchants for selection: ${response.statusCode} - ${response.bodyString}',
       );
       DialogUtils.showError(
@@ -564,3 +661,4 @@ class AdminUserService extends GetxService {
     }
   }
 }
+

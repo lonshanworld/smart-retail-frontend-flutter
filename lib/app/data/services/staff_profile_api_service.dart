@@ -3,12 +3,14 @@ import 'package:smart_retail/app/core/config/app_config.dart';
 import 'package:smart_retail/app/data/models/staff_profile_model.dart';
 import 'package:smart_retail/app/data/providers/api_constants.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
+import 'package:smart_retail/app/services/local_database_service.dart';
 import 'package:smart_retail/app/utils/response_utils.dart';
 
 class StaffProfileApiService extends GetxService {
   final AppConfig _appConfig = Get.find<AppConfig>();
   final GetConnect _connect = Get.find<GetConnect>();
   final AuthService _authService = Get.find<AuthService>();
+  final LocalDatabaseService _localDb = Get.find<LocalDatabaseService>();
 
   /// Fetches the detailed profile for the currently logged-in staff member.
   ///
@@ -46,6 +48,18 @@ class StaffProfileApiService extends GetxService {
         salary: 45000.00,
         payFrequency: 'Bi-Weekly',
       );
+    }
+
+    if (_appConfig.localStorageOnly) {
+      try {
+        final uid = await _authService.getUserId();
+        if (uid == null) throw Exception('No user id for local lookup');
+        final row = await _localDb.getUserById(uid);
+        if (row == null) throw Exception('Local user not found');
+        return StaffProfile.fromJson(row);
+      } catch (e) {
+        throw Exception('Failed to load local staff profile: $e');
+      }
     }
 
     final token = await _authService.getToken();

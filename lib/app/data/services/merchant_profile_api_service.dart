@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:bcrypt/bcrypt.dart';
 import 'package:smart_retail/app/core/config/app_config.dart';
 import 'package:smart_retail/app/data/models/user_model.dart';
 import 'package:smart_retail/app/data/providers/api_constants.dart';
@@ -33,6 +34,10 @@ class MerchantProfileApiService extends GetxService {
         text.contains('timeout');
   }
 
+  String _hashPassword(String password) {
+    return BCrypt.hashpw(password, BCrypt.gensalt());
+  }
+
   /// Fetches the current merchant's profile.
   ///
   /// __Request:__
@@ -52,6 +57,24 @@ class MerchantProfileApiService extends GetxService {
         throw Exception('Mock Error: No merchant user is currently logged in.');
       }
       return currentUser;
+    }
+
+    if (_appConfig.localStorageOnly) {
+      try {
+        final currentUserId =
+            _authService.userId.value ?? _authService.user.value?.id;
+        if (currentUserId == null)
+          throw Exception('No current user id available locally');
+        final row = await _localDatabaseService.getUserById(currentUserId);
+        if (row != null) {
+          return User.fromJson(row);
+        }
+        throw Exception('No local merchant profile available');
+      } catch (e) {
+        throw Exception(
+          'LOCAL_STORAGE_ONLY enabled but local profile fetch failed: $e',
+        );
+      }
     }
 
     final response = await _connect.get(_baseUrl, headers: await _getHeaders());
@@ -99,8 +122,40 @@ class MerchantProfileApiService extends GetxService {
     }
 
     final clientOperationId = const Uuid().v4();
-    final payload = Map<String, dynamic>.from(updates)..['clientOperationId'] = clientOperationId;
+    final payload = Map<String, dynamic>.from(updates)
+      ..['clientOperationId'] = clientOperationId;
     try {
+      if (_appConfig.localStorageOnly) {
+        final currentUserId =
+            _authService.userId.value ?? _authService.user.value?.id;
+        if (currentUserId == null) {
+          throw Exception('No current user id available locally');
+        }
+
+        final existingRow = await _localDatabaseService.getUserById(
+          currentUserId,
+        );
+        if (existingRow == null) {
+          throw Exception('No local merchant profile available to update');
+        }
+
+        final toSave = Map<String, dynamic>.from(existingRow)
+          ..addAll(updates)
+          ..['id'] = currentUserId;
+
+        if (updates.containsKey('password')) {
+          final rawPassword = updates['password']?.toString() ?? '';
+          if (rawPassword.isNotEmpty) {
+            toSave['password_hash'] = _hashPassword(rawPassword);
+          }
+          toSave.remove('password');
+        }
+
+        await _localDatabaseService.upsertUser(toSave);
+        final row = await _localDatabaseService.getUserById(currentUserId);
+        if (row != null) return User.fromJson(row);
+        // Fallback: return a merged local copy if available
+      }
       final headers = await _getHeaders();
       headers['X-Client-Operation-Id'] = clientOperationId;
       final response = await _connect.put(_baseUrl, payload, headers: headers);

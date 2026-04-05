@@ -5,6 +5,7 @@ import 'package:smart_retail/app/data/providers/api_constants.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
 import 'package:smart_retail/app/services/local_database_service.dart';
 import 'package:smart_retail/app/utils/response_utils.dart';
+import 'package:smart_retail/app/utils/app_logger.dart';
 import 'package:uuid/uuid.dart';
 
 class MerchantShopsApiService extends GetxService {
@@ -83,6 +84,7 @@ class MerchantShopsApiService extends GetxService {
   Future<List<Shop>> listShops() async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
+      // Start with generated mock shops
       if (_mockShops.isEmpty) {
         _mockShops.addAll(
           List.generate(
@@ -98,7 +100,58 @@ class MerchantShopsApiService extends GetxService {
           ),
         );
       }
-      return _mockShops;
+      // Also include any shops persisted in the local DB for the current merchant
+      try {
+        final merchantId = _authService.user.value?.merchantId ?? '';
+        final localRows = await _localDatabaseService.listShopsForMerchant(merchantId);
+        final localShops = localRows.map((r) => Shop.fromJson({
+              'id': r['id'],
+              'name': r['name'],
+              'address': r['address'],
+              'merchantId': r['merchantId'] ?? r['merchant_id'],
+            'taxRate': r['taxRate'] ?? r['tax_rate'],
+            'deliveryCharge': r['deliveryCharge'] ?? r['delivery_charge'],
+            'isActive': r['isActive'] ?? r['is_active'],
+            'isPrimary': r['isPrimary'] ?? r['is_primary'],
+              'createdAt': r['createdAt'] ?? r['created_at'],
+              'updatedAt': r['updatedAt'] ?? r['updated_at'],
+            })).toList();
+        return [..._mockShops, ...localShops];
+      } catch (_) {
+        return _mockShops;
+      }
+    }
+
+    // Local-only: fetch from local DB
+    if (_appConfig.localStorageOnly) {
+      try {
+          // Determine merchantId robustly: prefer populated user.merchantId, else fall back to stored userId
+          String merchantId = _authService.user.value?.merchantId ?? '';
+          if ((merchantId.isEmpty)) {
+            merchantId = _authService.userId.value ?? '';
+          }
+          if ((merchantId.isEmpty)) {
+            // As a last resort, call getUserId() which may read persisted storage
+            merchantId = await _authService.getUserId() ?? '';
+          }
+          final rows = await _localDatabaseService.listShopsForMerchant(merchantId);
+        try { getLogger('app').info('[MerchantShopsApiService] Local listShops for merchantId=$merchantId returned ${rows.length} rows'); } catch (_) {}
+        try { getLogger('app').info('[MerchantShopsApiService] Local rows: $rows'); } catch (_) {}
+        return rows.map((r) => Shop.fromJson({
+          'id': r['id'],
+          'name': r['name'],
+          'address': r['address'],
+          'merchantId': r['merchantId'] ?? r['merchant_id'],
+          'taxRate': r['taxRate'] ?? r['tax_rate'],
+          'deliveryCharge': r['deliveryCharge'] ?? r['delivery_charge'],
+          'isActive': r['isActive'] ?? r['is_active'],
+          'isPrimary': r['isPrimary'] ?? r['is_primary'],
+          'createdAt': r['createdAt'] ?? r['created_at'],
+          'updatedAt': r['updatedAt'] ?? r['updated_at'],
+        })).toList();
+      } catch (e) {
+        throw Exception('Local fetch shops failed: $e');
+      }
     }
 
     final response = await _connect.get(_baseUrl, headers: await _getHeaders());
@@ -111,6 +164,42 @@ class MerchantShopsApiService extends GetxService {
     } else {
       throw Exception(response.body?['message'] ?? 'Failed to load shops');
     }
+  }
+  
+  Future<Shop?> getShopById(String shopId) async {
+    if (shopId.isEmpty) return null;
+
+    if (_appConfig.localStorageOnly) {
+      try {
+        final row = await _localDatabaseService.getShopById(shopId);
+        if (row == null) return null;
+        return Shop.fromJson({
+          'id': row['id'],
+          'name': row['name'],
+          'address': row['address'],
+          'merchantId': row['merchantId'] ?? row['merchant_id'],
+          'taxRate': row['taxRate'] ?? row['tax_rate'],
+          'deliveryCharge': row['deliveryCharge'] ?? row['delivery_charge'],
+          'isActive': row['isActive'] ?? row['is_active'],
+          'isPrimary': row['isPrimary'] ?? row['is_primary'],
+          'createdAt': row['createdAt'] ?? row['created_at'],
+          'updatedAt': row['updatedAt'] ?? row['updated_at'],
+        });
+      } catch (e) {
+        throw Exception('Local getShopById failed: $e');
+      }
+    }
+
+    final response = await _connect.get(
+      '$_baseUrl/$shopId',
+      headers: await _getHeaders(),
+    );
+
+    if (response.isOk && response.body['data'] != null) {
+      return Shop.fromJson(asMap(response.body['data']));
+    }
+
+    throw Exception(response.body?['message'] ?? 'Failed to load shop');
   }
 
   /// Creates a new shop for the current merchant.
@@ -142,6 +231,38 @@ class MerchantShopsApiService extends GetxService {
       return newShop;
     }
 
+    // Local-only
+    if (_appConfig.localStorageOnly) {
+      final id = clientOperationId;
+      final merchantId = _authService.user.value?.merchantId;
+      if (merchantId == null || merchantId.isEmpty) {
+        throw Exception('Merchant ID not available in local mode');
+      }
+      final payloadLocal = {
+        'id': id,
+        'merchant_id': merchantId,
+        'name': name,
+        'address': address,
+        'created_at': DateTime.now().toIso8601String(),
+        'updated_at': DateTime.now().toIso8601String(),
+      };
+      try {
+        getLogger('app').info('[MerchantShopsApiService] Local createShop payload: $payloadLocal');
+      } catch (_) {}
+      await _localDatabaseService.upsertShop(payloadLocal);
+      try { getLogger('app').info('[MerchantShopsApiService] Local createShop persisted id=$id'); } catch (_) {}
+      return Shop(
+        id: id,
+        name: name,
+        address: address,
+        merchantId: merchantId,
+        taxRate: 5.0,
+        deliveryCharge: 0.0,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+    }
+
     try {
       final headers = await _getHeaders();
       headers['X-Client-Operation-Id'] = clientOperationId;
@@ -164,6 +285,8 @@ class MerchantShopsApiService extends GetxService {
           name: name,
           address: address,
           merchantId: 'pending',
+          taxRate: 5.0,
+          deliveryCharge: 0.0,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         );
@@ -203,6 +326,30 @@ class MerchantShopsApiService extends GetxService {
         return updatedShop;
       }
       throw Exception('Mock shop not found');
+    }
+
+    // Local-only
+    if (_appConfig.localStorageOnly) {
+      final merchantId = _authService.user.value?.merchantId;
+      if (merchantId == null || merchantId.isEmpty) {
+        throw Exception('Merchant ID not available in local mode');
+      }
+      final payloadLocal = {
+        'id': shopId,
+        'merchant_id': merchantId,
+        'name': name,
+        'address': address,
+        'updated_at': DateTime.now().toIso8601String(),
+      };
+      await _localDatabaseService.upsertShop(payloadLocal);
+      return Shop(
+        id: shopId,
+        name: name,
+        address: address,
+        merchantId: payloadLocal['merchant_id'] as String,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
     }
 
     try {
@@ -245,6 +392,11 @@ class MerchantShopsApiService extends GetxService {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(milliseconds: 500));
       _mockShops.removeWhere((s) => s.id == shopId);
+      return;
+    }
+    // Local-only
+    if (_appConfig.localStorageOnly) {
+      await _localDatabaseService.deleteShop(shopId);
       return;
     }
 

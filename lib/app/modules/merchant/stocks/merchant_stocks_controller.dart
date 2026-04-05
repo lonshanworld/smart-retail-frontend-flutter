@@ -1,7 +1,8 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 import 'package:smart_retail/app/data/models/inventory_item_model.dart';
 import 'package:smart_retail/app/data/services/inventory_api_service.dart';
 import 'package:smart_retail/app/routes/app_pages.dart';
+import 'package:smart_retail/app/utils/app_logger.dart';
 
 class MerchantStocksController extends GetxController {
   final InventoryApiService _inventoryApiService =
@@ -21,19 +22,19 @@ class MerchantStocksController extends GetxController {
     try {
       isLoading.value = true;
       errorMessage.value = null;
-      print('[MerchantStocks] Fetching inventory items...');
+      getLogger('app').info('[MerchantStocks] Fetching inventory items...');
       final response = await _inventoryApiService.listInventoryItems();
-      print(
+      getLogger('app').info(
         '[MerchantStocks] Response received: ${response != null ? '${response.items.length} items' : 'null'}',
       );
       if (response != null) {
         inventoryItems.assignAll(response.items);
-        print('[MerchantStocks] Items assigned: ${inventoryItems.length}');
+        getLogger('app').info('[MerchantStocks] Items assigned: ${inventoryItems.length}');
       } else {
         inventoryItems.assignAll([]);
       }
     } catch (e) {
-      print('[MerchantStocks] Error: $e');
+      getLogger('app').info('[MerchantStocks] Error: $e');
       errorMessage.value = e.toString();
     } finally {
       isLoading.value = false;
@@ -52,3 +53,4 @@ class MerchantStocksController extends GetxController {
     Get.toNamed(Routes.MERCHANT_STOCK_MOVE);
   }
 }
+

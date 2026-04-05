@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart'; // For kDebugMode
+﻿import 'package:flutter/foundation.dart'; // For kDebugMode
 import 'package:get/get.dart';
 import 'package:smart_retail/app/utils/dialog_utils.dart';
 import 'package:smart_retail/app/core/config/app_config.dart';
@@ -9,9 +9,10 @@ import 'package:smart_retail/app/data/providers/api_constants.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
 import 'package:smart_retail/app/services/local_database_service.dart';
 import 'package:uuid/uuid.dart';
+import 'package:smart_retail/app/utils/app_logger.dart';
 
 class AdminMerchantService extends GetxService {
-  final GetConnect _connect = GetConnect(timeout: const Duration(seconds: 30));
+  final GetConnect _connect = Get.find<GetConnect>();
   final AuthService _authService = Get.find<AuthService>();
   final AppConfig _appConfig = Get.find<AppConfig>();
   final LocalDatabaseService _localDatabaseService =
@@ -38,7 +39,7 @@ class AdminMerchantService extends GetxService {
       errorMessage += " (${response.body?['data']})";
     }
     if (kDebugMode) {
-      print(
+      getLogger('app').info(
         'Error $operation: ${response.statusCode} - ${response.bodyString}',
       );
     }
@@ -150,6 +151,31 @@ class AdminMerchantService extends GetxService {
         ),
       );
     }
+    // Local-only: return merchants from local DB when enabled
+    if (_appConfig.localStorageOnly) {
+      try {
+        final rows = await _localDatabaseService.listAllUsers(role: 'merchant');
+        final merchants = rows.map((r) => Merchant.fromJson(r)).toList();
+        final total = merchants.length;
+        final pageItems = merchants.skip((page - 1) * pageSize).take(pageSize).toList();
+        return PaginatedAdminMerchantsResponse(
+          merchants: pageItems,
+          pagination: PaginationInfo(
+            totalItems: total,
+            totalPages: (total / pageSize).ceil(),
+            currentPage: page,
+            pageSize: pageSize,
+          ),
+        );
+      } catch (e) {
+        getLogger('app').info('[AdminMerchantService] Local listMerchants failed: $e');
+        return PaginatedAdminMerchantsResponse(
+          merchants: [],
+          pagination: PaginationInfo(totalItems: 0, totalPages: 0, currentPage: page, pageSize: pageSize),
+        );
+      }
+    }
+
     final token = await _getAuthToken();
     if (token == null) return null;
 
@@ -171,7 +197,7 @@ class AdminMerchantService extends GetxService {
     }
 
     if (kDebugMode) {
-      print(
+      getLogger('app').info(
         '[AdminMerchantService] Listing merchants with query: $queryParameters',
       );
     }
@@ -181,8 +207,8 @@ class AdminMerchantService extends GetxService {
       headers: {'Authorization': 'Bearer $token'},
       query: queryParameters,
     );
-    print('checking respnose ${response.body}');
-    print('is true mapping? ${response.body['data'] is Map<String, dynamic>}');
+    getLogger('app').info('checking respnose ${response.body}');
+    getLogger('app').info('is true mapping? ${response.body['data'] is Map<String, dynamic>}');
     if (response.statusCode == 200) {
       return PaginatedAdminMerchantsResponse.fromJson(response.body);
     } else {
@@ -221,7 +247,7 @@ class AdminMerchantService extends GetxService {
       '$_adminMerchantsBaseUrl/$merchantIdOrUserId',
       headers: {'Authorization': 'Bearer $token'},
     );
-    print('checking get merchant response ${response.body}');
+    getLogger('app').info('checking get merchant response ${response.body}');
 
     if (response.statusCode == 200 && response.body['status'] == 'success') {
       return Merchant.fromJson(asMap(response.body['data']));
@@ -261,6 +287,19 @@ class AdminMerchantService extends GetxService {
       ..['clientOperationId'] = clientOperationId;
 
     try {
+      if (_appConfig.localStorageOnly) {
+        final toSave = Map<String, dynamic>.from(payload);
+        toSave['id'] = toSave['id'] ?? clientOperationId;
+        toSave['role'] = 'merchant';
+        toSave['is_active'] = toSave['is_active'] ?? 1;
+        await _localDatabaseService.createUserLocal(toSave);
+        return User.fromJsonWithShop({
+          ...toSave,
+          'createdAt': DateTime.now().toIso8601String(),
+          'updatedAt': DateTime.now().toIso8601String(),
+        });
+      }
+
       final response = await _connect.post(
         _adminUsersBaseUrl,
         payload,
@@ -327,6 +366,17 @@ class AdminMerchantService extends GetxService {
       ..['clientOperationId'] = clientOperationId;
 
     try {
+      if (_appConfig.localStorageOnly) {
+        final toSave = Map<String, dynamic>.from(payload)..['id'] = userId;
+        await _localDatabaseService.upsertUser(toSave);
+        return User.fromJson({
+          ...toSave,
+          'id': userId,
+          'role': 'merchant',
+          'updatedAt': DateTime.now().toIso8601String(),
+        });
+      }
+
       final response = await _connect.put(
         '$_adminUsersBaseUrl/$userId',
         payload,
@@ -380,7 +430,7 @@ class AdminMerchantService extends GetxService {
   Future<bool> setMerchantUserActiveStatus(String userId, bool isActive) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(milliseconds: 300));
-      print('Mock status update for $userId to $isActive');
+      getLogger('app').info('Mock status update for $userId to $isActive');
       return true;
     }
     final token = await _getAuthToken();
@@ -388,6 +438,11 @@ class AdminMerchantService extends GetxService {
     final clientOperationId = const Uuid().v4();
     final payload = {'isActive': isActive, 'clientOperationId': clientOperationId};
     try {
+      if (_appConfig.localStorageOnly) {
+        await _localDatabaseService.upsertUser({'id': userId, 'is_active': isActive ? 1 : 0});
+        return true;
+      }
+
       final response = await _connect.put(
         '$_adminUsersBaseUrl/$userId',
         payload,
@@ -431,13 +486,18 @@ class AdminMerchantService extends GetxService {
   Future<bool> deleteUserMerchant(String userId) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(milliseconds: 500));
-      print('Mock delete for $userId');
+      getLogger('app').info('Mock delete for $userId');
       return true;
     }
     final token = await _getAuthToken();
     if (token == null) return false;
     final clientOperationId = const Uuid().v4();
     try {
+      if (_appConfig.localStorageOnly) {
+        await _localDatabaseService.database.then((db) => db.delete('users', where: 'id = ?', whereArgs: [userId]));
+        return true;
+      }
+
       final response = await _connect.delete(
         '$_adminUsersBaseUrl/$userId',
         headers: {
@@ -467,3 +527,4 @@ class AdminMerchantService extends GetxService {
     }
   }
 }
+

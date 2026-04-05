@@ -1,4 +1,4 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 import 'package:smart_retail/app/core/config/app_config.dart';
 import 'package:smart_retail/app/data/models/inventory_item_model.dart';
 import 'package:smart_retail/app/data/models/promotion_model.dart';
@@ -7,6 +7,9 @@ import 'package:smart_retail/app/data/providers/api_constants.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
 import 'package:smart_retail/app/utils/response_utils.dart';
 import 'package:uuid/uuid.dart';
+import 'package:flutter/foundation.dart';
+import 'package:smart_retail/app/services/local_database_service.dart';
+import 'package:smart_retail/app/utils/app_logger.dart';
 
 class ShopPosApiService extends GetxService {
   final GetConnect _connect = Get.find<GetConnect>();
@@ -244,6 +247,59 @@ class ShopPosApiService extends GetxService {
     }
     // =========================================================================
 
+    // Local-only short-circuit for product search
+    if (_appConfig.localStorageOnly) {
+      try {
+        final localDb = Get.find<LocalDatabaseService>();
+        final rows = await localDb.getInventoryForShopLocal(shopId);
+
+        // convert base rows to InventoryItem for filter operations
+        final items = rows
+            .map((r) => InventoryItem.fromJson(Map<String, dynamic>.from(r)))
+            .toList();
+
+        var filtered = items;
+
+        if (categoryId != null && categoryId.isNotEmpty) {
+          filtered = filtered
+              .where(
+                (p) => p.categoryId == categoryId || p.category == categoryId,
+              )
+              .toList();
+        }
+        if (subcategoryId != null && subcategoryId.isNotEmpty) {
+          filtered = filtered
+              .where((p) => p.subcategoryId == subcategoryId)
+              .toList();
+        }
+        if (brandId != null && brandId.isNotEmpty) {
+          filtered = filtered.where((p) => p.brandId == brandId).toList();
+        }
+
+        if (searchTerm.isEmpty) {
+          return filtered;
+        }
+
+        final lowerCaseSearchTerm = searchTerm.toLowerCase();
+        return filtered
+            .where(
+              (p) =>
+                  p.name.toLowerCase().contains(lowerCaseSearchTerm) ||
+                  (p.sku?.toLowerCase().contains(lowerCaseSearchTerm) ?? false),
+            )
+            .toList();
+      } catch (e) {
+        getLogger('app').info('[SHOP POS API] Local searchProducts failed: $e');
+        return [];
+      }
+    }
+
+    // Safety: if running in local-only mode but local DB lookup failed above,
+    // return an empty list rather than making a network call.
+    if (_appConfig.localStorageOnly) {
+      return [];
+    }
+
     // Determine the correct endpoint based on user role
     final userRole = _authService.user.value?.role;
     final String endpoint;
@@ -259,18 +315,20 @@ class ShopPosApiService extends GetxService {
       // Merchants accessing shop dashboard use merchant endpoint with shopId
       endpoint = '${ApiConstants.baseUrl}/merchant/pos/products';
       queryParams['shopId'] = shopId;
-      print(
-        '👔 [SHOP POS API] Using merchant POS endpoint for products search (shopId: $shopId)',
+      getLogger('app').info(
+        'ðŸ‘” [SHOP POS API] Using merchant POS endpoint for products search (shopId: $shopId)',
       );
     } else if (userRole == 'staff') {
       // Staff accessing shop dashboard use staff endpoint (uses their assigned shop from JWT)
       endpoint = '${ApiConstants.baseUrl}/staff/pos/products';
-      print('👤 [SHOP POS API] Using staff POS endpoint for products search');
+      getLogger('app').info(
+        'ðŸ‘¤ [SHOP POS API] Using staff POS endpoint for products search',
+      );
     } else {
       // Fallback for other roles
       endpoint = '$_baseUrl/$shopId/products';
-      print(
-        '🏪 [SHOP POS API] Using generic shop POS endpoint for products search (shopId: $shopId)',
+      getLogger('app').info(
+        'ðŸª [SHOP POS API] Using generic shop POS endpoint for products search (shopId: $shopId)',
       );
     }
 
@@ -291,32 +349,17 @@ class ShopPosApiService extends GetxService {
   }
 
   /// Fetches active promotions for the current shop.
-  ///
-  /// __Request:__
-  /// - __Method:__ GET
-  /// - __Endpoint:__
-  ///   - For merchants: `/api/v1/merchant/pos/promotions?shopId={shopId}`
-  ///   - For staff: `/api/v1/staff/pos/promotions` (uses assigned shop from user)
-  ///   - For shop (both roles accessing shop dashboard): `/api/v1/shop/pos/promotions` (uses assigned shop from user)
-  /// - __Headers:__
-  ///   - `Authorization: Bearer <token>`
-  /// - __Query Parameters:__
-  ///   - `shopId`: (optional for staff/shop endpoints, required for merchant)
-  ///
-  /// __Expected Response (Success):__
-  /// - __Status Code:__ 200
-  /// - __Body (JSON):__ (A list of `Promotion` objects)
   Future<List<Promotion>> getActivePromotions({String? shopId}) async {
     // =========================================================================
     // MOCK IMPLEMENTATION
     // =========================================================================
     if (_appConfig.isDevelopment) {
-      await Future.delayed(const Duration(milliseconds: 200));
       final now = DateTime.now();
       return [
         Promotion(
           id: 'promo-001',
           merchantId: 'mock-merchant',
+          shopId: shopId,
           name: '10% Off Everything',
           description: 'Get 10% discount on all items',
           type: 'percentage',
@@ -332,6 +375,7 @@ class ShopPosApiService extends GetxService {
         Promotion(
           id: 'promo-002',
           merchantId: 'mock-merchant',
+          shopId: shopId,
           name: '\$5 Off Orders Over \$50',
           description: 'Save \$5 on orders over \$50',
           type: 'fixed_amount',
@@ -348,40 +392,37 @@ class ShopPosApiService extends GetxService {
     }
     // =========================================================================
 
+    // Local-only short-circuit
+    if (_appConfig.localStorageOnly) {
+      try {
+        final localDb = Get.find<LocalDatabaseService>();
+        final rows = await localDb.listActivePromotionsForShop(shopId ?? '');
+        return rows
+            .map((r) => Promotion.fromJson(Map<String, dynamic>.from(r)))
+            .toList();
+      } catch (e) {
+        if (kDebugMode)
+          getLogger(
+            'app',
+          ).info('[SHOP POS API] Local promotions fetch failed: $e');
+        return [];
+      }
+    }
+
     // Determine the correct endpoint based on user role
     final userRole = _authService.user.value?.role;
     final String endpoint;
     final Map<String, dynamic> queryParams = {};
 
     if (userRole == 'merchant') {
-      // Merchants accessing shop dashboard use merchant endpoint with shopId
       endpoint = '${ApiConstants.baseUrl}/merchant/pos/promotions';
-      if (shopId != null) {
-        queryParams['shopId'] = shopId;
-      }
-      print(
-        '👔 [SHOP POS API] Using merchant POS endpoint for promotions (shopId: $shopId)',
-      );
+      if (shopId != null) queryParams['shopId'] = shopId;
     } else if (userRole == 'staff') {
-      // Staff accessing shop dashboard use staff endpoint (uses their assigned shop from JWT)
       endpoint = '${ApiConstants.baseUrl}/staff/pos/promotions';
-      print(
-        '👤 [SHOP POS API] Using staff POS endpoint for promotions (assigned shop from JWT)',
-      );
     } else {
-      // Fallback for other roles (shouldn't happen in normal flow)
       endpoint = '$_baseUrl/promotions';
-      if (shopId != null) {
-        queryParams['shopId'] = shopId;
-      }
-      print(
-        '🏪 [SHOP POS API] Using generic shop POS endpoint for promotions (shopId: $shopId)',
-      );
+      if (shopId != null) queryParams['shopId'] = shopId;
     }
-
-    print(
-      '📡 [SHOP POS API] Calling: $endpoint with query params: $queryParams',
-    );
 
     final response = await _connect.get(
       endpoint,
@@ -389,33 +430,16 @@ class ShopPosApiService extends GetxService {
       query: queryParams.isNotEmpty ? queryParams : null,
     );
 
-    print(
-      '📥 [SHOP POS API] Promotions response status: ${response.statusCode}',
-    );
-    print('📥 [SHOP POS API] Promotions response body: ${response.body}');
-
     if (response.isOk) {
-      // Backend returns data as null if no promotions exist, so we handle both cases
-      if (response.body['data'] != null) {
-        final rawList = asList(response.body['data']);
-        final promotions = rawList
-            .map((i) => Promotion.fromJson(Map<String, dynamic>.from(i)))
-            .toList();
-        print(
-          '✅ [SHOP POS API] Successfully fetched ${promotions.length} promotions',
-        );
-        return promotions;
-      } else {
-        // No promotions available, return empty list instead of error
-        print(
-          '⚠️ [SHOP POS API] No promotions available (data is null), returning empty list',
-        );
-        return [];
-      }
+      final rawList = asList(response.body['data'] ?? response.body);
+      return rawList
+          .map((i) => Promotion.fromJson(Map<String, dynamic>.from(i)))
+          .toList();
     } else {
-      print(
-        '❌ [SHOP POS API] Error: ${response.body?['message']} (status: ${response.statusCode})',
-      );
+      if (kDebugMode)
+        getLogger(
+          'app',
+        ).info('[SHOP POS API] Promotions fetch failed: ${response.body}');
       throw Exception(
         response.body?['message'] ?? 'Failed to fetch promotions',
       );
@@ -497,6 +521,212 @@ class ShopPosApiService extends GetxService {
         updatedAt: now,
       );
     }
+    // Local-only mode: persist sale in local DB and return constructed Sale
+    if (_appConfig.localStorageOnly) {
+      try {
+        final localDb = Get.find<LocalDatabaseService>();
+
+        final merchantId =
+            _authService.user.value?.merchantId ??
+            _authService.user.value?.id ??
+            'local-merchant';
+
+        final safeSaleData = <String, dynamic>{
+          'id': clientSaleId,
+          'client_sale_id': clientSaleId,
+          'shop_id': shopId,
+          'merchant_id': merchantId,
+          'sale_date': DateTime.now().toIso8601String(),
+          'total_amount': (saleData['totalAmount'] as num?)?.toDouble() ?? 0.0,
+          'discount_amount':
+              (saleData['discountAmount'] as num?)?.toDouble() ?? 0.0,
+          'applied_promotion_id': saleData['appliedPromotionId'],
+          'delivery_charge':
+              (saleData['deliveryCharge'] as num?)?.toDouble() ?? 0.0,
+          'payment_type': saleData['paymentType'] ?? 'cash',
+          'payment_status': 'succeeded',
+          'customer_id':
+              saleData['customerName'] ??
+              saleData['customer_id'] ??
+              saleData['customerId'],
+          'created_at': DateTime.now().toIso8601String(),
+          'updated_at': DateTime.now().toIso8601String(),
+        };
+
+        getLogger('app').info(
+          'DEBUG [ShopPosApiService] local checkout safeSaleData: $safeSaleData',
+        );
+
+        final createdSaleId = await localDb.createSaleLocal(safeSaleData);
+
+        final saleRow = await localDb.getSaleById(createdSaleId);
+
+        final itemRows = (saleData['items'] as List<dynamic>?) ?? [];
+        for (var i = 0; i < itemRows.length; i++) {
+          final itemData = itemRows[i];
+          if (itemData is Map<String, dynamic>) {
+            final itemId =
+                itemData['productId']?.toString() ??
+                '${DateTime.now().microsecondsSinceEpoch}_$i';
+            final quantity = (itemData['quantity'] as num?)?.toInt() ?? 0;
+            final extractedName = (itemData['itemName'] ?? itemData['item_name'] ?? itemData['name'] ?? itemData['productName'] ?? itemData['product_name'] ?? itemData['title'])?.toString() ?? '';
+            var resolvedItemName = extractedName;
+
+            if (resolvedItemName.isEmpty) {
+              try {
+                final inventoryRows = await localDb.getInventoryForShopLocal(shopId);
+                final match = inventoryRows.firstWhere(
+                  (iRow) => (iRow['id'] ?? iRow['inventory_item_id'])?.toString() == itemId,
+                  orElse: () => {},
+                );
+                resolvedItemName = (match['name'] ?? match['title'] ?? '').toString();
+              } catch (_) {}
+            }
+
+            await localDb.createSaleItemLocal({
+              'id': 'sale_item_${itemId}_$createdSaleId',
+              'sale_id': createdSaleId,
+              'inventory_item_id': itemId,
+              'item_name': resolvedItemName,
+              'item_sku': itemData['itemSku'] ?? itemData['sku'] ?? '',
+              'quantity_sold': quantity,
+              'selling_price_at_sale':
+                  (itemData['sellingPriceAtSale'] as num?)?.toDouble() ?? 0.0,
+              'original_price_at_sale':
+                  (itemData['originalPriceAtSale'] as num?)?.toDouble(),
+              'subtotal':
+                  quantity *
+                      ((itemData['sellingPriceAtSale'] as num?)?.toDouble() ?? 0.0),
+              'created_at': DateTime.now().toIso8601String(),
+              'updated_at': DateTime.now().toIso8601String(),
+            });
+
+            if (quantity > 0) {
+              await localDb.adjustStockLocal(
+                shopId: shopId,
+                itemId: itemId,
+                quantity: -quantity,
+                actorId: _authService.user.value?.id,
+              );
+            }
+          }
+        }
+
+        final itemsRows = await localDb.getSaleItemsForSale(createdSaleId);
+
+        final saleItems = itemsRows.map((row) {
+          return SaleItem(
+            id: row['id'] as String,
+            saleId: row['sale_id'] as String,
+            inventoryItemId: row['inventory_item_id'] as String,
+            quantitySold: (row['quantity_sold'] as num).toInt(),
+            sellingPriceAtSale: (row['selling_price_at_sale'] as num)
+                .toDouble(),
+            originalPriceAtSale: row['original_price_at_sale'] != null
+                ? (row['original_price_at_sale'] as num).toDouble()
+                : null,
+            subtotal: (row['subtotal'] as num).toDouble(),
+            createdAt: DateTime.parse(row['created_at'] as String),
+            updatedAt: DateTime.parse(row['updated_at'] as String),
+            itemName: row['item_name'] as String?,
+            itemSku: row['item_sku'] as String?,
+          );
+        }).toList();
+
+        final now = DateTime.now();
+
+        final invoiceId = 'invoice_${createdSaleId}';
+        final invoiceItems = saleItems
+            .map(
+              (s) => {
+                'id': s.id,
+                'saleId': s.saleId,
+                'inventoryItemId': s.inventoryItemId,
+                'itemName': s.itemName,
+                'itemSku': s.itemSku,
+                'quantitySold': s.quantitySold,
+                'sellingPriceAtSale': s.sellingPriceAtSale,
+                'subtotal': s.subtotal,
+              },
+            )
+            .toList();
+        final subtotal =
+            (saleData['items'] as List<dynamic>?)?.fold<double>(0.0, (
+              prev,
+              elem,
+            ) {
+              if (elem is Map<String, dynamic>) {
+                final qty = (elem['quantity'] as num?)?.toDouble() ?? 0.0;
+                final price =
+                    (elem['sellingPriceAtSale'] as num?)?.toDouble() ?? 0.0;
+                return prev + qty * price;
+              }
+              return prev;
+            }) ??
+            0.0;
+
+        final discountAmount = (saleData['discountAmount'] as num?)?.toDouble() ?? 0.0;
+        final deliveryCharge = (saleData['deliveryCharge'] as num?)?.toDouble() ?? 0.0;
+        final totalAmount = (saleData['totalAmount'] as num?)?.toDouble() ?? 0.0;
+        final explicitTaxAmount = (saleData['taxAmount'] as num?)?.toDouble();
+        final derivedTaxAmount = totalAmount - subtotal + discountAmount - deliveryCharge;
+
+        await localDb.createInvoiceLocal({
+          'id': invoiceId,
+          'saleId': createdSaleId,
+          'invoiceNumber': 'INV-${DateTime.now().millisecondsSinceEpoch}',
+          'merchantId': merchantId,
+          'shopId': shopId,
+          'customerId':
+              saleData['customerName'] ??
+              saleData['customerId'] ??
+              saleData['customer_id'],
+          'invoiceDate': now.toIso8601String(),
+          'dueDate': null,
+          'subtotal': subtotal,
+            'discountAmount': discountAmount,
+            'taxAmount': explicitTaxAmount ?? (derivedTaxAmount < 0 ? 0.0 : derivedTaxAmount),
+            'deliveryCharge': deliveryCharge,
+            'totalAmount': totalAmount,
+          'paymentStatus': 'succeeded',
+          'notes': 'Local shop checkout (offline)',
+          'createdAt': now.toIso8601String(),
+          'updatedAt': now.toIso8601String(),
+          'items': invoiceItems,
+        });
+
+        return Sale(
+          id: saleRow?['id'] ?? createdSaleId,
+          merchantId: saleRow?['merchant_id'] ?? 'local-storage',
+          shopId: saleRow?['shop_id'] ?? shopId,
+          saleDate: DateTime.parse(
+            saleRow?['sale_date'] ?? now.toIso8601String(),
+          ),
+          totalAmount:
+              (saleRow?['total_amount'] as num?)?.toDouble() ??
+              (saleData['totalAmount'] as num?)?.toDouble() ??
+              0.0,
+          deliveryCharge:
+              (saleRow?['delivery_charge'] as num?)?.toDouble() ??
+              (saleData['deliveryCharge'] as num?)?.toDouble() ??
+              0.0,
+          items: saleItems,
+          paymentType:
+              saleRow?['payment_type'] ?? saleData['paymentType'] ?? 'unknown',
+          paymentStatus: saleRow?['payment_status'] ?? 'pending',
+          createdAt: DateTime.parse(
+            saleRow?['created_at'] ?? now.toIso8601String(),
+          ),
+          updatedAt: DateTime.parse(
+            saleRow?['updated_at'] ?? now.toIso8601String(),
+          ),
+        );
+      } catch (e) {
+        throw Exception(
+          'Local storage only mode is enabled but saving sale failed: $e',
+        );
+      }
+    }
     // =========================================================================
 
     // Determine endpoint based on user role
@@ -508,27 +738,27 @@ class ShopPosApiService extends GetxService {
       endpoint = '${ApiConstants.baseUrl}/merchant/pos/checkout';
       // Create a copy of saleData and add shopId for merchant endpoint
       requestBody = {...saleData, 'shopId': shopId};
-      print(
-        '👔 [SHOP POS API] Using merchant POS endpoint for checkout (shopId: $shopId)',
+      getLogger('app').info(
+        'ðŸ‘” [SHOP POS API] Using merchant POS endpoint for checkout (shopId: $shopId)',
       );
     } else if (userRole == 'staff') {
       endpoint = '${ApiConstants.baseUrl}/staff/pos/checkout';
       // Staff endpoint doesn't need shopId (it's in JWT)
       requestBody = saleData;
-      print(
-        '👤 [SHOP POS API] Using staff POS endpoint for checkout (assigned shop from JWT)',
+      getLogger('app').info(
+        'ðŸ‘¤ [SHOP POS API] Using staff POS endpoint for checkout (assigned shop from JWT)',
       );
     } else {
       endpoint = '${ApiConstants.baseUrl}/shop/pos/checkout';
       // Generic shop endpoint includes shopId
       requestBody = {...saleData, 'shopId': shopId};
-      print(
-        '🏪 [SHOP POS API] Using generic shop POS endpoint for checkout (shopId: $shopId)',
+      getLogger('app').info(
+        'ðŸª [SHOP POS API] Using generic shop POS endpoint for checkout (shopId: $shopId)',
       );
     }
 
-    print('📡 [SHOP POS API] Calling: $endpoint');
-    print('📤 [SHOP POS API] Request body: $requestBody');
+    getLogger('app').info('ðŸ“¡ [SHOP POS API] Calling: $endpoint');
+    getLogger('app').info('ðŸ“¤ [SHOP POS API] Request body: $requestBody');
 
     final response = await _connect.post(
       endpoint,
@@ -536,15 +766,23 @@ class ShopPosApiService extends GetxService {
       headers: await _getHeaders(),
     );
 
-    print('📥 [SHOP POS API] Response status: ${response.statusCode}');
-    print('📥 [SHOP POS API] Response body: ${response.bodyString}');
+    getLogger(
+      'app',
+    ).info('ðŸ“¥ [SHOP POS API] Response status: ${response.statusCode}');
+    getLogger(
+      'app',
+    ).info('ðŸ“¥ [SHOP POS API] Response body: ${response.bodyString}');
 
     if (response.statusCode == 201 && response.body['data'] != null) {
-      print('✅ [SHOP POS API] Checkout succeeded');
+      getLogger('app').info('âœ… [SHOP POS API] Checkout succeeded');
       return Sale.fromJson(asMap(response.body['data']));
     } else {
-      print('❌ [SHOP POS API] Checkout failed. Status: ${response.statusCode}');
-      print('❌ [SHOP POS API] Response body: ${response.bodyString}');
+      getLogger('app').info(
+        'âŒ [SHOP POS API] Checkout failed. Status: ${response.statusCode}',
+      );
+      getLogger(
+        'app',
+      ).info('âŒ [SHOP POS API] Response body: ${response.bodyString}');
       throw Exception(response.body?['message'] ?? 'Checkout failed');
     }
   }

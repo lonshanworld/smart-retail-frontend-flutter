@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
 import 'package:smart_retail/app/data/models/inventory_item_model.dart';
@@ -7,6 +7,7 @@ import 'package:smart_retail/app/data/models/stock_movement_model.dart';
 import 'package:smart_retail/app/data/services/shop_inventory_api_service.dart';
 import 'package:smart_retail/app/data/services/inventory_api_service.dart';
 import 'package:smart_retail/app/utils/dialog_utils.dart';
+import 'package:smart_retail/app/utils/app_logger.dart';
 
 class MerchantShopInventoryController extends GetxController {
   final ShopInventoryApiService _apiService =
@@ -57,20 +58,20 @@ class MerchantShopInventoryController extends GetxController {
   void fetchShopsAndSelectById(String shopId) async {
     try {
       isLoadingShops.value = true;
-      print('Fetching shops to select shopId: $shopId');
+      getLogger('app').info('Fetching shops to select shopId: $shopId');
       final result = await _apiService.getShops();
       shops.assignAll(result);
-      print('check here first, shops loaded: ${shops.length}');
+      getLogger('app').info('check here first, shops loaded: ${shops.length}');
       // Find and select the specific shop
       final shop = shops.firstWhereOrNull((s) => s.id == shopId);
-      print('check here second, selected shop: $shop');
+      getLogger('app').info('check here second, selected shop: $shop');
       if (shop != null) {
         onShopSelected(shop);
       } else if (shops.isNotEmpty) {
         onShopSelected(shops.first);
       }
     } catch (e) {
-      print('Error fetching shops: $e');
+      getLogger('app').info('Error fetching shops: $e');
       DialogUtils.showError('Failed to load shops: $e');
     } finally {
       isLoadingShops.value = false;
@@ -99,17 +100,17 @@ class MerchantShopInventoryController extends GetxController {
   }
 
   Future<void> fetchShopInventory({bool showLoading = true}) async {
-    print('Fetching inventory for shop: ${selectedShop.value?.name}');
+    getLogger('app').info('Fetching inventory for shop: ${selectedShop.value?.name}');
     if (selectedShop.value?.id == null) return;
     try {
       if (showLoading) isLoadingInventory.value = true;
       final result = await _apiService.getInventoryForShop(
         selectedShop.value!.id!,
       );
-      print('Inventory items fetched: ${result.length}');
+      getLogger('app').info('Inventory items fetched: ${result.length}');
       shopInventoryList.assignAll(result);
     } catch (e) {
-      print('fetch inventory error: $e');
+      getLogger('app').info('fetch inventory error: $e');
       DialogUtils.showError(
         'Failed to load inventory for ${selectedShop.value?.name}: $e',
       );
@@ -171,7 +172,7 @@ class MerchantShopInventoryController extends GetxController {
   /// Fetches all merchant's inventory items (from API)
   Future<void> fetchAllMerchantInventory() async {
     try {
-      print('Fetching all merchant inventory from API...');
+      getLogger('app').info('Fetching all merchant inventory from API...');
 
       // Fetch all inventory items with a large page size to get all items
       final response = await _inventoryApiService.listInventoryItems(
@@ -181,15 +182,15 @@ class MerchantShopInventoryController extends GetxController {
 
       if (response != null && response.items.isNotEmpty) {
         allMerchantInventory.value = response.items;
-        print(
+        getLogger('app').info(
           'Fetched ${response.items.length} merchant inventory items from API',
         );
       } else {
         allMerchantInventory.value = [];
-        print('No inventory items found in API response');
+        getLogger('app').info('No inventory items found in API response');
       }
     } catch (e) {
-      print('Error fetching merchant inventory from API: $e');
+      getLogger('app').info('Error fetching merchant inventory from API: $e');
       allMerchantInventory.value = [];
       DialogUtils.showError('Failed to load merchant inventory: $e');
     }
@@ -220,9 +221,27 @@ class MerchantShopInventoryController extends GetxController {
         if (!shopItemIds.contains(item.id)) {
           // New item - must use positive quantity for stock-in
           if (quantityChange > 0) {
-            newItems.add({'productId': item.id, 'quantity': quantityChange});
+            final merchantId = (item.merchantId.isNotEmpty)
+                ? item.merchantId
+                : (selectedShop.value?.merchantId ?? '');
+            newItems.add({
+              'productId': item.id,
+              'quantity': quantityChange,
+              'merchantId': merchantId,
+              'name': item.name,
+              'description': item.description,
+              'sku': item.sku,
+              'sellingPrice': item.sellingPrice,
+              'originalPrice': item.originalPrice,
+              'lowStockThreshold': item.lowStockThreshold,
+              'category': item.category,
+              'categoryId': item.categoryId,
+              'subcategoryId': item.subcategoryId,
+              'brandId': item.brandId,
+              'supplier': item.supplier,
+            });
           } else {
-            print(
+            getLogger('app').info(
               'Skipping new item ${item.name} with negative/zero quantity: $quantityChange',
             );
           }
@@ -234,7 +253,7 @@ class MerchantShopInventoryController extends GetxController {
 
       // Process new items with bulk stock-in
       if (newItems.isNotEmpty) {
-        print('Adding ${newItems.length} new items to shop via stock-in');
+        getLogger('app').info('Adding ${newItems.length} new items to shop via stock-in');
         await _apiService.bulkStockIn(shopId: shopId, items: newItems);
       }
 
@@ -242,11 +261,9 @@ class MerchantShopInventoryController extends GetxController {
       for (final adjustment in existingAdjustments) {
         final item = adjustment.key;
         final quantityChange = adjustment.value;
-        final movementType = quantityChange > 0
-            ? 'stock_in'
-            : 'inventory_correction';
+        final movementType = quantityChange > 0 ? 'stock_in' : 'adjustment';
 
-        print('Adjusting existing item ${item.name} by $quantityChange');
+        getLogger('app').info('Adjusting existing item ${item.name} by $quantityChange');
         final clientOperationId = const Uuid().v4();
         await _apiService.adjustStock(
           shopId: shopId,
@@ -265,7 +282,7 @@ class MerchantShopInventoryController extends GetxController {
       await fetchShopInventory(showLoading: false);
       await fetchAllMerchantInventory();
     } catch (e) {
-      print('Error processing bulk stock changes: $e');
+      getLogger('app').info('Error processing bulk stock changes: $e');
       DialogUtils.showError('Failed to update stock: $e');
     } finally {
       isSubmitting.value = false;
@@ -278,3 +295,4 @@ class MerchantShopInventoryController extends GetxController {
     super.onClose();
   }
 }
+

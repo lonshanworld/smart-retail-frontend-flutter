@@ -1,7 +1,8 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 import 'package:smart_retail/app/utils/dialog_utils.dart';
 import 'package:smart_retail/app/modules/admin/dashboard/models/admin_dashboard_summary_model.dart'; // <<< CORRECTED IMPORT
 import 'package:smart_retail/app/data/services/admin_dashboard_service.dart';
+import 'package:smart_retail/app/utils/app_logger.dart';
 
 class AdminDashboardController extends GetxController {
   final AdminDashboardApiService _apiService =
@@ -38,7 +39,7 @@ class AdminDashboardController extends GetxController {
             "Failed to load dashboard data. Service returned null.";
       }
     } catch (e) {
-      print(
+      getLogger('app').info(
         'Error in AdminDashboardController fetching summary: ${e.toString()}',
       );
       errorMessage.value = 'An unexpected error occurred: ${e.toString()}';
@@ -54,3 +55,4 @@ class AdminDashboardController extends GetxController {
     fetchDashboardSummary();
   }
 }
+

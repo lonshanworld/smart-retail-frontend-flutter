@@ -52,16 +52,27 @@ class ShopItemsApiService extends GetxService {
       return _mockItems;
     }
 
+    if (_appConfig.localStorageOnly) {
+      try {
+        final rows = await _localDatabaseService.getInventoryForShopLocal(shopId);
+        return rows.map((r) => InventoryItem.fromJson(Map<String, dynamic>.from(r))).toList();
+      } catch (e) {
+        throw Exception('Failed to load local shop items: $e');
+      }
+    }
+
     final token = _authService.authToken.value;
     if (token == null || token.isEmpty) {
       throw Exception('No authentication token available');
     }
 
     final params = <String, String>{'shopId': shopId};
-    if (categoryId != null && categoryId.isNotEmpty)
+    if (categoryId != null && categoryId.isNotEmpty) {
       params['categoryId'] = categoryId;
-    if (subcategoryId != null && subcategoryId.isNotEmpty)
+    }
+    if (subcategoryId != null && subcategoryId.isNotEmpty) {
       params['subcategoryId'] = subcategoryId;
+    }
     if (brandId != null && brandId.isNotEmpty) params['brandId'] = brandId;
     final queryString = params.entries
         .map(
@@ -70,13 +81,19 @@ class ShopItemsApiService extends GetxService {
         )
         .join('&');
     final url = '$_baseUrl/items?$queryString';
-    final response = await GetConnect().get(
+    final response = await Get.find<GetConnect>().get(
       url,
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
       },
     );
+
+    // Defensive: if local-only mode was enabled concurrently, avoid network
+    // responses by returning an empty list (conservative fallback).
+    if (_appConfig.localStorageOnly) {
+      return <InventoryItem>[];
+    }
 
     if (response.statusCode == null) {
       throw Exception('Network error: Could not connect to server');
@@ -126,6 +143,21 @@ class ShopItemsApiService extends GetxService {
       return;
     }
 
+    // Local-only mode: apply stock adjustment to local DB
+    if (_appConfig.localStorageOnly) {
+      final clientOperationId = const Uuid().v4();
+      final actorId = await _authService.getUserId() ?? 'unknown';
+      final shopId = await _authService.getShopId() ?? 'unknown';
+      await _localDatabaseService.adjustStockLocal(
+        shopId: shopId,
+        itemId: itemId,
+        quantity: newQuantity,
+        actorId: actorId,
+        clientOperationId: clientOperationId,
+      );
+      return;
+    }
+
     final token = _authService.authToken.value;
     if (token == null || token.isEmpty) {
       final clientOperationId = const Uuid().v4();
@@ -143,7 +175,7 @@ class ShopItemsApiService extends GetxService {
     }
 
     final clientOperationId = const Uuid().v4();
-    final response = await GetConnect().put(
+    final response = await Get.find<GetConnect>().put(
       '$_baseUrl/items/$itemId/stock',
       {'quantity': newQuantity, 'clientOperationId': clientOperationId},
       headers: {

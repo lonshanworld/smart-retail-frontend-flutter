@@ -61,6 +61,9 @@ class PromotionAddEditController extends GetxController {
     try {
       isLoadingShops.value = true;
       shopList.value = await _apiService.getShops();
+      if (shopList.isNotEmpty && selectedShop.value == null) {
+        selectedShop.value = shopList.first;
+      }
     } catch (e) {
       DialogUtils.showError('Failed to load shops: $e');
     } finally {
@@ -178,16 +181,20 @@ class PromotionAddEditController extends GetxController {
     }
 
     try {
+      print('[PromotionAddEditController] savePromotion payload: $promotionData');
       if (isEditing.value) {
-        await _apiService.updatePromotion(existingPromotion!.id, promotionData);
+        final updated = await _apiService.updatePromotion(existingPromotion!.id, promotionData);
+        print('[PromotionAddEditController] updatePromotion result: ${updated.id}');
         Get.back(result: true);
         DialogUtils.showSuccess('Promotion updated successfully!');
       } else {
-        await _apiService.createPromotion(promotionData);
+        final created = await _apiService.createPromotion(promotionData);
+        print('[PromotionAddEditController] createPromotion result: ${created.id}');
         Get.back(result: true);
         DialogUtils.showSuccess('Promotion created successfully!');
       }
     } catch (e) {
+      print('[PromotionAddEditController] savePromotion error: $e');
       DialogUtils.showError(e.toString());
     } finally {
       isSaving.value = false;

@@ -1,5 +1,6 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 import 'local_database_service.dart';
+import 'package:smart_retail/app/utils/app_logger.dart';
 
 class CacheManagerService extends GetxService {
   late LocalDatabaseService _localDatabaseService;
@@ -18,11 +19,11 @@ class CacheManagerService extends GetxService {
   ) async {
     try {
       await _localDatabaseService.cacheProducts(products, merchantId);
-      print(
+      getLogger('app').info(
         '[CacheManager] Cached ${products.length} products for merchant $merchantId',
       );
     } catch (e) {
-      print('[CacheManager] Error caching products: $e');
+      getLogger('app').info('[CacheManager] Error caching products: $e');
     }
   }
 
@@ -34,13 +35,13 @@ class CacheManagerService extends GetxService {
         merchantId,
       );
       if (products != null) {
-        print(
+        getLogger('app').info(
           '[CacheManager] Retrieved ${products.length} cached products for merchant $merchantId',
         );
       }
       return products;
     } catch (e) {
-      print('[CacheManager] Error retrieving cached products: $e');
+      getLogger('app').info('[CacheManager] Error retrieving cached products: $e');
       return null;
     }
   }
@@ -53,11 +54,11 @@ class CacheManagerService extends GetxService {
   ) async {
     try {
       await _localDatabaseService.cachePromotions(promotions, merchantId);
-      print(
+      getLogger('app').info(
         '[CacheManager] Cached ${promotions.length} promotions for merchant $merchantId',
       );
     } catch (e) {
-      print('[CacheManager] Error caching promotions: $e');
+      getLogger('app').info('[CacheManager] Error caching promotions: $e');
     }
   }
 
@@ -69,13 +70,13 @@ class CacheManagerService extends GetxService {
         merchantId,
       );
       if (promotions != null) {
-        print(
+        getLogger('app').info(
           '[CacheManager] Retrieved ${promotions.length} cached promotions for merchant $merchantId',
         );
       }
       return promotions;
     } catch (e) {
-      print('[CacheManager] Error retrieving cached promotions: $e');
+      getLogger('app').info('[CacheManager] Error retrieving cached promotions: $e');
       return null;
     }
   }
@@ -88,9 +89,9 @@ class CacheManagerService extends GetxService {
   ) async {
     try {
       await _localDatabaseService.cacheShopInfo(shopInfo, merchantId);
-      print('[CacheManager] Cached shop info for shop ${shopInfo['id']}');
+      getLogger('app').info('[CacheManager] Cached shop info for shop ${shopInfo['id']}');
     } catch (e) {
-      print('[CacheManager] Error caching shop info: $e');
+      getLogger('app').info('[CacheManager] Error caching shop info: $e');
     }
   }
 
@@ -98,11 +99,11 @@ class CacheManagerService extends GetxService {
     try {
       final shopInfo = await _localDatabaseService.getCachedShopInfo(shopId);
       if (shopInfo != null) {
-        print('[CacheManager] Retrieved cached shop info for shop $shopId');
+        getLogger('app').info('[CacheManager] Retrieved cached shop info for shop $shopId');
       }
       return shopInfo;
     } catch (e) {
-      print('[CacheManager] Error retrieving cached shop info: $e');
+      getLogger('app').info('[CacheManager] Error retrieving cached shop info: $e');
       return null;
     }
   }
@@ -113,7 +114,7 @@ class CacheManagerService extends GetxService {
     try {
       return await _localDatabaseService.isCacheExpired('products');
     } catch (e) {
-      print('[CacheManager] Error checking if products cache expired: $e');
+      getLogger('app').info('[CacheManager] Error checking if products cache expired: $e');
       return true;
     }
   }
@@ -122,7 +123,7 @@ class CacheManagerService extends GetxService {
     try {
       return await _localDatabaseService.isCacheExpired('promotions');
     } catch (e) {
-      print('[CacheManager] Error checking if promotions cache expired: $e');
+      getLogger('app').info('[CacheManager] Error checking if promotions cache expired: $e');
       return true;
     }
   }
@@ -131,7 +132,7 @@ class CacheManagerService extends GetxService {
     try {
       return await _localDatabaseService.isCacheExpired('shop_info');
     } catch (e) {
-      print('[CacheManager] Error checking if shop info cache expired: $e');
+      getLogger('app').info('[CacheManager] Error checking if shop info cache expired: $e');
       return true;
     }
   }
@@ -139,18 +140,18 @@ class CacheManagerService extends GetxService {
   Future<void> clearExpiredCache() async {
     try {
       await _localDatabaseService.clearExpiredCache();
-      print('[CacheManager] Cleared expired cache entries');
+      getLogger('app').info('[CacheManager] Cleared expired cache entries');
     } catch (e) {
-      print('[CacheManager] Error clearing expired cache: $e');
+      getLogger('app').info('[CacheManager] Error clearing expired cache: $e');
     }
   }
 
   Future<void> clearAllCache() async {
     try {
       await _localDatabaseService.clearAllCache();
-      print('[CacheManager] Cleared all cache');
+      getLogger('app').info('[CacheManager] Cleared all cache');
     } catch (e) {
-      print('[CacheManager] Error clearing all cache: $e');
+      getLogger('app').info('[CacheManager] Error clearing all cache: $e');
     }
   }
 
@@ -158,9 +159,10 @@ class CacheManagerService extends GetxService {
 
   Future<String> getCacheSize() async {
     try {
-      return await _localDatabaseService.calculateCacheSize();
+      final size = await _localDatabaseService.calculateCacheSize();
+      return '${size.toString()} items';
     } catch (e) {
-      print('[CacheManager] Error calculating cache size: $e');
+      getLogger('app').info('[CacheManager] Error calculating cache size: $e');
       return '0 MB';
     }
   }
@@ -178,7 +180,7 @@ class CacheManagerService extends GetxService {
         ),
       };
     } catch (e) {
-      print('[CacheManager] Error getting cache info: $e');
+      getLogger('app').info('[CacheManager] Error getting cache info: $e');
       return {'size': '0 MB', 'lastCleared': null, 'lastUpdated': null};
     }
   }
@@ -196,9 +198,9 @@ class CacheManagerService extends GetxService {
       } else if (type == 'promotions') {
         await cachePromotions(data, merchantId);
       }
-      print('[CacheManager] Refreshed $type cache');
+      getLogger('app').info('[CacheManager] Refreshed $type cache');
     } catch (e) {
-      print('[CacheManager] Error refreshing $type cache: $e');
+      getLogger('app').info('[CacheManager] Error refreshing $type cache: $e');
     }
   }
 
@@ -209,7 +211,7 @@ class CacheManagerService extends GetxService {
         DateTime.now().toIso8601String(),
       );
     } catch (e) {
-      print('[CacheManager] Error setting last cache clear: $e');
+      getLogger('app').info('[CacheManager] Error setting last cache clear: $e');
     }
   }
 
@@ -220,7 +222,8 @@ class CacheManagerService extends GetxService {
         DateTime.now().toIso8601String(),
       );
     } catch (e) {
-      print('[CacheManager] Error setting last cache update: $e');
+      getLogger('app').info('[CacheManager] Error setting last cache update: $e');
     }
   }
 }
+

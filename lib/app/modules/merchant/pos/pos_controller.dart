@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -14,6 +14,7 @@ import 'package:smart_retail/app/data/services/pos_api_service.dart';
 import 'package:smart_retail/app/data/services/merchant_shops_api_service.dart';
 import 'package:smart_retail/app/modules/shared/code_scanner/code_scanner_view.dart';
 import 'dart:convert';
+import 'package:smart_retail/app/utils/app_logger.dart';
 
 class PosController extends GetxController {
   final MerchantPosApiService _posApiService =
@@ -63,11 +64,18 @@ class PosController extends GetxController {
     // Check if minimum spend is met
     if (cartSubtotal < promo.minSpend) return 0.0;
 
-    if (promo.type == 'percentage') {
+    final type = promo.type.toLowerCase();
+    if (type == 'percentage' || type == 'percent') {
       return cartSubtotal * (promo.value / 100);
-    } else if (promo.type == 'fixed_amount') {
+    } else if (type == 'fixed_amount' || type == 'fixed' || type == 'amount') {
       return promo.value;
     }
+
+    // Fallback: for unknown type, if value is positive treat as fixed amount
+    if (promo.value > 0) {
+      return promo.value;
+    }
+
     return 0.0;
   }
 
@@ -125,14 +133,27 @@ class PosController extends GetxController {
     searchProducts(initialLoad: true);
   }
 
+  CartItem? getCartItemByProductId(String productId) {
+  try {
+    return cartItems.firstWhere((item) => item.product.id == productId);
+  } catch (_) {
+    return null;
+  }
+}
+
   void fetchShops() async {
     try {
       isLoadingShops.value = true;
       final shops = await _shopsApiService.listShops();
       shopList.assignAll(shops);
+      final previousShopId = selectedShop.value?.id;
       if (shops.isNotEmpty) {
-        selectedShop.value = shops.first;
-        _setDeliveryCharge(shops.first.deliveryCharge);
+        final refreshedSelection = previousShopId == null
+            ? shops.first
+            : shops.firstWhereOrNull((shop) => shop.id == previousShopId) ??
+                shops.first;
+        selectedShop.value = refreshedSelection;
+        _setDeliveryCharge(refreshedSelection.deliveryCharge);
       }
     } catch (e) {
       DialogUtils.showError('Could not load shops: $e');
@@ -142,15 +163,18 @@ class PosController extends GetxController {
   }
 
   void onShopSelected(Shop? shop) async {
-    print('check shop $shop');
+    getLogger('app').info('check shop $shop');
     if (shop == null) return;
 
-    print('🏪 [POS CONTROLLER] Shop changed to: ${shop.name} (${shop.id})');
+    getLogger('app').info('ðŸª [POS CONTROLLER] Shop changed to: ${shop.name} (${shop.id})');
     if (shop.id != selectedShop.value?.id) {
       cartItems.clear();
     }
-    selectedShop.value = shop;
-    _setDeliveryCharge(shop.deliveryCharge);
+    final freshShop = shop.id == null
+      ? shop
+      : await _shopsApiService.getShopById(shop.id!) ?? shop;
+    selectedShop.value = freshShop;
+    _setDeliveryCharge(freshShop.deliveryCharge);
 
     // Clear cart when shop changes
     selectedPromotion.value = null; // Clear selected promotion
@@ -161,27 +185,27 @@ class PosController extends GetxController {
     await searchProducts(initialLoad: true); // Search for products
     await fetchActivePromotions(); // Fetch promotions for new shop
 
-    print(
-      '🏁 [POS CONTROLLER] Shop selection complete. Available promotions: ${availablePromotions.length}',
+    getLogger('app').info(
+      'ðŸ [POS CONTROLLER] Shop selection complete. Available promotions: ${availablePromotions.length}',
     );
   }
 
   Future<void> fetchActivePromotions() async {
     if (selectedShop.value == null || selectedShop.value!.id == null) {
-      print('⚠️  [POS CONTROLLER] Cannot fetch promotions - no shop selected');
+      getLogger('app').info('âš ï¸  [POS CONTROLLER] Cannot fetch promotions - no shop selected');
       return;
     }
 
-    print(
-      '🔄 [POS CONTROLLER] Fetching promotions for: ${selectedShop.value!.name} (${selectedShop.value!.id})',
+    getLogger('app').info(
+      'ðŸ”„ [POS CONTROLLER] Fetching promotions for: ${selectedShop.value!.name} (${selectedShop.value!.id})',
     );
 
     late final Timer promotionsTimeoutTimer;
     var didRespond = false;
     try {
       isLoadingPromotions.value = true;
-      print(
-        '🔄 [POS CONTROLLER] Starting promotions fetch (will warn after 12s if slow)',
+      getLogger('app').info(
+        'ðŸ”„ [POS CONTROLLER] Starting promotions fetch (will warn after 12s if slow)',
       );
 
       // Use a cancelable Timer guarded by a local flag so the info warning
@@ -190,7 +214,7 @@ class PosController extends GetxController {
       promotionsTimeoutTimer = Timer(const Duration(seconds: 12), () {
         if (!didRespond && isLoadingPromotions.value) {
           final msg = 'Promotions load is taking longer than expected';
-          print('⚠️ [POS CONTROLLER] $msg');
+          getLogger('app').info('âš ï¸ [POS CONTROLLER] $msg');
           DialogUtils.showInfo(msg);
         }
       });
@@ -206,29 +230,29 @@ class PosController extends GetxController {
       } catch (_) {}
 
       // Debug logging
-      print('📊 [POS CONTROLLER] Received ${promotions.length} promotion(s)');
+      getLogger('app').info('ðŸ“Š [POS CONTROLLER] Received ${promotions.length} promotion(s)');
       if (promotions.isEmpty) {
-        print('⚠️  [POS CONTROLLER] No active promotions available');
-        print('   Possible reasons:');
-        print('   1. Promotions are inactive (toggle is OFF)');
-        print('   2. Promotions have not started yet (future start_date)');
-        print('   3. Promotions have expired (past end_date)');
-        print('   4. Promotions are assigned to a different shop');
-        print('   5. No promotions created yet');
+        getLogger('app').info('âš ï¸  [POS CONTROLLER] No active promotions available');
+        getLogger('app').info('   Possible reasons:');
+        getLogger('app').info('   1. Promotions are inactive (toggle is OFF)');
+        getLogger('app').info('   2. Promotions have not started yet (future start_date)');
+        getLogger('app').info('   3. Promotions have expired (past end_date)');
+        getLogger('app').info('   4. Promotions are assigned to a different shop');
+        getLogger('app').info('   5. No promotions created yet');
       } else {
-        print('✅ [POS CONTROLLER] Promotions loaded successfully:');
+        getLogger('app').info('âœ… [POS CONTROLLER] Promotions loaded successfully:');
         for (var promo in promotions) {
           final typeSymbol = promo.type == 'percentage' ? '%' : '\$';
           final minSpend = promo.minSpend > 0
               ? ', min: \$${promo.minSpend.toStringAsFixed(2)}'
               : ', no minimum';
-          print(
-            '   • ${promo.name}: ${promo.value.toStringAsFixed(0)}$typeSymbol off$minSpend',
+          getLogger('app').info(
+            '   â€¢ ${promo.name}: ${promo.value.toStringAsFixed(0)}$typeSymbol off$minSpend',
           );
         }
       }
     } catch (e) {
-      print('❌ [POS CONTROLLER] Error loading promotions: $e');
+      getLogger('app').info('âŒ [POS CONTROLLER] Error loading promotions: $e');
       DialogUtils.showInfo('Could not load promotions: $e');
       try {
         promotionsTimeoutTimer.cancel();
@@ -238,8 +262,8 @@ class PosController extends GetxController {
         promotionsTimeoutTimer.cancel();
       } catch (_) {}
       isLoadingPromotions.value = false;
-      print(
-        '🏁 [POS CONTROLLER] Promotion fetch complete. isLoading: ${isLoadingPromotions.value}',
+      getLogger('app').info(
+        'ðŸ [POS CONTROLLER] Promotion fetch complete. isLoading: ${isLoadingPromotions.value}',
       );
     }
   }
@@ -257,7 +281,7 @@ class PosController extends GetxController {
 
   void selectPromotion(Promotion? promo) {
     selectedPromotion.value = promo;
-    cartItems.refresh(); // Trigger UI update for totals
+    // cartItems.refresh(); // Trigger UI update for totals
   }
 
   Future<void> searchProducts({bool initialLoad = false}) async {
@@ -299,16 +323,62 @@ class PosController extends GetxController {
     await searchProducts();
   }
 
+  int? _availableStockForProduct(InventoryItem product) {
+    final shopId = selectedShop.value?.id;
+    final stockInfo = product.stockInfo;
+
+    if (stockInfo != null && stockInfo.isNotEmpty) {
+      if (shopId != null) {
+        final matchedStock = stockInfo.firstWhereOrNull(
+          (stock) => stock.shopId == shopId,
+        );
+        if (matchedStock != null) {
+          return matchedStock.quantity;
+        }
+      }
+
+      if (stockInfo.length == 1) {
+        return stockInfo.first.quantity;
+      }
+    }
+
+    return null;
+  }
+
+  void _showStockLimitWarning(InventoryItem product, int available) {
+    final message = available <= 0
+        ? '${product.name} is out of stock for this shop.'
+        : 'Only $available unit${available == 1 ? '' : 's'} of ${product.name} left in this shop.';
+    DialogUtils.showWarning(
+      message,
+      title: 'Stock is gone',
+      snackPosition: SnackPosition.BOTTOM,
+    );
+  }
+
+  bool _canIncreaseQuantity(InventoryItem product, int requestedQuantity) {
+    final available = _availableStockForProduct(product);
+    return available == null || requestedQuantity <= available;
+  }
+
   void addToCart(InventoryItem product) {
     final existingIndex = cartItems.indexWhere(
       (item) => item.product.id == product.id,
     );
+    final requestedQuantity =
+        existingIndex != -1 ? cartItems[existingIndex].quantity.value + 1 : 1;
+    if (!_canIncreaseQuantity(product, requestedQuantity)) {
+      _showStockLimitWarning(product, _availableStockForProduct(product) ?? 0);
+      return;
+    }
     if (existingIndex != -1) {
       cartItems[existingIndex].quantity.value++;
+      // cartItems[existingIndex].quantity.refresh();
     } else {
       cartItems.add(CartItem(product: product, initialQuantity: 1));
     }
-    cartItems.refresh();
+    // cartItems.refresh();
+    // update();
   }
 
   void clearCart() {
@@ -316,8 +386,16 @@ class PosController extends GetxController {
   }
 
   void incrementCartItem(CartItem cartItem) {
+    final requestedQuantity = cartItem.quantity.value + 1;
+    if (!_canIncreaseQuantity(cartItem.product, requestedQuantity)) {
+      _showStockLimitWarning(
+        cartItem.product,
+        _availableStockForProduct(cartItem.product) ?? 0,
+      );
+      return;
+    }
     cartItem.quantity.value++;
-    cartItems.refresh();
+    // cartItems.refresh();
   }
 
   void decrementCartItem(CartItem cartItem) {
@@ -326,7 +404,7 @@ class PosController extends GetxController {
     } else {
       cartItems.remove(cartItem);
     }
-    cartItems.refresh();
+    // cartItems.refresh();
   }
 
   Future<void> handleCheckout() async {
@@ -337,6 +415,15 @@ class PosController extends GetxController {
     if (selectedShop.value == null || selectedShop.value!.id == null) {
       errorMessage.value = 'A shop must be selected.';
       return;
+    }
+
+    for (final item in cartItems) {
+      final available = _availableStockForProduct(item.product);
+      if (available != null && item.quantity.value > available) {
+        _showStockLimitWarning(item.product, available);
+        errorMessage.value = 'Cart quantity exceeds available stock.';
+        return;
+      }
     }
 
     isCheckingOut.value = true;
@@ -354,6 +441,7 @@ class PosController extends GetxController {
           .toList(),
       'totalAmount': cartTotal,
       'discountAmount': discountAmount,
+          'taxAmount': taxAmount,
       'deliveryCharge': deliveryCharge,
       'appliedPromotionId': selectedPromotion.value?.id,
       'paymentType': 'cash',
@@ -361,12 +449,14 @@ class PosController extends GetxController {
         'customerName': customerNameController.text,
     };
 
-    // Debug: log checkout payload
+    // Debug: log checkout payload and computed promotion details
     try {
+        getLogger('app').info('DEBUG: Merchant POS promotion selected: ${selectedPromotion.value?.name} (id: ${selectedPromotion.value?.id})');
+        getLogger('app').info('DEBUG: Merchant POS discountAmount: $discountAmount, cartSubtotal: $cartSubtotal, taxAmount: $taxAmount');
       final payloadJson = jsonEncode(saleData);
-      print('DEBUG: Merchant POS checkout payload: $payloadJson');
+      getLogger('app').info('DEBUG: Merchant POS checkout payload: $payloadJson');
     } catch (e) {
-      print('DEBUG: Failed to encode checkout payload: $e');
+      getLogger('app').info('DEBUG: Failed to encode checkout payload: $e');
     }
 
     try {
@@ -374,9 +464,12 @@ class PosController extends GetxController {
         selectedShop.value!.id!,
         saleData,
       );
-      print(
+      getLogger('app').info(
         'DEBUG: Merchant POS checkout response received: saleId=${result.id} total=${result.totalAmount}',
       );
+      if (Get.width < 800 && (Get.isBottomSheetOpen ?? false)) {
+        Get.back();
+      }
       _showSuccessDialog(result);
       clearCart();
       customerNameController.clear();
@@ -468,3 +561,4 @@ class PosController extends GetxController {
     super.onClose();
   }
 }
+

@@ -1,6 +1,7 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 import 'package:smart_retail/app/data/models/sale_model.dart';
 import 'package:smart_retail/app/data/services/shop_api_service.dart';
+import 'package:smart_retail/app/utils/app_logger.dart';
 
 class ShopSalesHistoryController extends GetxController {
   final ShopApiService _shopApiService = Get.find<ShopApiService>();
@@ -62,7 +63,7 @@ class ShopSalesHistoryController extends GetxController {
         }
       }
     } catch (e) {
-      print("Error fetching sales history for shop $shopId: $e");
+      getLogger('app').info("Error fetching sales history for shop $shopId: $e");
       errorMessage.value = "An error occurred. Please try again.";
       if (initialLoad) sales.clear();
     } finally {
@@ -85,3 +86,4 @@ class ShopSalesHistoryController extends GetxController {
     await fetchSalesHistory(initialLoad: true);
   }
 }
+

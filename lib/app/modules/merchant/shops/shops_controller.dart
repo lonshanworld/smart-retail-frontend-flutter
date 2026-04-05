@@ -1,6 +1,9 @@
 import 'package:get/get.dart';
 import 'package:smart_retail/app/data/models/shop_model.dart';
 import 'package:smart_retail/app/data/services/merchant_shops_api_service.dart';
+import 'package:smart_retail/app/services/local_database_service.dart';
+import 'package:smart_retail/app/data/services/auth_service.dart';
+import 'package:smart_retail/app/utils/app_logger.dart';
 import 'package:smart_retail/app/routes/app_pages.dart';
 import 'package:smart_retail/app/utils/dialog_utils.dart';
 
@@ -23,6 +26,15 @@ class MerchantShopsController extends GetxController {
       isLoading.value = true;
       errorMessage.value = null;
       final shops = await _apiService.listShops();
+      try { getLogger('app').info('[MerchantShopsController] fetchShops returned ${shops.length} shops'); } catch (_) {}
+      // Additionally dump raw local DB rows for troubleshooting localStorageOnly flows
+      try {
+        final localDb = Get.find<LocalDatabaseService>();
+        final auth = Get.isRegistered<AuthService>() ? Get.find<AuthService>() : null;
+        final merchantId = auth?.user.value?.merchantId ?? '';
+        final rawRows = await localDb.listShopsForMerchant(merchantId);
+        try { getLogger('app').info('[MerchantShopsController] Raw local DB shops for merchantId=$merchantId: $rawRows'); } catch (_) {}
+      } catch (_) {}
       shopList.assignAll(shops);
     } catch (e) {
       errorMessage.value = e.toString();

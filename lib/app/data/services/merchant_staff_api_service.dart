@@ -146,6 +146,26 @@ class MerchantStaffApiService extends GetxService {
       );
     }
 
+    if (_appConfig.localStorageOnly) {
+      try {
+        final merchantId = _authService.user.value?.merchantId ?? '';
+        final rows = await _localDatabaseService.listUsersForMerchant(merchantId);
+        final staffRows = rows.where((r) => (r['role'] as String?) == 'staff').toList();
+        final total = staffRows.length;
+        final start = (page - 1) * pageSize;
+        final items = staffRows.skip(start).take(pageSize).map((r) => User.fromJson(r)).toList();
+        return PaginatedStaffResponse(
+          staff: items,
+          totalCount: total,
+          currentPage: page,
+          pageSize: pageSize,
+          totalPages: (total / pageSize).ceil(),
+        );
+      } catch (e) {
+        throw Exception('Failed to load local staff: $e');
+      }
+    }
+
     final response = await _connect.get(
       _baseUrl,
       headers: await _getHeaders(),
@@ -171,7 +191,8 @@ class MerchantStaffApiService extends GetxService {
   Future<List<Shop>> getShopsForSelection() async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(milliseconds: 500));
-      return List.generate(
+      return _uniqueShops(
+        List.generate(
         5,
         (index) => Shop(
           id: 'shop-$index',
@@ -181,20 +202,49 @@ class MerchantStaffApiService extends GetxService {
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         ),
+      ),
       );
     }
+    if (_appConfig.localStorageOnly) {
+      try {
+        final merchantId = _authService.user.value?.merchantId ?? '';
+        final rows = await _localDatabaseService.listShopsForMerchant(merchantId);
+        return _uniqueShops(rows.map((r) => Shop.fromJson(r)).toList());
+      } catch (e) {
+        throw Exception('Failed to load local shops: $e');
+      }
+    }
+
     final response = await _connect.get(
       _shopsBaseUrl,
       headers: await _getHeaders(),
     );
     if (response.isOk && response.body['data'] != null) {
       final rawList = asList(response.body['data']);
-      return rawList
+      return _uniqueShops(rawList
           .map((i) => Shop.fromJson(Map<String, dynamic>.from(i)))
-          .toList();
+          .toList());
     } else {
       throw Exception(response.body?['message'] ?? 'Failed to load shops');
     }
+  }
+
+  List<Shop> _uniqueShops(List<Shop> shops) {
+    final seenIds = <String>{};
+    final unique = <Shop>[];
+
+    for (final shop in shops) {
+      final id = shop.id?.trim();
+      if (id == null || id.isEmpty) {
+        unique.add(shop);
+        continue;
+      }
+      if (seenIds.add(id)) {
+        unique.add(shop);
+      }
+    }
+
+    return unique;
   }
 
   /// Creates a new staff member for the current merchant.
@@ -239,6 +289,25 @@ class MerchantStaffApiService extends GetxService {
       return newUser;
     }
     try {
+      if (_appConfig.localStorageOnly) {
+        final toSave = Map<String, dynamic>.from(payload);
+        toSave['id'] = toSave['id'] ?? clientOperationId;
+        toSave['role'] = 'staff';
+        toSave['is_active'] = 1;
+        toSave['merchant_id'] = toSave['merchantId'] ?? _authService.user.value?.merchantId;
+        toSave['password_hash'] = toSave['password_hash'] ?? toSave['password'];
+        final now = DateTime.now().toIso8601String();
+        toSave['created_at'] = toSave['created_at'] ?? now;
+        toSave['updated_at'] = toSave['updated_at'] ?? now;
+        await _localDatabaseService.createUserLocal(toSave);
+        return User.fromJson({
+          ...toSave,
+          'id': toSave['id'],
+          'createdAt': toSave['created_at'],
+          'updatedAt': toSave['updated_at'],
+        });
+      }
+
       final headers = await _getHeaders();
       headers['X-Client-Operation-Id'] = clientOperationId;
       final response = await _connect.post(
@@ -316,6 +385,16 @@ class MerchantStaffApiService extends GetxService {
       );
     }
     try {
+      if (_appConfig.localStorageOnly) {
+        final toSave = Map<String, dynamic>.from(payload)..['id'] = staffId;
+        await _localDatabaseService.upsertUser(toSave);
+        return User.fromJson({
+          ...toSave,
+          'id': staffId,
+          'updatedAt': DateTime.now().toIso8601String(),
+        });
+      }
+
       final headers = await _getHeaders();
       headers['X-Client-Operation-Id'] = clientOperationId;
       final response = await _connect.put(
@@ -374,6 +453,12 @@ class MerchantStaffApiService extends GetxService {
     }
 
     try {
+      if (_appConfig.localStorageOnly) {
+        // soft-delete locally
+        await _localDatabaseService.upsertUser({'id': staffId, 'is_active': 0});
+        return;
+      }
+
       final headers = await _getHeaders();
       headers['X-Client-Operation-Id'] = clientOperationId;
       final response = await _connect.delete(
@@ -409,6 +494,18 @@ class MerchantStaffApiService extends GetxService {
       await Future.delayed(const Duration(milliseconds: 200));
       return {'deletable': true, 'blockers': {}};
     }
+    if (_appConfig.localStorageOnly) {
+      // Simple local check: assume deletable unless there are local stock movements
+      try {
+        final db = await _localDatabaseService.database;
+        final res = await db.rawQuery('SELECT COUNT(*) as c FROM stock_movements WHERE user_id = ?', [staffId]);
+        final count = res.isNotEmpty ? (res.first['c'] as int?) ?? 0 : 0;
+        return {'deletable': count == 0, 'blockers': {'stock_movements': count}};
+      } catch (e) {
+        return {'deletable': true, 'blockers': {}};
+      }
+    }
+
     final response = await _connect.get(
       '$_baseUrl/$staffId/delete-check',
       headers: await _getHeaders(),

@@ -1,9 +1,14 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:bcrypt/bcrypt.dart';
 import 'package:smart_retail/app/utils/dialog_utils.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
+import 'package:smart_retail/app/core/config/app_config.dart';
+import 'package:smart_retail/app/services/local_database_service.dart';
+import 'package:uuid/uuid.dart';
 import 'package:smart_retail/app/routes/app_pages.dart';
 import 'package:smart_retail/app/data/providers/api_constants.dart';
+import 'package:smart_retail/app/utils/app_logger.dart';
 
 class SignupView extends StatefulWidget {
   const SignupView({super.key});
@@ -39,8 +44,40 @@ class SignupViewState extends State<SignupView> {
     setState(() => _isLoading = true);
 
     try {
-      final connect = GetConnect();
-      print(ApiConstants.baseUrl);
+      final appConfig = Get.find<AppConfig>();
+      if (appConfig.localStorageOnly) {
+        // Create a local user record and save auth locally
+        try {
+          final db = Get.find<LocalDatabaseService>();
+          final id = const Uuid().v4();
+          final now = DateTime.now().toIso8601String();
+          final passwordHash = BCrypt.hashpw(password, BCrypt.gensalt());
+          final userMap = {
+            'id': id,
+            'name': name,
+            'email': email,
+            'password_hash': passwordHash,
+            'role': 'merchant',
+            'is_active': 1,
+            'merchantId': id,
+            'merchant_id': id,
+            'created_at': now,
+            'updated_at': now,
+          };
+          await db.createUserLocal(userMap);
+          await _authService.saveAuthDataFromPayload('local_$id', userMap);
+          DialogUtils.showSuccess('Account created (local mode). Welcome!');
+          Get.offAllNamed(Routes.MERCHANT_DASHBOARD);
+          return;
+        } catch (e) {
+          getLogger('app').info('[SignupView] Local signup failed: $e');
+          DialogUtils.showError('Local signup failed');
+          return;
+        }
+      }
+
+      final connect = Get.find<GetConnect>();
+      getLogger('app').info(ApiConstants.baseUrl);
       final response = await connect.post(
         '${ApiConstants.baseUrl}/auth/signup',
         {'name': name, 'email': email, 'password': password},
@@ -68,7 +105,7 @@ class SignupViewState extends State<SignupView> {
         DialogUtils.showError(msg);
       }
     } catch (e, st) {
-      print('[SignupView] Exception: $e\n$st');
+      getLogger('app').info('[SignupView] Exception: $e\n$st');
       DialogUtils.showError('An unexpected error occurred');
     } finally {
       setState(() => _isLoading = false);
@@ -88,7 +125,7 @@ class SignupViewState extends State<SignupView> {
             colors: [color.shade50, Colors.white],
           ),
         ),
-        child:  Center(
+        child: Center(
           child: SingleChildScrollView(
             child: Padding(
               padding: const EdgeInsets.all(24.0),
@@ -207,8 +244,7 @@ class SignupViewState extends State<SignupView> {
                                 filled: true,
                                 fillColor: Colors.grey.shade50,
                               ),
-                              validator: (v) =>
-                              (v == null || v.trim().isEmpty)
+                              validator: (v) => (v == null || v.trim().isEmpty)
                                   ? 'Please enter your name'
                                   : null,
                             ),
@@ -249,10 +285,14 @@ class SignupViewState extends State<SignupView> {
                               ),
                               keyboardType: TextInputType.emailAddress,
                               validator: (v) {
-                                if (v == null || v.trim().isEmpty)
+                                if (v == null || v.trim().isEmpty) {
                                   return 'Please enter your email';
-                                if (!GetUtils.isEmail(v.trim()))
+                                }
+
+                                if (!GetUtils.isEmail(v.trim())) {
                                   return 'Please enter a valid email';
+                                }
+
                                 return null;
                               },
                             ),
@@ -296,8 +336,8 @@ class SignupViewState extends State<SignupView> {
                                     color: Colors.grey.shade600,
                                   ),
                                   onPressed: () => setState(
-                                        () => _isPasswordHidden =
-                                    !_isPasswordHidden,
+                                    () =>
+                                        _isPasswordHidden = !_isPasswordHidden,
                                   ),
                                 ),
                                 filled: true,
@@ -348,8 +388,8 @@ class SignupViewState extends State<SignupView> {
                                     color: Colors.grey.shade600,
                                   ),
                                   onPressed: () => setState(
-                                        () => _isConfirmPasswordHidden =
-                                    !_isConfirmPasswordHidden,
+                                    () => _isConfirmPasswordHidden =
+                                        !_isConfirmPasswordHidden,
                                   ),
                                 ),
                                 filled: true,
@@ -382,22 +422,22 @@ class SignupViewState extends State<SignupView> {
                               onPressed: _isLoading ? null : _submit,
                               child: _isLoading
                                   ? const SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 3.0,
-                                ),
-                              )
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 3.0,
+                                      ),
+                                    )
                                   : Row(
-                                mainAxisAlignment:
-                                MainAxisAlignment.center,
-                                children: const [
-                                  Text('Sign Up'),
-                                  SizedBox(width: 8),
-                                  Icon(Icons.arrow_forward, size: 20),
-                                ],
-                              ),
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: const [
+                                        Text('Sign Up'),
+                                        SizedBox(width: 8),
+                                        Icon(Icons.arrow_forward, size: 20),
+                                      ],
+                                    ),
                             ),
                           ],
                         ),
@@ -415,8 +455,7 @@ class SignupViewState extends State<SignupView> {
                             ),
                           ),
                           TextButton(
-                            onPressed: () =>
-                                Get.toNamed(Routes.MERCHANT_LOGIN),
+                            onPressed: () => Get.toNamed(Routes.MERCHANT_LOGIN),
                             child: Text(
                               'Login',
                               style: TextStyle(

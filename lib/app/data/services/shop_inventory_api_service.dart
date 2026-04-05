@@ -1,4 +1,4 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
 import 'package:smart_retail/app/core/config/app_config.dart';
 import 'package:smart_retail/app/data/models/shop_inventory_item.dart';
@@ -8,6 +8,8 @@ import 'package:smart_retail/app/data/models/stock_movement_model.dart';
 import 'package:smart_retail/app/data/providers/api_constants.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
 import 'package:smart_retail/app/utils/response_utils.dart';
+import 'package:smart_retail/app/services/local_database_service.dart';
+import 'package:smart_retail/app/utils/app_logger.dart';
 
 class ShopInventoryApiService extends GetxService {
   final GetConnect _connect = Get.find<GetConnect>();
@@ -54,28 +56,33 @@ class ShopInventoryApiService extends GetxService {
     }
 
     // Staff inventory page uses the /shop/items endpoint.
-    print('🔍 [SHOP INVENTORY API] Fetching inventory for shopId: $shopId');
-    print(
-      '🌐 [SHOP INVENTORY API] Using endpoint: $_shopBaseUrl/items?shopId=$shopId',
+    getLogger('app').info('ðŸ” [SHOP INVENTORY API] Fetching inventory for shopId: $shopId');
+    getLogger('app').info(
+      'ðŸŒ [SHOP INVENTORY API] Using endpoint: $_shopBaseUrl/items?shopId=$shopId',
     );
+    if (_appConfig.localStorageOnly) {
+      final db = Get.find<LocalDatabaseService>();
+      final rows = await db.getInventoryForShopLocal(shopId);
+      return rows.map((r) => ShopInventoryItem.fromJson(r)).toList();
+    }
 
     final response = await _connect.get(
       '$_shopBaseUrl/items?shopId=$shopId',
       headers: await _getHeaders(),
     );
 
-    print('📥 [SHOP INVENTORY API] Response status: ${response.statusCode}');
+    getLogger('app').info('ðŸ“¥ [SHOP INVENTORY API] Response status: ${response.statusCode}');
 
     if (response.isOk && response.body['data'] != null) {
       final rawList = asList(response.body['data']);
-      print(
-        '✅ [SHOP INVENTORY API] Successfully fetched ${rawList.length} items',
+      getLogger('app').info(
+        'âœ… [SHOP INVENTORY API] Successfully fetched ${rawList.length} items',
       );
       return rawList
           .map((i) => ShopInventoryItem.fromJson(Map<String, dynamic>.from(i)))
           .toList();
     } else {
-      print('❌ [SHOP INVENTORY API] Error: ${response.body?['message']}');
+      getLogger('app').info('âŒ [SHOP INVENTORY API] Error: ${response.body?['message']}');
       throw Exception(
         response.body?['message'] ?? 'Failed to load shop inventory',
       );
@@ -113,8 +120,23 @@ class ShopInventoryApiService extends GetxService {
       return true;
     }
 
+    final opId = clientOperationId ?? const Uuid().v4();
+
+    if (_appConfig.localStorageOnly) {
+      final db = Get.find<LocalDatabaseService>();
+      final actorId = await _authService.getUserId() ?? 'unknown';
+      final ok = await db.addStockToShopLocal(
+        shopId: shopId,
+        productId: productId,
+        quantity: quantity,
+        actorId: actorId,
+        clientOperationId: opId,
+      );
+      return ok;
+    }
+
     final payload = {
-      'clientOperationId': clientOperationId ?? const Uuid().v4(),
+      'clientOperationId': opId,
       'items': [
         {'productId': productId, 'quantity': quantity},
       ],
@@ -165,13 +187,30 @@ class ShopInventoryApiService extends GetxService {
         ),
       ];
     }
+    // Local-only mode: return shops from the local database
+    if (_appConfig.localStorageOnly) {
+      try {
+        final db = Get.find<LocalDatabaseService>();
+        // Prefer merchant-scoped shops when available; otherwise return all local shops
+        final merchantId = _authService.user.value?.merchantId;
+        List<Map<String, dynamic>> rows;
+        if (merchantId != null && merchantId.isNotEmpty) {
+          rows = await db.listShopsForMerchant(merchantId);
+        } else {
+          rows = await db.getAll('shops');
+        }
+        return rows.map((r) => Shop.fromJson(r)).toList();
+      } catch (e) {
+        throw Exception('Failed to load shops from local DB: $e');
+      }
+    }
 
     try {
       final response = await _connect.get(
         _merchantBaseUrl,
         headers: await _getHeaders(),
       );
-      print('getShops response: ${response.body}');
+      getLogger('app').info('getShops response: ${response.body}');
       if (response.isOk &&
           response.body != null &&
           response.body['data'] != null) {
@@ -226,11 +265,17 @@ class ShopInventoryApiService extends GetxService {
     }
 
     try {
+      if (_appConfig.localStorageOnly) {
+        final db = Get.find<LocalDatabaseService>();
+        final rows = await db.getInventoryForShopLocal(shopId);
+        return rows.map((r) => InventoryItem.fromJson(r)).toList();
+      }
+
       final response = await _connect.get(
         '$_merchantBaseUrl/$shopId/products',
         headers: await _getHeaders(),
       );
-      print('getInventoryForShop response: ${response.body}');
+      getLogger('app').info('getInventoryForShop response: ${response.body}');
       if (response.isOk &&
           response.body != null &&
           response.body['data'] != null) {
@@ -290,6 +335,29 @@ class ShopInventoryApiService extends GetxService {
       );
     }
 
+    if (_appConfig.localStorageOnly) {
+      final db = Get.find<LocalDatabaseService>();
+      final rows = await db.getMovementHistoryLocal(shopId, itemId);
+      getLogger('app').info('[ShopInventoryApiService] Local movement history for shop:$shopId item:$itemId rows=${rows.length}');
+      for(int a = 0; a < rows.length; a++) {
+        getLogger('app').info('Row $a: ${rows[a]}');
+      }
+
+      final enrichedRows = await Future.wait(rows.map((r) async {
+        final userId = r['userId'] ?? r['user_id'] ?? r['actorId'] ?? r['actor_id'];
+        if (userId != null) {
+          final user = await db.getUserById(userId.toString());
+          if (user != null) {
+            r['userName'] = user['name'] ?? user['displayName'] ?? user['username'];
+            r['user_name'] = r['userName'];
+          }
+        }
+        return r;
+      }));
+
+      return enrichedRows.map((r) => StockMovement.fromJson(r)).toList();
+    }
+
     final response = await _connect.get(
       '$_merchantBaseUrl/$shopId/inventory/$itemId/history',
       headers: await _getHeaders(),
@@ -340,6 +408,21 @@ class ShopInventoryApiService extends GetxService {
       if (reason != null) 'reason': reason,
     };
 
+    final opId = payload['clientOperationId'] as String;
+    if (_appConfig.localStorageOnly) {
+      final db = Get.find<LocalDatabaseService>();
+      final actorId = await _authService.getUserId() ?? 'unknown';
+      await db.adjustStockLocal(
+        shopId: shopId,
+        itemId: itemId,
+        quantity: quantity,
+        actorId: actorId,
+        reason: reason,
+        clientOperationId: opId,
+      );
+      return;
+    }
+
     final response = await _connect.post(
       '$_merchantBaseUrl/$shopId/inventory/$itemId/adjust',
       payload,
@@ -383,8 +466,48 @@ class ShopInventoryApiService extends GetxService {
       'items': items,
     };
 
-    print('bulkStockIn calling: $_merchantBaseUrl/$shopId/stock-in');
-    print('bulkStockIn payload: $payload');
+    getLogger('app').info('bulkStockIn calling: $_merchantBaseUrl/$shopId/stock-in');
+    getLogger('app').info('bulkStockIn payload: $payload');
+    getLogger('app').info('bulkStockIn localStorageOnly: ${_appConfig.localStorageOnly}');
+
+    final opId = payload['clientOperationId'] as String;
+    if (_appConfig.localStorageOnly) {
+      final db = Get.find<LocalDatabaseService>();
+      final actorId = await _authService.getUserId() ?? 'unknown';
+
+      // Ensure our local inventory catalog has metadata for bulk stock-in items.
+      for (final it in items) {
+        final itemId = it['productId'] as String? ?? it['product_id'] as String? ?? it['id'] as String?;
+        if (itemId == null) continue;
+
+        // Preserve existing inventory metadata; apply data when available from UI.
+        final upsert = <String, dynamic>{'id': itemId};
+        if (it.containsKey('merchantId')) upsert['merchant_id'] = it['merchantId'];
+        if (it.containsKey('name')) upsert['name'] = it['name'];
+        if (it.containsKey('description')) upsert['description'] = it['description'];
+        if (it.containsKey('sku')) upsert['sku'] = it['sku'];
+        if (it.containsKey('sellingPrice')) upsert['selling_price'] = it['sellingPrice'];
+        if (it.containsKey('originalPrice')) upsert['original_price'] = it['originalPrice'];
+        if (it.containsKey('lowStockThreshold')) upsert['low_stock_threshold'] = it['lowStockThreshold'];
+        if (it.containsKey('category')) upsert['category'] = it['category'];
+        if (it.containsKey('categoryId')) upsert['category_id'] = it['categoryId'];
+        if (it.containsKey('subcategoryId')) upsert['subcategory_id'] = it['subcategoryId'];
+        if (it.containsKey('brandId')) upsert['brand_id'] = it['brandId'];
+        if (it.containsKey('supplier')) upsert['supplier_id'] = it['supplier'];
+
+        if (upsert.length > 1) {
+          await db.upsertInventoryItem(upsert);
+        }
+      }
+
+      await db.bulkStockInLocal(
+        shopId: shopId,
+        items: items,
+        actorId: actorId,
+        clientOperationId: opId,
+      );
+      return;
+    }
 
     final response = await _connect.post(
       '$_merchantBaseUrl/$shopId/stock-in',
@@ -392,11 +515,12 @@ class ShopInventoryApiService extends GetxService {
       headers: await _getHeaders(),
     );
 
-    print('bulkStockIn response: ${response.body}');
+    getLogger('app').info('bulkStockIn response: ${response.body}');
 
     if (!response.isOk) {
       throw Exception(response.body?['message'] ?? 'Failed to stock-in items');
     }
   }
 }
+
 

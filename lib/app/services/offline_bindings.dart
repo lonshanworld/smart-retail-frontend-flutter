@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'local_database_service.dart';
 import 'noop_local_database_service.dart';
+import 'local_database/local_database_service_impl.dart';
 import 'connectivity_service.dart';
 import 'offline_mode_manager.dart';
 import 'cache_manager_service.dart';
@@ -24,7 +25,8 @@ class OfflineBindings extends Bindings {
         permanent: true,
       );
     } else {
-      Get.put<LocalDatabaseService>(LocalDatabaseService(), permanent: true);
+      // Register the concrete in-memory/sql provider implementation.
+      Get.put<LocalDatabaseService>(LocalDatabaseServiceImpl(), permanent: true);
     }
 
     // 2. Initialize ConnectivityService (network monitoring)

@@ -39,17 +39,26 @@ class ResponsiveDataTable<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Use table layout for wide screens, cards for mobile
+        final hasBoundedHeight =
+            constraints.hasBoundedHeight && constraints.maxHeight.isFinite;
+
+        // Use table layout for wide screens, cards for mobile.
+        // When the widget is placed inside another scroll view, avoid creating
+        // a nested vertical viewport and let the parent handle scrolling.
         if (constraints.maxWidth >= mobileBreakpoint) {
-          return _buildDataTable();
+          return hasBoundedHeight
+              ? _buildScrollableDataTable()
+              : _buildExpandedDataTable();
         } else {
-          return _buildMobileList();
+          return hasBoundedHeight
+              ? _buildScrollableMobileList()
+              : _buildExpandedMobileList();
         }
       },
     );
   }
 
-  Widget _buildDataTable() {
+  Widget _buildScrollableDataTable() {
     final verticalController = ScrollController();
     final horizontalController = ScrollController();
 
@@ -107,7 +116,56 @@ class ResponsiveDataTable<T> extends StatelessWidget {
     );
   }
 
-  Widget _buildMobileList() {
+  Widget _buildExpandedDataTable() {
+    final horizontalController = ScrollController();
+
+    return ScrollbarTheme(
+      data: ScrollbarThemeData(
+        thumbVisibility: WidgetStateProperty.all(true),
+        thickness: WidgetStateProperty.all(8.0),
+        thumbColor: WidgetStateProperty.all(Colors.grey.shade400),
+        radius: const Radius.circular(4),
+        minThumbLength: 40,
+      ),
+      child: Scrollbar(
+        controller: horizontalController,
+        thumbVisibility: true,
+        thickness: 8.0,
+        child: SingleChildScrollView(
+          controller: horizontalController,
+          scrollDirection: Axis.horizontal,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minWidth: 800),
+            child: Theme(
+              data: ThemeData(dividerColor: Colors.grey.shade200),
+              child: DataTable(
+                sortAscending: sortAscending,
+                sortColumnIndex: sortColumnIndex,
+                showCheckboxColumn: showCheckboxColumn,
+                headingRowColor: headingRowColor != null
+                    ? WidgetStateProperty.all(headingRowColor!)
+                    : WidgetStateProperty.all(Colors.grey.shade100),
+                dataRowMinHeight: dataRowHeight ?? 72,
+                dataRowMaxHeight: dataRowHeight ?? 72,
+                headingRowHeight: headingRowHeight ?? 56,
+                columns: columns,
+                rows: items.map((item) {
+                  return DataRow(
+                    onSelectChanged: onRowTap != null
+                        ? (_) => onRowTap!(item)
+                        : null,
+                    cells: buildCells(item),
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildScrollableMobileList() {
     final scrollController = ScrollController();
 
     if (buildMobileCard != null) {
@@ -175,6 +233,45 @@ class ResponsiveDataTable<T> extends StatelessWidget {
           },
         ),
       ),
+    );
+  }
+
+  Widget _buildExpandedMobileList() {
+    if (buildMobileCard != null) {
+      return Column(
+        children: items
+            .map(
+              (item) => Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                child: buildMobileCard!(item),
+              ),
+            )
+            .toList(),
+      );
+    }
+
+    return Column(
+      children: items
+          .map(
+            (item) => Card(
+              margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: buildCells(item)
+                      .map(
+                        (cell) => Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: cell.child,
+                        ),
+                      )
+                      .toList(),
+                ),
+              ),
+            ),
+          )
+          .toList(),
     );
   }
 }

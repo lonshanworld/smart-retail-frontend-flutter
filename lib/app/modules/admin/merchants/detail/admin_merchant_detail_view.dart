@@ -44,7 +44,7 @@ class AdminMerchantDetailView extends GetView<AdminMerchantDetailController> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [AppColors.admin.shade50.withOpacity(0.3), Colors.white],
+            colors: [AppColors.admin.shade50.withValues(alpha: 0.3), Colors.white],
           ),
         ),
         child: Obx(() {
@@ -308,8 +308,8 @@ class AdminMerchantDetailView extends GetView<AdminMerchantDetailController> {
                                   Container(
                                     padding: const EdgeInsets.all(8),
                                     decoration: BoxDecoration(
-                                      color: AppColors.merchant.withOpacity(
-                                        0.1,
+                                      color: AppColors.merchant.withValues(
+                                        alpha: 0.1,
                                       ),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
@@ -475,7 +475,7 @@ class AdminMerchantDetailView extends GetView<AdminMerchantDetailController> {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: AppColors.merchant.withOpacity(0.1),
+            color: AppColors.merchant.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, color: AppColors.merchant, size: 20),

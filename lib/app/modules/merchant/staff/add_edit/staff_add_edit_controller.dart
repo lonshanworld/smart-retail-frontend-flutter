@@ -1,9 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:smart_retail/app/utils/dialog_utils.dart';
 import 'package:smart_retail/app/data/models/user_model.dart';
 import 'package:smart_retail/app/data/models/shop_model.dart';
 import 'package:smart_retail/app/data/services/merchant_staff_api_service.dart';
+import 'package:smart_retail/app/utils/app_logger.dart';
 
 class StaffAddEditController extends GetxController {
   final MerchantStaffApiService _apiService =
@@ -45,7 +46,19 @@ class StaffAddEditController extends GetxController {
     try {
       isLoadingShops.value = true;
       final shops = await _apiService.getShopsForSelection();
-      shopList.assignAll(shops);
+      final uniqueShops = <Shop>[];
+      final seenIds = <String>{};
+      for (final shop in shops) {
+        final id = shop.id?.trim();
+        if (id == null || id.isEmpty) {
+          uniqueShops.add(shop);
+          continue;
+        }
+        if (seenIds.add(id)) {
+          uniqueShops.add(shop);
+        }
+      }
+      shopList.assignAll(uniqueShops);
     } catch (e) {
       DialogUtils.showError('Could not load shops for assignment: $e');
     } finally {
@@ -54,7 +67,7 @@ class StaffAddEditController extends GetxController {
   }
 
   Future<void> saveStaff() async {
-    print('reach here to save staff ??');
+    getLogger('app').info('reach here to save staff ??');
     if (!formKey.currentState!.validate()) {
       formError.value = 'Please correct the errors above.';
       return;
@@ -70,7 +83,7 @@ class StaffAddEditController extends GetxController {
         'isActive': isActive.value,
         'assignedShopId': selectedShopId.value,
       };
-      print('reach here for save staff 2');
+      getLogger('app').info('reach here for save staff 2');
       if (!isEditMode.value) {
         if (passwordController.text.isEmpty) {
           formError.value = 'Password is required for new staff.';
@@ -79,14 +92,14 @@ class StaffAddEditController extends GetxController {
         }
         data['password'] = passwordController.text;
       }
-      print('reach here 3 staff');
+      getLogger('app').info('reach here 3 staff');
       if (isEditMode.value) {
         await _apiService.updateStaff(_editingStaff.value!.id, data);
       } else {
-        print('reach here 4 staff');
+        getLogger('app').info('reach here 4 staff');
         await _apiService.createStaff(data);
       }
-      print('reach here 5 staff');
+      getLogger('app').info('reach here 5 staff');
       Get.back(result: true); // Return true to signal a refresh is needed
       DialogUtils.showSuccess('Staff member saved successfully.');
     } catch (e) {
@@ -104,3 +117,4 @@ class StaffAddEditController extends GetxController {
     super.onClose();
   }
 }
+

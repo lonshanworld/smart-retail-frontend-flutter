@@ -1,13 +1,15 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 import 'package:smart_retail/app/core/config/app_config.dart';
 import 'package:smart_retail/app/data/models/inventory_item_model.dart';
 import 'package:smart_retail/app/data/models/promotion_model.dart';
 import 'package:smart_retail/app/data/models/sale_model.dart';
 import 'package:smart_retail/app/data/providers/api_constants.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
+import 'package:smart_retail/app/services/local_database_service.dart';
 import 'package:smart_retail/app/services/offline_sales_service.dart';
 import 'package:smart_retail/app/utils/response_utils.dart';
 import 'package:uuid/uuid.dart';
+import 'package:smart_retail/app/utils/app_logger.dart';
 
 class StaffPosApiService extends GetxService {
   final GetConnect _connect = Get.find<GetConnect>();
@@ -17,6 +19,8 @@ class StaffPosApiService extends GetxService {
       Get.isRegistered<OfflineSalesService>()
           ? Get.find<OfflineSalesService>()
           : null;
+    final LocalDatabaseService _localDatabaseService =
+      Get.find<LocalDatabaseService>();
 
   String get _baseUrl => '${ApiConstants.baseUrl}/staff/pos';
 
@@ -95,6 +99,46 @@ class StaffPosApiService extends GetxService {
       }).toList();
     }
 
+    if (_appConfig.localStorageOnly) {
+      try {
+        final shopId = _authService.user.value?.assignedShopId ?? _authService.shopId.value;
+        if (shopId == null || shopId.isEmpty) {
+          return <InventoryItem>[];
+        }
+
+        final rows = await _localDatabaseService.getInventoryForShopLocal(shopId);
+        var items = rows
+            .map((row) => InventoryItem.fromJson(Map<String, dynamic>.from(row)))
+            .toList();
+
+        if (categoryId != null && categoryId.isNotEmpty) {
+          items = items
+              .where((item) => item.categoryId == categoryId || item.category == categoryId)
+              .toList();
+        }
+        if (subcategoryId != null && subcategoryId.isNotEmpty) {
+          items = items.where((item) => item.subcategoryId == subcategoryId).toList();
+        }
+        if (brandId != null && brandId.isNotEmpty) {
+          items = items.where((item) => item.brandId == brandId).toList();
+        }
+
+        if (searchTerm.trim().isEmpty) {
+          return items;
+        }
+
+        final query = searchTerm.toLowerCase();
+        return items.where((item) {
+          final nameMatch = item.name.toLowerCase().contains(query);
+          final skuMatch = item.sku?.toLowerCase().contains(query) ?? false;
+          return nameMatch || skuMatch;
+        }).toList();
+      } catch (e) {
+        getLogger('app').info('[STAFF POS API] Local searchProducts failed: $e');
+        return <InventoryItem>[];
+      }
+    }
+
     final response = await _connect.get(
       '$_baseUrl/products',
       headers: await _getHeaders(),
@@ -149,6 +193,20 @@ class StaffPosApiService extends GetxService {
           updatedAt: now,
         ),
       ];
+    }
+
+    if (_appConfig.localStorageOnly) {
+      try {
+        final shopId = _authService.user.value?.assignedShopId ?? _authService.shopId.value;
+        if (shopId == null || shopId.isEmpty) {
+          return <Promotion>[];
+        }
+        final rows = await _localDatabaseService.listActivePromotionsForShop(shopId);
+        return rows.map((row) => Promotion.fromJson(Map<String, dynamic>.from(row))).toList();
+      } catch (e) {
+        getLogger('app').info('[STAFF POS API] Local promotions fetch failed: $e');
+        return <Promotion>[];
+      }
     }
 
     final response = await _connect.get(
@@ -282,17 +340,17 @@ class StaffPosApiService extends GetxService {
     );
 
     // Debug: log request and response for checkout
-    print('📤 [STAFF POS API] Request body: $saleData');
-    print('📥 [STAFF POS API] Response status: ${response.statusCode}');
-    print('📥 [STAFF POS API] Response body: ${response.bodyString}');
+    getLogger('app').info('ðŸ“¤ [STAFF POS API] Request body: $saleData');
+    getLogger('app').info('ðŸ“¥ [STAFF POS API] Response status: ${response.statusCode}');
+    getLogger('app').info('ðŸ“¥ [STAFF POS API] Response body: ${response.bodyString}');
 
     if (response.statusCode == 201 && response.body['data'] != null) {
       return Sale.fromJson(asMap(response.body['data']));
     } else {
-      print(
-        '❌ [STAFF POS API] Checkout failed. Status: ${response.statusCode}',
+      getLogger('app').info(
+        'âŒ [STAFF POS API] Checkout failed. Status: ${response.statusCode}',
       );
-      print('❌ [STAFF POS API] Response body: ${response.bodyString}');
+      getLogger('app').info('âŒ [STAFF POS API] Response body: ${response.bodyString}');
       if (_offlineSalesService != null) {
         final saleQueued = await _offlineSalesService.processSale(saleData);
         if (saleQueued) {
@@ -334,3 +392,4 @@ class StaffPosApiService extends GetxService {
     }
   }
 }
+

@@ -60,6 +60,11 @@ class ShopProfileView extends GetView<ShopProfileController> {
                 'Shop Address',
                 shop.address ?? 'N/A',
               ),
+              _buildInfoRow(
+                Icons.percent,
+                'Tax Rate',
+                '${shop.taxRate.toStringAsFixed(shop.taxRate.truncateToDouble() == shop.taxRate ? 0 : 2)}%',
+              ),
               const Divider(),
             ],
             _buildInfoRow(Icons.person, 'Name', user.name),

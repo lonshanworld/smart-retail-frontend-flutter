@@ -55,11 +55,16 @@ class User {
     String? merchantName;
 
     if (isMerchant) {
-      merchantId = json['shop']?['merchant_id'] as String?;
-      merchantName = json['shop']?['name'] as String?;
+      merchantId = json['merchant_id'] as String? ??
+          json['merchantId'] as String? ??
+          json['id'] as String? ??
+          json['ID'] as String?;
+      merchantName = json['merchant_name'] as String? ?? json['name'] as String?;
     } else {
-      merchantId = json['merchant_id'];
-      merchantName = json['merchant_name'];
+      merchantId = json['merchant_id'] as String? ??
+          json['merchantId'] as String? ??
+          (json['shop'] != null ? (json['shop']['merchant_id'] as String?) : null);
+      merchantName = json['merchant_name'] as String? ?? json['merchant_name'] as String?;
     }
 
     return User(

@@ -1,9 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
 import 'package:smart_retail/app/utils/dialog_utils.dart';
 import 'package:smart_retail/app/data/services/shop_api_service.dart';
 import './shop_stock_controller.dart'; // To refresh the previous screen
+import 'package:smart_retail/app/utils/app_logger.dart';
 
 class StockAdjustmentController extends GetxController {
   final ShopApiService _shopApiService = Get.find<ShopApiService>();
@@ -99,7 +100,7 @@ class StockAdjustmentController extends GetxController {
         // errorMessage.value = 'Failed to adjust stock. Please try again.';
       }
     } catch (e) {
-      print("Error adjusting stock: $e");
+      getLogger('app').info("Error adjusting stock: $e");
       errorMessage.value = 'An error occurred: ${e.toString()}';
       DialogUtils.showError(errorMessage.value!);
     } finally {
@@ -114,3 +115,4 @@ class StockAdjustmentController extends GetxController {
     super.onClose();
   }
 }
+

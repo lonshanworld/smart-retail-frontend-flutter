@@ -1,6 +1,7 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 import 'package:smart_retail/app/data/models/staff_dashboard_model.dart';
 import 'package:smart_retail/app/data/services/staff_api_service.dart';
+import 'package:smart_retail/app/utils/app_logger.dart';
 
 class StaffDashboardController extends GetxController {
   final StaffApiService _apiService = Get.put(StaffApiService());
@@ -23,13 +24,13 @@ class StaffDashboardController extends GetxController {
       hasError.value = false;
       errorMessage.value = '';
 
-      print('🔍 [STAFF DASHBOARD] Fetching dashboard summary...');
+      getLogger('app').info('ðŸ” [STAFF DASHBOARD] Fetching dashboard summary...');
       final summary = await _apiService.getStaffDashboardSummary();
-      print('✅ [STAFF DASHBOARD] Summary received: $summary');
+      getLogger('app').info('âœ… [STAFF DASHBOARD] Summary received: $summary');
       dashboardSummary.value = summary;
     } catch (e, stackTrace) {
-      print('❌ [STAFF DASHBOARD] Error: $e');
-      print('📋 [STAFF DASHBOARD] Stack trace: $stackTrace');
+      getLogger('app').info('âŒ [STAFF DASHBOARD] Error: $e');
+      getLogger('app').info('ðŸ“‹ [STAFF DASHBOARD] Stack trace: $stackTrace');
       hasError.value = true;
       errorMessage.value = e.toString();
     } finally {
@@ -41,3 +42,4 @@ class StaffDashboardController extends GetxController {
     await fetchDashboardSummary();
   }
 }
+

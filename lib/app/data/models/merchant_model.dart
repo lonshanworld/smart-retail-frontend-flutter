@@ -1,6 +1,7 @@
-import 'package:flutter/foundation.dart'; // For kDebugMode
+﻿import 'package:flutter/foundation.dart'; // For kDebugMode
 import 'package:smart_retail/app/data/models/shop_model.dart';
 import 'package:smart_retail/app/shared/utils/app_utils.dart'; // For safeFromJson and toIso8601String
+import 'package:smart_retail/app/utils/app_logger.dart';
 
 class Merchant {
   final String id; // Represents users.id for users with role = 'merchant'
@@ -36,22 +37,22 @@ class Merchant {
       List<Shop> shopsList = [];
       if (json.containsKey('shops') && json['shops'] is List) {
         if (kDebugMode) {
-          print(
+          getLogger('app').info(
             '[Merchant.fromJson] Found shops array with ${(json['shops'] as List).length} items',
           );
-          print('[Merchant.fromJson] Shops data: ${json['shops']}');
+          getLogger('app').info('[Merchant.fromJson] Shops data: ${json['shops']}');
         }
         shopsList = (json['shops'] as List)
             .map((shopJson) => Shop.fromJson(shopJson as Map<String, dynamic>))
             .toList();
         if (kDebugMode) {
-          print(
+          getLogger('app').info(
             '[Merchant.fromJson] Parsed ${shopsList.length} shops successfully',
           );
         }
       } else {
         if (kDebugMode) {
-          print(
+          getLogger('app').info(
             '[Merchant.fromJson] No shops array found in JSON. Keys: ${json.keys}',
           );
         }
@@ -95,8 +96,8 @@ class Merchant {
       );
     } catch (e) {
       if (kDebugMode) {
-        print('[Merchant.fromJson] Error parsing merchant from user data: $e');
-        print('[Merchant.fromJson] JSON data: $json');
+        getLogger('app').info('[Merchant.fromJson] Error parsing merchant from user data: $e');
+        getLogger('app').info('[Merchant.fromJson] JSON data: $json');
       }
       rethrow;
     }
@@ -225,3 +226,4 @@ class PaginationInfo {
     );
   }
 }
+

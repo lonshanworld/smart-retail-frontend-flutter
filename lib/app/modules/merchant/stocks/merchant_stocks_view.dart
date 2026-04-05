@@ -63,7 +63,13 @@ class MerchantStocksView extends GetView<MerchantStocksController> {
               ),
               DataColumn(
                 label: Text(
-                  'Price',
+                  'Sell Price',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'Original Price',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
@@ -157,6 +163,24 @@ class MerchantStocksView extends GetView<MerchantStocksController> {
                   }
                 },
               ),
+              DataCell(
+                Text(
+                  '\$${item.originalPrice.toStringAsFixed(2)}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green,
+                  ),
+                ),
+                onTap: () async {
+                  final result = await Get.toNamed(
+                    Routes.MERCHANT_INVENTORY_EDIT,
+                    arguments: item,
+                  );
+                  if (result == true) {
+                    controller.fetchInventoryItems();
+                  }
+                },
+              ),
             ],
             buildMobileCard: (item) => DataRowCard(
               leading: CircleAvatar(
@@ -176,9 +200,24 @@ class MerchantStocksView extends GetView<MerchantStocksController> {
                   value: item.category ?? 'Uncategorized',
                 ),
                 DetailRow(
+                  icon: Icons.subject,
+                  label: 'SubCategory',
+                  value: item.subcategoryObj?.name ?? 'Uncategorized',
+                ),
+                DetailRow(
+                  icon: Icons.branding_watermark, 
+                  label: 'Brand',
+                  value: item.brandObj?.name ?? 'No Brand',
+                ),
+                DetailRow(
                   icon: Icons.attach_money,
-                  label: 'Price',
+                  label: 'Sell Price',
                   value: '\$${item.sellingPrice.toStringAsFixed(2)}',
+                ),
+                DetailRow(
+                  icon: Icons.money_off,
+                  label: 'Original Price',
+                  value: '\$${item.originalPrice.toStringAsFixed(2)}',
                 ),
               ],
               onTap: () async {

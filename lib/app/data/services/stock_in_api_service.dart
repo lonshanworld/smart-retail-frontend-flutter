@@ -1,8 +1,11 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 import 'package:smart_retail/app/core/config/app_config.dart';
 import 'package:smart_retail/app/data/providers/api_constants.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
 import 'package:uuid/uuid.dart';
+import 'package:smart_retail/app/services/local_database_service.dart';
+import 'package:flutter/foundation.dart';
+import 'package:smart_retail/app/utils/app_logger.dart';
 
 // Represents a single item in a stock-in request
 class StockInItem {
@@ -61,7 +64,7 @@ class StockInApiService extends GetxService {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 2));
       // Simulate a successful stock-in
-      print('Mock Stock-In for shop $shopId with ${items.length} items.');
+      if (kDebugMode) getLogger('app').info('Mock Stock-In for shop $shopId with ${items.length} items.');
       return;
     }
 
@@ -71,6 +74,27 @@ class StockInApiService extends GetxService {
       'items': items.map((item) => item.toJson()).toList(),
     };
 
+    // Local-only mode: apply to local DB
+    if (_appConfig.localStorageOnly) {
+      final db = Get.find<LocalDatabaseService>();
+      final actorId = await _authService.getUserId() ?? 'unknown';
+      // Ensure items are properly typed for the local DB helper
+      final itemsList = (body['items'] as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      await db.bulkStockInLocal(
+        shopId: shopId,
+        items: itemsList,
+        actorId: actorId,
+        clientOperationId: body['clientOperationId'] as String,
+      );
+      return;
+    }
+
+    // Defensive: if local-only is enabled but the local DB call above failed for
+    // some reason, avoid sending network requests.
+    if (_appConfig.localStorageOnly) {
+      throw Exception('LOCAL_STORAGE_ONLY enabled and local DB unavailable');
+    }
+
     final response = await _connect.post(
       _baseUrl,
       body,
@@ -78,9 +102,26 @@ class StockInApiService extends GetxService {
     );
 
     if (!response.isOk) {
-      throw Exception(
-        response.body?['message'] ?? 'Failed to perform stock-in',
-      );
+      // On network/backend failure, queue operation for retry
+      try {
+        final db = Get.find<LocalDatabaseService>();
+        await db.queueOperation({
+          'id': body['clientOperationId'],
+          'client_operation_id': body['clientOperationId'],
+          'entity_type': 'stock_in',
+          'action': 'create',
+          'method': 'POST',
+          'endpoint': '/merchant/inventory/stock-in',
+          'payload': body,
+          'headers': await _getHeaders(),
+        });
+        return;
+      } catch (_) {
+        throw Exception(
+          response.body?['message'] ?? 'Failed to perform stock-in',
+        );
+      }
     }
   }
 }
+

@@ -297,6 +297,16 @@ class MerchantDashboardView extends GetView<MerchantDashboardController> {
               onTap: () => Get.toNamed(Routes.MERCHANT_INVOICES),
             ),
             _buildActionCard(
+              icon: Icons.account_balance_wallet_outlined,
+              title: 'Profit Breakdown',
+              subtitle: 'Analyze profit per order',
+              gradient: [
+                AppColors.warning.shade400,
+                AppColors.warning.shade700,
+              ],
+              onTap: () => Get.toNamed(Routes.MERCHANT_PROFIT_BREAKDOWN),
+            ),
+            _buildActionCard(
               icon: Icons.people_alt_rounded,
               title: 'Suppliers',
               subtitle: 'Manage supplier relationships',

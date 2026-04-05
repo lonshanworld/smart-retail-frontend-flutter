@@ -1,6 +1,7 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 import 'package:smart_retail/app/data/models/invoice_model.dart';
 import 'package:smart_retail/app/data/services/invoice_api_service.dart';
+import 'package:smart_retail/app/utils/app_logger.dart';
 
 class MerchantInvoicesController extends GetxController {
   final InvoiceApiService _invoiceApiService = Get.find<InvoiceApiService>();
@@ -32,7 +33,7 @@ class MerchantInvoicesController extends GetxController {
       isLoading.value = true;
       errorMessage.value = null;
 
-      print(
+      getLogger('app').info(
         '[MerchantInvoices] Fetching invoices... page: ${currentPage.value}',
       );
 
@@ -42,7 +43,7 @@ class MerchantInvoicesController extends GetxController {
         shopId: selectedShopId.value,
       );
 
-      print(
+      getLogger('app').info(
         '[MerchantInvoices] Response received: ${response != null ? '${response.items.length} invoices' : 'null'}',
       );
 
@@ -50,7 +51,7 @@ class MerchantInvoicesController extends GetxController {
         invoices.assignAll(response.items);
         totalPages.value = response.totalPages;
         totalItems.value = response.totalItems;
-        print(
+        getLogger('app').info(
           '[MerchantInvoices] Invoices assigned: ${invoices.length}, total: ${totalItems.value}',
         );
       } else {
@@ -58,7 +59,7 @@ class MerchantInvoicesController extends GetxController {
         errorMessage.value = 'Failed to load invoices';
       }
     } catch (e) {
-      print('[MerchantInvoices] Error: $e');
+      getLogger('app').info('[MerchantInvoices] Error: $e');
       errorMessage.value = e.toString();
     } finally {
       isLoading.value = false;
@@ -93,3 +94,4 @@ class MerchantInvoicesController extends GetxController {
     fetchInvoices(resetPage: true);
   }
 }
+

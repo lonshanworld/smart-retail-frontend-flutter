@@ -21,10 +21,14 @@ class PromotionsController extends GetxController {
     try {
       isLoading.value = true;
       error.value = null;
+      print('[PromotionsController] fetchPromotions start');
       final response = await _apiService.getPromotions();
+      print('[PromotionsController] fetchPromotions got ${response.items.length} items');
       promotions.assignAll(response.items);
+      print('[PromotionsController] fetchPromotions finished');
     } catch (e) {
       error.value = e.toString();
+      print('[PromotionsController] fetchPromotions error: $e');
       DialogUtils.showError('Failed to fetch promotions: ${e.toString()}');
     } finally {
       isLoading.value = false;

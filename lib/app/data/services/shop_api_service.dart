@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart'; // For kDebugMode
+﻿import 'package:flutter/foundation.dart'; // For kDebugMode
 import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
 import 'package:smart_retail/app/utils/dialog_utils.dart';
@@ -13,17 +13,18 @@ import 'package:smart_retail/app/data/providers/api_constants.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
 import 'package:smart_retail/app/services/local_database_service.dart';
 import 'package:smart_retail/app/services/offline_sales_service.dart';
+import 'package:smart_retail/app/utils/app_logger.dart';
 
 class ShopApiService extends GetxService {
-  final GetConnect _connect = GetConnect(timeout: const Duration(seconds: 30));
+  final GetConnect _connect = Get.find<GetConnect>();
   final AuthService _authService = Get.find<AuthService>();
   final AppConfig _appConfig = Get.find<AppConfig>();
-    final LocalDatabaseService _localDatabaseService =
+  final LocalDatabaseService _localDatabaseService =
       Get.find<LocalDatabaseService>();
-    final OfflineSalesService? _offlineSalesService =
+  final OfflineSalesService? _offlineSalesService =
       Get.isRegistered<OfflineSalesService>()
-        ? Get.find<OfflineSalesService>()
-        : null;
+      ? Get.find<OfflineSalesService>()
+      : null;
 
   Future<String?> _getAuthToken() async {
     return await _authService.getToken();
@@ -43,7 +44,7 @@ class ShopApiService extends GetxService {
       errorMessage += " (${response.body?['data']})";
     }
     if (kDebugMode) {
-      print(
+      getLogger('app').info(
         'Error $operation: ${response.statusCode} - ${response.bodyString}',
       );
     }
@@ -100,16 +101,41 @@ class ShopApiService extends GetxService {
   /// - __Status Code:__ 201
   /// - __Body (JSON):__ (The newly created shop object)
   Future<Shop?> createShop(Shop shop) async {
-    if (_appConfig.isDevelopment) {
-      await Future.delayed(const Duration(seconds: 1));
-      return shop.copyWith(id: 'new-shop-id');
+    // Local-only: persist shop locally and return a local copy
+    if (_appConfig.localStorageOnly) {
+      final clientOperationId = const Uuid().v4();
+      final now = DateTime.now();
+      final merchantId =
+          _authService.user.value?.merchantId ?? _authService.userId.value ??
+          await _authService.getUserId() ??
+          '';
+      if (merchantId.isEmpty) {
+        throw Exception('Merchant ID not available for shop creation.');
+      }
+      final toSave = {
+        ...shop.toJsonForCreate(merchantId),
+        'id': clientOperationId,
+        'merchant_id': merchantId,
+        'created_at': now.toIso8601String(),
+        'updated_at': now.toIso8601String(),
+      };
+      await _localDatabaseService.upsertShop(toSave);
+      return shop.copyWith(
+        id: clientOperationId,
+        merchantId: merchantId,
+        createdAt: now,
+        updatedAt: now,
+      );
     }
     final token = await _getAuthToken();
-    final currentUserId = _authService.userId;
     if (token == null) return null;
     final clientOperationId = const Uuid().v4();
+    final merchantId =
+        _authService.user.value?.merchantId ?? _authService.userId.value ??
+        await _authService.getUserId() ??
+        '';
     final payload = {
-      ...shop.toJsonForCreate(currentUserId.value!),
+      ...shop.toJsonForCreate(merchantId),
       'clientOperationId': clientOperationId,
     };
 
@@ -138,7 +164,7 @@ class ShopApiService extends GetxService {
         );
         return Shop(
           id: clientOperationId,
-          merchantId: currentUserId.value ?? '',
+          merchantId: merchantId,
           name: shop.name,
           address: shop.address,
           isPrimary: shop.isPrimary,
@@ -162,35 +188,37 @@ class ShopApiService extends GetxService {
   /// - __Status Code:__ 200
   /// - __Body (JSON):__ (A list of shop objects)
   Future<List<Shop>> listShops() async {
-    if (_appConfig.isDevelopment) {
-      await Future.delayed(const Duration(seconds: 1));
-      return [
-        Shop(
-          id: '1',
-          merchantId: '1',
-          name: 'Main Street Branch',
-          address: '123 Main St, Anytown',
-          isPrimary: true,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        ),
-        Shop(
-          id: '2',
-          merchantId: '1',
-          name: 'City Center Outlet',
-          address: '456 Central Ave, Metroville',
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        ),
-      ];
-    }
     final token = await _getAuthToken();
     if (token == null) return [];
+    // Local-only mode: return shops from local DB
+    if (_appConfig.localStorageOnly) {
+      try {
+        String merchantId = _authService.user.value?.merchantId ?? '';
+        if (merchantId.isEmpty) {
+          merchantId = _authService.userId.value ?? '';
+        }
+        if (merchantId.isEmpty) {
+          merchantId = await _authService.getUserId() ?? '';
+        }
+        final rows = await _localDatabaseService.listShopsForMerchant(
+          merchantId,
+        );
+        return rows.map((r) => Shop.fromJson(r)).toList();
+      } catch (e) {
+        if (kDebugMode) {
+          getLogger('app').info('[ShopApiService] Local listShops failed: $e');
+        }
+        return [];
+      }
+    }
+
     final response = await _connect.get(
       _merchantShopsBaseUrl,
       headers: {'Authorization': 'Bearer $token'},
     );
-    print('check merchant shop list ${response.body}');
+    if (kDebugMode) {
+      getLogger('app').info('check merchant shop list ${response.body}');
+    }
     if (response.statusCode == 200 && response.body['status'] == 'success') {
       List<dynamic> shopListJson = asList(response.body['data']);
       return shopListJson
@@ -214,17 +242,31 @@ class ShopApiService extends GetxService {
   /// - __Status Code:__ 200
   /// - __Body (JSON):__ (The full shop object)
   Future<Shop?> getShopById(String shopId) async {
-    if (_appConfig.isDevelopment) {
-      await Future.delayed(const Duration(seconds: 1));
-      return Shop(
-        id: shopId,
-        merchantId: '1',
-        name: 'Shop $shopId',
-        address: 'Address $shopId',
-        createdAt: DateTime.now(),
-        deliveryCharge: 0.0,
-        updatedAt: DateTime.now(),
-      );
+    // Local-only: fetch from local DB
+    if (_appConfig.localStorageOnly) {
+      try {
+        final row = await _localDatabaseService.getShopById(shopId);
+        if (row == null) return null;
+        return Shop.fromJson({
+          'id': row['id'],
+          'merchantId': row['merchant_id'],
+          'name': row['name'],
+          'address': row['address'],
+          'taxRate': row['tax_rate'],
+          'deliveryCharge': row['delivery_charge'],
+          'isActive': row['is_active'] == 1,
+          'isPrimary': row['is_primary'] == 1,
+          'createdAt': row['created_at'],
+          'updatedAt': row['updated_at'],
+        });
+      } catch (e) {
+        if (kDebugMode) {
+          getLogger(
+            'app',
+          ).info('[ShopApiService] Local getShopById failed: $e');
+        }
+        return null;
+      }
     }
     final token = await _getAuthToken();
     if (token == null) return null;
@@ -253,21 +295,76 @@ class ShopApiService extends GetxService {
   /// - __Status Code:__ 200
   /// - __Body (JSON):__ (The updated shop object)
   Future<Shop?> updateShop(String shopId, Map<String, dynamic> updates) async {
-    if (_appConfig.isDevelopment) {
-      await Future.delayed(const Duration(seconds: 1));
-      return Shop(
-        id: shopId,
-        merchantId: '1',
-        name: updates['name'],
-        address: updates['address'],
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
+    // Local-only: persist update locally
+    if (_appConfig.localStorageOnly) {
+      try {
+        final clientOperationId =
+            updates['clientOperationId']?.toString() ?? const Uuid().v4();
+        final existingRow = await _localDatabaseService.getShopById(shopId);
+        final parsedTaxRate =
+            (updates['taxRate'] as num?)?.toDouble() ??
+            (updates['tax_rate'] as num?)?.toDouble() ??
+            (existingRow?['tax_rate'] as num?)?.toDouble() ??
+            (existingRow?['taxRate'] as num?)?.toDouble() ??
+            5.0;
+        final merchantId =
+            updates['merchantId']?.toString() ??
+            updates['merchant_id']?.toString() ??
+            existingRow?['merchant_id']?.toString() ??
+            existingRow?['merchantId']?.toString() ??
+            _authService.user.value?.merchantId ??
+            _authService.userId.value ??
+            await _authService.getUserId() ??
+            '';
+        final toSave = <String, dynamic>{
+          ...?existingRow,
+          ...updates,
+          'id': shopId,
+          'merchant_id': merchantId,
+          'merchantId': merchantId,
+          'tax_rate': parsedTaxRate,
+          'taxRate': parsedTaxRate,
+          'updated_at': DateTime.now().toIso8601String(),
+          'updatedAt': DateTime.now().toIso8601String(),
+        };
+        await _localDatabaseService.upsertShop(toSave);
+        await _queueOperation(
+          clientOperationId: clientOperationId,
+          action: 'update',
+          endpoint: '$_merchantShopsBaseUrl/$shopId',
+          entityType: 'shop',
+          payload: toSave,
+        );
+        final row = await _localDatabaseService.getShopById(shopId);
+        if (row == null) return null;
+        final updatedShop = Shop.fromJson({
+          'id': row['id'],
+          'merchantId': row['merchant_id'],
+          'name': row['name'],
+          'address': row['address'],
+          'taxRate': row['tax_rate'],
+          'deliveryCharge': row['delivery_charge'],
+          'isActive': row['is_active'] == 1,
+          'isPrimary': row['is_primary'] == 1,
+          'createdAt': row['created_at'],
+          'updatedAt': row['updated_at'],
+        });
+        if (!_appConfig.localStorageOnly &&
+            _authService.shopId.value == updatedShop.id) {
+          await _authService.updateCurrentShop(updatedShop);
+        }
+        return updatedShop;
+      } catch (e) {
+        if (kDebugMode) {
+          getLogger('app').info('[ShopApiService] Local updateShop failed: $e');
+        }
+        return null;
+      }
     }
     final token = await _getAuthToken();
     if (token == null) return null;
-    final clientOperationId = updates['clientOperationId']?.toString() ??
-        const Uuid().v4();
+    final clientOperationId =
+        updates['clientOperationId']?.toString() ?? const Uuid().v4();
     final payload = Map<String, dynamic>.from(updates)
       ..['clientOperationId'] = clientOperationId;
 
@@ -281,7 +378,12 @@ class ShopApiService extends GetxService {
         },
       );
       if (response.statusCode == 200 && response.body['status'] == 'success') {
-        return Shop.fromJson(asMap(response.body['data']));
+        final updatedShop = Shop.fromJson(asMap(response.body['data']));
+        if (!_appConfig.localStorageOnly &&
+            _authService.shopId.value == updatedShop.id) {
+          await _authService.updateCurrentShop(updatedShop);
+        }
+        return updatedShop;
       }
       _handleError(response, "updating shop $shopId");
       return null;
@@ -320,21 +422,40 @@ class ShopApiService extends GetxService {
   /// - __Status Code:__ 200
   /// - __Body (JSON):__ (The updated shop object)
   Future<Shop?> setPrimaryShop(String shopId) async {
-    if (_appConfig.isDevelopment) {
-      await Future.delayed(const Duration(seconds: 1));
-      return Shop(
-        id: shopId,
-        merchantId: '1',
-        name: 'Primary Shop',
-        address: 'Primary Address',
-        isPrimary: true,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
-    }
     final token = await _getAuthToken();
     if (token == null) return null;
     final clientOperationId = const Uuid().v4();
+    if (_appConfig.localStorageOnly) {
+      try {
+        final now = DateTime.now().toIso8601String();
+        await _localDatabaseService.upsertShop({
+          'id': shopId,
+          'is_primary': 1,
+          'updated_at': now,
+        });
+        final row = await _localDatabaseService.getShopById(shopId);
+        if (row == null) return null;
+        return Shop.fromJson({
+          'id': row['id'],
+          'merchantId': row['merchant_id'],
+          'name': row['name'],
+          'address': row['address'],
+          'taxRate': row['tax_rate'],
+          'deliveryCharge': row['delivery_charge'],
+          'isActive': row['is_active'] == 1,
+          'isPrimary': row['is_primary'] == 1,
+          'createdAt': row['created_at'],
+          'updatedAt': row['updated_at'],
+        });
+      } catch (e) {
+        if (kDebugMode) {
+          getLogger(
+            'app',
+          ).info('[ShopApiService] Local setPrimaryShop failed: $e');
+        }
+        return null;
+      }
+    }
     try {
       final response = await _connect.patch(
         '$_merchantShopsBaseUrl/$shopId/set-primary',
@@ -345,7 +466,12 @@ class ShopApiService extends GetxService {
         },
       );
       if (response.statusCode == 200 && response.body['status'] == 'success') {
-        return Shop.fromJson(asMap(response.body['data']));
+        final updatedShop = Shop.fromJson(asMap(response.body['data']));
+        if (!_appConfig.localStorageOnly &&
+            _authService.shopId.value == updatedShop.id) {
+          await _authService.updateCurrentShop(updatedShop);
+        }
+        return updatedShop;
       }
       _handleError(response, "setting shop $shopId as primary");
       return null;
@@ -384,9 +510,17 @@ class ShopApiService extends GetxService {
   /// __Expected Response (Success):__
   /// - __Status Code:__ 200
   Future<bool> deleteShop(String shopId) async {
-    if (_appConfig.isDevelopment) {
-      await Future.delayed(const Duration(seconds: 1));
-      return true;
+    // Local-only: delete locally
+    if (_appConfig.localStorageOnly) {
+      try {
+        await _localDatabaseService.deleteShop(shopId);
+        return true;
+      } catch (e) {
+        if (kDebugMode) {
+          getLogger('app').info('[ShopApiService] Local deleteShop failed: $e');
+        }
+        return false;
+      }
     }
     final token = await _getAuthToken();
     if (token == null) return false;
@@ -423,10 +557,6 @@ class ShopApiService extends GetxService {
   /// Preflight check whether a shop can be safely deleted.
   /// Returns a map like: { 'deletable': true/false, 'blockers': { 'sales': 3, ... } }
   Future<Map<String, dynamic>?> checkShopDeletable(String shopId) async {
-    if (_appConfig.isDevelopment) {
-      await Future.delayed(const Duration(milliseconds: 200));
-      return {'deletable': true, 'blockers': {}};
-    }
     final token = await _getAuthToken();
     if (token == null) return null;
     final response = await _connect.get(
@@ -531,7 +661,7 @@ class ShopApiService extends GetxService {
         );
       } else {
         if (kDebugMode) {
-          print(
+          getLogger('app').info(
             'Error admin listing shops: response.body[\'data\'] is not a Map.',
           );
         }
@@ -677,8 +807,8 @@ class ShopApiService extends GetxService {
     }
     final token = await _getAuthToken();
     if (token == null) return null;
-    final clientOperationId = updates['clientOperationId']?.toString() ??
-        const Uuid().v4();
+    final clientOperationId =
+        updates['clientOperationId']?.toString() ?? const Uuid().v4();
     final payload = Map<String, dynamic>.from(updates)
       ..['clientOperationId'] = clientOperationId;
     try {
@@ -789,7 +919,10 @@ class ShopApiService extends GetxService {
     final token = await _getAuthToken();
     if (token == null) return false;
     final clientOperationId = const Uuid().v4();
-    final payload = {'isActive': isActive, 'clientOperationId': clientOperationId};
+    final payload = {
+      'isActive': isActive,
+      'clientOperationId': clientOperationId,
+    };
     try {
       final response = await _connect.put(
         '$_adminBaseUrl/shops/$shopId/status',
@@ -1023,9 +1156,9 @@ class ShopApiService extends GetxService {
   Future<ShopStockItem?> stockInItem(
     String shopId,
     String inventoryItemId,
-    int quantityAdded,
-    {String? clientOperationId}
-  ) async {
+    int quantityAdded, {
+    String? clientOperationId,
+  }) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
       return ShopStockItem(
@@ -1215,6 +1348,129 @@ class ShopApiService extends GetxService {
       );
     }
 
+    // Local-only mode: persist sale locally and return constructed Sale
+    if (_appConfig.localStorageOnly) {
+      try {
+        final saleMap = saleData.toJson();
+        final clientSaleId = saleMap['id'] ?? const Uuid().v4();
+        final merchantId =
+            saleMap['merchantId'] ?? saleMap['merchant_id'] ?? 'local-merchant';
+
+        final safeSaleData = <String, dynamic>{
+          'id': clientSaleId,
+          'client_sale_id': clientSaleId,
+          'shop_id': saleMap['shopId'] ?? saleMap['shop_id'],
+          'merchant_id': merchantId,
+          'sale_date': DateTime.now().toIso8601String(),
+          'total_amount': (saleMap['totalAmount'] as num?)?.toDouble() ?? 0.0,
+          'discount_amount':
+              (saleMap['discountAmount'] as num?)?.toDouble() ?? 0.0,
+          'applied_promotion_id':
+              saleMap['appliedPromotionId'] ?? saleMap['applied_promotion_id'],
+          'delivery_charge':
+              (saleMap['deliveryCharge'] as num?)?.toDouble() ?? 0.0,
+          'payment_type':
+              saleMap['paymentType'] ?? saleMap['payment_type'] ?? 'cash',
+          'payment_status': 'succeeded',
+          'customer_id': saleMap['customerId'] ?? saleMap['customer_id'],
+          'created_at': DateTime.now().toIso8601String(),
+          'updated_at': DateTime.now().toIso8601String(),
+        };
+
+        getLogger('app').info(
+          'DEBUG [ShopApiService] local createSale safeSaleData: $safeSaleData',
+        );
+
+        final createdSaleId = await _localDatabaseService.createSaleLocal(
+          safeSaleData,
+        );
+
+        final itemRows = (saleMap['items'] as List<dynamic>?) ?? [];
+        for (var i = 0; i < itemRows.length; i++) {
+          final itemData = itemRows[i];
+          if (itemData is Map<String, dynamic>) {
+            final itemId =
+                itemData['productId']?.toString() ??
+                '${DateTime.now().microsecondsSinceEpoch}_$i';
+            await _localDatabaseService.createSaleItemLocal({
+              'id': 'sale_item_${itemId}_$createdSaleId',
+              'sale_id': createdSaleId,
+              'inventory_item_id': itemId,
+              'item_name': itemData['itemName'] ?? '',
+              'item_sku': itemData['itemSku'] ?? itemData['sku'] ?? '',
+              'quantity_sold': (itemData['quantity'] as num?)?.toInt() ?? 0,
+              'selling_price_at_sale':
+                  (itemData['sellingPriceAtSale'] as num?)?.toDouble() ?? 0.0,
+              'original_price_at_sale':
+                  (itemData['originalPriceAtSale'] as num?)?.toDouble(),
+              'subtotal':
+                  ((itemData['quantity'] as num?)?.toInt() ?? 0) *
+                  ((itemData['sellingPriceAtSale'] as num?)?.toDouble() ?? 0.0),
+              'created_at': DateTime.now().toIso8601String(),
+              'updated_at': DateTime.now().toIso8601String(),
+            });
+          }
+        }
+
+        final saleRow = await _localDatabaseService.getSaleById(createdSaleId);
+        final itemsRows = await _localDatabaseService.getSaleItemsForSale(
+          createdSaleId,
+        );
+
+        final saleItems = itemsRows.map((row) {
+          return SaleItem(
+            id: row['id'] as String,
+            saleId: row['sale_id'] as String,
+            inventoryItemId: row['inventory_item_id'] as String,
+            quantitySold: (row['quantity_sold'] as num).toInt(),
+            sellingPriceAtSale: (row['selling_price_at_sale'] as num)
+                .toDouble(),
+            originalPriceAtSale: row['original_price_at_sale'] != null
+                ? (row['original_price_at_sale'] as num).toDouble()
+                : null,
+            subtotal: (row['subtotal'] as num).toDouble(),
+            createdAt: DateTime.parse(row['created_at'] as String),
+            updatedAt: DateTime.parse(row['updated_at'] as String),
+            itemName: row['item_name'] as String?,
+            itemSku: row['item_sku'] as String?,
+          );
+        }).toList();
+
+        final now = DateTime.now();
+        return Sale(
+          id: saleRow?['id'] as String? ?? createdSaleId,
+          shopId: saleRow?['shop_id'] as String? ?? saleData.shopId,
+          merchantId: saleRow?['merchant_id'] as String? ?? '',
+          saleDate: DateTime.parse(
+            saleRow?['sale_date'] ?? now.toIso8601String(),
+          ),
+          totalAmount:
+              (saleRow?['total_amount'] as num?)?.toDouble() ??
+              (saleMap['totalAmount'] as num?)?.toDouble() ??
+              0.0,
+          deliveryCharge:
+              (saleRow?['delivery_charge'] as num?)?.toDouble() ??
+              (saleMap['deliveryCharge'] as num?)?.toDouble() ??
+              0.0,
+          items: saleItems,
+          paymentType:
+              saleRow?['payment_type'] as String? ?? saleData.paymentType,
+          paymentStatus: saleRow?['payment_status'] as String? ?? 'pending',
+          createdAt: DateTime.parse(
+            saleRow?['created_at'] ?? now.toIso8601String(),
+          ),
+          updatedAt: DateTime.parse(
+            saleRow?['updated_at'] ?? now.toIso8601String(),
+          ),
+        );
+      } catch (e) {
+        if (kDebugMode) {
+          getLogger('app').info('[ShopApiService] Local createSale failed: $e');
+        }
+        return null;
+      }
+    }
+
     final token = await _getAuthToken();
     if (token == null) return null;
     final Map<String, dynamic> saleMap = saleData.toJson();
@@ -1349,6 +1605,58 @@ class ShopApiService extends GetxService {
         items: [],
       );
     }
+
+    // Local-only mode: return sale from local database
+    if (_appConfig.localStorageOnly) {
+      try {
+        final saleRow = await _localDatabaseService.getSaleById(saleId);
+        if (saleRow == null) return null;
+
+        final itemsRows = await _localDatabaseService.getSaleItemsForSale(
+          saleId,
+        );
+        final saleItems = itemsRows.map((row) {
+          return SaleItem(
+            id: row['id'] as String,
+            saleId: row['sale_id'] as String,
+            inventoryItemId: row['inventory_item_id'] as String,
+            quantitySold: (row['quantity_sold'] as num).toInt(),
+            sellingPriceAtSale: (row['selling_price_at_sale'] as num)
+                .toDouble(),
+            originalPriceAtSale: row['original_price_at_sale'] != null
+                ? (row['original_price_at_sale'] as num).toDouble()
+                : null,
+            subtotal: (row['subtotal'] as num).toDouble(),
+            createdAt: DateTime.parse(row['created_at'] as String),
+            updatedAt: DateTime.parse(row['updated_at'] as String),
+            itemName: row['item_name'] as String?,
+            itemSku: row['item_sku'] as String?,
+          );
+        }).toList();
+
+        return Sale(
+          id: saleRow['id'] as String,
+          shopId: saleRow['shop_id'] as String,
+          merchantId: saleRow['merchant_id'] as String,
+          saleDate: DateTime.parse(saleRow['sale_date'] as String),
+          totalAmount: (saleRow['total_amount'] as num).toDouble(),
+          deliveryCharge:
+              (saleRow['delivery_charge'] as num?)?.toDouble() ?? 0.0,
+          items: saleItems,
+          paymentType: saleRow['payment_type'] as String? ?? 'unknown',
+          paymentStatus: saleRow['payment_status'] as String? ?? 'pending',
+          createdAt: DateTime.parse(saleRow['created_at'] as String),
+          updatedAt: DateTime.parse(saleRow['updated_at'] as String),
+        );
+      } catch (e) {
+        if (kDebugMode) {
+          getLogger(
+            'app',
+          ).info('[ShopApiService] Local getSaleById failed: $e');
+        }
+        return null;
+      }
+    }
     final token = await _getAuthToken();
     if (token == null) return null;
 
@@ -1460,8 +1768,14 @@ class ShopApiService extends GetxService {
     );
 
     if (kDebugMode) {
-      print('Staff Dashboard Summary Response Status: ${response.statusCode}');
-      print('Staff Dashboard Summary Response Body: ${response.bodyString}');
+      if (kDebugMode) {
+        getLogger('app').info(
+          'Staff Dashboard Summary Response Status: ${response.statusCode}',
+        );
+        getLogger(
+          'app',
+        ).info('Staff Dashboard Summary Response Body: ${response.bodyString}');
+      }
     }
 
     if (response.statusCode == 200 && response.body != null) {
@@ -1471,7 +1785,9 @@ class ShopApiService extends GetxService {
         );
       } catch (e) {
         if (kDebugMode) {
-          print('Error parsing staff dashboard summary: $e');
+          if (kDebugMode) {
+            getLogger('app').info('Error parsing staff dashboard summary: $e');
+          }
         }
         _handleError(
           Response(

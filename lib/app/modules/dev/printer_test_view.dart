@@ -45,8 +45,9 @@ class _PrinterTestViewState extends State<PrinterTestView> {
       setState(() {
         _saved = sel;
         // prefill BLE UUID fields if present
-        if (sel.serviceUuid != null)
+        if (sel.serviceUuid != null) {
           _bleServiceController.text = sel.serviceUuid!;
+        }
         if (sel.charUuid != null) _bleCharController.text = sel.charUuid!;
       });
     }

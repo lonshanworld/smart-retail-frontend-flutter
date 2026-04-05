@@ -39,7 +39,7 @@ class DetailItem extends StatelessWidget {
               '$label:',
               style: Get.textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: Get.textTheme.bodySmall?.color?.withOpacity(0.9),
+                color: Get.textTheme.bodySmall?.color?.withValues(alpha: 0.9),
               ),
             ),
           ),

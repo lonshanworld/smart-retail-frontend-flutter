@@ -1,44 +1,45 @@
 import 'dart:io';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
-import 'package:printing/printing.dart';
+import 'package:smart_retail/app/constants/currency.dart';
+import 'package:smart_retail/app/utils/web_file_utils.dart';
 import 'package:smart_retail/app/data/models/invoice_model.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:smart_retail/app/utils/app_logger.dart';
 
 class InvoicePdfService {
   /// Generates a PDF for the given invoice and returns the file path (or downloads on web)
   static Future<String> generateInvoicePdf(Invoice invoice) async {
     final pdf = pw.Document();
 
-    // Add page to PDF
+    // Add page to PDF. Layout mirrors the on-screen InvoiceDetailView:
+    // Header -> Amount Breakdown -> Additional Info -> Items -> Footer
     pdf.addPage(
       pw.Page(
         pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.all(32),
+        margin: const pw.EdgeInsets.all(24),
         build: (pw.Context context) {
           return pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
               // Header
               _buildHeader(invoice),
-              pw.SizedBox(height: 30),
+              pw.SizedBox(height: 16),
 
-              // Invoice details
-              _buildInvoiceInfo(invoice),
-              pw.SizedBox(height: 20),
-              // Items table
-              if (invoice.items.isNotEmpty) _buildItemsTable(invoice),
-              pw.SizedBox(height: 30),
-
-              // Divider
-              pw.Divider(thickness: 2),
-              pw.SizedBox(height: 20),
-
-              // Amount breakdown
+              // Amount breakdown (matches UI ordering)
               _buildAmountBreakdown(invoice),
-              pw.SizedBox(height: 30),
+              pw.SizedBox(height: 12),
+
+              // Additional info
+              _buildInvoiceInfo(invoice),
+              pw.SizedBox(height: 12),
+
+              // Items list (styled like the UI card)
+              if (invoice.items.isNotEmpty) _buildItemsList(invoice),
+              pw.SizedBox(height: 16),
 
               // Footer
               pw.Spacer(),
@@ -51,26 +52,95 @@ class InvoicePdfService {
 
     // Save or download PDF
     if (kIsWeb) {
-      // For web, share the PDF using the printing package (works in many browsers)
-      try {
-        final bytes = await pdf.save();
-        await Printing.sharePdf(
-          bytes: bytes,
-          filename: '${invoice.invoiceNumber}.pdf',
-        );
-        return 'web-shared';
-      } catch (e) {
-        // Fallback: still attempt to save bytes (some environments may not support share)
-        final bytes = await pdf.save();
-        return 'web-bytes:${bytes.length}';
-      }
+      // For web, trigger a direct download via an anchor element instead of the share sheet.
+      final bytes = await pdf.save();
+      final filename = '${invoice.invoiceNumber}.pdf';
+      await downloadFile(bytes, filename);
+      // Print/log the web download filename for debugging
+      getLogger(
+        'app',
+      ).info('[InvoicePdfService] Web download triggered: $filename');
+      return 'web-downloaded';
     } else {
-      // For mobile/desktop, save to file
-      final output = await getTemporaryDirectory();
-      final file = File('${output.path}/${invoice.invoiceNumber}.pdf');
+      // For mobile/desktop, save to a user-visible local directory when possible.
+      final output = await _getLocalPdfDirectory();
+      final file = File(p.join(output.path, '${invoice.invoiceNumber}.pdf'));
       await file.writeAsBytes(await pdf.save());
+      // Print/log the saved file path so UI/debugging can see where it landed
+      getLogger(
+        'app',
+      ).info('[InvoicePdfService] Saved invoice PDF to: ${file.path}');
       return file.path;
     }
+  }
+
+  static Future<Directory> _getLocalPdfDirectory() async {
+    try {
+      // Prefer a user-visible Documents/SmartRetail/Invoices folder on Android and iOS
+      if (Platform.isAndroid) {
+        try {
+          final dirs = await getExternalStorageDirectories(
+            type: StorageDirectory.documents,
+          );
+          if (dirs != null && dirs.isNotEmpty) {
+            final base = dirs.first;
+            // If the returned path is app-scoped (contains '/Android'), prefer
+            // the shared public Documents folder by trimming at '/Android'.
+            String publicRoot = base.path;
+            final androidIdx = base.path.indexOf('${p.separator}Android');
+            if (androidIdx != -1) {
+              publicRoot = base.path.substring(0, androidIdx);
+            }
+            final target = Directory(
+              p.join(publicRoot, 'Documents', 'SmartRetail', 'Invoices'),
+            );
+            if (!await target.exists()) await target.create(recursive: true);
+            // Log chosen path for debugging
+            getLogger('app').info(
+              '[InvoicePdfService] Using Android public path: ${target.path}',
+            );
+            return target;
+          }
+        } catch (e) {
+          getLogger(
+            'app',
+          ).info('[InvoicePdfService] Android public path fallback failed: $e');
+        }
+      } else if (Platform.isIOS) {
+        try {
+          final docs = await getApplicationDocumentsDirectory();
+          final target = Directory(
+            p.join(docs.path, 'SmartRetail', 'Invoices'),
+          );
+          if (!await target.exists()) await target.create(recursive: true);
+          return target;
+        } catch (_) {}
+      }
+
+      // Fallback to downloads directory if available
+      try {
+        final downloadsDirectory = await getDownloadsDirectory();
+        if (downloadsDirectory != null) {
+          final target = Directory(
+            p.join(downloadsDirectory.path, 'SmartRetail', 'Invoices'),
+          );
+          if (!await target.exists()) await target.create(recursive: true);
+          return target;
+        }
+      } catch (_) {}
+
+      // Last fallback: application documents
+      try {
+        final appDocs = await getApplicationDocumentsDirectory();
+        final target = Directory(
+          p.join(appDocs.path, 'SmartRetail', 'Invoices'),
+        );
+        if (!await target.exists()) await target.create(recursive: true);
+        return target;
+      } catch (_) {}
+    } catch (_) {}
+
+    return await getTemporaryDirectory();
   }
 
   static pw.Widget _buildHeader(Invoice invoice) {
@@ -127,18 +197,20 @@ class InvoicePdfService {
         ),
         pw.SizedBox(height: 12),
         _buildInfoRow(
-          'Invoice Date:',
-          dateFormat.format(invoice.invoiceDate.toLocal()),
+          'Checkout Time:',
+          dateFormat.format(invoice.checkoutTime.toLocal()),
         ),
         if (invoice.dueDate != null)
           _buildInfoRow(
             'Due Date:',
             dateFormat.format(invoice.dueDate!.toLocal()),
           ),
-        _buildInfoRow('Sale ID:', invoice.saleId),
-        _buildInfoRow('Shop ID:', invoice.shopId),
-        if (invoice.customerId != null)
-          _buildInfoRow('Customer ID:', invoice.customerId!),
+        _buildInfoRow(
+          'Shop Name:',
+          invoice.shopName?.trim().isNotEmpty == true
+              ? invoice.shopName!
+              : 'Unknown shop',
+        ),
       ],
     );
   }
@@ -235,7 +307,7 @@ class InvoicePdfService {
           ),
         ),
         pw.Text(
-          '\$${amount.abs().toStringAsFixed(2)}',
+          formatCurrency(amount),
           style: pw.TextStyle(
             fontSize: isTotal ? 20 : 14,
             fontWeight: isTotal ? pw.FontWeight.bold : pw.FontWeight.bold,
@@ -254,6 +326,8 @@ class InvoicePdfService {
       children: [
         pw.Divider(thickness: 1, color: PdfColors.grey400),
         pw.SizedBox(height: 12),
+        pw.Center(child: _buildSaleQr(invoice)),
+        pw.SizedBox(height: 10),
         pw.Text(
           'Thank you for your business!',
           style: pw.TextStyle(
@@ -271,9 +345,39 @@ class InvoicePdfService {
     );
   }
 
-  static pw.Widget _buildItemsTable(Invoice invoice) {
-    final headers = ['Item', 'SKU', 'Qty', 'Unit', 'Total'];
+  static pw.Widget _buildSaleQr(Invoice invoice) {
+    final saleId = invoice.saleId.trim().isNotEmpty
+        ? invoice.saleId.trim()
+        : invoice.id;
+    return pw.Column(
+      mainAxisSize: pw.MainAxisSize.min,
+      children: [
+        pw.Text(
+          'Sale ID QR',
+          style: pw.TextStyle(
+            fontSize: 11,
+            fontWeight: pw.FontWeight.bold,
+            color: PdfColors.grey700,
+          ),
+        ),
+        pw.SizedBox(height: 6),
+        pw.BarcodeWidget(
+          barcode: pw.Barcode.qrCode(),
+          data: saleId,
+          width: 72,
+          height: 72,
+          drawText: false,
+        ),
+        pw.SizedBox(height: 6),
+        pw.Text(
+          saleId,
+          style: pw.TextStyle(fontSize: 9, color: PdfColors.grey700),
+        ),
+      ],
+    );
+  }
 
+  static pw.Widget _buildItemsList(Invoice invoice) {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
@@ -282,24 +386,63 @@ class InvoicePdfService {
           style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
         ),
         pw.SizedBox(height: 8),
-        pw.TableHelper.fromTextArray(
-          headers: headers,
-          data: invoice.items.map((it) {
-            return [
-              it.itemName ?? '-',
-              it.itemSku ?? '-',
-              it.quantitySold.toString(),
-              '\$${it.sellingPriceAtSale.toStringAsFixed(2)}',
-              '\$${it.subtotal.toStringAsFixed(2)}',
-            ];
+        pw.Column(
+          children: invoice.items.map((it) {
+            final displayName = it.itemName ?? it.inventoryItemId;
+            return pw.Padding(
+              padding: const pw.EdgeInsets.symmetric(vertical: 6),
+              child: pw.Row(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Expanded(
+                    flex: 5,
+                    child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Text(
+                          displayName,
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                        ),
+                        if (it.itemSku != null)
+                          pw.Text(
+                            'SKU: ${it.itemSku}',
+                            style: pw.TextStyle(
+                              fontSize: 10,
+                              color: PdfColors.grey700,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  pw.SizedBox(width: 8),
+                  pw.Expanded(
+                    flex: 1,
+                    child: pw.Text(
+                      'x${it.quantitySold}',
+                      textAlign: pw.TextAlign.right,
+                    ),
+                  ),
+                  pw.SizedBox(width: 8),
+                  pw.Expanded(
+                    flex: 2,
+                    child: pw.Text(
+                      formatCurrency(it.sellingPriceAtSale),
+                      textAlign: pw.TextAlign.right,
+                    ),
+                  ),
+                  pw.SizedBox(width: 8),
+                  pw.Expanded(
+                    flex: 2,
+                    child: pw.Text(
+                      formatCurrency(it.subtotal),
+                      textAlign: pw.TextAlign.right,
+                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            );
           }).toList(),
-          headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-          cellAlignment: pw.Alignment.centerLeft,
-          headerDecoration: pw.BoxDecoration(color: PdfColors.grey300),
-          cellPadding: const pw.EdgeInsets.symmetric(
-            vertical: 6,
-            horizontal: 8,
-          ),
         ),
       ],
     );

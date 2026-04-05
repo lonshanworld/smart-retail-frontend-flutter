@@ -1,10 +1,11 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:smart_retail/app/data/models/shop_model.dart';
 import 'package:smart_retail/app/data/models/user_selection_item.dart';
 import 'package:smart_retail/app/data/services/shop_api_service.dart';
 import 'package:smart_retail/app/data/services/user_api_service.dart';
 import 'package:smart_retail/app/utils/dialog_utils.dart';
+import 'package:smart_retail/app/utils/app_logger.dart';
 
 class AdminAddEditShopController extends GetxController {
   final ShopApiService _shopApiService = Get.find<ShopApiService>();
@@ -159,7 +160,7 @@ class AdminAddEditShopController extends GetxController {
         );
       }
     } catch (e) {
-      print("[AdminAddEditShopController] Error saving shop: $e");
+      getLogger('app').info("[AdminAddEditShopController] Error saving shop: $e");
       DialogUtils.showError("An unexpected error occurred: ${e.toString()}");
     } finally {
       isLoading.value = false;
@@ -173,3 +174,4 @@ class AdminAddEditShopController extends GetxController {
     super.onClose();
   }
 }
+

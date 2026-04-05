@@ -1,10 +1,11 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:smart_retail/app/utils/dialog_utils.dart';
 import 'package:smart_retail/app/data/models/shop_model.dart';
 import 'package:smart_retail/app/data/services/shop_api_service.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart'; // To get user ID and role
 import './shops_controller.dart'; // To refresh list after save
+import 'package:smart_retail/app/utils/app_logger.dart';
 
 class ShopAddEditController extends GetxController {
   final ShopApiService _shopApiService = Get.find<ShopApiService>();
@@ -52,12 +53,14 @@ class ShopAddEditController extends GetxController {
     try {
       final String? currentUserId = await _authService.getUserId();
       final String? currentUserRole = await _authService.getUserRole();
+      final String? currentUserMerchantId = _authService.user.value?.merchantId;
 
       if (currentUserRole != 'merchant' || currentUserId == null) {
         throw Exception('Merchant not authenticated or user ID not found.');
       }
 
       Shop? savedShop;
+      getLogger('app').info('[ShopAddEditController] Saving shop: name=${nameController.text}, address=${addressController.text}, editing=${isEditing.value}');
       final double parsedTaxRate =
           double.tryParse(taxRateController.text.trim()) ?? -1;
       if (parsedTaxRate < 0 || parsedTaxRate > 100) {
@@ -83,7 +86,7 @@ class ShopAddEditController extends GetxController {
       } else {
         // Create new shop
         Shop newShop = Shop(
-          merchantId: currentUserId, // Use the fetched currentUserId
+          merchantId: currentUserMerchantId ?? currentUserId, // Prefer merchantId, fallback to userId
           name: nameController.text,
           address: addressController.text.isNotEmpty
               ? addressController.text
@@ -93,6 +96,7 @@ class ShopAddEditController extends GetxController {
           updatedAt: DateTime.now(), // Client-side, backend will override
         );
         savedShop = await _shopApiService.createShop(newShop);
+      getLogger('app').info('[ShopAddEditController] Save shop returned: ${savedShop?.toString()}');
       }
 
       if (savedShop != null) {
@@ -108,7 +112,7 @@ class ShopAddEditController extends GetxController {
         DialogUtils.showError(errorMessage.value!);
       }
     } catch (e) {
-      print("Error saving shop: $e");
+      getLogger('app').info("Error saving shop: $e");
       errorMessage.value = 'An error occurred: ${e.toString()}';
       DialogUtils.showError(errorMessage.value!);
     } finally {
@@ -194,3 +198,4 @@ class ShopAddEditController extends GetxController {
     super.onClose();
   }
 }
+

@@ -18,7 +18,7 @@ class MerchantStaffListView extends GetView<MerchantStaffListController> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [AppColors.merchant.shade50.withOpacity(0.3), Colors.white],
+            colors: [AppColors.merchant.shade50.withValues(alpha: 0.3), Colors.white],
           ),
         ),
         child: Obx(() {

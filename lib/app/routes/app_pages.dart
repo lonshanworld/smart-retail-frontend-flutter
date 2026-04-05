@@ -55,6 +55,10 @@ import 'package:smart_retail/app/modules/merchant/staff/detail/staff_detail_view
 import 'package:smart_retail/app/modules/merchant/staff/detail/staff_detail_binding.dart';
 import 'package:smart_retail/app/modules/merchant/reports/sales_analysis_view.dart';
 import 'package:smart_retail/app/modules/merchant/reports/sales_analysis_binding.dart';
+import 'package:smart_retail/app/modules/merchant/business_analysis/business_analysis_view.dart';
+import 'package:smart_retail/app/modules/merchant/business_analysis/business_analysis_binding.dart';
+import 'package:smart_retail/app/modules/merchant/profit_breakdown/profit_breakdown_view.dart';
+import 'package:smart_retail/app/modules/merchant/profit_breakdown/profit_breakdown_binding.dart';
 import 'package:smart_retail/app/modules/merchant/ai_sales_analysis/ai_sales_analysis_view.dart';
 import 'package:smart_retail/app/modules/merchant/ai_sales_analysis/ai_sales_analysis_binding.dart';
 import 'package:smart_retail/app/modules/merchant/notifications/notifications_view.dart';
@@ -437,6 +441,18 @@ class AppPages {
       name: Routes.MERCHANT_REPORTS,
       page: () => const SalesAnalysisView(),
       binding: SalesAnalysisBinding(),
+      middlewares: [AuthMiddleware(requiredRole: UserRole.merchant)],
+    ),
+    GetPage(
+      name: Routes.MERCHANT_BUSINESS_ANALYSIS,
+      page: () => const BusinessAnalysisView(),
+      binding: BusinessAnalysisBinding(),
+      middlewares: [AuthMiddleware(requiredRole: UserRole.merchant)],
+    ),
+    GetPage(
+      name: Routes.MERCHANT_PROFIT_BREAKDOWN,
+      page: () => const ProfitBreakdownView(),
+      binding: ProfitBreakdownBinding(),
       middlewares: [AuthMiddleware(requiredRole: UserRole.merchant)],
     ),
     GetPage(

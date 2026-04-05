@@ -1,16 +1,19 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 import 'package:smart_retail/app/core/config/app_config.dart';
+import 'package:smart_retail/app/services/local_database_service.dart';
 import 'package:smart_retail/app/data/models/shop_inventory_item.dart';
 import 'package:smart_retail/app/data/providers/api_constants.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
 import 'package:smart_retail/app/utils/response_utils.dart';
 import 'package:uuid/uuid.dart';
+import 'package:smart_retail/app/utils/app_logger.dart';
 
 // This service handles inventory operations from the STAFF'S perspective for their assigned shop.
 class StaffInventoryApiService extends GetxService {
   final GetConnect _connect = Get.find<GetConnect>();
   final AuthService _authService = Get.find<AuthService>();
   final AppConfig _appConfig = Get.find<AppConfig>();
+  final LocalDatabaseService _localDb = Get.find<LocalDatabaseService>();
 
   String get _baseUrl => '${ApiConstants.baseUrl}/shop/inventory';
 
@@ -49,6 +52,25 @@ class StaffInventoryApiService extends GetxService {
       );
     }
 
+    // Local-only mode: return cached/local inventory from the local DB
+    if (_appConfig.localStorageOnly) {
+      final shopId = await _authService.getShopId();
+      if (shopId == null) throw Exception('No shop selected for staff user');
+      final rows = await _localDb.getInventoryForShopLocal(shopId);
+      return rows.map((r) {
+        final stockInfo = r['stockInfo'] as List<dynamic>? ?? [];
+        final qty = stockInfo.isNotEmpty ? (stockInfo.first['quantity'] as int?) ?? 0 : 0;
+        return ShopInventoryItem(
+          id: r['id'] as String,
+          productId: r['id'] as String,
+          name: r['name'] as String,
+          sku: r['sku'] as String?,
+          quantity: qty,
+          sellingPrice: (r['selling_price'] as num?)?.toDouble() ?? 0.0,
+        );
+      }).toList();
+    }
+
     final response = await _connect.get(_baseUrl, headers: await _getHeaders());
     if (response.isOk && response.body['data'] != null) {
       final rawList = asList(response.body['data']);
@@ -82,7 +104,22 @@ class StaffInventoryApiService extends GetxService {
   }) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 2));
-      print('Mock Staff Stock Update for ${items.length} items.');
+      getLogger('app').info('Mock Staff Stock Update for ${items.length} items.');
+      return;
+    }
+
+    // Local-only mode: apply stock changes to local DB and queue if needed.
+    if (_appConfig.localStorageOnly) {
+      final shopId = await _authService.getShopId();
+      if (shopId == null) throw Exception('No shop selected for staff user');
+      final actorId = await _authService.getUserId() ?? 'local_actor';
+      final opId = clientOperationId ?? const Uuid().v4();
+      await _localDb.bulkStockInLocal(
+        shopId: shopId,
+        items: items,
+        actorId: actorId,
+        clientOperationId: opId,
+      );
       return;
     }
 
@@ -99,3 +136,4 @@ class StaffInventoryApiService extends GetxService {
     }
   }
 }
+

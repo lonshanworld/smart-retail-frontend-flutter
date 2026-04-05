@@ -1,4 +1,4 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 import 'package:smart_retail/app/core/config/app_config.dart';
 import 'package:smart_retail/app/data/providers/api_constants.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
@@ -7,6 +7,7 @@ import 'local_database_service.dart';
 import 'connectivity_service.dart';
 import 'offline_mode_manager.dart';
 import 'package:uuid/uuid.dart';
+import 'package:smart_retail/app/utils/app_logger.dart';
 
 class OfflineSalesService extends GetxService {
   late LocalDatabaseService _localDatabaseService;
@@ -53,7 +54,7 @@ class OfflineSalesService extends GetxService {
 
       // Check if device can process sales
       if (!_offlineModeManager.canProcessSales()) {
-        print('[OfflineSales] Cannot process sales at the moment');
+        getLogger('app').info('[OfflineSales] Cannot process sales at the moment');
         return false;
       }
 
@@ -69,7 +70,7 @@ class OfflineSalesService extends GetxService {
         return await _queueSaleOffline(saleData);
       }
     } catch (e) {
-      print('[OfflineSales] Error processing sale: $e');
+      getLogger('app').info('[OfflineSales] Error processing sale: $e');
       return false;
     }
   }
@@ -81,11 +82,11 @@ class OfflineSalesService extends GetxService {
         return await _queueSaleOffline(saleData);
       }
 
-      print('[OfflineSales] Processing sale online...');
+      getLogger('app').info('[OfflineSales] Processing sale online...');
 
       final token = _authService.authToken.value;
       if (token == null || token.isEmpty) {
-        print(
+        getLogger('app').info(
           '[OfflineSales] Missing auth token, queueing sale for offline sync',
         );
         return await _queueSaleOffline(saleData);
@@ -93,7 +94,7 @@ class OfflineSalesService extends GetxService {
 
       final shopId = saleData['shopId']?.toString();
       if (shopId == null || shopId.isEmpty) {
-        print(
+        getLogger('app').info(
           '[OfflineSales] Missing shopId in sale payload, queueing offline',
         );
         return await _queueSaleOffline(saleData);
@@ -111,15 +112,15 @@ class OfflineSalesService extends GetxService {
       );
 
       if (response.statusCode == 201 && response.body?['data'] != null) {
-        print('[OfflineSales] Sale processed online successfully');
+        getLogger('app').info('[OfflineSales] Sale processed online successfully');
         return true;
       }
 
       final backendMessage = response.body?['message'] ?? 'Checkout failed';
-      print('[OfflineSales] Backend rejected sale: $backendMessage');
+      getLogger('app').info('[OfflineSales] Backend rejected sale: $backendMessage');
       return await _queueSaleOffline(saleData);
     } catch (e) {
-      print('[OfflineSales] Error processing sale online: $e');
+      getLogger('app').info('[OfflineSales] Error processing sale online: $e');
       // On error, queue for offline processing
       return await _queueSaleOffline(saleData);
     }
@@ -128,21 +129,53 @@ class OfflineSalesService extends GetxService {
   /// Queue sale for offline processing
   Future<bool> _queueSaleOffline(Map<String, dynamic> saleData) async {
     try {
-      print('[OfflineSales] Queuing sale for offline processing...');
+      getLogger('app').info('[OfflineSales] Queuing sale for offline processing...');
 
       saleData['timestamp'] = DateTime.now().toIso8601String();
       saleData['status'] = 'pending';
       saleData['syncAttempts'] = 0;
 
+      final shopId =
+          saleData['shopId']?.toString() ??
+          saleData['shop_id']?.toString() ??
+          _authService.shopId.value ??
+          _authService.user.value?.assignedShopId;
+
+      if (shopId != null && shopId.isNotEmpty) {
+        final items = (saleData['items'] as List<dynamic>?) ?? const [];
+        for (final item in items) {
+          if (item is! Map<String, dynamic>) continue;
+          final itemId =
+              item['productId']?.toString() ??
+              item['product_id']?.toString() ??
+              item['inventoryItemId']?.toString() ??
+              item['inventory_item_id']?.toString();
+          final quantity = (item['quantity'] as num?)?.toInt() ?? 0;
+          if (itemId == null || itemId.isEmpty || quantity <= 0) continue;
+
+          await _localDatabaseService.adjustStockLocal(
+            shopId: shopId,
+            itemId: itemId,
+            quantity: -quantity,
+            actorId: _authService.user.value?.id,
+            reason: 'sale',
+          );
+        }
+      } else {
+        getLogger('app').info(
+          '[OfflineSales] No shopId available while queueing sale, stock was not decremented locally.',
+        );
+      }
+
       await _localDatabaseService.queueSale(saleData);
       await _loadPendingSales();
 
-      print(
+      getLogger('app').info(
         '[OfflineSales] Sale queued successfully. Total pending: ${totalPendingCount.value}',
       );
       return true;
     } catch (e) {
-      print('[OfflineSales] Error queuing sale: $e');
+      getLogger('app').info('[OfflineSales] Error queuing sale: $e');
       return false;
     }
   }
@@ -156,9 +189,9 @@ class OfflineSalesService extends GetxService {
       pendingSales.value = sales;
       totalPendingCount.value = sales.length;
 
-      print('[OfflineSales] Loaded ${sales.length} pending sales');
+      getLogger('app').info('[OfflineSales] Loaded ${sales.length} pending sales');
     } catch (e) {
-      print('[OfflineSales] Error loading pending sales: $e');
+      getLogger('app').info('[OfflineSales] Error loading pending sales: $e');
     }
   }
 
@@ -179,9 +212,9 @@ class OfflineSalesService extends GetxService {
     try {
       await _localDatabaseService.markSaleAsSynced(saleId, serverId);
       await _loadPendingSales();
-      print('[OfflineSales] Marked sale $saleId as synced');
+      getLogger('app').info('[OfflineSales] Marked sale $saleId as synced');
     } catch (e) {
-      print('[OfflineSales] Error marking sale as synced: $e');
+      getLogger('app').info('[OfflineSales] Error marking sale as synced: $e');
     }
   }
 
@@ -190,9 +223,9 @@ class OfflineSalesService extends GetxService {
     try {
       await _localDatabaseService.markSaleFailed(saleId, error);
       await _loadPendingSales();
-      print('[OfflineSales] Marked sale $saleId as failed: $error');
+      getLogger('app').info('[OfflineSales] Marked sale $saleId as failed: $error');
     } catch (e) {
-      print('[OfflineSales] Error marking sale as failed: $e');
+      getLogger('app').info('[OfflineSales] Error marking sale as failed: $e');
     }
   }
 
@@ -204,7 +237,7 @@ class OfflineSalesService extends GetxService {
       final sales = await _localDatabaseService.getPendingSales();
       return sales.take(limit).toList();
     } catch (e) {
-      print('[OfflineSales] Error getting sales for sync: $e');
+      getLogger('app').info('[OfflineSales] Error getting sales for sync: $e');
       return [];
     }
   }
@@ -220,9 +253,9 @@ class OfflineSalesService extends GetxService {
         }
       }
       await _loadPendingSales();
-      print('[OfflineSales] Updated sync status for ${results.length} sales');
+      getLogger('app').info('[OfflineSales] Updated sync status for ${results.length} sales');
     } catch (e) {
-      print('[OfflineSales] Error updating batch sync status: $e');
+      getLogger('app').info('[OfflineSales] Error updating batch sync status: $e');
     }
   }
 
@@ -234,7 +267,7 @@ class OfflineSalesService extends GetxService {
       final sales = await _localDatabaseService.getPendingSales();
       return sales.where((s) => s['status'] == status).toList();
     } catch (e) {
-      print('[OfflineSales] Error getting sales by status: $e');
+      getLogger('app').info('[OfflineSales] Error getting sales by status: $e');
       return [];
     }
   }
@@ -244,9 +277,9 @@ class OfflineSalesService extends GetxService {
     try {
       await _localDatabaseService.deleteSale(saleId);
       await _loadPendingSales();
-      print('[OfflineSales] Deleted sale $saleId');
+      getLogger('app').info('[OfflineSales] Deleted sale $saleId');
     } catch (e) {
-      print('[OfflineSales] Error deleting sale: $e');
+      getLogger('app').info('[OfflineSales] Error deleting sale: $e');
     }
   }
 
@@ -255,9 +288,9 @@ class OfflineSalesService extends GetxService {
     try {
       await _localDatabaseService.clearAllSales();
       await _loadPendingSales();
-      print('[OfflineSales] Cleared all pending sales');
+      getLogger('app').info('[OfflineSales] Cleared all pending sales');
     } catch (e) {
-      print('[OfflineSales] Error clearing pending sales: $e');
+      getLogger('app').info('[OfflineSales] Error clearing pending sales: $e');
     }
   }
 
@@ -283,7 +316,7 @@ class OfflineSalesService extends GetxService {
         'lastUpdated': DateTime.now().toIso8601String(),
       };
     } catch (e) {
-      print('[OfflineSales] Error getting sales statistics: $e');
+      getLogger('app').info('[OfflineSales] Error getting sales statistics: $e');
       return {
         'totalPending': 0,
         'totalSynced': 0,
@@ -315,7 +348,7 @@ class OfflineSalesService extends GetxService {
   String getOfflineStatusMessage() {
     if (_connectivityService.isOnline.value) {
       if (totalPendingCount.value == 0) {
-        return 'All data synced ✓';
+        return 'All data synced âœ“';
       }
       return 'Syncing ${totalPendingCount.value} pending sales...';
     } else {
@@ -323,3 +356,4 @@ class OfflineSalesService extends GetxService {
     }
   }
 }
+

@@ -1,9 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:smart_retail/app/utils/dialog_utils.dart';
 import 'package:smart_retail/app/data/models/inventory_item_model.dart';
 import 'package:smart_retail/app/data/services/inventory_api_service.dart';
 import 'package:smart_retail/app/data/services/shop_inventory_api_service.dart';
+import 'package:smart_retail/app/utils/app_logger.dart';
 
 class StockInController extends GetxController {
   final InventoryApiService _inventoryApiService =
@@ -61,7 +62,7 @@ class StockInController extends GetxController {
         selectedItem.value!.id!,
         quantity,
       );
-      print('check stock in succes or not $success');
+      getLogger('app').info('check stock in succes or not $success');
       if (success) {
         Get.back(result: true);
         DialogUtils.showSuccess('Stock added successfully.');
@@ -81,3 +82,4 @@ class StockInController extends GetxController {
     super.onClose();
   }
 }
+

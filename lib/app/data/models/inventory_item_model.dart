@@ -7,9 +7,14 @@ class StockInfo {
   StockInfo({required this.quantity, required this.shopId, this.shopName});
 
   factory StockInfo.fromJson(Map<String, dynamic> json) {
+    final rawQuantity = json['quantity'];
     return StockInfo(
-      quantity: json['quantity'] as int,
-      shopId: json['shopId'] as String? ?? json['shop_id'] as String,
+      quantity:
+          (rawQuantity as num?)?.toInt() ??
+          int.tryParse(rawQuantity?.toString() ?? '') ??
+          0,
+      shopId:
+          json['shopId']?.toString() ?? json['shop_id']?.toString() ?? '',
       shopName: json['shopName'] as String? ?? json['shop_name'] as String?,
     );
   }
@@ -132,7 +137,7 @@ class InventoryItem {
   String? description;
   String? sku;
   double sellingPrice;
-  double? originalPrice;
+  double originalPrice;
   int? lowStockThreshold;
   String? category;
   String? categoryId;
@@ -160,7 +165,7 @@ class InventoryItem {
     this.description,
     this.sku,
     required this.sellingPrice,
-    this.originalPrice,
+    required this.originalPrice,
     this.lowStockThreshold,
     this.category,
     this.categoryId,
@@ -235,41 +240,52 @@ class InventoryItem {
     // Handle quantity field from backend (InventoryItemWithQuantity)
     List<StockInfo>? stockInfoList;
 
+    List<StockInfo> parseStockInfoList(dynamic rawStockInfo) {
+      final rawList = rawStockInfo as List? ?? const [];
+      return rawList
+          .whereType<Map>()
+          .map((s) => StockInfo.fromJson(Map<String, dynamic>.from(s)))
+          .toList();
+    }
+
     if (json.containsKey('quantity') && json['quantity'] != null) {
       // Backend sends quantity directly for shop-specific inventory
       stockInfoList = [
         StockInfo(
-          quantity: json['quantity'] as int,
+          quantity: (json['quantity'] as num?)?.toInt() ?? 0,
           shopId: '', // Shop ID is context-dependent
         ),
       ];
     } else if (json.containsKey('stockInfo') && json['stockInfo'] != null) {
-      stockInfoList = (json['stockInfo'] as List)
-          .map((s) => StockInfo.fromJson(s as Map<String, dynamic>))
-          .toList();
+      stockInfoList = parseStockInfoList(json['stockInfo']);
     } else if (json.containsKey('stock_info') && json['stock_info'] != null) {
-      stockInfoList = (json['stock_info'] as List)
-          .map((s) => StockInfo.fromJson(s as Map<String, dynamic>))
-          .toList();
+      stockInfoList = parseStockInfoList(json['stock_info']);
     } else if (json.containsKey('stock') && json['stock'] != null) {
-      stockInfoList = [
-        StockInfo.fromJson(json['stock'] as Map<String, dynamic>),
-      ];
+      final stockValue = json['stock'];
+      if (stockValue is Map<String, dynamic>) {
+        stockInfoList = [StockInfo.fromJson(stockValue)];
+      } else if (stockValue is Map) {
+        stockInfoList = [
+          StockInfo.fromJson(Map<String, dynamic>.from(stockValue)),
+        ];
+      }
     }
 
     return InventoryItem(
       id: json['id'] as String?,
       merchantId:
-          json['merchantId'] as String? ?? json['merchant_id'] as String,
-      name: json['name'] as String,
+          json['merchantId']?.toString() ??
+          json['merchant_id']?.toString() ??
+          '',
+      name: json['name']?.toString() ?? '',
       description: json['description'] as String?,
       sku: json['sku'] as String?,
       sellingPrice:
           (json['sellingPrice'] as num? ?? json['selling_price'] as num)
               .toDouble(),
       originalPrice:
-          (json['originalPrice'] as num? ?? json['original_price'] as num?)
-              ?.toDouble(),
+          (json['originalPrice'] as num? ?? json['original_price'] as num)
+              .toDouble(),
       lowStockThreshold:
           (json['lowStockThreshold'] as num? ??
                   json['low_stock_threshold'] as num?)
@@ -298,12 +314,20 @@ class InventoryItem {
           : null,
       isArchived:
           json['isArchived'] as bool? ?? json['is_archived'] as bool? ?? false,
-      createdAt: DateTime.parse(
-        json['createdAt'] as String? ?? json['created_at'] as String,
-      ),
-      updatedAt: DateTime.parse(
-        json['updatedAt'] as String? ?? json['updated_at'] as String,
-      ),
+      createdAt:
+          DateTime.tryParse(
+            json['createdAt']?.toString() ??
+                json['created_at']?.toString() ??
+                '',
+          ) ??
+          DateTime.now(),
+      updatedAt:
+          DateTime.tryParse(
+            json['updatedAt']?.toString() ??
+                json['updated_at']?.toString() ??
+                '',
+          ) ??
+          DateTime.now(),
       isSynced: true,
       stockInfo: stockInfoList,
     );
@@ -317,7 +341,7 @@ class InventoryItem {
       description: map['description'] as String?,
       sku: map['sku'] as String?,
       sellingPrice: (map['sellingPrice'] as num).toDouble(),
-      originalPrice: map['originalPrice'] as double?,
+      originalPrice: (map['originalPrice'] as num).toDouble(),
       lowStockThreshold: map['lowStockThreshold'] as int?,
       category: map['category'] as String?,
       categoryId: map['categoryId'] as String?,
@@ -379,7 +403,7 @@ class InventoryItem {
     if (description != null) data['description'] = description;
     if (sku != null) data['sku'] = sku;
     data['sellingPrice'] = sellingPrice;
-    if (originalPrice != null) data['originalPrice'] = originalPrice;
+    data['originalPrice'] = originalPrice;
     if (lowStockThreshold != null) {
       data['lowStockThreshold'] = lowStockThreshold;
     }

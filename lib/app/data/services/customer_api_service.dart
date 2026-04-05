@@ -120,6 +120,18 @@ class CustomerApiService extends GetxService {
       }, // CORRECTED: Added shopId to query
     );
 
+      // Local-only mode: search local DB and return results without hitting network
+      if (_appConfig.localStorageOnly) {
+        final rows = await _localDatabaseService.listCustomersForShop(shopId);
+        final lower = query.toLowerCase();
+        final filtered = rows.where((r) {
+          final name = (r['name'] ?? '').toString().toLowerCase();
+          final email = (r['email'] ?? '').toString().toLowerCase();
+          final phone = (r['phone'] ?? '').toString().toLowerCase();
+          return name.contains(lower) || email.contains(lower) || phone.contains(lower);
+        }).toList();
+        return filtered.map((json) => Customer.fromJson(Map<String, dynamic>.from(json))).toList();
+      }
     if (response.statusCode == 200 && response.body['success'] == true) {
       final List<dynamic> data = asList(response.body['data']);
       return data
@@ -196,6 +208,28 @@ class CustomerApiService extends GetxService {
       await Future.delayed(const Duration(seconds: 1));
       return Customer(
         id: 'uuid-customer-2',
+        shopId: shopId,
+        name: name,
+        phone: phone,
+        email: email,
+        createdAt: DateTime.now(),
+      );
+    }
+    if (_appConfig.localStorageOnly) {
+      final now = DateTime.now().toIso8601String();
+      final customerRecord = {
+        'id': clientOperationId,
+        'shop_id': shopId,
+        'merchant_id': null,
+        'name': name,
+        'email': email,
+        'phone': phone,
+        'created_at': now,
+        'updated_at': now,
+      };
+      await _localDatabaseService.createCustomerLocal(customerRecord);
+      return Customer(
+        id: clientOperationId,
         shopId: shopId,
         name: name,
         phone: phone,

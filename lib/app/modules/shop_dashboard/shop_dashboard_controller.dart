@@ -1,7 +1,8 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
 import 'package:smart_retail/app/data/services/shop_dashboard_api_service.dart';
 import 'package:smart_retail/app/utils/dialog_utils.dart';
+import 'package:smart_retail/app/utils/app_logger.dart';
 
 class ShopDashboardController extends GetxController {
   final ShopDashboardApiService _apiService =
@@ -24,15 +25,15 @@ class ShopDashboardController extends GetxController {
       final userRole = _authService.user.value?.role;
       final user = _authService.user.value;
 
-      print('🔍 [SHOP DASHBOARD CONTROLLER] User role: $userRole');
+      getLogger('app').info('ðŸ” [SHOP DASHBOARD CONTROLLER] User role: $userRole');
 
       // Get shopId based on user role
       String? shopId;
       if (userRole == 'merchant') {
         // For merchants, shopId comes from route parameters
         shopId = Get.parameters['shopId'];
-        print(
-          '🔍 [SHOP DASHBOARD CONTROLLER] Merchant - Shop ID from params: $shopId',
+        getLogger('app').info(
+          'ðŸ” [SHOP DASHBOARD CONTROLLER] Merchant - Shop ID from params: $shopId',
         );
 
         shopId ??= user?.assignedShopId;
@@ -44,8 +45,8 @@ class ShopDashboardController extends GetxController {
       } else if (userRole == 'staff') {
         // For staff, use their assigned shop ID from user model
         shopId = user?.assignedShopId;
-        print(
-          '🔍 [SHOP DASHBOARD CONTROLLER] Staff - Assigned Shop ID: $shopId',
+        getLogger('app').info(
+          'ðŸ” [SHOP DASHBOARD CONTROLLER] Staff - Assigned Shop ID: $shopId',
         );
 
         if (shopId == null || shopId.isEmpty) {
@@ -55,17 +56,18 @@ class ShopDashboardController extends GetxController {
         throw Exception('Invalid user role: $userRole');
       }
 
-      print(
-        '📦 [SHOP DASHBOARD CONTROLLER] Fetching dashboard for shop: $shopId',
+      getLogger('app').info(
+        'ðŸ“¦ [SHOP DASHBOARD CONTROLLER] Fetching dashboard for shop: $shopId',
       );
       final result = await _apiService.getDashboardSummary(shopId: shopId);
       summary.value = result;
-      print('✅ [SHOP DASHBOARD CONTROLLER] Dashboard loaded successfully');
+      getLogger('app').info('âœ… [SHOP DASHBOARD CONTROLLER] Dashboard loaded successfully');
     } catch (e) {
-      print('❌ [SHOP DASHBOARD CONTROLLER] Error: $e');
+      getLogger('app').info('âŒ [SHOP DASHBOARD CONTROLLER] Error: $e');
       DialogUtils.showError('Could not load dashboard summary: $e');
     } finally {
       isLoading.value = false;
     }
   }
 }
+

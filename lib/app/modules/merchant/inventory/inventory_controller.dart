@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:smart_retail/app/utils/dialog_utils.dart';
 import 'package:smart_retail/app/data/models/inventory_item_model.dart';
@@ -6,6 +6,7 @@ import 'package:smart_retail/app/data/services/database_service.dart';
 import 'package:smart_retail/app/data/services/inventory_api_service.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
 import 'package:uuid/uuid.dart' as uuid_pkg;
+import 'package:smart_retail/app/utils/app_logger.dart';
 
 class InventoryController extends GetxController {
   final DatabaseService _dbService = Get.find<DatabaseService>();
@@ -72,7 +73,7 @@ class InventoryController extends GetxController {
     super.onInit();
     _authService.userRole.listen((role) {
       if (role == 'merchant' && _authService.isAuthenticated) {
-        print(
+        getLogger('app').info(
           "Merchant role detected and authenticated, initializing inventory.",
         );
         initializeInventory();
@@ -81,12 +82,12 @@ class InventoryController extends GetxController {
         currentPage.value = 1;
         totalPagesFromApi.value = 1;
         clearFormFields(); // Clear form if user changes
-        print("Not a merchant, or not authenticated. Inventory cleared.");
+        getLogger('app').info("Not a merchant, or not authenticated. Inventory cleared.");
       }
     });
     if (_authService.isAuthenticated &&
         _authService.userRole.value == 'merchant') {
-      print("Already authenticated as merchant, initializing inventory.");
+      getLogger('app').info("Already authenticated as merchant, initializing inventory.");
       initializeInventory();
     }
 
@@ -151,7 +152,7 @@ class InventoryController extends GetxController {
       isLoading.value = false;
       return;
     }
-    print(
+    getLogger('app').info(
       "Initializing inventory: Fetching page 1 from API for User ID (Merchant): $currentUserId",
     );
     await _fetchFromApiAndCache(
@@ -169,7 +170,7 @@ class InventoryController extends GetxController {
     try {
       await syncPendingChanges();
     } catch (e) {
-      print("Error during background sync/fetch: $e");
+      getLogger('app').info("Error during background sync/fetch: $e");
     } finally {
       isSyncing.value = false;
     }
@@ -193,7 +194,7 @@ class InventoryController extends GetxController {
     }
 
     try {
-      print("Performing full sync for User ID (Merchant): $currentUserId");
+      getLogger('app').info("Performing full sync for User ID (Merchant): $currentUserId");
       await _dbService.clearAllInventoryForMerchant(currentUserId);
       inventoryItems.clear();
       currentPage.value = 1;
@@ -208,9 +209,9 @@ class InventoryController extends GetxController {
       DialogUtils.showSuccess(
         "Inventory has been synchronized with the server. Displaying first page.",
       );
-      print("Full sync complete. First page items loaded and synced.");
+      getLogger('app').info("Full sync complete. First page items loaded and synced.");
     } catch (e) {
-      print("Error during full sync: $e");
+      getLogger('app').info("Error during full sync: $e");
       errorMessage.value = "Full sync failed: $e";
       DialogUtils.showError("Could not fully synchronize inventory.");
     } finally {
@@ -291,7 +292,7 @@ class InventoryController extends GetxController {
 
       totalPagesFromApi.value = apiResponse.totalPages;
       currentPage.value = apiResponse.currentPage;
-      print(
+      getLogger('app').info(
         "Fetched and cached page ${currentPage.value} from API. Total API pages: ${totalPagesFromApi.value}",
       );
     } else {
@@ -332,9 +333,7 @@ class InventoryController extends GetxController {
           : null,
       sku: skuController.text.isNotEmpty ? skuController.text : null,
       sellingPrice: double.parse(sellingPriceController.text),
-      originalPrice: originalPriceController.text.isNotEmpty
-          ? double.tryParse(originalPriceController.text)
-          : null,
+      originalPrice: double.parse(originalPriceController.text),
       lowStockThreshold: lowStockThresholdController.text.isNotEmpty
           ? int.tryParse(lowStockThresholdController.text)
           : null,
@@ -355,7 +354,7 @@ class InventoryController extends GetxController {
     await _dbService.insertInventoryItem(newItem);
     inventoryItems.insert(0, newItem);
     DialogUtils.showSuccess("'${newItem.name}' added. Sync to upload.");
-    print("Item added to local DB: ${newItem.name}");
+    getLogger('app').info("Item added to local DB: ${newItem.name}");
 
     clearFormFields();
 
@@ -388,7 +387,7 @@ class InventoryController extends GetxController {
         );
       }
     } catch (e) {
-      print("Error syncing new item: $e");
+      getLogger('app').info("Error syncing new item: $e");
       DialogUtils.showError(
         "Item '${newItem.name}' saved locally. Sync failed. Will retry.",
       );
@@ -490,7 +489,7 @@ class InventoryController extends GetxController {
     if (itemIndex != -1) {
       inventoryItems[itemIndex] = itemWithChanges;
     } else {
-      print(
+      getLogger('app').info(
         "Item updated in DB but not in current view: ${itemWithChanges.name}",
       );
     }
@@ -536,7 +535,7 @@ class InventoryController extends GetxController {
         );
       }
     } catch (e) {
-      print("Error syncing updated item: $e");
+      getLogger('app').info("Error syncing updated item: $e");
       DialogUtils.showError(
         "Item '${itemWithChanges.name}' updated locally. Sync failed. Will retry.",
       );
@@ -611,7 +610,7 @@ class InventoryController extends GetxController {
         );
       }
     } catch (e) {
-      print("Error syncing archive status: $e");
+      getLogger('app').info("Error syncing archive status: $e");
       DialogUtils.showError(
         "Item status changed locally. Sync failed. Will retry.",
       );
@@ -664,7 +663,7 @@ class InventoryController extends GetxController {
         try {
           await _dbService.deleteInventoryItem(item.id!);
         } catch (e) {
-          print('Warning: failed to delete local DB record: $e');
+          getLogger('app').info('Warning: failed to delete local DB record: $e');
         }
         inventoryItems.removeWhere((i) => i.id == item.id);
         DialogUtils.showSuccess('Item deleted');
@@ -681,7 +680,7 @@ class InventoryController extends GetxController {
   Future<void> syncPendingChanges() async {
     if (isSyncing.value) return;
     isSyncing.value = true;
-    print("Starting sync of pending changes...");
+    getLogger('app').info("Starting sync of pending changes...");
     int createdCount = 0;
     int updatedCount = 0;
     String? currentUserId = await _authService.getUserId();
@@ -698,7 +697,7 @@ class InventoryController extends GetxController {
     );
     for (var item in itemsToCreate) {
       if (item.id == null || item.id!.isEmpty) continue;
-      print("Syncing (create): ${item.name}");
+      getLogger('app').info("Syncing (create): ${item.name}");
       InventoryItem? createdItem = await _apiService.createInventoryItem(item);
       if (createdItem != null) {
         await _dbService.markItemAsSynced(
@@ -715,7 +714,7 @@ class InventoryController extends GetxController {
     );
     for (var item in itemsToUpdate) {
       if (item.id == null || item.id!.isEmpty || item.needsCreate) continue;
-      print("Syncing (update): ${item.name}");
+      getLogger('app').info("Syncing (update): ${item.name}");
       InventoryItem? updatedApiItem = await _apiService.updateInventoryItem(
         item.id!,
         item.toJsonForUpdate(),
@@ -738,9 +737,9 @@ class InventoryController extends GetxController {
       await _fetchPageData();
     } else {
       DialogUtils.showInfo("Your local data is up to date.");
-      print("No pending changes to sync.");
+      getLogger('app').info("No pending changes to sync.");
     }
-    print("Sync process completed.");
+    getLogger('app').info("Sync process completed.");
     isSyncing.value = false;
   }
 
@@ -772,3 +771,4 @@ class InventoryController extends GetxController {
     super.onClose();
   }
 }
+

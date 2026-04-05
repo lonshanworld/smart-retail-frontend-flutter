@@ -1,5 +1,6 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 import 'package:smart_retail/app/data/services/notification_api_service.dart';
+import 'package:smart_retail/app/utils/app_logger.dart';
 
 class NotificationCenterService extends GetxService {
   final NotificationApiService _apiService = Get.find<NotificationApiService>();
@@ -19,7 +20,7 @@ class NotificationCenterService extends GetxService {
       unreadCount.value = count;
     } catch (e) {
       // Silently fail or log error, as this is often a background task
-      print("Failed to fetch unread notification count: $e");
+      getLogger('app').info("Failed to fetch unread notification count: $e");
     }
   }
 
@@ -29,3 +30,4 @@ class NotificationCenterService extends GetxService {
     }
   }
 }
+

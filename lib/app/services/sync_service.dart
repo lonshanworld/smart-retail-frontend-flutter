@@ -1,4 +1,4 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 import 'package:smart_retail/app/data/providers/api_constants.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
 import 'package:smart_retail/app/utils/response_utils.dart';
@@ -7,6 +7,7 @@ import '../models/sync_models.dart';
 import 'connectivity_service.dart';
 import 'local_database_service.dart';
 import 'offline_mode_manager.dart';
+import 'package:smart_retail/app/utils/app_logger.dart';
 
 class SyncService extends GetxService {
   final Rx<SyncStatus> syncStatus = SyncStatus.idle.obs;
@@ -42,7 +43,7 @@ class SyncService extends GetxService {
         Future.delayed(Duration(seconds: 2), () async {
           final count = await _localDatabaseService.getPendingSalesCount();
           if (count > 0) {
-            print(
+            getLogger('app').info(
               '[SyncService] Connection restored. Pending sales: $count. Triggering auto-sync...',
             );
             // Don't auto-sync by default, let user manually trigger
@@ -73,7 +74,7 @@ class SyncService extends GetxService {
       final history = await _localDatabaseService.getSyncHistory(limit: limit);
       syncHistory.value = history.map((h) => SyncLog.fromMap(h)).toList();
     } catch (e) {
-      print('[SyncService] Error loading sync history: $e');
+      getLogger('app').info('[SyncService] Error loading sync history: $e');
     }
   }
 
@@ -109,7 +110,7 @@ class SyncService extends GetxService {
         sales: salesForSync,
       );
 
-      print('[SyncService] Starting sync for ${salesForSync.length} sales');
+      getLogger('app').info('[SyncService] Starting sync for ${salesForSync.length} sales');
       lastSyncMessage.value = 'Connecting to server...';
 
       // Send to backend
@@ -172,7 +173,7 @@ class SyncService extends GetxService {
         syncStatus.value = SyncStatus.success;
         lastSyncMessage.value =
             'All ${syncedCount.value} sales synced successfully!';
-        print(
+        getLogger('app').info(
           '[SyncService] Sync completed successfully: ${syncedCount.value} synced',
         );
         return true;
@@ -180,7 +181,7 @@ class SyncService extends GetxService {
         syncStatus.value = SyncStatus.error;
         lastSyncMessage.value =
             'Sync completed with ${failedCount.value} errors';
-        print(
+        getLogger('app').info(
           '[SyncService] Sync completed with errors: ${failedCount.value} failed',
         );
         return false;
@@ -188,7 +189,7 @@ class SyncService extends GetxService {
     } catch (e) {
       syncStatus.value = SyncStatus.error;
       lastSyncMessage.value = 'Sync error: $e';
-      print('[SyncService] Error during sync: $e');
+      getLogger('app').info('[SyncService] Error during sync: $e');
       failedCount.value = pendingSales.length;
       return false;
     }
@@ -264,7 +265,7 @@ class SyncService extends GetxService {
 
   Future<BatchSyncResponse?> _sendBatchToBackend(SyncRequest request) async {
     try {
-      print(
+      getLogger('app').info(
         '[SyncService] Sending batch ${request.syncBatchId} with ${request.sales.length} sales',
       );
 
@@ -305,7 +306,7 @@ class SyncService extends GetxService {
           'userId': authenticatedUserId,
       };
 
-      print(
+      getLogger('app').info(
         '[SyncService] Sync payload prepared: ${request.sales.length} sales',
       );
 
@@ -318,7 +319,7 @@ class SyncService extends GetxService {
             : null,
       );
 
-      print('[SyncService] Backend response status: ${response.statusCode}');
+      getLogger('app').info('[SyncService] Backend response status: ${response.statusCode}');
 
       if (response.statusCode == 200 && response.body['data'] != null) {
         final data = asMap(response.body['data']);
@@ -342,7 +343,7 @@ class SyncService extends GetxService {
         final successCount = results.where((r) => r.isSuccess).length;
         final failureCount = results.where((r) => r.isFailed).length;
 
-        print(
+        getLogger('app').info(
           '[SyncService] Backend sync response: $successCount success, $failureCount failed',
         );
 
@@ -357,11 +358,11 @@ class SyncService extends GetxService {
         );
       } else {
         final errorMsg = response.body?['message'] ?? 'Unknown backend error';
-        print('[SyncService] Backend error: $errorMsg');
+        getLogger('app').info('[SyncService] Backend error: $errorMsg');
         return null;
       }
     } catch (e) {
-      print('[SyncService] Error sending batch to backend: $e');
+      getLogger('app').info('[SyncService] Error sending batch to backend: $e');
       return null;
     }
   }
@@ -373,7 +374,7 @@ class SyncService extends GetxService {
       return;
     }
 
-    print('[SyncService] Retrying ${failedSales.length} failed sales');
+    getLogger('app').info('[SyncService] Retrying ${failedSales.length} failed sales');
     await syncPendingSales();
   }
 
@@ -402,11 +403,11 @@ class SyncService extends GetxService {
 
   void startAutoSync() {
     // Listen to connectivity changes and auto-sync
-    print('[SyncService] Auto-sync enabled');
+    getLogger('app').info('[SyncService] Auto-sync enabled');
   }
 
   void stopAutoSync() {
-    print('[SyncService] Auto-sync disabled');
+    getLogger('app').info('[SyncService] Auto-sync disabled');
   }
 
   Future<void> _logSyncAttempt({
@@ -430,7 +431,7 @@ class SyncService extends GetxService {
     try {
       await _localDatabaseService.logSyncAttempt(log);
     } catch (e) {
-      print('[SyncService] Error logging sync attempt: $e');
+      getLogger('app').info('[SyncService] Error logging sync attempt: $e');
     }
   }
 
@@ -447,6 +448,17 @@ class SyncService extends GetxService {
   }
 
   Future<bool> _sendOperationToBackend(Map<String, dynamic> operation) async {
+    // If running in local-storage-only mode, do not attempt to send mutations.
+    try {
+      if (_offlineModeManager.isLocalStorageOnly) {
+        getLogger('app').info('[SyncService] Local storage only mode enabled - skipping sending operation to backend');
+        return false;
+      }
+    } catch (e) {
+      // If _offlineModeManager is not initialized for some reason, be conservative and skip network.
+      getLogger('app').info('[SyncService] OfflineModeManager not available, skipping network operation: $e');
+      return false;
+    }
     final connect = Get.find<GetConnect>();
     final token = _authService.authToken.value;
     final endpoint = operation['endpoint']?.toString() ?? '';
@@ -483,3 +495,4 @@ class SyncService extends GetxService {
     }
   }
 }
+

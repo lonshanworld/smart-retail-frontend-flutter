@@ -5,11 +5,13 @@ import 'package:smart_retail/app/data/models/admin_dashboard_summary_model.dart'
 import 'package:smart_retail/app/data/providers/api_constants.dart';
 import 'package:smart_retail/app/utils/response_utils.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
+import 'package:smart_retail/app/services/local_database_service.dart';
 
 class AdminApiService extends GetxService {
   final GetConnect _connect = Get.find<GetConnect>();
   final AuthService _authService = Get.find<AuthService>();
   final AppConfig _appConfig = Get.find<AppConfig>();
+  final LocalDatabaseService _localDb = Get.find<LocalDatabaseService>();
 
   String get _baseUrl => '${ApiConstants.baseUrl}/admin';
 
@@ -58,6 +60,44 @@ class AdminApiService extends GetxService {
         transactionsToday: 100,
       );
     }
+    if (_appConfig.localStorageOnly) {
+      final db = await _localDb.database;
+      final merchantsRes = await db.rawQuery('SELECT COUNT(DISTINCT merchant_id) as c FROM shops');
+      final totalMerchants = (merchantsRes.isNotEmpty ? (merchantsRes.first['c'] as int?) ?? 0 : 0);
+
+      final activeMerchantsRes = await db.rawQuery('SELECT COUNT(DISTINCT merchant_id) as c FROM shops WHERE is_active = 1');
+      final activeMerchants = (activeMerchantsRes.isNotEmpty ? (activeMerchantsRes.first['c'] as int?) ?? 0 : 0);
+
+      final staffRes = await db.rawQuery('SELECT COUNT(*) as c FROM users WHERE role = ?', ['staff']);
+      final totalStaff = (staffRes.isNotEmpty ? (staffRes.first['c'] as int?) ?? 0 : 0);
+      final activeStaffRes = await db.rawQuery('SELECT COUNT(*) as c FROM users WHERE role = ? AND is_active = 1', ['staff']);
+      final activeStaff = (activeStaffRes.isNotEmpty ? (activeStaffRes.first['c'] as int?) ?? 0 : 0);
+
+      final shopsRes = await db.rawQuery('SELECT COUNT(*) as c FROM shops');
+      final totalShops = (shopsRes.isNotEmpty ? (shopsRes.first['c'] as int?) ?? 0 : 0);
+
+      final salesRes = await db.rawQuery('SELECT SUM(total_amount) as s FROM sales');
+      final totalSalesValue = (salesRes.isNotEmpty ? (salesRes.first['s'] as num?)?.toDouble() ?? 0.0 : 0.0);
+
+      final now = DateTime.now();
+      final startOfDay = DateTime(now.year, now.month, now.day).toIso8601String();
+      final nowIso = now.toIso8601String();
+      final salesTodayRes = await db.rawQuery('SELECT SUM(total_amount) as s, COUNT(*) as c FROM sales WHERE sale_date >= ? AND sale_date <= ?', [startOfDay, nowIso]);
+      final salesToday = (salesTodayRes.isNotEmpty ? (salesTodayRes.first['s'] as num?)?.toDouble() ?? 0.0 : 0.0);
+      final transactionsToday = (salesTodayRes.isNotEmpty ? (salesTodayRes.first['c'] as int?) ?? 0 : 0);
+
+      return AdminDashboardSummary(
+        totalMerchants: totalMerchants,
+        activeMerchants: activeMerchants,
+        totalStaff: totalStaff,
+        activeStaff: activeStaff,
+        totalShops: totalShops,
+        totalSalesValue: totalSalesValue,
+        salesToday: salesToday,
+        transactionsToday: transactionsToday,
+      );
+    }
+
     final response = await _connect.get(
       '$_baseUrl/dashboard/summary',
       headers: await _getHeaders(),
@@ -102,6 +142,14 @@ class AdminApiService extends GetxService {
           ..['role'] = 'merchant',
       );
     }
+    // Local-only mode: persist changes to local DB and return the updated user.
+    if (_appConfig.localStorageOnly) {
+      final toSave = {...updates, 'id': userId};
+      await _localDb.upsertUser(toSave);
+      final u = await _localDb.getUserById(userId);
+      return u != null ? User.fromJson(Map<String, dynamic>.from(u)) : null;
+    }
+
     final response = await _connect.put(
       '$_baseUrl/users/$userId',
       updates,

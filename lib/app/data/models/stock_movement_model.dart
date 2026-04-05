@@ -1,16 +1,16 @@
+import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart'; // For date formatting
 
 class StockMovement {
   final String id;
   final String itemId;
   final String shopId;
-  final String
-  movementType; // e.g., "stock_in", "sale", "adjustment_damage", "adjustment_theft", "initial_stock"
-  final int
-  quantityChanged; // Can be positive (stock in) or negative (stock out)
+  final String movementType; // e.g., "stock_in", "sale", "return", "adjustment"
+  final int quantityChanged; // Can be positive (stock in) or negative (stock out)
   final int newQuantity; // Stock quantity after this movement
   final String? reason; // Optional reason for adjustment
   final String userId; // User who performed the action
+  final String? userName; // Optional resolved user name
   final DateTime movementDate;
   final String? notes; // Additional notes if any
 
@@ -27,6 +27,7 @@ class StockMovement {
     required this.newQuantity,
     this.reason,
     required this.userId,
+    this.userName,
     required this.movementDate,
     this.notes,
     // this.itemName,
@@ -34,27 +35,67 @@ class StockMovement {
   });
 
   factory StockMovement.fromJson(Map<String, dynamic> json) {
+    final id = json['id'] as String? ?? json['movement_id'] as String? ?? UniqueKey().toString();
+    final itemId = json['itemId'] as String? ??
+        json['item_id'] as String? ??
+        json['inventoryItemId'] as String? ??
+        json['inventory_item_id'] as String? ??
+        json['item_id'] as String?;
+    final shopId = json['shopId'] as String? ?? json['shop_id'] as String?;
+    final movementType = json['movementType'] as String? ??
+        json['movement_type'] as String? ??
+        json['reason'] as String? ??
+        'stock_in';
+    final quantity = (json['quantityChanged'] as num?)?.toInt() ??
+        (json['quantity_changed'] as num?)?.toInt() ??
+        (json['quantity'] as num?)?.toInt() ??
+        0;
+    final inferredMovementType = (() {
+      if (movementType == 'stock_in' && quantity < 0) {
+        return 'sale';
+      }
+      return movementType;
+    })();
+    final newQuantity = (json['newQuantity'] as num?)?.toInt() ??
+        (json['new_quantity'] as num?)?.toInt() ??
+        (json['newQty'] as num?)?.toInt() ??
+        0;
+    final userId = json['userId'] as String? ??
+        json['user_id'] as String? ??
+        json['actorId'] as String? ??
+        json['actor_id'] as String? ??
+        'local-user';
+    final userName = json['userName'] as String? ?? json['user_name'] as String?;
+    final movementDateString = json['movementDate'] as String? ??
+        json['movement_date'] as String? ??
+        json['time'] as String?;
+
+    DateTime movementDate;
+    if (movementDateString != null) {
+      movementDate = DateTime.parse(movementDateString);
+    } else {
+      movementDate = DateTime.now();
+    }
+
     return StockMovement(
-      id: json['id'] as String,
-      itemId:
-          json['itemId'] as String? ??
-          json['item_id'] as String? ??
-          json['inventoryItemId'] as String,
-      shopId: json['shopId'] as String? ?? json['shop_id'] as String,
-      movementType:
-          json['movementType'] as String? ?? json['movement_type'] as String,
-      quantityChanged:
-          json['quantityChanged'] as int? ?? json['quantity_changed'] as int,
-      newQuantity: json['newQuantity'] as int? ?? json['new_quantity'] as int,
+      id: id,
+      itemId: itemId ?? '',
+      shopId: shopId ?? '',
+      movementType: inferredMovementType,
+      quantityChanged: quantity,
+      newQuantity: newQuantity,
       reason: json['reason'] as String?,
-      userId: json['userId'] as String? ?? json['user_id'] as String,
-      movementDate: DateTime.parse(
-        json['movementDate'] as String? ?? json['movement_date'] as String,
-      ), // Ensure API returns ISO 8601
+      userId: userId,
+      userName: userName,
+      movementDate: movementDate,
       notes: json['notes'] as String?,
       // itemName: json['item_name'] as String?, // If API includes this
       // itemSku: json['item_sku'] as String?,   // If API includes this
     );
+  }
+
+  String get displayMovementType {
+    return movementType;
   }
 
   Map<String, dynamic> toJson() {

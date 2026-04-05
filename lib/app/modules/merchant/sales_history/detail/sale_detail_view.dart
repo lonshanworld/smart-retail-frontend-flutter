@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:smart_retail/app/constants/currency.dart';
 import 'package:smart_retail/app/data/models/sale_model.dart';
 import 'package:smart_retail/app/modules/merchant/widgets/merchant_main_scaffold.dart';
+import 'package:smart_retail/app/routes/app_pages.dart';
 import './sale_detail_controller.dart';
 
 class SaleDetailView extends GetView<SaleDetailController> {
@@ -48,12 +50,24 @@ class SaleDetailView extends GetView<SaleDetailController> {
   }
 
   Widget _buildSaleDetails(Sale sale) {
-    final currencyFormat = NumberFormat.currency(symbol: '\$');
+    final currencyFormat = NumberFormat.currency(symbol: currencySymbol);
 
     return ListView(
       padding: const EdgeInsets.all(16.0),
       children: [
         _buildHeader(sale),
+        const SizedBox(height: 16),
+        Align(
+          alignment: Alignment.centerRight,
+          child: FilledButton.tonalIcon(
+            onPressed: () => Get.toNamed(
+              Routes.MERCHANT_PROFIT_BREAKDOWN,
+              arguments: sale.id,
+            ),
+            icon: const Icon(Icons.account_balance_wallet_outlined),
+            label: const Text('Profit breakdown'),
+          ),
+        ),
         const SizedBox(height: 16),
         _buildInfoCard(sale, currencyFormat),
         const SizedBox(height: 16),

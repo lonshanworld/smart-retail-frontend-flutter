@@ -8,7 +8,7 @@ import 'package:smart_retail/app/utils/response_utils.dart';
 import 'package:uuid/uuid.dart';
 
 class NotificationApiService extends GetxService {
-  final GetConnect _connect = GetConnect(); // <<< CORRECTED: Use a new instance
+  final GetConnect _connect = Get.find<GetConnect>();
   final AuthService _authService = Get.find<AuthService>();
   final AppConfig _appConfig = Get.find<AppConfig>();
   final LocalDatabaseService _localDatabaseService =
@@ -118,6 +118,38 @@ class NotificationApiService extends GetxService {
         ),
       );
     }
+    // Conservative local-only fallback: return notifications from local DB
+    // if available, otherwise return an empty paginated response.
+    if (_appConfig.localStorageOnly) {
+      try {
+        // LocalDatabaseService does not yet have a dedicated notifications
+        // table in all setups. Use a safe empty result to avoid network calls.
+        return PaginatedNotificationsResponse(
+          success: true,
+          message: 'local-only',
+          data: [],
+          meta: Meta(
+            totalItems: 0,
+            currentPage: page,
+            pageSize: pageSize,
+            totalPages: 0,
+          ),
+        );
+      } catch (e) {
+        return PaginatedNotificationsResponse(
+          success: true,
+          message: 'local-error',
+          data: [],
+          meta: Meta(
+            totalItems: 0,
+            currentPage: page,
+            pageSize: pageSize,
+            totalPages: 0,
+          ),
+        );
+      }
+    }
+
     final response = await _connect.get(
       _baseUrl,
       headers: await _getHeaders(),
@@ -139,6 +171,11 @@ class NotificationApiService extends GetxService {
       await Future.delayed(const Duration(milliseconds: 300));
       return 2; // Based on the mock data above
     }
+    if (_appConfig.localStorageOnly) {
+      // No server access; return 0 as a conservative default.
+      return 0;
+    }
+
     final response = await _connect.get(
       '$_baseUrl/unread-count',
       headers: await _getHeaders(),
@@ -163,6 +200,20 @@ class NotificationApiService extends GetxService {
     }
     final payload = {'clientOperationId': clientOperationId};
     try {
+      if (_appConfig.localStorageOnly) {
+        // Queue the mutation locally for later sync instead of calling the backend.
+        await _localDatabaseService.queueOperation({
+          'id': clientOperationId,
+          'client_operation_id': clientOperationId,
+          'entity_type': 'notification',
+          'action': 'update',
+          'method': 'PATCH',
+          'endpoint': '$_baseUrl/$notificationId/read',
+          'payload': payload,
+          'headers': {'X-Client-Operation-Id': clientOperationId},
+        });
+        return;
+      }
       final headers = await _getHeaders();
       headers['X-Client-Operation-Id'] = clientOperationId;
       final response = await _connect.patch(

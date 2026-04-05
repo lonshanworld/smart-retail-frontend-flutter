@@ -121,7 +121,7 @@ class MerchantInvoicesView extends GetView<MerchantInvoicesController> {
                             color: _getStatusColor(invoice.paymentStatus),
                           ),
                         ),
-                        title: Row(
+                        title:Row(
                           children: [
                             Text(
                               invoice.invoiceNumber,
@@ -162,7 +162,10 @@ class MerchantInvoicesView extends GetView<MerchantInvoicesController> {
                           ],
                         ),
                         trailing: const Icon(Icons.chevron_right),
-                        onTap: () => controller.goToInvoiceDetail(invoice.id),
+                        onTap: (){
+                          print('Tapped invoice ${invoice.invoiceNumber} with ID ${invoice.id}');
+                          controller.goToInvoiceDetail(invoice.id);
+                        },
                       ),
                     );
                   },

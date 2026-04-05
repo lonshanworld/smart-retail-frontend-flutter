@@ -1,10 +1,11 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import '../models/inventory_item_model.dart';
 import '../models/shop_model.dart';
 import 'package:uuid/uuid.dart';
+import 'package:smart_retail/app/utils/app_logger.dart';
 
 class DatabaseService extends GetxService {
   static const String _dbName = kIsWeb
@@ -27,10 +28,10 @@ class DatabaseService extends GetxService {
   Future<Database> _initDB() async {
     String path;
     if (kIsWeb) {
-      print("Initializing database for WEB (using sqflite_common_ffi_web).");
+      getLogger('app').info("Initializing database for WEB (using sqflite_common_ffi_web).");
       path = _dbName; // sqflite_common_ffi_web handles this as IndexedDB name
     } else {
-      print("Initializing database for Mobile/Desktop.");
+      getLogger('app').info("Initializing database for Mobile/Desktop.");
       final dbPath = await getDatabasesPath();
       path = join(dbPath, _dbName);
     }
@@ -56,7 +57,7 @@ class DatabaseService extends GetxService {
     await _createInventoryTable(db);
     await _createShopsTable(db);
     await _createShopStockTable(db);
-    print("All tables created for version $version.");
+    getLogger('app').info("All tables created for version $version.");
   }
 
   Future<void> _onUpgradeDB(Database db, int oldVersion, int newVersion) async {
@@ -72,11 +73,11 @@ class DatabaseService extends GetxService {
       // Recreate inventory table with new schema (simplest for this change)
       await db.execute('DROP TABLE IF EXISTS $_inventoryTableName;');
       await _createInventoryTable(db);
-      print("Inventory table recreated for v2.");
+      getLogger('app').info("Inventory table recreated for v2.");
 
       await _createShopsTable(db);
       await _createShopStockTable(db);
-      print("Shops and ShopStock tables created for v2.");
+      getLogger('app').info("Shops and ShopStock tables created for v2.");
     }
     // Add more migrations for future versions here
   }
@@ -103,7 +104,7 @@ class DatabaseService extends GetxService {
         needsCreate INTEGER NOT NULL DEFAULT 0
       )
     ''');
-    print("Table '$_inventoryTableName' created or verified.");
+    getLogger('app').info("Table '$_inventoryTableName' created or verified.");
   }
 
   Future<void> _createShopsTable(Database db) async {
@@ -118,7 +119,7 @@ class DatabaseService extends GetxService {
         -- Add sync flags (isSynced, needsUpdate, needsCreate) if shops are to be synced
       )
     ''');
-    print("Table '$_shopsTableName' created or verified.");
+    getLogger('app').info("Table '$_shopsTableName' created or verified.");
   }
 
   Future<void> _createShopStockTable(Database db) async {
@@ -136,7 +137,7 @@ class DatabaseService extends GetxService {
         FOREIGN KEY (inventoryItemId) REFERENCES $_inventoryTableName(id) ON DELETE CASCADE
       )
     ''');
-    print("Table '$_shopStockTableName' created or verified.");
+    getLogger('app').info("Table '$_shopStockTableName' created or verified.");
     await db.execute(
       'CREATE INDEX IF NOT EXISTS idx_stock_shop_item ON $_shopStockTableName (shopId, inventoryItemId);',
     );
@@ -168,7 +169,7 @@ class DatabaseService extends GetxService {
       _inventoryTableName,
       where: 'merchantId = ?',
       whereArgs: [merchantId],
-      orderBy: 'name ASC',
+      orderBy: 'updatedAt DESC, createdAt DESC, id DESC',
     );
     return List.generate(maps.length, (i) => InventoryItem.fromDbMap(maps[i]));
   }
@@ -261,7 +262,7 @@ class DatabaseService extends GetxService {
       where: 'merchantId = ?',
       whereArgs: [merchantId],
     );
-    print(
+    getLogger('app').info(
       "All master inventory items (and their shop stock) cleared for merchant $merchantId from local DB.",
     );
   }
@@ -292,7 +293,7 @@ class DatabaseService extends GetxService {
       _shopsTableName,
       where: 'merchantId = ?',
       whereArgs: [merchantId],
-      orderBy: 'name ASC',
+      orderBy: 'createdAt DESC, updatedAt DESC, id DESC',
     );
     return List.generate(maps.length, (i) => Shop.fromDbMap(maps[i]));
   }
@@ -321,7 +322,7 @@ class DatabaseService extends GetxService {
       where: 'merchantId = ?',
       whereArgs: [merchantId],
     );
-    print(
+    getLogger('app').info(
       "All shops (and their stock) cleared for merchant $merchantId from local DB.",
     );
   }
@@ -402,7 +403,7 @@ class DatabaseService extends GetxService {
       where: 'shopId = ?',
       whereArgs: [shopId],
     );
-    print("Stock cleared for shop $shopId.");
+    getLogger('app').info("Stock cleared for shop $shopId.");
   }
 
   // Clears all stock for a specific inventory item across all shops (e.g. item deleted, though cascade should handle)
@@ -413,7 +414,7 @@ class DatabaseService extends GetxService {
       where: 'inventoryItemId = ?',
       whereArgs: [inventoryItemId],
     );
-    print(
+    getLogger('app').info(
       "Stock cleared for inventory item $inventoryItemId across all shops.",
     );
   }
@@ -427,7 +428,7 @@ class DatabaseService extends GetxService {
     await clearAllInventoryForMerchant(
       merchantId,
     ); // This will cascade to shop_stock related to these items
-    print(
+    getLogger('app').info(
       "All data (shops, inventory, stock) cleared for merchant $merchantId from local DB.",
     );
   }
@@ -437,7 +438,8 @@ class DatabaseService extends GetxService {
     if (db != null && db.isOpen) {
       await db.close();
       _database = null;
-      print("Database closed.");
+      getLogger('app').info("Database closed.");
     }
   }
 }
+

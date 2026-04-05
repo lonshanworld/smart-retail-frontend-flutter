@@ -39,12 +39,11 @@ class ShopLoginController extends GetxController {
             );
           }
         } else {
-          // Merchant Login
-          // Login as merchant and verify shop ownership
-          success = await _authService.loginMerchantToShop(
-            _defaultShopId,
+          // Merchant Login: authenticate as merchant
+          success = await _authService.login(
             emailController.text,
             passwordController.text,
+            role: 'merchant',
           );
 
           if (success) {

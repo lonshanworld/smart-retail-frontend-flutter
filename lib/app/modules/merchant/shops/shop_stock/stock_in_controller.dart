@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:smart_retail/app/utils/dialog_utils.dart';
 import 'package:smart_retail/app/data/services/shop_api_service.dart';
 import './shop_stock_controller.dart'; // To refresh the previous screen
+import 'package:smart_retail/app/utils/app_logger.dart';
 
 class StockInController extends GetxController {
   final ShopApiService _shopApiService = Get.find<ShopApiService>();
@@ -70,7 +71,7 @@ class StockInController extends GetxController {
         DialogUtils.showError(errorMessage.value!);
       }
     } catch (e) {
-      print("Error stocking in item: $e");
+      getLogger('app').info("Error stocking in item: $e");
       errorMessage.value = 'An error occurred: ${e.toString()}';
       DialogUtils.showError(errorMessage.value!);
     } finally {
@@ -84,3 +85,4 @@ class StockInController extends GetxController {
     super.onClose();
   }
 }
+

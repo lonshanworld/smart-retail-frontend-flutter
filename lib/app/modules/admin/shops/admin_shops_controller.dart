@@ -1,10 +1,11 @@
-// lib/app/modules/admin/shops/admin_shops_controller.dart
+﻿// lib/app/modules/admin/shops/admin_shops_controller.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:smart_retail/app/data/models/shop_model.dart';
 import 'package:smart_retail/app/data/services/shop_api_service.dart';
 import 'package:smart_retail/app/routes/app_pages.dart';
 import 'package:smart_retail/app/utils/dialog_utils.dart';
+import 'package:smart_retail/app/utils/app_logger.dart';
 
 class AdminShopsController extends GetxController {
   final ShopApiService _shopApiService = Get.find<ShopApiService>();
@@ -85,7 +86,7 @@ class AdminShopsController extends GetxController {
       // shops.clear();
     }
 
-    print(
+    getLogger('app').info(
       "[AdminShopsController] Fetching shops for page ${currentPage.value} with filters: Name=${nameFilter.value}, Active=${isActiveFilter.value}, Merchant=${merchantIdFilter.value}",
     );
 
@@ -105,7 +106,7 @@ class AdminShopsController extends GetxController {
       }
       totalItems.value = response.pagination.totalItems;
       totalPages.value = response.pagination.totalPages;
-      print(
+      getLogger('app').info(
         "[AdminShopsController] Fetched ${response.shops.length} shops. Total items: ${totalItems.value}",
       );
     } else {
@@ -260,3 +261,4 @@ class AdminShopsController extends GetxController {
     super.onClose();
   }
 }
+

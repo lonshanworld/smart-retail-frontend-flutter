@@ -1,14 +1,17 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 import 'package:smart_retail/app/core/config/app_config.dart';
 import 'package:smart_retail/app/data/models/user_model.dart';
 import 'package:smart_retail/app/data/providers/api_constants.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
+import 'package:smart_retail/app/services/local_database_service.dart';
 import 'package:smart_retail/app/utils/response_utils.dart';
+import 'package:smart_retail/app/utils/app_logger.dart';
 
 /// AdminStaffApiService - Service for managing all staff users from the admin perspective.
 class AdminStaffApiService extends GetConnect {
   final AppConfig _appConfig = Get.find<AppConfig>();
   final AuthService _authService = Get.find<AuthService>();
+  final LocalDatabaseService _localDb = Get.find<LocalDatabaseService>();
 
   String get _baseUrl => '${ApiConstants.baseUrl}/admin/staff';
 
@@ -50,8 +53,13 @@ class AdminStaffApiService extends GetConnect {
       return Future.delayed(const Duration(seconds: 1), () => _mockStaff);
     }
 
+    if (_appConfig.localStorageOnly) {
+      final rows = await _localDb.listAllUsers(role: 'staff');
+      return rows.map((r) => User.fromJson(Map<String, dynamic>.from(r))).toList();
+    }
+
     final response = await get(_baseUrl, headers: await _getHeaders());
-    print("check response for admin staff ${response.body}");
+    getLogger('app').info("check response for admin staff ${response.body}");
     if (response.isOk && response.body != null) {
       if (response.body['data'] == null) {
         return [];
@@ -103,3 +111,4 @@ class AdminStaffApiService extends GetConnect {
     ),
   ];
 }
+

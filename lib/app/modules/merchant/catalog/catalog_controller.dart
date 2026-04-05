@@ -34,7 +34,7 @@ class CatalogController extends GetxController {
     }
   }
 
-  Future<void> createCategory(String name, String description) async {
+  Future<bool> createCategory(String name, String description) async {
     final ok = await _inventoryApi.createCategory(
       name: name,
       description: description,
@@ -42,12 +42,14 @@ class CatalogController extends GetxController {
     if (ok) {
       await loadCatalog();
       DialogUtils.showSuccess('Category created');
+      return true;
     } else {
       DialogUtils.showError('Failed to create category');
+      return false;
     }
   }
 
-  Future<void> updateCategory(
+  Future<bool> updateCategory(
     String categoryId,
     String name,
     String description,
@@ -60,8 +62,10 @@ class CatalogController extends GetxController {
     if (ok) {
       await loadCatalog();
       DialogUtils.showSuccess('Category updated');
+      return true;
     } else {
       DialogUtils.showError('Failed to update category');
+      return false;
     }
   }
 
@@ -75,7 +79,7 @@ class CatalogController extends GetxController {
     }
   }
 
-  Future<void> createSubcategory(
+  Future<bool> createSubcategory(
     String categoryId,
     String name,
     String description,
@@ -88,12 +92,14 @@ class CatalogController extends GetxController {
     if (ok) {
       await loadCatalog();
       DialogUtils.showSuccess('Subcategory created');
+      return true;
     } else {
       DialogUtils.showError('Failed to create subcategory');
+      return false;
     }
   }
 
-  Future<void> updateSubcategory(
+  Future<bool> updateSubcategory(
     String subcategoryId,
     String categoryId,
     String name,
@@ -108,8 +114,10 @@ class CatalogController extends GetxController {
     if (ok) {
       await loadCatalog();
       DialogUtils.showSuccess('Subcategory updated');
+      return true;
     } else {
       DialogUtils.showError('Failed to update subcategory');
+      return false;
     }
   }
 

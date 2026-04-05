@@ -8,7 +8,7 @@ import 'package:smart_retail/app/utils/response_utils.dart';
 import 'package:uuid/uuid.dart';
 
 class ShopSupportApiService extends GetxService {
-  final GetConnect _connect = GetConnect(timeout: const Duration(seconds: 30));
+  final GetConnect _connect = Get.find<GetConnect>();
   final AuthService _authService = Get.find<AuthService>();
   final AppConfig _appConfig = Get.find<AppConfig>();
   final LocalDatabaseService _localDatabaseService =

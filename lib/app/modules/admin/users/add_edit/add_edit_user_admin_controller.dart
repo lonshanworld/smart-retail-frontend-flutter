@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:smart_retail/app/data/models/user_model.dart';
 import 'package:smart_retail/app/data/services/admin_user_service.dart'; // <<< CORRECTED IMPORT
@@ -7,6 +7,7 @@ import 'package:smart_retail/app/data/enums/user_role.dart';
 import 'package:smart_retail/app/data/models/user_selection_item.dart';
 
 import 'package:smart_retail/app/utils/dialog_utils.dart';
+import 'package:smart_retail/app/utils/app_logger.dart';
 
 class AddEditUserAdminController extends GetxController {
   final AdminUserService _adminUserService =
@@ -168,7 +169,7 @@ class AddEditUserAdminController extends GetxController {
         try {
           Get.find<UsersAdminController>().fetchUsers();
         } catch (e) {
-          print(
+          getLogger('app').info(
             "AddEditUserAdminController: Could not find UsersAdminController to refresh: $e",
           );
         }
@@ -198,3 +199,4 @@ class AddEditUserAdminController extends GetxController {
     super.onClose();
   }
 }
+

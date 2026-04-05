@@ -14,6 +14,7 @@ import 'package:smart_retail/app/data/services/customer_api_service.dart';
 import 'package:smart_retail/app/data/services/database_service.dart';
 import 'package:smart_retail/app/data/services/inventory_api_service.dart';
 import 'package:smart_retail/app/data/services/merchant_staff_api_service.dart';
+import 'package:smart_retail/app/data/services/merchant_stocks_api_service.dart';
 import 'package:smart_retail/app/data/services/notification_api_service.dart';
 import 'package:smart_retail/app/data/services/notification_center_service.dart';
 import 'package:smart_retail/app/data/services/payment_api_service.dart';
@@ -31,6 +32,7 @@ import 'package:smart_retail/app/data/services/shop_profile_api_service.dart';
 import 'package:smart_retail/app/data/services/invoice_api_service.dart';
 import 'package:smart_retail/app/services/theme_service.dart';
 import 'package:smart_retail/app/services/offline_bindings.dart';
+import 'package:smart_retail/app/services/safe_get_connect.dart';
 import 'package:smart_retail/app/data/services/user_api_service.dart';
 import 'package:smart_retail/app/routes/app_pages.dart';
 import 'package:smart_retail/app/core/theme/app_theme.dart';
@@ -47,7 +49,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 Future<void> main() async {
-  await startSmartRetailApp(envFile: '.env.public', forcedPortal: 'public');
+  await startSmartRetailApp(envFile: '.env', forcedPortal: 'public');
 }
 
 Future<void> startSmartRetailApp({
@@ -71,7 +73,14 @@ Future<void> startSmartRetailApp({
 
   // Initialize Core Services
   await Get.putAsync(() => AppConfig().init());
-  Get.put(GetConnect());
+  // Register a safe GetConnect that blocks network requests when
+  // the app is configured as local-storage-only.
+  try {
+    Get.put<GetConnect>(SafeGetConnect());
+  } catch (_) {
+    // Fall back to the default GetConnect if registration fails
+    Get.put<GetConnect>(GetConnect());
+  }
   // Normalize responses globally to handle web JS interop types (JSArray/JSObject)
   try {
     final getConnect = Get.find<GetConnect>();
@@ -91,8 +100,8 @@ Future<void> startSmartRetailApp({
       } catch (_) {
         // ignore normalization failures; fall through to return original response
       }
-          final authService = Get.put(AuthService());
-          await authService.initialize();
+      final authService = Get.put(AuthService());
+      await authService.initialize();
     });
   } catch (_) {}
   Get.lazyPut<DatabaseService>(() => DatabaseService());
@@ -110,6 +119,7 @@ Future<void> startSmartRetailApp({
   Get.lazyPut<InventoryApiService>(() => InventoryApiService());
   Get.lazyPut<CustomerApiService>(() => CustomerApiService());
   Get.lazyPut<MerchantStaffApiService>(() => MerchantStaffApiService());
+  Get.lazyPut<MerchantStocksApiService>(() => MerchantStocksApiService());
   Get.lazyPut<BluetoothPrinterService>(() => BluetoothPrinterService());
   Get.lazyPut<NotificationApiService>(() => NotificationApiService());
   Get.lazyPut<NotificationCenterService>(() => NotificationCenterService());
@@ -142,7 +152,7 @@ Future<void> startSmartRetailApp({
     // Desktop platforms: Windows, Linux, macOS
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
-    debugPrint("SQLite FFI factory initialized for desktop platform.");
+    debugPrint("SQLite FFI factory initialized for desktop platfggorm.");
   } else if (kIsWeb) {
     // Web platform
     databaseFactory = databaseFactoryFfiWeb;
@@ -167,9 +177,7 @@ class MyApp extends StatelessWidget {
       initialRoute: AppPages.INITIAL,
       getPages: AppPages.routes,
       builder: (context, child) {
-        return SafeArea(
-            child: child ?? const SizedBox.shrink(),
-        );
+        return SafeArea(child: child ?? const SizedBox.shrink());
       },
     );
   }

@@ -11,8 +11,7 @@ class AdminProfileApiService extends GetxService {
   final GetConnect _connect = Get.find<GetConnect>();
   final AuthService _authService = Get.find<AuthService>();
   final AppConfig _appConfig = Get.find<AppConfig>();
-  final LocalDatabaseService _localDatabaseService =
-      Get.find<LocalDatabaseService>();
+  final LocalDatabaseService _localDatabaseService = Get.find<LocalDatabaseService>();
 
   String get _baseUrl => '${ApiConstants.baseUrl}/admin/profile';
 
@@ -52,6 +51,18 @@ class AdminProfileApiService extends GetxService {
         throw Exception('Mock Error: No admin user is currently logged in.');
       }
       return currentUser;
+    }
+
+    if (_appConfig.localStorageOnly) {
+      try {
+        final id = _authService.userId.value;
+        if (id == null) throw Exception('No local user id available');
+        final row = await _localDatabaseService.getUserById(id);
+        if (row == null) throw Exception('Local profile not found');
+        return User.fromJson(row);
+      } catch (e) {
+        throw Exception('Local profile lookup failed: $e');
+      }
     }
 
     final response = await _connect.get(_baseUrl, headers: await _getHeaders());
@@ -99,6 +110,17 @@ class AdminProfileApiService extends GetxService {
     final clientOperationId = const Uuid().v4();
     final payload = Map<String, dynamic>.from(updates)..['clientOperationId'] = clientOperationId;
     try {
+      if (_appConfig.localStorageOnly) {
+        final toSave = Map<String, dynamic>.from(updates);
+        final currentUserId = _authService.userId.value;
+        if (currentUserId == null) throw Exception('No current user id');
+        toSave['id'] = currentUserId;
+        await _localDatabaseService.upsertUser(toSave);
+        final row = await _localDatabaseService.getUserById(currentUserId);
+        if (row == null) throw Exception('Failed to update local profile');
+        return User.fromJson(row);
+      }
+
       final headers = await _getHeaders();
       headers['X-Client-Operation-Id'] = clientOperationId;
       final response = await _connect.put(_baseUrl, payload, headers: headers);

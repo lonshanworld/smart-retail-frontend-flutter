@@ -74,7 +74,7 @@ class StaffInvoiceDetailView extends GetView<InvoiceDetailController> {
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
-                                  'Invoice Date: ${DateFormat('MMM dd, yyyy').format(invoice.invoiceDate.toLocal())}',
+                                  'Checkout Time: ${DateFormat('MMM dd, yyyy HH:mm').format(invoice.checkoutTime.toLocal())}',
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: Colors.grey.shade700,
@@ -150,9 +150,19 @@ class StaffInvoiceDetailView extends GetView<InvoiceDetailController> {
                         ),
                       ),
                       const Divider(height: 24),
-                      _buildInfoRow('Sale ID', invoice.saleId),
+                      _buildInfoRow(
+                        'Shop Name',
+                        invoice.shopName?.trim().isNotEmpty == true
+                            ? invoice.shopName!
+                            : 'Unknown shop',
+                      ),
                       const SizedBox(height: 12),
-                      _buildInfoRow('Shop ID', invoice.shopId),
+                      _buildInfoRow(
+                        'Checkout Time',
+                        DateFormat(
+                          'MMM dd, yyyy HH:mm',
+                        ).format(invoice.checkoutTime.toLocal()),
+                      ),
                       const SizedBox(height: 12),
                     ],
                   ),
@@ -160,23 +170,34 @@ class StaffInvoiceDetailView extends GetView<InvoiceDetailController> {
               ),
               const SizedBox(height: 24),
               // Items Card
-              if (invoice.items.isNotEmpty)
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Items',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Items',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
                         ),
-                        const Divider(height: 24),
-                        ...invoice.items.map(
-                          (it) => Padding(
+                      ),
+                      const Divider(height: 24),
+                      if (invoice.items.isEmpty)
+                        Text(
+                          'No item list found for this invoice yet.',
+                          style: TextStyle(color: Colors.grey.shade600),
+                        )
+                      else
+                        ...invoice.items.map((it) {
+                          final displayName =
+                              it.itemName != null &&
+                                  it.itemName!.trim().isNotEmpty
+                              ? it.itemName!
+                              : it.inventoryItemId;
+
+                          return Padding(
                             padding: const EdgeInsets.symmetric(vertical: 6.0),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -187,12 +208,13 @@ class StaffInvoiceDetailView extends GetView<InvoiceDetailController> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        it.itemName ?? it.inventoryItemId,
+                                        displayName,
                                         style: const TextStyle(
                                           fontWeight: FontWeight.w600,
                                         ),
                                       ),
-                                      if (it.itemSku != null)
+                                      if (it.itemSku != null &&
+                                          it.itemSku!.isNotEmpty)
                                         Text(
                                           'SKU: ${it.itemSku}',
                                           style: TextStyle(
@@ -225,12 +247,12 @@ class StaffInvoiceDetailView extends GetView<InvoiceDetailController> {
                                 ),
                               ],
                             ),
-                          ),
-                        ),
-                      ],
-                    ),
+                          );
+                        }),
+                    ],
                   ),
                 ),
+              ),
 
               // Download PDF Button
               Obx(() {

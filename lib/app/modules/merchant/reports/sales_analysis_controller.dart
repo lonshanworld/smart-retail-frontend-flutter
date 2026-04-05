@@ -1,12 +1,16 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:smart_retail/app/utils/dialog_utils.dart';
 import 'package:smart_retail/app/data/models/report_model.dart';
 import 'package:smart_retail/app/data/models/sale_model.dart';
 import 'package:smart_retail/app/data/models/shop_model.dart';
+import 'package:smart_retail/app/data/models/inventory_item_model.dart';
+import 'package:smart_retail/app/data/services/merchant_stocks_api_service.dart';
 import 'package:smart_retail/app/data/services/merchant_shops_api_service.dart';
 import 'package:smart_retail/app/data/services/report_api_service.dart'; // CORRECTED IMPORT
 import 'package:smart_retail/app/routes/app_pages.dart';
+import 'package:smart_retail/app/utils/app_logger.dart';
+import 'package:smart_retail/app/modules/merchant/reports/report_analysis_utils.dart';
 
 enum ReportPeriod { daily, weekly, monthly, yearly, custom }
 
@@ -15,10 +19,13 @@ class SalesAnalysisController extends GetxController {
   final ReportApiService _apiService = Get.find<ReportApiService>();
   final MerchantShopsApiService _shopsApiService =
       Get.find<MerchantShopsApiService>();
+  final MerchantStocksApiService _stocksApiService =
+      Get.find<MerchantStocksApiService>();
 
   // --- State ---
   final RxList<Sale> sales = <Sale>[].obs;
   final RxList<Shop> shops = <Shop>[].obs;
+  final RxList<InventoryItem> inventoryItems = <InventoryItem>[].obs;
   final RxBool isLoading = true.obs;
   final RxnString errorMessage = RxnString();
 
@@ -28,6 +35,8 @@ class SalesAnalysisController extends GetxController {
   final Rxn<DateTime> customEndDate = Rxn<DateTime>();
   final Rxn<Shop> selectedShop = Rxn<Shop>();
   final RxString selectedGroupBy = 'daily'.obs;
+  final Rxn<BusinessAnalysisSnapshot> analysisSnapshot =
+      Rxn<BusinessAnalysisSnapshot>();
 
   @override
   void onInit() {
@@ -56,27 +65,46 @@ class SalesAnalysisController extends GetxController {
 
       var (start, end) = _calculateDateRange();
 
-      print('📊 [SALES REPORT] Fetching report...');
-      print('   Period: ${selectedPeriod.value}');
-      print('   Start: $start');
-      print('   End: $end');
-      print('   Shop: ${selectedShop.value?.name ?? "All Shops"}');
-      print('   Group by: ${selectedGroupBy.value}');
+      getLogger('app').info('ðŸ“Š [SALES REPORT] Fetching report...');
+      getLogger('app').info('   Period: ${selectedPeriod.value}');
+      getLogger('app').info('   Start: $start');
+      getLogger('app').info('   End: $end');
+      getLogger(
+        'app',
+      ).info('   Shop: ${selectedShop.value?.name ?? "All Shops"}');
+      getLogger('app').info('   Group by: ${selectedGroupBy.value}');
 
-      // CORRECTED: Called the correct method on the correct service
-      final SalesReportResponse response = await _apiService.getSalesReport(
+      final results = await Future.wait([
+        _apiService.getSalesReport(
+          startDate: start,
+          endDate: end,
+          shopId: selectedShop.value?.id,
+          groupBy: selectedGroupBy.value,
+        ),
+        _stocksApiService.getCombinedStocks(page: 1, pageSize: 500),
+      ]);
+
+      final SalesReportResponse response = results[0] as SalesReportResponse;
+      final stocks = results[1] as PaginatedStockResponse;
+
+      getLogger(
+        'app',
+      ).info('âœ… [SALES REPORT] Received ${response.sales.length} sales');
+      sales.assignAll(response.sales);
+      inventoryItems.assignAll(stocks.items);
+      analysisSnapshot.value = buildBusinessAnalysisSnapshot(
+        sales: sales,
+        inventoryItems: inventoryItems,
         startDate: start,
         endDate: end,
         shopId: selectedShop.value?.id,
         groupBy: selectedGroupBy.value,
       );
-
-      print('✅ [SALES REPORT] Received ${response.sales.length} sales');
-      sales.assignAll(response.sales);
     } catch (e, stackTrace) {
-      print('❌ [SALES REPORT] Error: $e');
-      print('   Stack trace: $stackTrace');
+      getLogger('app').info('âŒ [SALES REPORT] Error: $e');
+      getLogger('app').info('   Stack trace: $stackTrace');
       errorMessage.value = e.toString();
+      analysisSnapshot.value = null;
       DialogUtils.showInfo('Failed to load sales report: $e');
     } finally {
       isLoading.value = false;

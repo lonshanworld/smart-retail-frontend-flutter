@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:smart_retail/app/constants/currency.dart';
 import 'package:smart_retail/app/modules/merchant/invoices/invoice_detail_controller.dart';
 import 'package:smart_retail/app/modules/merchant/widgets/merchant_main_scaffold.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 class InvoiceDetailView extends GetView<InvoiceDetailController> {
   const InvoiceDetailView({super.key});
@@ -11,6 +13,7 @@ class InvoiceDetailView extends GetView<InvoiceDetailController> {
   Widget build(BuildContext context) {
     return MerchantMainScaffold(
       title: 'Invoice Details',
+      showBackbutton: true,
       body: Obx(() {
         if (controller.isLoading.value) {
           return const Center(child: CircularProgressIndicator());
@@ -46,13 +49,11 @@ class InvoiceDetailView extends GetView<InvoiceDetailController> {
         if (invoice == null) {
           return const Center(child: Text('Invoice not found'));
         }
-
         return SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header Card
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(20.0),
@@ -61,53 +62,27 @@ class InvoiceDetailView extends GetView<InvoiceDetailController> {
                     children: [
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  invoice.invoiceNumber,
+                                  invoice.saleId,
                                   style: const TextStyle(
-                                    fontSize: 24,
+                                    fontSize: 18,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
                                 const SizedBox(height: 8),
-                                Text(
-                                  'Invoice Date: ${DateFormat('MMM dd, yyyy').format(invoice.invoiceDate.toLocal())}',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey.shade700,
-                                  ),
-                                ),
+                                _buildStatusChip(invoice.paymentStatus),
                               ],
                             ),
                           ),
-                          _buildStatusChip(invoice.paymentStatus),
                         ],
                       ),
-                    ],
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Amount Breakdown Card
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Amount Breakdown',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      const SizedBox(height: 12),
                       const Divider(height: 24),
                       _buildAmountRow('Subtotal', invoice.subtotal),
                       const SizedBox(height: 12),
@@ -140,10 +115,7 @@ class InvoiceDetailView extends GetView<InvoiceDetailController> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 16),
-
-              // Additional Info Card
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(20.0),
@@ -158,14 +130,20 @@ class InvoiceDetailView extends GetView<InvoiceDetailController> {
                         ),
                       ),
                       const Divider(height: 24),
-                      _buildInfoRow('Sale ID', invoice.saleId),
+                      _buildInfoRow(
+                        'Shop Name',
+                        invoice.shopName?.trim().isNotEmpty == true
+                            ? invoice.shopName!
+                            : 'Unknown shop',
+                      ),
                       const SizedBox(height: 12),
-                      _buildInfoRow('Shop ID', invoice.shopId),
+                      _buildInfoRow(
+                        'Checkout Time',
+                        DateFormat(
+                          'MMM dd, yyyy HH:mm',
+                        ).format(invoice.checkoutTime.toLocal()),
+                      ),
                       const SizedBox(height: 12),
-                      if (invoice.customerId != null) ...[
-                        _buildInfoRow('Customer ID', invoice.customerId!),
-                        const SizedBox(height: 12),
-                      ],
                       if (invoice.dueDate != null) ...[
                         _buildInfoRow(
                           'Due Date',
@@ -194,27 +172,35 @@ class InvoiceDetailView extends GetView<InvoiceDetailController> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 24),
-
-              // Items Card
-              if (invoice.items.isNotEmpty)
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Items',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Items',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
                         ),
-                        const Divider(height: 24),
-                        ...invoice.items.map(
-                          (it) => Padding(
+                      ),
+                      const Divider(height: 24),
+                      if (invoice.items.isEmpty)
+                        Text(
+                          'No item list found for this invoice yet.',
+                          style: TextStyle(color: Colors.grey.shade600),
+                        )
+                      else
+                        ...invoice.items.map((it) {
+                          final displayName =
+                              it.itemName != null &&
+                                  it.itemName!.trim().isNotEmpty
+                              ? it.itemName!
+                              : it.inventoryItemId;
+
+                          return Padding(
                             padding: const EdgeInsets.symmetric(vertical: 6.0),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -225,12 +211,13 @@ class InvoiceDetailView extends GetView<InvoiceDetailController> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        it.itemName ?? it.inventoryItemId,
+                                        displayName,
                                         style: const TextStyle(
                                           fontWeight: FontWeight.w600,
                                         ),
                                       ),
-                                      if (it.itemSku != null)
+                                      if (it.itemSku != null &&
+                                          it.itemSku!.isNotEmpty)
                                         Text(
                                           'SKU: ${it.itemSku}',
                                           style: TextStyle(
@@ -249,28 +236,63 @@ class InvoiceDetailView extends GetView<InvoiceDetailController> {
                                 ),
                                 const SizedBox(width: 12),
                                 Text(
-                                  '\$${it.sellingPriceAtSale.toStringAsFixed(2)}',
+                                  formatCurrency(it.sellingPriceAtSale),
                                   style: const TextStyle(
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
                                 const SizedBox(width: 12),
                                 Text(
-                                  '\$${it.subtotal.toStringAsFixed(2)}',
+                                  formatCurrency(it.subtotal),
                                   style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
                               ],
                             ),
-                          ),
-                        ),
-                      ],
-                    ),
+                          );
+                        }),
+                    ],
                   ),
                 ),
-
-              // Download PDF Button
+              ),
+              const SizedBox(height: 16),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const Text(
+                        'Sale QR Code',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Center(
+                        child: QrImageView(
+                          data: invoice.saleId,
+                          version: QrVersions.auto,
+                          size: 160,
+                          backgroundColor: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Sale ID: ${invoice.saleId}',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
               Obx(() {
                 final isGenerating = controller.isGeneratingPdf.value;
                 return SizedBox(
@@ -346,7 +368,7 @@ class InvoiceDetailView extends GetView<InvoiceDetailController> {
           ),
         ),
         Text(
-          '\$${amount.abs().toStringAsFixed(2)}',
+          formatCurrency(amount),
           style: TextStyle(
             fontSize: isTotal ? 20 : 16,
             fontWeight: isTotal ? FontWeight.bold : FontWeight.w600,

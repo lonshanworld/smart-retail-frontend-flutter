@@ -1,6 +1,7 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 import 'package:smart_retail/app/core/config/app_config.dart';
 import 'connectivity_service.dart';
+import 'package:smart_retail/app/utils/app_logger.dart';
 
 class OfflineModeManager extends GetxService {
   final ConnectivityService _connectivityService =
@@ -51,20 +52,21 @@ class OfflineModeManager extends GetxService {
   }
 
   String getOnlineStatus() {
-    return isOnlineMode() ? 'Online 🟢' : 'Offline ⚪';
+    return isOnlineMode() ? 'Online ðŸŸ¢' : 'Offline âšª';
   }
 
   void disableFeature(String feature) {
     // Log disabled feature for analytics
-    print('Feature disabled (offline): $feature');
+    getLogger('app').info('Feature disabled (offline): $feature');
   }
 
   void enableFeature(String feature) {
     // Log enabled feature for analytics
-    print('Feature enabled (online): $feature');
+    getLogger('app').info('Feature enabled (online): $feature');
   }
 
   // Observe connectivity changes
   Stream<bool> get onConnectivityChanged =>
       _connectivityService.onConnectivityChanged;
 }
+

@@ -1,12 +1,14 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:smart_retail/app/constants/currency.dart';
 import 'package:smart_retail/app/data/models/sale_model.dart';
 import 'package:smart_retail/app/modules/shop_dashboard/widgets/shop_main_scaffold.dart';
 import 'package:smart_retail/app/modules/shop_dashboard/shop_sales/shop_sales_controller.dart';
 import 'package:smart_retail/app/modules/shop_dashboard/shop_sales/shop_sales_detail_view.dart';
 import 'package:smart_retail/app/widgets/app_colors.dart';
 import 'package:smart_retail/app/widgets/responsive_data_table.dart';
+import 'package:smart_retail/app/utils/app_logger.dart';
 
 class ShopSalesView extends GetView<ShopSalesController> {
   const ShopSalesView({super.key});
@@ -133,7 +135,7 @@ class ShopSalesView extends GetView<ShopSalesController> {
 
   List<DataCell> _buildCells(Sale sale) {
     final isMerchant = controller.isMerchant;
-    final currencyFormat = NumberFormat.currency(symbol: '\$');
+    final currencyFormat = NumberFormat.currency(symbol: currencySymbol);
 
     // Calculate total selling price
     double totalSellingPrice = sale.items.fold(
@@ -273,7 +275,7 @@ class ShopSalesView extends GetView<ShopSalesController> {
 
   Widget _buildMobileCard(Sale sale) {
     final isMerchant = controller.isMerchant;
-    final currencyFormat = NumberFormat.currency(symbol: '\$');
+    final currencyFormat = NumberFormat.currency(symbol: currencySymbol);
 
     // Calculate totals
     double totalSellingPrice = sale.items.fold(
@@ -378,8 +380,8 @@ class ShopSalesView extends GetView<ShopSalesController> {
   }
 
   void _showSaleDetails(Sale sale) {
-    print(
-      '📄 [SHOP SALES VIEW] Navigating to sale details for sale ID: ${sale.id}',
+    getLogger('app').info(
+      'ðŸ“„ [SHOP SALES VIEW] Navigating to sale details for sale ID: ${sale.id}',
     );
     Get.to(
       () => ShopSalesDetailView(sale: sale),

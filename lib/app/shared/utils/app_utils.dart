@@ -1,6 +1,7 @@
-// lib/app/shared/utils/app_utils.dart
+﻿// lib/app/shared/utils/app_utils.dart
 import 'package:flutter/foundation.dart'; // For kDebugMode
 import 'package:intl/intl.dart';
+import 'package:smart_retail/app/utils/app_logger.dart';
 
 class AppUtils {
   // --- JSON Parsing Helpers ---
@@ -14,7 +15,7 @@ class AppUtils {
       return json[key]?.toString() ?? defaultValue;
     } catch (e) {
       if (kDebugMode) {
-        print(
+        getLogger('app').info(
           '[AppUtils.safeJsonString] Error parsing key "$key": $e. Returning default: "$defaultValue"',
         );
       }
@@ -27,7 +28,7 @@ class AppUtils {
       return json[key]?.toString();
     } catch (e) {
       if (kDebugMode) {
-        print(
+        getLogger('app').info(
           '[AppUtils.safeJsonStringOrNull] Error parsing key "$key": $e. Returning null.',
         );
       }
@@ -52,7 +53,7 @@ class AppUtils {
       return defaultValue;
     } catch (e) {
       if (kDebugMode) {
-        print(
+        getLogger('app').info(
           '[AppUtils.safeJsonInt] Error parsing key "$key": $e. Returning default: $defaultValue',
         );
       }
@@ -77,7 +78,7 @@ class AppUtils {
       return defaultValue;
     } catch (e) {
       if (kDebugMode) {
-        print(
+        getLogger('app').info(
           '[AppUtils.safeJsonDouble] Error parsing key "$key": $e. Returning default: $defaultValue',
         );
       }
@@ -104,7 +105,7 @@ class AppUtils {
       return defaultValue;
     } catch (e) {
       if (kDebugMode) {
-        print(
+        getLogger('app').info(
           '[AppUtils.safeJsonBool] Error parsing key "$key": $e. Returning default: $defaultValue',
         );
       }
@@ -126,7 +127,7 @@ class AppUtils {
           DateTime.now().toLocal(); // Fallback to now or a specific default
     } catch (e) {
       if (kDebugMode) {
-        print(
+        getLogger('app').info(
           '[AppUtils.safeJsonDateTime] Error parsing key "$key": $e. Returning default.',
         );
       }
@@ -146,7 +147,7 @@ class AppUtils {
       return null;
     } catch (e) {
       if (kDebugMode) {
-        print(
+        getLogger('app').info(
           '[AppUtils.safeJsonDateTimeOrNull] Error parsing key "$key": $e. Returning null.',
         );
       }
@@ -164,7 +165,7 @@ class AppUtils {
       return list?.map((item) => parser(item)).toList() ?? [];
     } catch (e) {
       if (kDebugMode) {
-        print(
+        getLogger('app').info(
           '[AppUtils.safeJsonList] Error parsing list key "$key": $e. Returning empty list.',
         );
       }
@@ -192,3 +193,4 @@ class AppUtils {
 
   // Add other utility functions as needed
 }
+
