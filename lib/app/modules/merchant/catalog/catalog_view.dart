@@ -186,6 +186,9 @@ class _BrandsTab extends StatelessWidget {
             itemCount: controller.brands.length,
             itemBuilder: (context, index) {
               final item = controller.brands[index];
+              debugPrint(
+                '[Catalog][Brands] index=$index id=${item.id} name=${item.name} imageUrl=${item.imageUrl}',
+              );
               return ListTile(
                 leading: _BrandAvatar(imageUrl: item.imageUrl, name: item.name),
                 title: Text(item.name),
@@ -244,7 +247,7 @@ Future<void> _showCategoryDialog(
           onPressed: () => Navigator.of(ctx).pop(),
           child: const Text('Cancel'),
         ),
-            ElevatedButton(
+        ElevatedButton(
           onPressed: () async {
             final name = nameCtrl.text.trim();
             if (name.isEmpty) return;
@@ -287,15 +290,25 @@ class _BrandAvatar extends StatelessWidget {
       return CircleAvatar(child: Text(initial));
     }
 
-    return CircleAvatar(
-      backgroundColor: Colors.grey.shade200,
-      child: ClipOval(
-        child: Image.network(
-          url,
-          width: 40,
-          height: 40,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) => Center(child: Text(initial)),
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: Colors.grey.shade200,
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Image.network(
+        url,
+        width: 40,
+        height: 40,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => Center(
+          child: Text(
+            initial,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
         ),
       ),
     );
@@ -404,6 +417,10 @@ Future<void> _showBrandDialog(
   final descCtrl = TextEditingController(text: brand?.description ?? '');
   final imageCtrl = TextEditingController(text: brand?.imageUrl ?? '');
 
+  debugPrint(
+    '[Catalog][BrandDialog] open brandId=${brand?.id} name=${brand?.name} imageUrl=${brand?.imageUrl}',
+  );
+
   String? backendError;
 
   await showDialog(
@@ -452,40 +469,40 @@ Future<void> _showBrandDialog(
             ),
             ElevatedButton(
               onPressed: () async {
-                      final name = nameCtrl.text.trim();
-                      if (name.isEmpty) return;
-                      // Close dialog immediately
-                      try {
-                        if (Navigator.of(ctx).canPop()) Navigator.of(ctx).pop();
-                      } catch (_) {}
-                      try {
-                        if (brand == null) {
-                          final res = await controller.createBrandRaw(
-                            name,
-                            descCtrl.text.trim(),
-                            imageUrl: imageCtrl.text.trim(),
-                          );
-                          final okRes = res['ok'] == true;
-                          final msg =
-                              res['message']?.toString() ??
-                              'Failed to create brand';
-                          if (!okRes) {
-                            DialogUtils.showError(msg);
-                          } else {
-                            DialogUtils.showSuccess(msg);
-                          }
-                        } else {
-                          final ok = await controller.updateBrand(
-                            brand.id,
-                            name,
-                            descCtrl.text.trim(),
-                          );
-                          if (!ok) DialogUtils.showError('Failed to update brand');
-                        }
-                      } catch (e) {
-                        DialogUtils.showError(e.toString());
-                      }
-                    },
+                final name = nameCtrl.text.trim();
+                if (name.isEmpty) return;
+                // Close dialog immediately
+                try {
+                  if (Navigator.of(ctx).canPop()) Navigator.of(ctx).pop();
+                } catch (_) {}
+                try {
+                  if (brand == null) {
+                    final res = await controller.createBrandRaw(
+                      name,
+                      descCtrl.text.trim(),
+                      imageUrl: imageCtrl.text.trim(),
+                    );
+                    final okRes = res['ok'] == true;
+                    final msg =
+                        res['message']?.toString() ?? 'Failed to create brand';
+                    if (!okRes) {
+                      DialogUtils.showError(msg);
+                    } else {
+                      DialogUtils.showSuccess(msg);
+                    }
+                  } else {
+                    final ok = await controller.updateBrand(
+                      brand.id,
+                      name,
+                      descCtrl.text.trim(),
+                      imageCtrl.text.trim(),
+                    );
+                    if (!ok) DialogUtils.showError('Failed to update brand');
+                  }
+                } catch (e) {
+                  DialogUtils.showError(e.toString());
+                }
+              },
               child: const Text('Save'),
             ),
           ],

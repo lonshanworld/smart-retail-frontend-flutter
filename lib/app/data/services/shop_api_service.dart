@@ -1452,6 +1452,13 @@ class ShopApiService extends GetxService {
               (saleRow?['delivery_charge'] as num?)?.toDouble() ??
               (saleMap['deliveryCharge'] as num?)?.toDouble() ??
               0.0,
+          appliedPromotionId:
+            saleRow?['applied_promotion_id'] as String? ??
+            saleMap['appliedPromotionId'] as String?,
+          discountAmount:
+            (saleRow?['discount_amount'] as num?)?.toDouble() ??
+            (saleMap['discountAmount'] as num?)?.toDouble() ??
+            0.0,
           items: saleItems,
           paymentType:
               saleRow?['payment_type'] as String? ?? saleData.paymentType,
@@ -1642,6 +1649,11 @@ class ShopApiService extends GetxService {
           totalAmount: (saleRow['total_amount'] as num).toDouble(),
           deliveryCharge:
               (saleRow['delivery_charge'] as num?)?.toDouble() ?? 0.0,
+          appliedPromotionId:
+            saleRow['applied_promotion_id'] as String? ??
+            saleRow['appliedPromotionId'] as String?,
+          discountAmount:
+            (saleRow['discount_amount'] as num?)?.toDouble() ?? 0.0,
           items: saleItems,
           paymentType: saleRow['payment_type'] as String? ?? 'unknown',
           paymentStatus: saleRow['payment_status'] as String? ?? 'pending',

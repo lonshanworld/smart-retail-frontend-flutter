@@ -649,6 +649,7 @@ class InventoryApiService extends GetxService {
     required String brandId,
     required String name,
     String? description,
+    String? imageUrl,
   }) async {
     final clientOperationId = const Uuid().v4();
     final token = await _getAuthToken();
@@ -659,6 +660,7 @@ class InventoryApiService extends GetxService {
       'clientOperationId': clientOperationId,
       if (description != null && description.isNotEmpty)
         'description': description,
+      if (imageUrl != null && imageUrl.isNotEmpty) 'imageUrl': imageUrl,
     };
 
     try {
@@ -668,6 +670,7 @@ class InventoryApiService extends GetxService {
           'id': brandId,
           'name': name,
           'description': description,
+          'image_url': imageUrl,
           if (merchantId != null) 'merchantId': merchantId,
           if (merchantId != null) 'merchant_id': merchantId,
         });
@@ -1668,6 +1671,117 @@ class InventoryApiService extends GetxService {
       );
       return updatedItem;
     }
+
+    if (_appConfig.localStorageOnly) {
+      try {
+        final db = await _localDatabaseService.database;
+        final existingRows = await db.query(
+          'inventory_items',
+          where: 'id = ?',
+          whereArgs: [itemId],
+          limit: 1,
+        );
+
+        if (existingRows.isEmpty) {
+          _logger.warning('Local inventory update failed: item $itemId not found');
+          return null;
+        }
+
+        final existing = Map<String, dynamic>.from(existingRows.first);
+        final updatedAt = DateTime.now().toIso8601String();
+        final merged = <String, dynamic>{...existing, 'id': itemId, 'updated_at': updatedAt};
+
+        void applyStringField(String key, String column) {
+          if (!updates.containsKey(key)) return;
+          final value = updates[key]?.toString().trim() ?? '';
+          if (value.isEmpty) {
+            merged.remove(column);
+          } else {
+            merged[column] = value;
+          }
+        }
+
+        void applyNumericField(String key, String column) {
+          if (!updates.containsKey(key)) return;
+          final value = updates[key];
+          if (value == null || value.toString().trim().isEmpty) {
+            merged.remove(column);
+            return;
+          }
+          final parsed = value is num ? value.toDouble() : double.tryParse(value.toString());
+          if (parsed != null) {
+            merged[column] = parsed;
+          }
+        }
+
+        applyStringField('name', 'name');
+        applyStringField('description', 'description');
+        applyStringField('sku', 'sku');
+        applyNumericField('sellingPrice', 'selling_price');
+        applyNumericField('originalPrice', 'original_price');
+
+        if (updates.containsKey('categoryId')) {
+          final categoryId = updates['categoryId']?.toString().trim() ?? '';
+          if (categoryId.isEmpty) {
+            merged.remove('category_id');
+          } else {
+            merged['category_id'] = categoryId;
+          }
+        }
+
+        if (updates.containsKey('subcategoryId')) {
+          final subcategoryId = updates['subcategoryId']?.toString().trim() ?? '';
+          if (subcategoryId.isEmpty) {
+            merged.remove('subcategory_id');
+          } else {
+            merged['subcategory_id'] = subcategoryId;
+          }
+        }
+
+        if (updates.containsKey('brandId')) {
+          final brandId = updates['brandId']?.toString().trim() ?? '';
+          if (brandId.isEmpty) {
+            merged.remove('brand_id');
+          } else {
+            merged['brand_id'] = brandId;
+          }
+        }
+
+        if (updates.containsKey('supplierId')) {
+          final supplierId = updates['supplierId']?.toString().trim() ?? '';
+          if (supplierId.isEmpty) {
+            merged.remove('supplier_id');
+          } else {
+            merged['supplier_id'] = supplierId;
+          }
+        } else if (updates.containsKey('supplier')) {
+          final supplierName = updates['supplier']?.toString().trim() ?? '';
+          if (supplierName.isEmpty) {
+            merged.remove('supplier_id');
+          } else {
+            final supplierId = await _resolveSupplierNameToId(supplierName);
+            if (supplierId != null && supplierId.isNotEmpty) {
+              merged['supplier_id'] = supplierId;
+            }
+          }
+        }
+
+        await _localDatabaseService.upsertInventoryItem(merged);
+
+        final reloaded = await db.query(
+          'inventory_items',
+          where: 'id = ?',
+          whereArgs: [itemId],
+          limit: 1,
+        );
+        if (reloaded.isEmpty) return null;
+        return InventoryItem.fromJson(Map<String, dynamic>.from(reloaded.first));
+      } catch (e) {
+        _logger.warning('Local inventory update failed for $itemId: $e');
+        return null;
+      }
+    }
+
     final token = await _getAuthToken();
     if (token == null) return null;
 

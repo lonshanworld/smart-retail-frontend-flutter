@@ -272,6 +272,49 @@ class PromotionApiService extends GetxService {
     }
   }
 
+  Future<Promotion?> getPromotionById(String promotionId) async {
+    if (promotionId.trim().isEmpty) {
+      return null;
+    }
+
+    if (_appConfig.localStorageOnly) {
+      final merchantId = await _resolveMerchantIdForLocal();
+      if (merchantId == null || merchantId.isEmpty) {
+        return null;
+      }
+
+      final rows = await _localDatabaseService.listPromotionsForMerchant(
+        merchantId,
+        onlyActive: false,
+      );
+      for (final row in rows) {
+        final id = (row['id'] ?? row['promotionId'] ?? row['promotion_id'])
+            ?.toString();
+        if (id == promotionId) {
+          return Promotion.fromJson(row);
+        }
+      }
+      return null;
+    }
+
+    var page = 1;
+    const pageSize = 100;
+    while (true) {
+      final response = await getPromotions(page: page, pageSize: pageSize);
+      for (final promotion in response.items) {
+        if (promotion.id == promotionId) {
+          return promotion;
+        }
+      }
+      if (response.items.isEmpty || page >= response.totalPages) {
+        break;
+      }
+      page += 1;
+    }
+
+    return null;
+  }
+
   /// Creates a new promotion.
   ///
   /// __Request:__

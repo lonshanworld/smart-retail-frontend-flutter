@@ -28,7 +28,7 @@ class ProfitBreakdownView extends GetView<ProfitBreakdownController> {
           );
         }
 
-        if (controller.sales.isEmpty) {
+        if (controller.allSales.isEmpty) {
           return const Center(
             child: Padding(
               padding: EdgeInsets.all(24),
@@ -37,46 +37,195 @@ class ProfitBreakdownView extends GetView<ProfitBreakdownController> {
           );
         }
 
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            final isWide = constraints.maxWidth >= 1100;
-            final contentWidth = constraints.maxWidth > 1400
-                ? 1320.0
-                : constraints.maxWidth;
+        return DefaultTabController(
+          length: 2,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isWide = constraints.maxWidth >= 1100;
+              final contentWidth = constraints.maxWidth > 1400
+                  ? 1320.0
+                  : constraints.maxWidth;
 
-            return SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: contentWidth),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _buildHeroCard(isWide),
-                      const SizedBox(height: 16),
-                      _buildFilterPanel(context, isWide),
-                      const SizedBox(height: 16),
-                      _buildSummaryCards(),
-                      const SizedBox(height: 16),
-                      ...controller.sales.asMap().entries.map((entry) {
-                        final sale = entry.value;
-                        return Padding(
-                          padding: EdgeInsets.only(
-                            bottom: entry.key == controller.sales.length - 1
-                                ? 0
-                                : 12,
-                          ),
-                          child: _buildOrderCard(context, sale, isWide),
-                        );
-                      }),
-                    ],
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Container(
+                    margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.04),
+                          blurRadius: 14,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: TabBar(
+                      labelColor: AppColors.merchant.shade800,
+                      unselectedLabelColor: Colors.black54,
+                      indicatorColor: AppColors.merchant,
+                      dividerColor: Colors.transparent,
+                      tabs: const [
+                        Tab(
+                          text: 'Overview',
+                          icon: Icon(Icons.dashboard_outlined),
+                        ),
+                        Tab(
+                          text: 'Sales',
+                          icon: Icon(Icons.receipt_long_outlined),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ),
-            );
-          },
+                  Expanded(
+                    child: TabBarView(
+                      children: [
+                        _buildOverviewTab(context, isWide, contentWidth),
+                        _buildSalesTab(context, isWide, contentWidth),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
         );
       }),
+    );
+  }
+
+  Widget _buildOverviewTab(
+    BuildContext context,
+    bool isWide,
+    double contentWidth,
+  ) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: contentWidth),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildHeroCard(isWide),
+              const SizedBox(height: 16),
+              _buildFilterPanel(context, isWide),
+              const SizedBox(height: 16),
+              _buildSummaryCards(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSalesTab(
+    BuildContext context,
+    bool isWide,
+    double contentWidth,
+  ) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: contentWidth),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 14,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Obx(
+                      () => Text(
+                        'Total: ${controller.totalItems.value} sales',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    Obx(
+                      () => Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.chevron_left),
+                            onPressed: controller.currentPage.value > 1
+                                ? () => controller.goToPage(
+                                      controller.currentPage.value - 1,
+                                    )
+                                : null,
+                          ),
+                          Text(
+                            'Page ${controller.currentPage.value} of ${controller.totalPages.value}',
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.chevron_right),
+                            onPressed:
+                                controller.currentPage.value <
+                                    controller.totalPages.value
+                                ? () => controller.goToPage(
+                                      controller.currentPage.value + 1,
+                                    )
+                                : null,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 14,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Text(
+                  'Each sale expands into revenue, cost, margin, and item-level profit details.',
+                  style: TextStyle(color: Colors.grey.shade700, height: 1.4),
+                ),
+              ),
+              const SizedBox(height: 16),
+              ...controller.sales.asMap().entries.map((entry) {
+                final sale = entry.value;
+                return Padding(
+                  padding: EdgeInsets.only(
+                    bottom: entry.key == controller.sales.length - 1 ? 0 : 12,
+                  ),
+                  child: _buildOrderCard(context, sale, isWide),
+                );
+              }),
+              const SizedBox(height: 16),
+              _buildPaginationControls(),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -85,10 +234,7 @@ class ProfitBreakdownView extends GetView<ProfitBreakdownController> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            AppColors.merchant.shade900,
-            AppColors.merchant.shade700,
-          ],
+          colors: [AppColors.merchant.shade900, AppColors.merchant.shade700],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -130,7 +276,7 @@ class ProfitBreakdownView extends GetView<ProfitBreakdownController> {
                 const SizedBox(width: 20),
                 _heroMetricCard(
                   'Sales loaded',
-                  controller.sales.length.toString(),
+                  controller.totalSalesCount.toString(),
                   Icons.receipt_long_outlined,
                 ),
                 const SizedBox(width: 12),
@@ -166,7 +312,7 @@ class ProfitBreakdownView extends GetView<ProfitBreakdownController> {
                     Expanded(
                       child: _heroMetricCard(
                         'Sales loaded',
-                        controller.sales.length.toString(),
+                        controller.totalSalesCount.toString(),
                         Icons.receipt_long_outlined,
                       ),
                     ),
@@ -241,7 +387,10 @@ class ProfitBreakdownView extends GetView<ProfitBreakdownController> {
                   Expanded(
                     child: Text(
                       'Profit shown here is gross item profit. Tax is not stored in the sale data and delivery is shown separately.',
-                      style: TextStyle(color: Colors.grey.shade700, height: 1.4),
+                      style: TextStyle(
+                        color: Colors.grey.shade700,
+                        height: 1.4,
+                      ),
                     ),
                   ),
                 ],
@@ -301,7 +450,7 @@ class ProfitBreakdownView extends GetView<ProfitBreakdownController> {
           children: [
             _summaryCard(
               'Orders',
-              controller.sales.length.toString(),
+              controller.totalSalesCount.toString(),
               Icons.receipt_long_outlined,
               Colors.blue,
               cardWidth,
@@ -402,8 +551,17 @@ class ProfitBreakdownView extends GetView<ProfitBreakdownController> {
     return Card(
       elevation: 0,
       color: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        child: ExpansionTile(
+      shape: RoundedRectangleBorder(
+        side: BorderSide(
+          color: grossProfit == 0
+              ? Colors.grey.withValues(alpha: 0.3)
+              : (grossProfit > 0
+                    ? Colors.green.withValues(alpha: 0.3)
+                    : Colors.red.withValues(alpha: 0.3)),
+        ),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: ExpansionTile(
         tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         key: PageStorageKey<String>(sale.id),
         initiallyExpanded: controller.focusSaleId == sale.id,
@@ -428,8 +586,11 @@ class ProfitBreakdownView extends GetView<ProfitBreakdownController> {
             children: [
               Text(
                 controller.formatMoney(grossProfit),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
+                  color: grossProfit == 0
+                      ? Colors.black
+                      : (grossProfit > 0 ? Colors.green : Colors.red),
                   fontWeight: FontWeight.w800,
                 ),
                 maxLines: 1,
@@ -437,7 +598,14 @@ class ProfitBreakdownView extends GetView<ProfitBreakdownController> {
               ),
               Text(
                 '${(margin * 100).toStringAsFixed(1)}% margin',
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: margin == 0
+                      ? Colors.grey
+                      : (margin > 0
+                            ? Colors.green.withValues(alpha: 0.7)
+                            : Colors.red.withValues(alpha: 0.7)),
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -570,5 +738,49 @@ class ProfitBreakdownView extends GetView<ProfitBreakdownController> {
         ),
       ],
     );
+  }
+
+  Widget _buildPaginationControls() {
+    return Obx(() {
+      if (controller.totalPages.value <= 1) {
+        return const SizedBox.shrink();
+      }
+
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        child: Row(
+          children: [
+            OutlinedButton.icon(
+              onPressed: controller.currentPage.value > 1
+                  ? () => controller.goToPage(controller.currentPage.value - 1)
+                  : null,
+              icon: const Icon(Icons.chevron_left_rounded),
+              label: const Text('Previous'),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Page ${controller.currentPage.value} of ${controller.totalPages.value} • ${controller.totalItems.value} sales',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+            const SizedBox(width: 12),
+            OutlinedButton.icon(
+              onPressed: controller.currentPage.value < controller.totalPages.value
+                  ? () => controller.goToPage(controller.currentPage.value + 1)
+                  : null,
+              icon: const Icon(Icons.chevron_right_rounded),
+              label: const Text('Next'),
+            ),
+          ],
+        ),
+      );
+    });
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:smart_retail/app/routes/app_pages.dart';
+import 'package:smart_retail/app/services/app_navigation.dart';
 import './shop_login_controller.dart';
 
 class ShopLoginView extends GetView<ShopLoginController> {
@@ -51,8 +52,7 @@ class ShopLoginView extends GetView<ShopLoginController> {
                           alignment: Alignment.centerLeft,
                           child: IconButton(
                             icon: const Icon(Icons.arrow_back),
-                            onPressed: () =>
-                                Get.offAllNamed(Routes.CUSTOMER_INTRO),
+                            onPressed: () => AppNavigation.backOr(Routes.OFFLINE_INTRO),
                           ),
                         ),
                         const SizedBox(height: 20),

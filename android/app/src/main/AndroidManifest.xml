@@ -8,7 +8,7 @@
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" android:required="false" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" android:required="false" />
     <application
-        android:label="smart_retail"
+        android:label="Nanonux Business Central"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

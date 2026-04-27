@@ -55,7 +55,7 @@ class PublicContactView extends StatelessWidget {
                   ),
                   const SizedBox(height: 14),
                   Text(
-                    'Contact Smart Retail',
+                    'Contact Nanonux Business Central',
                     style: GoogleFonts.playfairDisplay(
                       color: Colors.white,
                       fontSize: isWide ? 48 : 36,

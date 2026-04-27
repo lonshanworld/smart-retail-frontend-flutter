@@ -126,7 +126,7 @@ class CustomerLandingView extends StatelessWidget {
                   ),
                   const SizedBox(width: 10),
                   Text(
-                    'Smart Retail Central',
+                    'Nanonux Business Central',
                     style: GoogleFonts.playfairDisplay(
                       color: _ink,
                       fontSize: 24,
@@ -203,7 +203,7 @@ class CustomerLandingView extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Not Just POS.\nA Unified Operating Layer\nFor Modern Retail.',
+                  'Not Just POS.\nA Unified Operating Layer\nFor Modern Business.',
                   style: GoogleFonts.playfairDisplay(
                     color: Colors.white,
                     fontSize: stacked ? 40 : 58,
@@ -213,7 +213,7 @@ class CustomerLandingView extends StatelessWidget {
                 ),
                 const SizedBox(height: 14),
                 Text(
-                  'Smart Retail connects leadership, staff execution, and branch operations in one synchronized system. Every workflow shares the same data heartbeat.',
+                  'Nanonux Business Central connects leadership, staff execution, and branch operations in one synchronized system. Every workflow shares the same data heartbeat.',
                   style: GoogleFonts.manrope(
                     color: Colors.white.withValues(alpha: 0.92),
                     fontSize: stacked ? 15 : 18,
@@ -240,6 +240,12 @@ class CustomerLandingView extends StatelessWidget {
                     //   icon: Icons.storefront_rounded,
                     //   onTap: () => Get.toNamed(Routes.MERCHANT_LOGIN),
                     // ),
+                    FilledButton.icon(
+                      onPressed: () => Get.toNamed(Routes.SHOP_LOGIN),
+                      icon: const Icon(Icons.storefront_rounded),
+                      label: const Text('Shop Login'),
+                      style: FilledButton.styleFrom(backgroundColor: const Color(0xFF15803D), foregroundColor: Colors.white),
+                    ),
                     FilledButton.icon(
                       onPressed: () => Get.toNamed(Routes.MERCHANT_LOGIN),
                       icon: const Icon(Icons.business_center_rounded),
@@ -320,7 +326,7 @@ class CustomerLandingView extends StatelessWidget {
             builder: (context, constraints) {
               final stacked = constraints.maxWidth < 920;
               final narrative = Text(
-                'Most businesses operate across disconnected tools: one for checkout, one for stock, one for reports, and another for payroll signals. Smart Retail removes that fragmentation by creating one operating layer where each role sees exactly what it needs while sharing the same data truth.\n\nThis means branch staff can move quickly, merchant leadership can make strategic decisions with confidence, and admins can govern the whole environment without data lag or duplicated effort.',
+                'Most businesses operate across disconnected tools: one for checkout, one for stock, one for reports, and another for payroll signals. Nanonux Business Central removes that fragmentation by creating one operating layer where each role sees exactly what it needs while sharing the same data truth.\n\nThis means branch staff can move quickly, merchant leadership can make strategic decisions with confidence, and admins can govern the whole environment without data lag or duplicated effort.',
                 style: GoogleFonts.manrope(
                   color: _slate,
                   fontSize: 15,
@@ -439,7 +445,7 @@ class CustomerLandingView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _sectionTitle('Why Choose Smart Retail', 'Everything you need to run and grow a modern retail operation.'),
+          _sectionTitle('Why Choose Nanonux Business Central', 'Everything you need to run and grow a modern retail operation.'),
           const SizedBox(height: 12),
           const _RailStep(title: 'Lightning Fast', subtitle: 'Process transactions in seconds with an optimized POS workflow.'),
           const _RailStep(title: 'Secure and Reliable', subtitle: 'Bank-grade approach with offline continuity and dependable sync.'),
@@ -656,12 +662,12 @@ class CustomerLandingView extends StatelessWidget {
                 label: const Text('Merchant Login'),
                 style: FilledButton.styleFrom(backgroundColor: const Color(0xFF1D4ED8), foregroundColor: Colors.white),
               ),
-              // FilledButton.icon(
-              //   onPressed: () => Get.toNamed(Routes.SHOP_LOGIN),
-              //   icon: const Icon(Icons.storefront_rounded),
-              //   label: const Text('Shop Login'),
-              //   style: FilledButton.styleFrom(backgroundColor: const Color(0xFF15803D), foregroundColor: Colors.white),
-              // ),
+              FilledButton.icon(
+                onPressed: () => Get.toNamed(Routes.SHOP_LOGIN),
+                icon: const Icon(Icons.storefront_rounded),
+                label: const Text('Shop Login'),
+                style: FilledButton.styleFrom(backgroundColor: const Color(0xFF15803D), foregroundColor: Colors.white),
+              ),
               FilledButton.icon(
                 onPressed: () => Get.toNamed(Routes.STAFF_LOGIN),
                 icon: const Icon(Icons.badge_rounded),
@@ -1005,7 +1011,7 @@ class CustomerLandingView extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Smart Retail Central',
+                      'Nanonux Business Central',
                       style: GoogleFonts.playfairDisplay(
                         color: Colors.white,
                         fontSize: 28,
@@ -1093,7 +1099,7 @@ class CustomerLandingView extends StatelessWidget {
           const Divider(color: Color(0x334A6572), height: 1),
           const SizedBox(height: 10),
           Text(
-            'Copyright 2026 Smart Retail. All rights reserved.',
+            'Copyright 2026 Nanonux Business Central. All rights reserved.',
             style: GoogleFonts.manrope(
               color: const Color(0xFF90A7BB),
               fontSize: 12,
@@ -1672,7 +1678,7 @@ class _PublicAiChatFabState extends State<_PublicAiChatFab> {
   final List<_ChatMessage> _messages = [
     const _ChatMessage(
       role: _ChatRole.assistant,
-      text: 'Hello. I am Smart Retail Assistant. Ask me about features, onboarding, or support.',
+      text: 'Hello. I am Nanonux Business Central Assistant. Ask me about features, onboarding, or support.',
     ),
   ];
 
@@ -1780,7 +1786,7 @@ class _PublicAiChatFabState extends State<_PublicAiChatFab> {
                   const SizedBox(width: 8),
                   const Expanded(
                     child: Text(
-                      'Smart Retail AI Assistant',
+                      'Nanonux Business Central AI Assistant',
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w700,

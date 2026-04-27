@@ -240,6 +240,13 @@ class InventoryItem {
     // Handle quantity field from backend (InventoryItemWithQuantity)
     List<StockInfo>? stockInfoList;
 
+    bool parseBool(dynamic value) {
+      if (value is bool) return value;
+      if (value is num) return value != 0;
+      final text = value?.toString().trim().toLowerCase();
+      return text == 'true' || text == '1' || text == 'yes';
+    }
+
     List<StockInfo> parseStockInfoList(dynamic rawStockInfo) {
       final rawList = rawStockInfo as List? ?? const [];
       return rawList
@@ -312,8 +319,8 @@ class InventoryItem {
               Map<String, dynamic>.from(json['brandObj'] as Map),
             )
           : null,
-      isArchived:
-          json['isArchived'] as bool? ?? json['is_archived'] as bool? ?? false,
+        isArchived:
+          parseBool(json['isArchived']) || parseBool(json['is_archived']),
       createdAt:
           DateTime.tryParse(
             json['createdAt']?.toString() ??

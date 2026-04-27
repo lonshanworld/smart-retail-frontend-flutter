@@ -328,7 +328,7 @@ class _ShopMainScaffoldState extends State<ShopMainScaffold> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Smart Retail System',
+                        'Nanonux Business Central',
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.7),
                           fontSize: 12,

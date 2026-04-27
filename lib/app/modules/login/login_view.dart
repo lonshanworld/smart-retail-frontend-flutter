@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:smart_retail/app/modules/login/login_controller.dart';
 import 'package:smart_retail/app/routes/app_pages.dart';
+import 'package:smart_retail/app/services/app_navigation.dart';
 
 class LoginView extends GetView<LoginController> {
   final String? loginType; // 'admin', 'staff', or null (default to merchant)
@@ -71,8 +72,7 @@ class LoginView extends GetView<LoginController> {
                         alignment: Alignment.centerLeft,
                         child: IconButton(
                           icon: const Icon(Icons.arrow_back),
-                          onPressed: () =>
-                              Get.offAllNamed(Routes.CUSTOMER_INTRO),
+                          onPressed: () => AppNavigation.backOr(Routes.OFFLINE_INTRO),
                         ),
                       ),
                       const SizedBox(height: 20),

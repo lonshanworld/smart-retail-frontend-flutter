@@ -28,6 +28,10 @@ class SalesAnalysisController extends GetxController {
   final RxList<InventoryItem> inventoryItems = <InventoryItem>[].obs;
   final RxBool isLoading = true.obs;
   final RxnString errorMessage = RxnString();
+  final RxInt currentPage = 1.obs;
+  final RxInt pageSize = 10.obs;
+  final RxInt totalItems = 0.obs;
+  final RxInt totalPages = 0.obs;
 
   // --- Filters ---
   final Rx<ReportPeriod> selectedPeriod = ReportPeriod.daily.obs;
@@ -36,6 +40,8 @@ class SalesAnalysisController extends GetxController {
   final Rxn<Shop> selectedShop = Rxn<Shop>();
   final RxString selectedGroupBy = 'daily'.obs;
   final Rxn<BusinessAnalysisSnapshot> analysisSnapshot =
+      Rxn<BusinessAnalysisSnapshot>();
+  final Rxn<BusinessAnalysisSnapshot> pagedAnalysisSnapshot =
       Rxn<BusinessAnalysisSnapshot>();
 
   @override
@@ -58,10 +64,14 @@ class SalesAnalysisController extends GetxController {
     }
   }
 
-  Future<void> applyFilters() async {
+  Future<void> applyFilters({bool resetPage = true}) async {
     try {
       isLoading.value = true;
       errorMessage.value = null;
+
+      if (resetPage) {
+        currentPage.value = 1;
+      }
 
       var (start, end) = _calculateDateRange();
 
@@ -81,11 +91,26 @@ class SalesAnalysisController extends GetxController {
           shopId: selectedShop.value?.id,
           groupBy: selectedGroupBy.value,
         ),
+        _apiService.getSalesReportPage(
+          startDate: start,
+          endDate: end,
+          page: currentPage.value,
+          pageSize: pageSize.value,
+          shopId: selectedShop.value?.id,
+          groupBy: selectedGroupBy.value,
+        ),
         _stocksApiService.getCombinedStocks(page: 1, pageSize: 500),
+        _stocksApiService.getCombinedStocks(
+          page: currentPage.value,
+          pageSize: pageSize.value,
+        ),
       ]);
 
       final SalesReportResponse response = results[0] as SalesReportResponse;
-      final stocks = results[1] as PaginatedStockResponse;
+      final PaginatedSalesResponse pagedResponse =
+          results[1] as PaginatedSalesResponse;
+      final stocks = results[2] as PaginatedStockResponse;
+      final pagedStocks = results[3] as PaginatedStockResponse;
 
       getLogger(
         'app',
@@ -100,15 +125,37 @@ class SalesAnalysisController extends GetxController {
         shopId: selectedShop.value?.id,
         groupBy: selectedGroupBy.value,
       );
+      totalItems.value = pagedResponse.totalItems;
+      totalPages.value = pagedResponse.totalPages;
+      pagedAnalysisSnapshot.value = buildBusinessAnalysisSnapshot(
+        sales: pagedResponse.items,
+        inventoryItems: pagedStocks.items,
+        startDate: start,
+        endDate: end,
+        shopId: selectedShop.value?.id,
+        groupBy: selectedGroupBy.value,
+      );
     } catch (e, stackTrace) {
       getLogger('app').info('âŒ [SALES REPORT] Error: $e');
       getLogger('app').info('   Stack trace: $stackTrace');
       errorMessage.value = e.toString();
       analysisSnapshot.value = null;
+      pagedAnalysisSnapshot.value = null;
       DialogUtils.showInfo('Failed to load sales report: $e');
     } finally {
       isLoading.value = false;
     }
+  }
+
+  Future<void> goToPage(int page) async {
+    if (page <= 0 || page == currentPage.value) {
+      return;
+    }
+    if (totalPages.value > 0 && page > totalPages.value) {
+      return;
+    }
+    currentPage.value = page;
+    await applyFilters(resetPage: false);
   }
 
   void onPeriodChanged(ReportPeriod? period) {

@@ -57,8 +57,9 @@ class SaleItem {
   final String? itemSku;
 
   // Calculated property for profit
-  double get profit =>
-      (sellingPriceAtSale - (originalPriceAtSale ?? 0.0)) * quantitySold;
+    double get profit =>
+      (sellingPriceAtSale - (originalPriceAtSale ?? sellingPriceAtSale)) *
+      quantitySold;
 
   SaleItem({
     required this.id,

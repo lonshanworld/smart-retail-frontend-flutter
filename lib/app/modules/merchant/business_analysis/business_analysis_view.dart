@@ -19,7 +19,7 @@ class BusinessAnalysisView extends GetView<BusinessAnalysisController> {
   @override
   Widget build(BuildContext context) {
     return MerchantMainScaffold(
-      title: 'Business analysis page',
+      title: 'Business Analysis',
       body: Obx(() {
         if (controller.isLoading.value) {
           return const Center(child: CircularProgressIndicator());
@@ -42,42 +42,199 @@ class BusinessAnalysisView extends GetView<BusinessAnalysisController> {
             ),
           );
         }
+        final pageSnapshot = controller.pagedAnalysisSnapshot.value ?? snapshot;
 
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            final isWide = constraints.maxWidth >= 1100;
-            final maxWidth = constraints.maxWidth > 1440
-                ? 1360.0
-                : constraints.maxWidth;
+        return DefaultTabController(
+          length: 4,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isWide = constraints.maxWidth >= 1100;
+              final maxWidth = constraints.maxWidth > 1440
+                  ? 1360.0
+                  : constraints.maxWidth;
 
-            return SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: maxWidth),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _buildHero(snapshot, isWide),
-                      const SizedBox(height: 16),
-                      _buildFilterBar(context, isWide),
-                      const SizedBox(height: 16),
-                      _buildKpiGrid(snapshot),
-                      const SizedBox(height: 16),
-                      _buildTrendAndMarketing(snapshot, isWide),
-                      const SizedBox(height: 16),
-                      _buildProductPanels(snapshot, isWide),
-                      const SizedBox(height: 16),
-                      _buildActionBoard(snapshot),
-                    ],
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Container(
+                    margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.04),
+                          blurRadius: 14,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: TabBar(
+                      labelColor: AppColors.merchant.shade800,
+                      unselectedLabelColor: Colors.black54,
+                      indicatorColor: AppColors.merchant,
+                      dividerColor: Colors.transparent,
+                      tabs: const [
+                        Tab(
+                          text: 'Summary',
+                          icon: Icon(Icons.dashboard_outlined),
+                        ),
+                        Tab(text: 'Trends', icon: Icon(Icons.show_chart)),
+                        Tab(
+                          text: 'Products',
+                          icon: Icon(Icons.inventory_2_outlined),
+                        ),
+                        Tab(text: 'Actions', icon: Icon(Icons.tune_rounded)),
+                      ],
+                    ),
                   ),
-                ),
-              ),
-            );
-          },
+                  Expanded(
+                    child: TabBarView(
+                      children: [
+                        _buildSummaryTab(snapshot, isWide, maxWidth, context),
+                        _buildTrendsTab(snapshot, isWide, maxWidth),
+                        _buildProductsTab(pageSnapshot, isWide, maxWidth),
+                        _buildActionsTab(pageSnapshot, maxWidth),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
         );
       }),
     );
+  }
+
+  Widget _buildSummaryTab(
+    BusinessAnalysisSnapshot snapshot,
+    bool isWide,
+    double maxWidth,
+    BuildContext context,
+  ) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: maxWidth),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildHero(snapshot, isWide),
+              const SizedBox(height: 16),
+              _buildFilterBar(context, isWide),
+              const SizedBox(height: 16),
+              _buildKpiGrid(snapshot),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTrendsTab(
+    BusinessAnalysisSnapshot snapshot,
+    bool isWide,
+    double maxWidth,
+  ) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: maxWidth),
+          child: _buildTrendAndMarketing(snapshot, isWide),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProductsTab(
+    BusinessAnalysisSnapshot snapshot,
+    bool isWide,
+    double maxWidth,
+  ) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: maxWidth),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildProductPanels(snapshot, isWide),
+              const SizedBox(height: 16),
+              _buildPaginationControls(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionsTab(BusinessAnalysisSnapshot snapshot, double maxWidth) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: maxWidth),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildActionBoard(snapshot),
+              const SizedBox(height: 16),
+              _buildPaginationControls(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPaginationControls() {
+    return Obx(() {
+      if (controller.totalPages.value <= 1) {
+        return const SizedBox.shrink();
+      }
+
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        child: Row(
+          children: [
+            OutlinedButton.icon(
+              onPressed: controller.currentPage.value > 1
+                  ? () => controller.goToPage(controller.currentPage.value - 1)
+                  : null,
+              icon: const Icon(Icons.chevron_left_rounded),
+              label: const Text('Previous'),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Page ${controller.currentPage.value} of ${controller.totalPages.value} • ${controller.totalItems.value} items',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+            const SizedBox(width: 12),
+            OutlinedButton.icon(
+              onPressed:
+                  controller.currentPage.value < controller.totalPages.value
+                  ? () => controller.goToPage(controller.currentPage.value + 1)
+                  : null,
+              icon: const Icon(Icons.chevron_right_rounded),
+              label: const Text('Next'),
+            ),
+          ],
+        ),
+      );
+    });
   }
 
   Widget _buildHero(BusinessAnalysisSnapshot snapshot, bool isWide) {
@@ -107,7 +264,7 @@ class BusinessAnalysisView extends GetView<BusinessAnalysisController> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'Business analysis page',
+                        'Business Analysis',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 28,
@@ -157,7 +314,7 @@ class BusinessAnalysisView extends GetView<BusinessAnalysisController> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Business analysis page',
+                  'Business Analysis',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 26,

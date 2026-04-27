@@ -72,7 +72,8 @@ Future<void> startSmartRetailApp({
   }
 
   // Initialize Core Services
-  await Get.putAsync(() => AppConfig().init());
+  final appConfig = await Get.putAsync(() => AppConfig().init());
+
   // Register a safe GetConnect that blocks network requests when
   // the app is configured as local-storage-only.
   try {
@@ -152,7 +153,7 @@ Future<void> startSmartRetailApp({
     // Desktop platforms: Windows, Linux, macOS
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
-    debugPrint("SQLite FFI factory initialized for desktop platfggorm.");
+    debugPrint("SQLite FFI factory initialized for desktop platform.");
   } else if (kIsWeb) {
     // Web platform
     databaseFactory = databaseFactoryFfiWeb;
@@ -169,7 +170,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      title: 'Smart Retail',
+      title: 'Nanonux Business Central',
       theme: AppTheme.light,
       themeMode: ThemeMode.light,
       debugShowCheckedModeBanner: false,

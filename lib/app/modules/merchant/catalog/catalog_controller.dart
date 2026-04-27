@@ -176,11 +176,15 @@ class CatalogController extends GetxController {
     String brandId,
     String name,
     String description,
+    String? imageUrl,
   ) async {
+    // Debug trace for brand edit payloads.
+    // This helps confirm whether the image URL is preserved end-to-end.
     final ok = await _inventoryApi.updateBrand(
       brandId: brandId,
       name: name,
       description: description,
+      imageUrl: imageUrl,
     );
     if (ok) {
       await loadCatalog();

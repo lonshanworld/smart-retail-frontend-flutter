@@ -3,6 +3,7 @@ part of 'app_pages.dart';
 abstract class Routes {
   static const INTRO = '/intro'; // This will be dynamic based on portal type
   static const ADMIN_INTRO = '/admin-intro';
+  static const OFFLINE_INTRO = '/offline-intro';
   static const CUSTOMER_INTRO = '/customer-intro';
   static const PUBLIC_FEATURES = '/public/features';
   static const PUBLIC_ABOUT = '/public/about';

@@ -75,7 +75,7 @@ class PublicAboutView extends StatelessWidget {
           ),
           const SizedBox(height: 18),
           Text(
-            'About Smart Retail',
+            'About Nanonux Business Central',
             style: GoogleFonts.playfairDisplay(
               color: Colors.white,
               fontSize: isWide ? 50 : 38,
@@ -120,7 +120,7 @@ class PublicAboutView extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               Text(
-                'Smart Retail started from a simple observation: most retail teams juggle too many disconnected systems. We built one platform where merchant leadership, staff execution, and shop operations work in harmony.',
+                'Nanonux Business Central started from a simple observation: most retail teams juggle too many disconnected systems. We built one platform where merchant leadership, staff execution, and shop operations work in harmony.',
                 style: GoogleFonts.manrope(
                   color: const Color(0xFF334E68),
                   height: 1.7,

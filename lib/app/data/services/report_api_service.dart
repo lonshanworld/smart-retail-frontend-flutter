@@ -315,6 +315,166 @@ class ReportApiService extends GetxService {
     }
   }
 
+  Future<PaginatedSalesResponse> getSalesReportPage({
+    required DateTime startDate,
+    required DateTime endDate,
+    required int page,
+    required int pageSize,
+    String? shopId,
+    String? groupBy,
+    bool allowMockData = true,
+  }) async {
+    if (allowMockData && _appConfig.isDevelopment) {
+      final mockResponse = await getSalesReport(
+        startDate: startDate,
+        endDate: endDate,
+        shopId: shopId,
+        groupBy: groupBy,
+        allowMockData: allowMockData,
+      );
+      final totalItems = mockResponse.sales.length;
+      final start = (page - 1) * pageSize;
+      final end = (start + pageSize) > totalItems
+          ? totalItems
+          : (start + pageSize);
+      final items = start < totalItems
+          ? mockResponse.sales.sublist(start, end)
+          : <Sale>[];
+      return PaginatedSalesResponse(
+        items: items,
+        totalItems: totalItems,
+        currentPage: page,
+        pageSize: pageSize,
+        totalPages: totalItems == 0 ? 0 : (totalItems / pageSize).ceil(),
+      );
+    }
+
+    if (_appConfig.localStorageOnly) {
+      final merchantId =
+          _authService.user.value?.merchantId ??
+          _authService.user.value?.id ??
+          '';
+      final startIso = startDate.toIso8601String();
+      final endIso = endDate.toIso8601String();
+      final db = await _localDb.database;
+
+      final whereClauses = <String>[
+        'merchant_id = ?',
+        'sale_date BETWEEN ? AND ?',
+      ];
+      final whereArgs = <dynamic>[merchantId, startIso, endIso];
+      if (shopId != null && shopId.isNotEmpty) {
+        whereClauses.add('shop_id = ?');
+        whereArgs.add(shopId);
+      }
+
+      final whereSql = whereClauses.join(' AND ');
+      final totalRow = await db.rawQuery(
+        'SELECT COUNT(*) AS totalItems FROM sales WHERE $whereSql',
+        whereArgs,
+      );
+      final totalItems = (totalRow.first['totalItems'] as num?)?.toInt() ?? 0;
+      final offset = (page - 1) * pageSize;
+
+      final rows = await db.query(
+        'sales',
+        where: whereSql,
+        whereArgs: whereArgs,
+        orderBy: 'sale_date DESC',
+        limit: pageSize,
+        offset: offset,
+      );
+
+      final sales = <Sale>[];
+      for (final row in rows) {
+        final saleId = row['id']?.toString() ?? '';
+        if (saleId.isEmpty) {
+          continue;
+        }
+
+        final itemsRows = await _localDb.getSaleItemsForSale(saleId);
+        final itemsJson = itemsRows
+            .map(
+              (ir) => {
+                'id': ir['id'],
+                'saleId': ir['sale_id'] ?? ir['saleId'],
+                'inventoryItemId':
+                    ir['inventory_item_id'] ?? ir['inventoryItemId'],
+                'quantitySold': ir['quantity_sold'] ?? ir['quantitySold'],
+                'sellingPriceAtSale':
+                    ir['selling_price_at_sale'] ?? ir['sellingPriceAtSale'],
+                'originalPriceAtSale':
+                    ir['original_price_at_sale'] ?? ir['originalPriceAtSale'],
+                'subtotal': ir['subtotal'],
+                'createdAt': ir['created_at'] ?? ir['createdAt'],
+                'updatedAt': ir['updated_at'] ?? ir['updatedAt'],
+                'itemName': ir['item_name'] ?? ir['itemName'],
+                'itemSku': ir['item_sku'] ?? ir['itemSku'],
+              },
+            )
+            .toList();
+
+        final saleJson = {
+          'id': row['id'],
+          'shopId': row['shop_id'] ?? row['shopId'],
+          'merchantId': row['merchant_id'] ?? row['merchantId'],
+          'saleDate': row['sale_date'] ?? row['saleDate'],
+          'totalAmount': row['total_amount'] ?? row['totalAmount'],
+          'deliveryCharge': row['delivery_charge'] ?? row['deliveryCharge'],
+          'appliedPromotionId':
+              row['applied_promotion_id'] ?? row['appliedPromotionId'],
+          'discountAmount': row['discount_amount'] ?? row['discountAmount'],
+          'paymentType': row['payment_type'] ?? row['paymentType'],
+          'paymentStatus': row['payment_status'] ?? row['paymentStatus'],
+          'notes': row['notes'],
+          'createdAt': row['created_at'] ?? row['createdAt'],
+          'updatedAt': row['updated_at'] ?? row['updatedAt'],
+          'items': itemsJson,
+        };
+
+        sales.add(Sale.fromJson(saleJson));
+      }
+
+      return PaginatedSalesResponse(
+        items: sales,
+        totalItems: totalItems,
+        currentPage: page,
+        pageSize: pageSize,
+        totalPages: totalItems == 0 ? 0 : (totalItems / pageSize).ceil(),
+      );
+    }
+
+    final response = await _connect.get(
+      '$_baseUrl/sales',
+      headers: await _getHeaders(),
+      query: {
+        'startDate': startDate.toIso8601String(),
+        'endDate': endDate.toIso8601String(),
+        'page': page.toString(),
+        'pageSize': pageSize.toString(),
+        if (shopId != null) 'shopId': shopId,
+        if (groupBy != null) 'groupBy': groupBy,
+      },
+    );
+
+    if (_appConfig.localStorageOnly) {
+      return PaginatedSalesResponse(
+        items: [],
+        totalItems: 0,
+        currentPage: page,
+        pageSize: pageSize,
+        totalPages: 0,
+      );
+    }
+
+    if (response.isOk && response.body['data'] != null) {
+      return PaginatedSalesResponse.fromJson(asMap(response.body['data']));
+    }
+
+    final errorMsg = response.body?['message'] ?? 'Failed to load sales report';
+    throw Exception(errorMsg);
+  }
+
   /// Fetches a sales forecast for a specific item in a specific shop.
   ///
   /// __Request:__

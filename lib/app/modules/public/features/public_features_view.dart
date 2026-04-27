@@ -111,7 +111,7 @@ class PublicFeaturesView extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            'A premium look at what each operational team can do inside Smart Retail.',
+            'A premium look at what each operational team can do inside Nanonux Business Central.',
             style: GoogleFonts.manrope(
               color: Colors.white.withValues(alpha: 0.9),
               fontSize: 16,
@@ -142,7 +142,7 @@ class PublicFeaturesView extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(18),
           child: Text(
-            'Smart Retail is intentionally role-specific. Merchant, Staff, and Shop modules are designed around different decisions, while sharing one connected operational dataset.',
+            'Nanonux Business Central is intentionally role-specific. Merchant, Staff, and Shop modules are designed around different decisions, while sharing one connected operational dataset.',
             style: GoogleFonts.manrope(
               fontSize: 15,
               color: const Color(0xFF334E68),
@@ -233,7 +233,7 @@ class PublicFeaturesView extends StatelessWidget {
               const SizedBox(
                 width: 540,
                 child: Text(
-                  'Ready to experience Smart Retail workflows live? Choose your portal and start with the role that matches your team.',
+                  'Ready to experience Nanonux Business Central workflows live? Choose your portal and start with the role that matches your team.',
                   style: TextStyle(
                     color: Color(0xFFDBE7F0),
                     fontSize: 16,

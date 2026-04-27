@@ -64,7 +64,7 @@ class PublicSupportView extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Guided onboarding, troubleshooting, and deployment support for your Smart Retail operations.',
+                    'Guided onboarding, troubleshooting, and deployment support for your Nanonux Business Central operations.',
                     style: GoogleFonts.manrope(
                       color: Colors.white.withValues(alpha: 0.9),
                       height: 1.6,

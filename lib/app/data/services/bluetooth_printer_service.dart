@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -7,6 +8,7 @@ import 'package:flutter/foundation.dart'
     show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
+import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import 'package:get/get.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -15,7 +17,9 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
+import 'package:smart_retail/app/data/models/invoice_model.dart';
 import 'package:smart_retail/app/data/services/printer_preferences_storage.dart';
+import 'package:smart_retail/app/services/invoice_pdf_service.dart';
 import 'package:smart_retail/app/utils/app_logger.dart';
 import 'package:smart_retail/app/utils/dialog_utils.dart';
 import 'package:smart_retail/app/utils/web_file_utils.dart';
@@ -24,7 +28,17 @@ class BluetoothPrinterService extends GetxService {
   final devices = <BluetoothDevice>[].obs;
   final isScanning = false.obs;
   final selectedDevice = Rxn<BluetoothDevice>();
+  final selectedTransport = 'classic'.obs;
   final debugLogs = <String>[].obs;
+
+  final FlutterReactiveBle _ble = FlutterReactiveBle();
+  BluetoothConnection? _activeConnection;
+  StreamSubscription<BluetoothDiscoveryResult>? _discoverySubscription;
+  StreamSubscription<DiscoveredDevice>? _bleScanSubscription;
+  StreamSubscription<ConnectionStateUpdate>? _bleConnectionSubscription;
+  String? _bleConnectedDeviceId;
+  String? _bleServiceUuid;
+  String? _bleCharacteristicUuid;
 
   static const int _maxDebugLogEntries = 80;
 
@@ -40,6 +54,98 @@ class BluetoothPrinterService extends GetxService {
 
   void clearDebugLogs() {
     debugLogs.clear();
+  }
+
+  Future<BluetoothConnection> _ensureConnection(BluetoothDevice device) async {
+    final active = _activeConnection;
+    if (active?.isConnected == true) {
+      return active!;
+    }
+
+    _activeConnection = await BluetoothConnection.toAddress(device.address);
+    return _activeConnection!;
+  }
+
+  Future<void> _ensureBlePermissions() async {
+    final perms = <Permission>[];
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      perms.addAll([
+        Permission.bluetoothScan,
+        Permission.bluetoothConnect,
+        Permission.locationWhenInUse,
+      ]);
+    } else if (defaultTargetPlatform == TargetPlatform.iOS) {
+      perms.addAll([Permission.bluetooth, Permission.locationWhenInUse]);
+    }
+
+    if (perms.isNotEmpty) {
+      final statuses = await perms.request();
+      final denied = statuses.values.any(
+        (status) => status.isDenied || status.isPermanentlyDenied,
+      );
+      if (denied) {
+        throw StateError('Bluetooth permissions denied');
+      }
+    }
+  }
+
+  Future<void> scanBleForDevices({
+    Duration timeout = const Duration(seconds: 4),
+  }) async {
+    if (kIsWeb) {
+      devices.clear();
+      logDebug('BLE scanning is not available on web.');
+      return;
+    }
+
+    try {
+      await _ensureBlePermissions();
+    } catch (e) {
+      logDebug('Bluetooth permission denied while scanning BLE printers.');
+      DialogUtils.showError(
+        'Bluetooth permission denied. Please enable permissions in settings.',
+      );
+      return;
+    }
+
+    try {
+      isScanning.value = true;
+      devices.clear();
+      logDebug('Started BLE printer scan. Loading discovery results.');
+
+      await _bleScanSubscription?.cancel();
+      _bleScanSubscription = null;
+
+      final stream = _ble.scanForDevices(
+        withServices: const [],
+        scanMode: ScanMode.lowLatency,
+      );
+
+      _bleScanSubscription = stream.listen((device) {
+        final printerDevice = BluetoothDevice(
+          address: device.id,
+          name: device.name.isEmpty ? 'Unknown' : device.name,
+        );
+        if (!devices.any((item) => item.address == printerDevice.address)) {
+          devices.add(printerDevice);
+          logDebug(
+            'Discovered BLE printer: ${printerDevice.name ?? 'Unknown'} (${printerDevice.address}).',
+          );
+        }
+      });
+
+      await Future.delayed(timeout);
+      await _bleScanSubscription?.cancel();
+      _bleScanSubscription = null;
+      logDebug('BLE printer scan finished. Total devices: ${devices.length}.');
+    } catch (e) {
+      logDebug('BLE scan error: $e');
+      DialogUtils.showError('Failed to scan BLE printers: $e');
+    } finally {
+      await _bleScanSubscription?.cancel();
+      _bleScanSubscription = null;
+      isScanning.value = false;
+    }
   }
 
   Future<void> scanForDevices() async {
@@ -81,32 +187,49 @@ class BluetoothPrinterService extends GetxService {
     try {
       isScanning.value = true;
       devices.clear();
-      logDebug('Started printer scan. Loading bonded devices and discovery results.');
+      logDebug(
+        'Started printer scan. Loading bonded devices and discovery results.',
+      );
 
       final bonded = await FlutterBluetoothSerial.instance.getBondedDevices();
       devices.assignAll(bonded);
       logDebug('Found ${bonded.length} bonded device(s).');
 
+      await _discoverySubscription?.cancel();
+      _discoverySubscription = null;
       final stream = FlutterBluetoothSerial.instance.startDiscovery();
-      stream.listen((result) {
+      _discoverySubscription = stream.listen((result) {
         final device = result.device;
         if (!devices.any((item) => item.address == device.address)) {
           devices.add(device);
-          logDebug('Discovered printer: ${device.name ?? 'Unknown'} (${device.address}).');
+          logDebug(
+            'Discovered printer: ${device.name ?? 'Unknown'} (${device.address}).',
+          );
         }
       });
 
       await Future.delayed(const Duration(seconds: 4));
+      await FlutterBluetoothSerial.instance.cancelDiscovery();
+      await _discoverySubscription?.cancel();
+      _discoverySubscription = null;
       logDebug('Printer scan finished. Total devices: ${devices.length}.');
     } catch (e) {
       logDebug('Scan error: $e');
       DialogUtils.showError('Failed to scan for printers: $e');
     } finally {
+      await FlutterBluetoothSerial.instance.cancelDiscovery();
+      await _discoverySubscription?.cancel();
+      _discoverySubscription = null;
       isScanning.value = false;
     }
   }
 
-  Future<void> connectToDevice(BluetoothDevice? device) async {
+  Future<void> connectToDevice(
+    BluetoothDevice? device, {
+    String transport = 'classic',
+    String? bleServiceUuid,
+    String? bleCharacteristicUuid,
+  }) async {
     if (kIsWeb) {
       logDebug('Bluetooth connect requested on web, which is not supported.');
       DialogUtils.showInfo('Bluetooth not supported on web');
@@ -114,18 +237,55 @@ class BluetoothPrinterService extends GetxService {
     }
     if (device == null) return;
 
+    final normalizedTransport = transport.toLowerCase().trim();
+    if (normalizedTransport == 'ble') {
+      if (bleServiceUuid == null ||
+          bleServiceUuid.trim().isEmpty ||
+          bleCharacteristicUuid == null ||
+          bleCharacteristicUuid.trim().isEmpty) {
+        logDebug('BLE printer UUIDs are missing.');
+        DialogUtils.showError(
+          'BLE printer service and characteristic UUIDs are required',
+        );
+        return;
+      }
+      await connectBle(
+        device,
+        serviceUuid: bleServiceUuid.trim(),
+        characteristicUuid: bleCharacteristicUuid.trim(),
+      );
+      return;
+    }
+
+    await _closeBleConnection();
+    selectedTransport.value = 'classic';
+
+    if (selectedDevice.value?.address == device.address &&
+        _activeConnection?.isConnected == true) {
+      logDebug('Printer already connected: ${device.name ?? device.address}.');
+      return;
+    }
+
+    if (selectedDevice.value?.address != device.address) {
+      await disconnect();
+    }
+
     try {
       if (defaultTargetPlatform == TargetPlatform.android) {
         final status = await Permission.bluetoothConnect.request();
         if (status.isDenied || status.isPermanentlyDenied) {
-          logDebug('Bluetooth connect permission denied for ${device.name ?? device.address}.');
+          logDebug(
+            'Bluetooth connect permission denied for ${device.name ?? device.address}.',
+          );
           DialogUtils.showError('Bluetooth connect permission required');
           return;
         }
       } else if (defaultTargetPlatform == TargetPlatform.iOS) {
         final status = await Permission.bluetooth.request();
         if (status.isDenied || status.isPermanentlyDenied) {
-          logDebug('Bluetooth permission denied for ${device.name ?? device.address}.');
+          logDebug(
+            'Bluetooth permission denied for ${device.name ?? device.address}.',
+          );
           DialogUtils.showError('Bluetooth permission required');
           return;
         }
@@ -135,18 +295,114 @@ class BluetoothPrinterService extends GetxService {
     }
 
     try {
+      final connection = await _ensureConnection(device);
       selectedDevice.value = device;
-      logDebug('Selected printer: ${device.name ?? 'Unknown'} (${device.address}).');
+      logDebug(
+        'Connected printer: ${device.name ?? 'Unknown'} (${device.address}).',
+      );
+      await connection.output.allSent;
     } catch (e) {
+      await _closeActiveConnection();
+      selectedDevice.value = null;
       logDebug('Connect error: $e');
       DialogUtils.showError('Failed to select printer: $e');
     }
   }
 
+  Future<void> connectBle(
+    BluetoothDevice device, {
+    required String serviceUuid,
+    required String characteristicUuid,
+  }) async {
+    if (device.address == null || device.address!.isEmpty) {
+      logDebug('BLE printer device id is missing.');
+      DialogUtils.showError('BLE printer id is missing');
+      return;
+    }
+
+    if (kIsWeb) {
+      logDebug('Bluetooth connect requested on web, which is not supported.');
+      DialogUtils.showInfo('Bluetooth not supported on web');
+      return;
+    }
+
+    try {
+      await _ensureBlePermissions();
+    } catch (e) {
+      logDebug('BLE connect permission check failed: $e');
+      DialogUtils.showError('Bluetooth permission required');
+      return;
+    }
+
+    try {
+      await _closeActiveConnection();
+      await _closeBleConnection();
+
+      final serviceId = Uuid.parse(serviceUuid);
+      final characteristicId = Uuid.parse(characteristicUuid);
+      final deviceId = device.address!;
+      final completer = Completer<void>();
+
+      _bleServiceUuid = serviceUuid;
+      _bleCharacteristicUuid = characteristicUuid;
+      selectedDevice.value = device;
+      selectedTransport.value = 'ble';
+
+      _bleConnectionSubscription = _ble
+          .connectToDevice(
+            id: deviceId,
+            servicesWithCharacteristicsToDiscover: {
+              serviceId: [characteristicId],
+            },
+            connectionTimeout: const Duration(seconds: 10),
+          )
+          .listen(
+            (update) async {
+              if (update.connectionState == DeviceConnectionState.connected) {
+                _bleConnectedDeviceId = deviceId;
+                logDebug(
+                  'Connected BLE printer: ${device.name ?? 'Unknown'} (${device.address}).',
+                );
+                if (!completer.isCompleted) {
+                  completer.complete();
+                }
+                try {
+                  await _ble.requestMtu(deviceId: deviceId, mtu: 247);
+                } catch (_) {}
+              } else if (update.connectionState ==
+                  DeviceConnectionState.disconnected) {
+                if (_bleConnectedDeviceId == deviceId) {
+                  _bleConnectedDeviceId = null;
+                }
+              }
+            },
+            onError: (error) {
+              _bleConnectedDeviceId = null;
+              if (!completer.isCompleted) {
+                completer.completeError(error);
+              }
+            },
+          );
+
+      await completer.future.timeout(const Duration(seconds: 12));
+    } catch (e) {
+      await _closeBleConnection();
+      selectedDevice.value = null;
+      selectedTransport.value = 'classic';
+      logDebug('BLE connect error: $e');
+      DialogUtils.showError('Failed to connect BLE printer: $e');
+    }
+  }
+
   Future<void> disconnect() async {
     try {
-      logDebug('Disconnecting printer: ${selectedDevice.value?.name ?? 'Unknown'}');
+      logDebug(
+        'Disconnecting printer: ${selectedDevice.value?.name ?? 'Unknown'}',
+      );
+      await _closeActiveConnection();
+      await _closeBleConnection();
       selectedDevice.value = null;
+      selectedTransport.value = 'classic';
       logDebug('Printer disconnected.');
     } catch (e) {
       logDebug('Disconnect error: $e');
@@ -244,6 +500,86 @@ class BluetoothPrinterService extends GetxService {
     return Uint8List.fromList([...header, ...rasterBytes]);
   }
 
+  Future<Uint8List> _encodePdfRasterToEscPos(
+    PdfRaster raster,
+    int targetWidthPx,
+  ) async {
+    final uiImage = await raster.toImage();
+    final targetHeightPx = (uiImage.height * targetWidthPx / uiImage.width)
+        .round();
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder);
+    canvas.drawRect(
+      Rect.fromLTWH(0, 0, targetWidthPx.toDouble(), targetHeightPx.toDouble()),
+      Paint()..color = Colors.white,
+    );
+    final paint = Paint()..filterQuality = FilterQuality.high;
+    canvas.drawImageRect(
+      uiImage,
+      Rect.fromLTWH(0, 0, uiImage.width.toDouble(), uiImage.height.toDouble()),
+      Rect.fromLTWH(0, 0, targetWidthPx.toDouble(), targetHeightPx.toDouble()),
+      paint,
+    );
+
+    final image = recorder.endRecording().toImageSync(
+      targetWidthPx,
+      targetHeightPx,
+    );
+    final byteData = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+    if (byteData == null) {
+      throw StateError('Failed to rasterize PDF page for bluetooth printing');
+    }
+    return _encodeEscPosRaster(byteData, targetWidthPx, targetHeightPx);
+  }
+
+  Future<bool> _printPdfBytesViaBluetooth(
+    Uint8List pdfBytes, {
+    String? documentName,
+  }) async {
+    if (kIsWeb) {
+      logDebug('Bluetooth PDF printing is not available on web.');
+      return false;
+    }
+
+    final device = selectedDevice.value;
+    if (device == null) {
+      logDebug('No bluetooth printer selected.');
+      DialogUtils.showInfo('Please select a bluetooth printer first.');
+      return false;
+    }
+
+    try {
+      final preferences = await PrinterPreferencesStorage.load();
+      final targetWidthPx = _paperWidthToPixels(preferences.paperWidthMm);
+      logDebug(
+        'Using ${selectedTransport.value.toUpperCase()} printer ${device.address} for PDF print.',
+      );
+
+      await for (final page in Printing.raster(pdfBytes, dpi: 203)) {
+        final pageBytes = await _encodePdfRasterToEscPos(page, targetWidthPx);
+        await _writePrintBytes(pageBytes);
+        await _writePrintBytes(Uint8List.fromList(const [0x0A, 0x0A, 0x0A]));
+      }
+
+      logDebug(
+        'PDF print complete${documentName == null ? '' : ' for $documentName'}.',
+      );
+      return true;
+    } catch (e) {
+      logDebug('PDF bluetooth print failed: $e');
+      DialogUtils.showError('Failed to print PDF on bluetooth printer: $e');
+      return false;
+    }
+  }
+
+  Future<bool> printInvoice(Invoice invoice) async {
+    final pdfBytes = await InvoicePdfService.buildInvoicePdfBytes(invoice);
+    return _printPdfBytesViaBluetooth(
+      pdfBytes,
+      documentName: invoice.invoiceNumber,
+    );
+  }
+
   Future<bool> _sendRasterReceipt(
     String receiptText, {
     required bool allowFallbackPdf,
@@ -263,11 +599,10 @@ class BluetoothPrinterService extends GetxService {
     try {
       final preferences = await PrinterPreferencesStorage.load();
       final bytes = await _renderReceiptRasterBytes(receiptText, preferences);
-      final connection = await BluetoothConnection.toAddress(device.address);
-      logDebug('Connected to ${device.address} for raster print.');
-      connection.output.add(bytes);
-      await connection.output.allSent;
-      await connection.close();
+      logDebug(
+        'Using ${selectedTransport.value.toUpperCase()} printer ${device.address} for raster print.',
+      );
+      await _writePrintBytes(bytes);
       logDebug('Raster print complete.');
       return true;
     } catch (e) {
@@ -281,6 +616,111 @@ class BluetoothPrinterService extends GetxService {
       }
       return false;
     }
+  }
+
+  Future<void> _closeActiveConnection() async {
+    final connection = _activeConnection;
+    _activeConnection = null;
+    if (connection == null) return;
+
+    try {
+      await connection.close();
+    } catch (e) {
+      logDebug('Failed to close printer connection cleanly: $e');
+    }
+  }
+
+  Future<void> _closeBleConnection() async {
+    final subscription = _bleConnectionSubscription;
+    _bleConnectionSubscription = null;
+    _bleConnectedDeviceId = null;
+    _bleServiceUuid = null;
+    _bleCharacteristicUuid = null;
+
+    try {
+      await subscription?.cancel();
+    } catch (e) {
+      logDebug('Failed to close BLE printer connection cleanly: $e');
+    }
+  }
+
+  Future<void> _writePrintBytes(Uint8List bytes) async {
+    if (selectedTransport.value == 'ble') {
+      await _writeBlePrintBytes(bytes);
+      return;
+    }
+
+    final connection = _activeConnection;
+    if (connection == null || !connection.isConnected) {
+      throw StateError('No classic bluetooth printer connected');
+    }
+
+    connection.output.add(bytes);
+    await connection.output.allSent;
+  }
+
+  Future<void> _writeBlePrintBytes(Uint8List bytes) async {
+    final device = selectedDevice.value;
+    final serviceUuid = _bleServiceUuid;
+    final characteristicUuid = _bleCharacteristicUuid;
+
+    if (device == null ||
+        device.address == null ||
+        _bleConnectedDeviceId == null ||
+        serviceUuid == null ||
+        characteristicUuid == null) {
+      throw StateError('No BLE printer connected');
+    }
+
+    final serviceId = Uuid.parse(serviceUuid);
+    final charId = Uuid.parse(characteristicUuid);
+    final characteristic = QualifiedCharacteristic(
+      deviceId: device.address!,
+      serviceId: serviceId,
+      characteristicId: charId,
+    );
+
+    const chunkSize = 180;
+    var useWithResponse = true;
+    for (var offset = 0; offset < bytes.length; offset += chunkSize) {
+      final end = (offset + chunkSize) > bytes.length
+          ? bytes.length
+          : offset + chunkSize;
+      final chunk = bytes.sublist(offset, end);
+      try {
+        if (useWithResponse) {
+          await _ble.writeCharacteristicWithResponse(
+            characteristic,
+            value: chunk,
+          );
+        } else {
+          await _ble.writeCharacteristicWithoutResponse(
+            characteristic,
+            value: chunk,
+          );
+        }
+      } catch (e) {
+        if (useWithResponse) {
+          useWithResponse = false;
+          await _ble.writeCharacteristicWithoutResponse(
+            characteristic,
+            value: chunk,
+          );
+        } else {
+          rethrow;
+        }
+      }
+      await Future.delayed(const Duration(milliseconds: 25));
+    }
+  }
+
+  @override
+  void onClose() {
+    _discoverySubscription?.cancel();
+    _bleScanSubscription?.cancel();
+    _closeBleConnection();
+    _activeConnection?.close();
+    super.onClose();
   }
 
   Future<Uint8List> generateVoucherPdf(String voucherText) async {

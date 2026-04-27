@@ -48,7 +48,9 @@ class MerchantShopsApiService extends GetxService {
       'client_operation_id': clientOperationId,
       'entity_type': 'shop',
       'action': action,
-      'method': action == 'delete' ? 'DELETE' : (action == 'update' ? 'PUT' : 'POST'),
+      'method': action == 'delete'
+          ? 'DELETE'
+          : (action == 'update' ? 'PUT' : 'POST'),
       'endpoint': endpoint,
       'payload': payload,
       'headers': {'X-Client-Operation-Id': clientOperationId},
@@ -103,19 +105,25 @@ class MerchantShopsApiService extends GetxService {
       // Also include any shops persisted in the local DB for the current merchant
       try {
         final merchantId = _authService.user.value?.merchantId ?? '';
-        final localRows = await _localDatabaseService.listShopsForMerchant(merchantId);
-        final localShops = localRows.map((r) => Shop.fromJson({
-              'id': r['id'],
-              'name': r['name'],
-              'address': r['address'],
-              'merchantId': r['merchantId'] ?? r['merchant_id'],
-            'taxRate': r['taxRate'] ?? r['tax_rate'],
-            'deliveryCharge': r['deliveryCharge'] ?? r['delivery_charge'],
-            'isActive': r['isActive'] ?? r['is_active'],
-            'isPrimary': r['isPrimary'] ?? r['is_primary'],
-              'createdAt': r['createdAt'] ?? r['created_at'],
-              'updatedAt': r['updatedAt'] ?? r['updated_at'],
-            })).toList();
+        final localRows = await _localDatabaseService.listShopsForMerchant(
+          merchantId,
+        );
+        final localShops = localRows
+            .map(
+              (r) => Shop.fromJson({
+                'id': r['id'],
+                'name': r['name'],
+                'address': r['address'],
+                'merchantId': r['merchantId'] ?? r['merchant_id'],
+                'taxRate': r['taxRate'] ?? r['tax_rate'],
+                'deliveryCharge': r['deliveryCharge'] ?? r['delivery_charge'],
+                'isActive': r['isActive'] ?? r['is_active'],
+                'isPrimary': r['isPrimary'] ?? r['is_primary'],
+                'createdAt': r['createdAt'] ?? r['created_at'],
+                'updatedAt': r['updatedAt'] ?? r['updated_at'],
+              }),
+            )
+            .toList();
         return [..._mockShops, ...localShops];
       } catch (_) {
         return _mockShops;
@@ -125,30 +133,42 @@ class MerchantShopsApiService extends GetxService {
     // Local-only: fetch from local DB
     if (_appConfig.localStorageOnly) {
       try {
-          // Determine merchantId robustly: prefer populated user.merchantId, else fall back to stored userId
-          String merchantId = _authService.user.value?.merchantId ?? '';
-          if ((merchantId.isEmpty)) {
-            merchantId = _authService.userId.value ?? '';
-          }
-          if ((merchantId.isEmpty)) {
-            // As a last resort, call getUserId() which may read persisted storage
-            merchantId = await _authService.getUserId() ?? '';
-          }
-          final rows = await _localDatabaseService.listShopsForMerchant(merchantId);
-        try { getLogger('app').info('[MerchantShopsApiService] Local listShops for merchantId=$merchantId returned ${rows.length} rows'); } catch (_) {}
-        try { getLogger('app').info('[MerchantShopsApiService] Local rows: $rows'); } catch (_) {}
-        return rows.map((r) => Shop.fromJson({
-          'id': r['id'],
-          'name': r['name'],
-          'address': r['address'],
-          'merchantId': r['merchantId'] ?? r['merchant_id'],
-          'taxRate': r['taxRate'] ?? r['tax_rate'],
-          'deliveryCharge': r['deliveryCharge'] ?? r['delivery_charge'],
-          'isActive': r['isActive'] ?? r['is_active'],
-          'isPrimary': r['isPrimary'] ?? r['is_primary'],
-          'createdAt': r['createdAt'] ?? r['created_at'],
-          'updatedAt': r['updatedAt'] ?? r['updated_at'],
-        })).toList();
+        // Determine merchantId robustly: prefer populated user.merchantId, else fall back to stored userId
+        String merchantId = _authService.user.value?.merchantId ?? '';
+        if ((merchantId.isEmpty)) {
+          merchantId = _authService.userId.value ?? '';
+        }
+        if ((merchantId.isEmpty)) {
+          // As a last resort, call getUserId() which may read persisted storage
+          merchantId = await _authService.getUserId() ?? '';
+        }
+        final rows = await _localDatabaseService.listShopsForMerchant(
+          merchantId,
+        );
+        try {
+          getLogger('app').info(
+            '[MerchantShopsApiService] Local listShops for merchantId=$merchantId returned ${rows.length} rows',
+          );
+        } catch (_) {}
+        try {
+          getLogger('app').info('[MerchantShopsApiService] Local rows: $rows');
+        } catch (_) {}
+        return rows
+            .map(
+              (r) => Shop.fromJson({
+                'id': r['id'],
+                'name': r['name'],
+                'address': r['address'],
+                'merchantId': r['merchantId'] ?? r['merchant_id'],
+                'taxRate': r['taxRate'] ?? r['tax_rate'],
+                'deliveryCharge': r['deliveryCharge'] ?? r['delivery_charge'],
+                'isActive': r['isActive'] ?? r['is_active'],
+                'isPrimary': r['isPrimary'] ?? r['is_primary'],
+                'createdAt': r['createdAt'] ?? r['created_at'],
+                'updatedAt': r['updatedAt'] ?? r['updated_at'],
+              }),
+            )
+            .toList();
       } catch (e) {
         throw Exception('Local fetch shops failed: $e');
       }
@@ -165,7 +185,7 @@ class MerchantShopsApiService extends GetxService {
       throw Exception(response.body?['message'] ?? 'Failed to load shops');
     }
   }
-  
+
   Future<Shop?> getShopById(String shopId) async {
     if (shopId.isEmpty) return null;
 
@@ -214,9 +234,18 @@ class MerchantShopsApiService extends GetxService {
   ///     "address": "456 Market St"
   ///   }
   ///   ```
-  Future<Shop> createShop(String name, String address) async {
+  Future<Shop> createShop(
+    String name,
+    String address, {
+    double taxRate = 5.0,
+  }) async {
     final clientOperationId = const Uuid().v4();
-    final payload = {'name': name, 'address': address, 'clientOperationId': clientOperationId};
+    final payload = {
+      'name': name,
+      'address': address,
+      'taxRate': taxRate,
+      'clientOperationId': clientOperationId,
+    };
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
       final newShop = Shop(
@@ -224,6 +253,7 @@ class MerchantShopsApiService extends GetxService {
         name: name,
         address: address,
         merchantId: 'mock-merchant-id',
+        taxRate: taxRate,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
@@ -243,20 +273,28 @@ class MerchantShopsApiService extends GetxService {
         'merchant_id': merchantId,
         'name': name,
         'address': address,
+        'tax_rate': taxRate,
+        'taxRate': taxRate,
         'created_at': DateTime.now().toIso8601String(),
         'updated_at': DateTime.now().toIso8601String(),
       };
       try {
-        getLogger('app').info('[MerchantShopsApiService] Local createShop payload: $payloadLocal');
+        getLogger('app').info(
+          '[MerchantShopsApiService] Local createShop payload: $payloadLocal',
+        );
       } catch (_) {}
       await _localDatabaseService.upsertShop(payloadLocal);
-      try { getLogger('app').info('[MerchantShopsApiService] Local createShop persisted id=$id'); } catch (_) {}
+      try {
+        getLogger(
+          'app',
+        ).info('[MerchantShopsApiService] Local createShop persisted id=$id');
+      } catch (_) {}
       return Shop(
         id: id,
         name: name,
         address: address,
         merchantId: merchantId,
-        taxRate: 5.0,
+        taxRate: taxRate,
         deliveryCharge: 0.0,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
@@ -285,7 +323,7 @@ class MerchantShopsApiService extends GetxService {
           name: name,
           address: address,
           merchantId: 'pending',
-          taxRate: 5.0,
+          taxRate: taxRate,
           deliveryCharge: 0.0,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
@@ -307,9 +345,19 @@ class MerchantShopsApiService extends GetxService {
   ///     "address": "789 Commerce Ave"
   ///   }
   ///   ```
-  Future<Shop> updateShop(String shopId, String name, String address) async {
+  Future<Shop> updateShop(
+    String shopId,
+    String name,
+    String address, {
+    double taxRate = 5.0,
+  }) async {
     final clientOperationId = const Uuid().v4();
-    final payload = {'name': name, 'address': address, 'clientOperationId': clientOperationId};
+    final payload = {
+      'name': name,
+      'address': address,
+      'taxRate': taxRate,
+      'clientOperationId': clientOperationId,
+    };
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 1));
       final index = _mockShops.indexWhere((s) => s.id == shopId);
@@ -319,6 +367,7 @@ class MerchantShopsApiService extends GetxService {
           name: name,
           address: address,
           merchantId: _mockShops[index].merchantId,
+          taxRate: taxRate,
           createdAt: _mockShops[index].createdAt,
           updatedAt: DateTime.now(),
         );
@@ -339,6 +388,8 @@ class MerchantShopsApiService extends GetxService {
         'merchant_id': merchantId,
         'name': name,
         'address': address,
+        'tax_rate': taxRate,
+        'taxRate': taxRate,
         'updated_at': DateTime.now().toIso8601String(),
       };
       await _localDatabaseService.upsertShop(payloadLocal);
@@ -347,6 +398,7 @@ class MerchantShopsApiService extends GetxService {
         name: name,
         address: address,
         merchantId: payloadLocal['merchant_id'] as String,
+        taxRate: taxRate,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
@@ -355,7 +407,11 @@ class MerchantShopsApiService extends GetxService {
     try {
       final headers = await _getHeaders();
       headers['X-Client-Operation-Id'] = clientOperationId;
-      final response = await _connect.put('$_baseUrl/$shopId', payload, headers: headers);
+      final response = await _connect.put(
+        '$_baseUrl/$shopId',
+        payload,
+        headers: headers,
+      );
 
       if (response.isOk && response.body['data'] != null) {
         return Shop.fromJson(asMap(response.body['data']));
@@ -374,6 +430,7 @@ class MerchantShopsApiService extends GetxService {
           name: name,
           address: address,
           merchantId: 'pending',
+          taxRate: taxRate,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         );

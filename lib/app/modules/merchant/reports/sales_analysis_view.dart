@@ -6,11 +6,11 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:smart_retail/app/constants/currency.dart';
 import 'package:smart_retail/app/data/models/shop_model.dart';
+import 'package:smart_retail/app/modules/merchant/reports/report_analysis_utils.dart';
 import 'package:smart_retail/app/modules/merchant/reports/sales_analysis_controller.dart';
 import 'package:smart_retail/app/modules/merchant/widgets/merchant_main_scaffold.dart';
 import 'package:smart_retail/app/widgets/app_colors.dart';
 import 'package:smart_retail/app/widgets/responsive_data_table.dart';
-import 'package:smart_retail/app/modules/merchant/reports/report_analysis_utils.dart';
 
 class SalesAnalysisView extends GetView<SalesAnalysisController> {
   const SalesAnalysisView({super.key});
@@ -23,6 +23,7 @@ class SalesAnalysisView extends GetView<SalesAnalysisController> {
         if (controller.isLoading.value) {
           return const Center(child: CircularProgressIndicator());
         }
+
         if (controller.errorMessage.value != null) {
           return Center(child: Text('Error: ${controller.errorMessage.value}'));
         }
@@ -33,135 +34,431 @@ class SalesAnalysisView extends GetView<SalesAnalysisController> {
             child: Text('No sales data found for the selected period.'),
           );
         }
+        final pageSnapshot = controller.pagedAnalysisSnapshot.value ?? snapshot;
 
-        return SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(8, 8, 8, 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildFilterBar(context),
-              const SizedBox(height: 16),
-              _buildKpiGrid(snapshot),
-              const SizedBox(height: 16),
-              _buildTrendCard(snapshot),
-              const SizedBox(height: 16),
-              _buildSummaryRow(snapshot),
-              const SizedBox(height: 16),
-              _buildTopProductsTable(snapshot.topProducts),
-              const SizedBox(height: 16),
-              _buildInventoryInsights(snapshot),
-              const SizedBox(height: 16),
-              _buildRecommendations(snapshot.recommendations),
-            ],
-          ),
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final contentWidth = constraints.maxWidth > 1440
+                ? 1360.0
+                : constraints.maxWidth;
+
+            return DefaultTabController(
+              length: 5,
+              child: SizedBox.expand(
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: SizedBox(
+                    width: contentWidth,
+                    height: constraints.maxHeight,
+                    child: NestedScrollView(
+                      headerSliverBuilder: (context, innerBoxIsScrolled) {
+                        return [
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                              child: _buildDashboardHeader(snapshot),
+                            ),
+                          ),
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                              child: _buildFilterPanel(context),
+                            ),
+                          ),
+                          SliverPadding(
+                            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                            sliver: SliverPersistentHeader(
+                              pinned: true,
+                              delegate: _PinnedHeaderDelegate(
+                                child: _buildTabBar(),
+                              ),
+                            ),
+                          ),
+                        ];
+                      },
+                      body: TabBarView(
+                        children: [
+                          _buildOverviewTab(snapshot),
+                          _buildTrendTab(snapshot),
+                          _buildProductsTab(pageSnapshot.topProducts),
+                          _buildInventoryTab(pageSnapshot),
+                          _buildRecommendationsTab(
+                            pageSnapshot.recommendations,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
         );
       }),
     );
   }
 
-  Widget _buildFilterBar(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.only(bottom: 8.0),
-      child: Row(
-        children: [
-          _buildPeriodDropdown(),
-          const SizedBox(width: 16),
-          Obx(
-            () => controller.selectedPeriod.value == ReportPeriod.custom
-                ? _buildCustomDateRange(context)
-                : const SizedBox.shrink(),
+  Widget _buildDashboardHeader(BusinessAnalysisSnapshot snapshot) {
+    return Container(
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [AppColors.merchant.shade800, AppColors.merchant.shade600],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.merchant.withValues(alpha: 0.22),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
           ),
-          _buildShopDropdown(),
-          const SizedBox(width: 16),
-          _buildGroupByDropdown(),
         ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Icon(
+                  Icons.analytics_rounded,
+                  color: Colors.white,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: 14),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Reports',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'The filters below update the whole report. Use the tabs to jump between each section.',
+                      style: TextStyle(color: Colors.white70, height: 1.4),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              _summaryChip(
+                'Period',
+                controller.selectedPeriod.value.name.toUpperCase(),
+              ),
+              _summaryChip(
+                'Shop',
+                controller.selectedShop.value?.name ?? 'All Shops',
+              ),
+              _summaryChip('Group by', controller.selectedGroupBy.value),
+              _summaryChip('Revenue', _money(snapshot.revenue)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTabBar() {
+    return Container(
+      padding: const EdgeInsets.all(6),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: TabBar(
+        isScrollable: true,
+        tabAlignment: TabAlignment.start,
+        labelColor: Colors.white,
+        unselectedLabelColor: Colors.black54,
+        indicator: BoxDecoration(
+          color: AppColors.merchant,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        indicatorSize: TabBarIndicatorSize.tab,
+        tabs: const [
+          Tab(text: 'Overview', icon: Icon(Icons.dashboard_rounded)),
+          Tab(text: 'Trend', icon: Icon(Icons.show_chart_rounded)),
+          Tab(text: 'Products', icon: Icon(Icons.inventory_2_outlined)),
+          Tab(text: 'Inventory', icon: Icon(Icons.warehouse_outlined)),
+          Tab(text: 'Recommendations', icon: Icon(Icons.lightbulb_outline)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterPanel(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.merchant.shade50,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(
+                  Icons.tune_rounded,
+                  color: AppColors.merchant.shade700,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Filters',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'These controls change the whole report, not a single tab.',
+                      style: TextStyle(color: Colors.black54, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 16,
+            runSpacing: 16,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              _buildPeriodDropdown(),
+              Obx(
+                () => controller.selectedPeriod.value == ReportPeriod.custom
+                    ? _buildCustomDateRange(context)
+                    : const SizedBox.shrink(),
+              ),
+              _buildShopDropdown(),
+              _buildGroupByDropdown(),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOverviewTab(BusinessAnalysisSnapshot snapshot) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildKpiGrid(snapshot),
+          const SizedBox(height: 16),
+          _buildOverviewHighlights(snapshot),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOverviewHighlights(BusinessAnalysisSnapshot snapshot) {
+    return Card(
+      elevation: 0,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Snapshot',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                _summaryChip('Revenue', _money(snapshot.revenue)),
+                _summaryChip('Profit', _money(snapshot.profit)),
+                _summaryChip('Orders', snapshot.totalSales.toString()),
+                _summaryChip('Units', snapshot.totalUnitsSold.toString()),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildPeriodDropdown() {
     return Obx(
-      () => DropdownButton<ReportPeriod>(
-        value: controller.selectedPeriod.value,
-        onChanged: controller.onPeriodChanged,
-        items: const [
-          DropdownMenuItem(
-            value: ReportPeriod.daily,
-            child: Text('Last 24 Hours'),
+      () => _filterField(
+        label: 'Period',
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<ReportPeriod>(
+            value: controller.selectedPeriod.value,
+            onChanged: controller.onPeriodChanged,
+            items: const [
+              DropdownMenuItem(
+                value: ReportPeriod.daily,
+                child: Text('Last 24 Hours'),
+              ),
+              DropdownMenuItem(
+                value: ReportPeriod.weekly,
+                child: Text('Last 7 Days'),
+              ),
+              DropdownMenuItem(
+                value: ReportPeriod.monthly,
+                child: Text('Last 30 Days'),
+              ),
+              DropdownMenuItem(
+                value: ReportPeriod.yearly,
+                child: Text('Last Year'),
+              ),
+              DropdownMenuItem(
+                value: ReportPeriod.custom,
+                child: Text('Custom Range'),
+              ),
+            ],
           ),
-          DropdownMenuItem(
-            value: ReportPeriod.weekly,
-            child: Text('Last 7 Days'),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCustomDateRange(BuildContext context) {
+    return _filterField(
+      label: 'Custom range',
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          InkWell(
+            onTap: () => controller.selectCustomDate(context, true),
+            child: Obx(
+              () => Text(
+                'Start: ${controller.customStartDate.value != null ? DateFormat.yMd().format(controller.customStartDate.value!) : 'Select'}',
+              ),
+            ),
           ),
-          DropdownMenuItem(
-            value: ReportPeriod.monthly,
-            child: Text('Last 30 Days'),
-          ),
-          DropdownMenuItem(
-            value: ReportPeriod.yearly,
-            child: Text('Last Year'),
-          ),
-          DropdownMenuItem(
-            value: ReportPeriod.custom,
-            child: Text('Custom Range'),
+          const SizedBox(width: 16),
+          InkWell(
+            onTap: () => controller.selectCustomDate(context, false),
+            child: Obx(
+              () => Text(
+                'End: ${controller.customEndDate.value != null ? DateFormat.yMd().format(controller.customEndDate.value!) : 'Select'}',
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildCustomDateRange(BuildContext context) {
-    return Row(
-      children: [
-        InkWell(
-          onTap: () => controller.selectCustomDate(context, true),
-          child: Obx(
-            () => Text(
-              'Start: ${controller.customStartDate.value != null ? DateFormat.yMd().format(controller.customStartDate.value!) : 'Select'}',
-            ),
-          ),
-        ),
-        const SizedBox(width: 16),
-        InkWell(
-          onTap: () => controller.selectCustomDate(context, false),
-          child: Obx(
-            () => Text(
-              'End: ${controller.customEndDate.value != null ? DateFormat.yMd().format(controller.customEndDate.value!) : 'Select'}',
-            ),
-          ),
-        ),
-        const SizedBox(width: 16),
-      ],
-    );
-  }
-
   Widget _buildShopDropdown() {
     return Obx(
-      () => DropdownButton<Shop?>(
-        value: controller.selectedShop.value,
-        hint: const Text('All Shops'),
-        onChanged: controller.onShopChanged,
-        items: [
-          const DropdownMenuItem<Shop?>(value: null, child: Text('All Shops')),
-          ...controller.shops.map(
-            (s) => DropdownMenuItem(value: s, child: Text(s.name)),
+      () => _filterField(
+        label: 'Shop',
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<Shop?>(
+            value: controller.selectedShop.value,
+            hint: const Text('All Shops'),
+            onChanged: controller.onShopChanged,
+            items: [
+              const DropdownMenuItem<Shop?>(
+                value: null,
+                child: Text('All Shops'),
+              ),
+              ...controller.shops.map(
+                (s) => DropdownMenuItem(value: s, child: Text(s.name)),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 
   Widget _buildGroupByDropdown() {
     return Obx(
-      () => DropdownButton<String>(
-        value: controller.selectedGroupBy.value,
-        onChanged: controller.onGroupByChanged,
-        items: const [
-          DropdownMenuItem(value: 'daily', child: Text('By Day')),
-          DropdownMenuItem(value: 'weekly', child: Text('By Week')),
-          DropdownMenuItem(value: 'monthly', child: Text('By Month')),
-          DropdownMenuItem(value: 'item', child: Text('By Item')),
+      () => _filterField(
+        label: 'Group by',
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<String>(
+            value: controller.selectedGroupBy.value,
+            onChanged: controller.onGroupByChanged,
+            items: const [
+              DropdownMenuItem(value: 'daily', child: Text('By Day')),
+              DropdownMenuItem(value: 'weekly', child: Text('By Week')),
+              DropdownMenuItem(value: 'monthly', child: Text('By Month')),
+              DropdownMenuItem(value: 'item', child: Text('By Item')),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _filterField({required String label, required Widget child}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(fontSize: 11, color: Colors.black54),
+          ),
+          const SizedBox(height: 4),
+          child,
         ],
       ),
     );
@@ -327,6 +624,13 @@ class SalesAnalysisView extends GetView<SalesAnalysisController> {
     );
   }
 
+  Widget _buildTrendTab(BusinessAnalysisSnapshot snapshot) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+      child: _buildTrendCard(snapshot),
+    );
+  }
+
   LineChartData _buildTrendChart(
     List<TrendPoint> points,
     String groupingLabel,
@@ -335,6 +639,7 @@ class SalesAnalysisView extends GetView<SalesAnalysisController> {
       points.fold<double>(0, (value, point) => max(value, point.revenue)),
       points.fold<double>(0, (value, point) => max(value, point.profit)),
     );
+
     return LineChartData(
       gridData: const FlGridData(show: false),
       borderData: FlBorderData(show: false),
@@ -356,9 +661,8 @@ class SalesAnalysisView extends GetView<SalesAnalysisController> {
             interval: max(1, (points.length / 4).ceil().toDouble()),
             getTitlesWidget: (value, meta) {
               final index = value.toInt();
-              if (index < 0 || index >= points.length) {
+              if (index < 0 || index >= points.length)
                 return const SizedBox.shrink();
-              }
               return Padding(
                 padding: const EdgeInsets.only(top: 8.0),
                 child: Text(
@@ -376,18 +680,22 @@ class SalesAnalysisView extends GetView<SalesAnalysisController> {
       ),
       lineBarsData: [
         LineChartBarData(
-          spots: points.asMap().entries.map((entry) {
-            return FlSpot(entry.key.toDouble(), entry.value.revenue);
-          }).toList(),
+          spots: points
+              .asMap()
+              .entries
+              .map((entry) => FlSpot(entry.key.toDouble(), entry.value.revenue))
+              .toList(),
           isCurved: true,
           color: Colors.teal,
           barWidth: 3,
           dotData: const FlDotData(show: false),
         ),
         LineChartBarData(
-          spots: points.asMap().entries.map((entry) {
-            return FlSpot(entry.key.toDouble(), entry.value.profit);
-          }).toList(),
+          spots: points
+              .asMap()
+              .entries
+              .map((entry) => FlSpot(entry.key.toDouble(), entry.value.profit))
+              .toList(),
           isCurved: true,
           color: Colors.green,
           barWidth: 3,
@@ -413,33 +721,18 @@ class SalesAnalysisView extends GetView<SalesAnalysisController> {
     }
   }
 
-  Widget _buildSummaryRow(BusinessAnalysisSnapshot snapshot) {
-    return Wrap(
-      spacing: 12,
-      runSpacing: 12,
-      children: [
-        _summaryChip('Active products', snapshot.activeProducts.toString()),
-        _summaryChip('Unsold', snapshot.unsoldProductsCount.toString()),
-        _summaryChip(
-          'Slow moving',
-          snapshot.slowMovingProductsCount.toString(),
-        ),
-        _summaryChip('Low stock', snapshot.lowStockProductsCount.toString()),
-      ],
-    );
-  }
-
   Widget _summaryChip(String label, String value) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: AppColors.merchant.shade50,
+        color: Colors.white.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
       ),
       child: Text(
         '$label: $value',
-        style: TextStyle(
-          color: AppColors.merchant.shade900,
+        style: const TextStyle(
+          color: Colors.white,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -539,6 +832,20 @@ class SalesAnalysisView extends GetView<SalesAnalysisController> {
     );
   }
 
+  Widget _buildProductsTab(List<ProductPerformance> products) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildTopProductsTable(products),
+          const SizedBox(height: 16),
+          _buildPaginationControls(),
+        ],
+      ),
+    );
+  }
+
   Widget _buildInventoryInsights(BusinessAnalysisSnapshot snapshot) {
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -567,6 +874,20 @@ class SalesAnalysisView extends GetView<SalesAnalysisController> {
           ],
         );
       },
+    );
+  }
+
+  Widget _buildInventoryTab(BusinessAnalysisSnapshot snapshot) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildInventoryInsights(snapshot),
+          const SizedBox(height: 16),
+          _buildPaginationControls(),
+        ],
+      ),
     );
   }
 
@@ -667,5 +988,92 @@ class SalesAnalysisView extends GetView<SalesAnalysisController> {
         ),
       ),
     );
+  }
+
+  Widget _buildRecommendationsTab(
+    List<BusinessRecommendation> recommendations,
+  ) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildRecommendations(recommendations),
+          const SizedBox(height: 16),
+          _buildPaginationControls(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPaginationControls() {
+    return Obx(() {
+      if (controller.totalPages.value <= 1) {
+        return const SizedBox.shrink();
+      }
+
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        child: Row(
+          children: [
+            OutlinedButton.icon(
+              onPressed: controller.currentPage.value > 1
+                  ? () => controller.goToPage(controller.currentPage.value - 1)
+                  : null,
+              icon: const Icon(Icons.chevron_left_rounded),
+              label: const Text('Previous'),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Page ${controller.currentPage.value} of ${controller.totalPages.value} • ${controller.totalItems.value} items',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+            const SizedBox(width: 12),
+            OutlinedButton.icon(
+              onPressed:
+                  controller.currentPage.value < controller.totalPages.value
+                  ? () => controller.goToPage(controller.currentPage.value + 1)
+                  : null,
+              icon: const Icon(Icons.chevron_right_rounded),
+              label: const Text('Next'),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+}
+
+class _PinnedHeaderDelegate extends SliverPersistentHeaderDelegate {
+  _PinnedHeaderDelegate({required this.child});
+
+  final Widget child;
+
+  @override
+  double get minExtent => 74;
+
+  @override
+  double get maxExtent => 74;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return child;
+  }
+
+  @override
+  bool shouldRebuild(covariant _PinnedHeaderDelegate oldDelegate) {
+    return oldDelegate.child != child;
   }
 }

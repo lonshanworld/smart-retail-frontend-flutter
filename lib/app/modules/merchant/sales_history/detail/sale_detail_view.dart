@@ -24,6 +24,7 @@ class SaleDetailView extends GetView<SaleDetailController> {
       return MerchantMainScaffold(
         title: _getSafeTitle(controller.sale.value?.id),
         body: _buildBody(),
+        showBackbutton: true,
       );
     });
   }
@@ -51,6 +52,9 @@ class SaleDetailView extends GetView<SaleDetailController> {
 
   Widget _buildSaleDetails(Sale sale) {
     final currencyFormat = NumberFormat.currency(symbol: currencySymbol);
+    final promotionName = controller.promotionName.value;
+    final hasPromotion = (sale.appliedPromotionId?.isNotEmpty ?? false) ||
+        (sale.discountAmount ?? 0) > 0;
 
     return ListView(
       padding: const EdgeInsets.all(16.0),
@@ -70,6 +74,14 @@ class SaleDetailView extends GetView<SaleDetailController> {
         ),
         const SizedBox(height: 16),
         _buildInfoCard(sale, currencyFormat),
+        if (hasPromotion) ...[
+          const SizedBox(height: 16),
+          _buildPromotionCard(
+            promotionName: promotionName,
+            discountAmount: sale.discountAmount ?? 0.0,
+            currencyFormat: currencyFormat,
+          ),
+        ],
         const SizedBox(height: 16),
         _buildItemsCard(sale.items, currencyFormat),
       ],
@@ -111,6 +123,12 @@ class SaleDetailView extends GetView<SaleDetailController> {
               'Merchant ID:',
               sale.merchantId,
             ),
+            if (sale.appliedPromotionId != null && sale.appliedPromotionId!.isNotEmpty)
+              _buildInfoRow(
+                Icons.local_offer_outlined,
+                'Promotion ID:',
+                sale.appliedPromotionId!,
+              ),
             if (sale.notes != null && sale.notes!.isNotEmpty)
               _buildInfoRow(Icons.notes, 'Notes:', sale.notes!),
             const Divider(height: 24),
@@ -151,6 +169,44 @@ class SaleDetailView extends GetView<SaleDetailController> {
               valueColor: sale.paymentStatus == 'succeeded'
                   ? Colors.green
                   : Colors.orange,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPromotionCard({
+    required String? promotionName,
+    required double discountAmount,
+    required NumberFormat currencyFormat,
+  }) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Promotion Applied',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            _buildInfoRow(
+              Icons.local_offer_outlined,
+              'Promotion Name:',
+              promotionName?.trim().isNotEmpty == true
+                  ? promotionName!
+                  : 'Unknown promotion',
+            ),
+            const SizedBox(height: 8),
+            _buildInfoRow(
+              Icons.price_check_outlined,
+              'Reduced By:',
+              '- ${currencyFormat.format(discountAmount)}',
+              valueColor: Colors.green,
             ),
           ],
         ),

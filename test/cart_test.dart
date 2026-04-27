@@ -12,6 +12,7 @@ void main() {
         merchantId: 'm1',
         name: 'Test Product',
         sellingPrice: 12.5,
+        originalPrice: 8.0,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
@@ -27,6 +28,7 @@ void main() {
         merchantId: 'm1',
         name: 'Another',
         sellingPrice: 3.0,
+        originalPrice: 2.0,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );

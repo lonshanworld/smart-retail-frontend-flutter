@@ -231,6 +231,14 @@ int _stockForShop(InventoryItem item, String? shopId) {
 
 DateTime _dayOnly(DateTime date) => DateTime(date.year, date.month, date.day);
 
+double _unitCostForSaleItem(SaleItem saleItem, InventoryItem? inventoryItem) {
+  return saleItem.originalPriceAtSale ?? inventoryItem?.originalPrice ?? saleItem.sellingPriceAtSale;
+}
+
+double _profitForSaleItem(SaleItem saleItem, InventoryItem? inventoryItem) {
+  return (saleItem.sellingPriceAtSale - _unitCostForSaleItem(saleItem, inventoryItem)) * saleItem.quantitySold;
+}
+
 BusinessAnalysisSnapshot buildBusinessAnalysisSnapshot({
   required List<Sale> sales,
   required List<InventoryItem> inventoryItems,
@@ -300,14 +308,14 @@ BusinessAnalysisSnapshot buildBusinessAnalysisSnapshot({
         trend.saleIds.add(sale.id);
         trend.orders = trend.saleIds.length;
         trend.revenue += saleItem.subtotal;
-        trend.profit += saleItem.profit;
+        trend.profit += _profitForSaleItem(saleItem, inventoryItem);
         trend.unitsSold += saleItem.quantitySold;
         if (saleDate.isAfter(trend.date)) {
           trend.date = saleDate;
         }
       } else {
         trend.unitsSold += saleItem.quantitySold;
-        trend.profit += saleItem.profit;
+        trend.profit += _profitForSaleItem(saleItem, inventoryItem);
       }
 
       final accumulator = itemAccumulators.putIfAbsent(
@@ -326,10 +334,9 @@ BusinessAnalysisSnapshot buildBusinessAnalysisSnapshot({
 
       accumulator.unitsSold += saleItem.quantitySold;
       accumulator.revenue += saleItem.subtotal;
-      accumulator.cost +=
-          (saleItem.originalPriceAtSale ?? saleItem.sellingPriceAtSale) *
-          saleItem.quantitySold;
-      accumulator.profit += saleItem.profit;
+        final unitCost = _unitCostForSaleItem(saleItem, inventoryItem);
+        accumulator.cost += unitCost * saleItem.quantitySold;
+        accumulator.profit += _profitForSaleItem(saleItem, inventoryItem);
       accumulator.lastSoldAt =
           accumulator.lastSoldAt == null ||
               sale.saleDate.isAfter(accumulator.lastSoldAt!)
@@ -337,10 +344,8 @@ BusinessAnalysisSnapshot buildBusinessAnalysisSnapshot({
           : accumulator.lastSoldAt;
 
       revenue += saleItem.subtotal;
-      cost +=
-          (saleItem.originalPriceAtSale ?? saleItem.sellingPriceAtSale) *
-          saleItem.quantitySold;
-      profit += saleItem.profit;
+        cost += unitCost * saleItem.quantitySold;
+        profit += _profitForSaleItem(saleItem, inventoryItem);
       totalUnitsSold += saleItem.quantitySold;
     }
   }

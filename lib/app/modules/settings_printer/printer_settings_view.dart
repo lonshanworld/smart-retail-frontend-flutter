@@ -1,10 +1,10 @@
+import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get/get.dart';
 
 import 'package:smart_retail/app/modules/settings_printer/printer_settings_controller.dart';
-import 'package:smart_retail/app/utils/app_logger.dart';
 import 'package:smart_retail/app/utils/dialog_utils.dart';
 import 'package:smart_retail/app/widgets/app_colors.dart';
 
@@ -22,22 +22,28 @@ class PrinterSettingsView extends GetView<PrinterSettingsController> {
         foregroundColor: Colors.white,
         elevation: 0,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(),
-            const SizedBox(height: 20),
-            _buildPrintOptionsCard(),
-            const SizedBox(height: 20),
-            _buildConnectionCard(),
-            const SizedBox(height: 20),
-            _buildDevicesSection(),
-            const SizedBox(height: 20),
-            _buildDebugLogCard(),
-            if (_isDev) ...[const SizedBox(height: 20), _buildTestButton()],
-          ],
+      body: Builder(
+        builder: (scaffoldContext) => Scrollbar(
+          controller: controller.pageScrollController,
+          child: SingleChildScrollView(
+            controller: controller.pageScrollController,
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildHeader(),
+                const SizedBox(height: 20),
+                _buildPrintOptionsCard(),
+                const SizedBox(height: 20),
+                _buildConnectionCard(),
+                const SizedBox(height: 20),
+                _buildDevicesSection(),
+                const SizedBox(height: 20),
+                _buildDebugLogCard(scaffoldContext),
+                if (_isDev) ...[const SizedBox(height: 20), _buildTestButton()],
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -186,6 +192,99 @@ class PrinterSettingsView extends GetView<PrinterSettingsController> {
               ],
             ),
             const SizedBox(height: 16),
+            Obx(
+              () => Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Printer transport',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: [
+                        ChoiceChip(
+                          label: const Text('Classic Bluetooth'),
+                          selected: !controller.isBleMode,
+                          onSelected: (_) =>
+                              controller.setTransportMode('classic'),
+                          selectedColor: AppColors.shop.shade100,
+                          labelStyle: TextStyle(
+                            color: !controller.isBleMode
+                                ? AppColors.shop.shade900
+                                : Colors.black87,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          side: BorderSide(
+                            color: !controller.isBleMode
+                                ? AppColors.shop
+                                : Colors.grey.shade300,
+                          ),
+                        ),
+                        ChoiceChip(
+                          label: const Text('BLE only'),
+                          selected: controller.isBleMode,
+                          onSelected: (_) => controller.setTransportMode('ble'),
+                          selectedColor: AppColors.shop.shade100,
+                          labelStyle: TextStyle(
+                            color: controller.isBleMode
+                                ? AppColors.shop.shade900
+                                : Colors.black87,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          side: BorderSide(
+                            color: controller.isBleMode
+                                ? AppColors.shop
+                                : Colors.grey.shade300,
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (controller.isBleMode) ...[
+                      const SizedBox(height: 14),
+                      TextField(
+                        controller: controller.bleServiceUuidController,
+                        decoration: const InputDecoration(
+                          labelText: 'BLE Service UUID',
+                          hintText: '0000ffff-0000-1000-8000-00805f9b34fb',
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: controller.bleCharacteristicUuidController,
+                        decoration: const InputDecoration(
+                          labelText: 'BLE Characteristic UUID',
+                          hintText: '0000ff01-0000-1000-8000-00805f9b34fb',
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Enter the UUIDs from the printer manual or vendor app. BLE printers usually need a writable characteristic.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade700,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(14),
@@ -217,6 +316,9 @@ class PrinterSettingsView extends GetView<PrinterSettingsController> {
     return Obx(() {
       final device = controller.selectedDevice.value;
       final connected = device != null;
+      final transportLabel = controller.connectedTransport.value == 'ble'
+          ? 'BLE only'
+          : 'Classic Bluetooth';
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.all(18),
@@ -225,57 +327,151 @@ class PrinterSettingsView extends GetView<PrinterSettingsController> {
           borderRadius: BorderRadius.circular(18),
           border: Border.all(color: connected ? Colors.green : Colors.orange),
         ),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(
-              connected ? Icons.check_circle : Icons.info,
-              color: connected ? Colors.green.shade700 : Colors.orange.shade700,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    connected ? 'Connected printer' : 'No printer connected',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: connected
-                          ? Colors.green.shade900
-                          : Colors.orange.shade900,
-                    ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  connected ? Icons.check_circle : Icons.info,
+                  color: connected
+                      ? Colors.green.shade700
+                      : Colors.orange.shade700,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        connected
+                            ? 'Current connected device'
+                            : 'No printer connected',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: connected
+                              ? Colors.green.shade900
+                              : Colors.orange.shade900,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        connected
+                            ? 'The printer below is the one currently selected for printing.'
+                            : 'Scan and select a paired thermal printer',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: connected
+                              ? Colors.green.shade900
+                              : Colors.orange.shade900,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    connected
-                        ? '${device.name ?? 'Unknown'} • ${device.address}'
-                        : 'Scan and select a paired thermal printer',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: connected
-                          ? Colors.green.shade900
-                          : Colors.orange.shade900,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
             if (connected)
-              OutlinedButton(
-                onPressed: controller.disconnect,
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.red,
-                  side: const BorderSide(color: Colors.red),
+              Padding(
+                padding: const EdgeInsets.only(top: 14),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.65),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: Colors.green.shade100),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Current device',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.green.shade800,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        device.name ?? 'Unknown device',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        device.address,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.green.shade900,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          _StatusChip(
+                            icon: Icons.bluetooth_rounded,
+                            label: transportLabel,
+                          ),
+                          _StatusChip(
+                            icon: Icons.link_rounded,
+                            label: 'Ready to print',
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: OutlinedButton.icon(
+                          onPressed: controller.disconnect,
+                          icon: const Icon(Icons.link_off_rounded),
+                          label: const Text('Disconnect'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.red,
+                            side: const BorderSide(color: Colors.red),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                child: const Text('Disconnect'),
               ),
           ],
         ),
       );
     });
+  }
+
+  Widget _StatusChip({required IconData icon, required String label}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: Colors.green.shade100,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: Colors.green.shade800),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: Colors.green.shade900,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildDevicesSection() {
@@ -347,6 +543,8 @@ class PrinterSettingsView extends GetView<PrinterSettingsController> {
                     () => Text(
                       controller.isScanning.value
                           ? 'Scanning...'
+                          : controller.isBleMode
+                          ? 'Scan BLE devices'
                           : 'Scan for devices',
                     ),
                   ),
@@ -366,211 +564,251 @@ class PrinterSettingsView extends GetView<PrinterSettingsController> {
             ],
           ),
           const SizedBox(height: 16),
-          Obx(() {
-            if (controller.devices.isEmpty) {
-              return Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey.shade200),
-                ),
-                child: Column(
-                  children: [
-                    Icon(
-                      Icons.devices_other,
-                      size: 48,
-                      color: Colors.grey.shade400,
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'No devices found',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey.shade700,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Turn on the thermal printer, pair it from Bluetooth settings, then scan again.',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey.shade600,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              );
-            }
+          LayoutBuilder(
+            builder: (context, _) {
+              final maxListHeight = (MediaQuery.sizeOf(context).height * 0.32)
+                  .clamp(180.0, 320.0)
+                  .toDouble();
 
-            return ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: controller.devices.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 10),
-              itemBuilder: (context, index) {
-                final device = controller.devices[index];
-                return Obx(() {
-                  final isSelected = controller.selectedDevice.value == device;
+              return Obx(() {
+                if (controller.devices.isEmpty) {
                   return Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: isSelected ? AppColors.shop.shade50 : Colors.white,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: isSelected
-                            ? AppColors.shop
-                            : Colors.grey.shade200,
-                        width: isSelected ? 2 : 1,
-                      ),
+                      color: Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.grey.shade200),
                     ),
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 6,
-                      ),
-                      leading: Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? AppColors.shop
-                              : Colors.grey.shade200,
-                          borderRadius: BorderRadius.circular(12),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.devices_other,
+                          size: 48,
+                          color: Colors.grey.shade400,
                         ),
-                        child: Icon(
-                          Icons.print_rounded,
-                          color: isSelected
-                              ? Colors.white
-                              : Colors.grey.shade700,
-                          size: 20,
+                        const SizedBox(height: 12),
+                        Text(
+                          'No devices found',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey.shade700,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      ),
-                      title: Text(
-                        device.name ?? 'Unknown Device',
-                        style: const TextStyle(fontWeight: FontWeight.w700),
-                      ),
-                      subtitle: Text(
-                        device.address,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey.shade600,
+                        const SizedBox(height: 4),
+                        Text(
+                          controller.isBleMode
+                              ? 'Turn on the BLE printer, make sure it is advertising, then scan again.'
+                              : 'Turn on the thermal printer, pair it from Bluetooth settings, then scan again.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                          ),
+                          textAlign: TextAlign.center,
                         ),
-                      ),
-                      trailing: isSelected
-                          ? Icon(
-                              Icons.check_circle,
-                              color: AppColors.shop,
-                              size: 24,
-                            )
-                          : ElevatedButton(
-                              onPressed: () {
-                                getLogger('app').info(
-                                  '[PRINTER SETTINGS] Connecting to: ${device.name}',
-                                );
-                                controller.connect(device);
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.shop.shade100,
-                                foregroundColor: AppColors.shop,
-                                elevation: 0,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 14,
-                                  vertical: 10,
-                                ),
-                              ),
-                              child: const Text('Connect'),
-                            ),
+                      ],
                     ),
                   );
-                });
-              },
-            );
-          }),
+                }
+
+                return ConstrainedBox(
+                  constraints: BoxConstraints(maxHeight: maxListHeight),
+                  child: Scrollbar(
+                    controller: controller.devicesScrollController,
+                    thumbVisibility: controller.devices.length > 3,
+                    child: ListView.separated(
+                      controller: controller.devicesScrollController,
+                      padding: EdgeInsets.zero,
+                      itemCount: controller.devices.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 10),
+                      itemBuilder: (context, index) {
+                        return _buildDeviceCard(controller.devices[index]);
+                      },
+                    ),
+                  ),
+                );
+              });
+            },
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildDebugLogCard() {
+  Widget _buildDeviceCard(BluetoothDevice device) {
+    return Obx(() {
+      final isSelected = controller.selectedDevice.value == device;
+      return Container(
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.shop.shade50 : Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isSelected ? AppColors.shop : Colors.grey.shade200,
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: isSelected ? AppColors.shop : Colors.grey.shade200,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.print_rounded,
+                  color: isSelected ? Colors.white : Colors.grey.shade700,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      device.name ?? 'Unknown Device',
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      device.address,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              if (isSelected)
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Icon(
+                    Icons.check_circle,
+                    color: AppColors.shop,
+                    size: 24,
+                  ),
+                )
+              else
+                SizedBox(
+                  width: 92,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      controller.connect(device);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.shop.shade100,
+                      foregroundColor: AppColors.shop,
+                      elevation: 0,
+                      minimumSize: const Size(0, 40),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    child: const Text('Connect'),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      );
+    });
+  }
+
+  Widget _buildDebugLogCard(BuildContext context) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.black,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.grey.shade800),
+        border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.12),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(12),
+      child: Obx(
+        () => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.shop.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.bug_report_rounded,
+                    color: AppColors.shop.shade700,
+                    size: 20,
+                  ),
                 ),
-                child: const Icon(
-                  Icons.bug_report_rounded,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Printer debug log',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Printer debug log',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      'Share this section when Bluetooth setup fails.',
-                      style: TextStyle(color: Colors.white70, fontSize: 12),
-                    ),
-                  ],
+                      SizedBox(height: 4),
+                      Text(
+                        'Open the full printer log in a bottom sheet.',
+                        style: TextStyle(color: Colors.black54, fontSize: 12),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Obx(
-            () => Row(
+                const SizedBox(width: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.info.shade50,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    '${controller.debugLogs.length} entries',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.info.shade700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Row(
               children: [
                 Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () async {
-                      final text = controller.debugLogs.join('\n');
-                      await Clipboard.setData(ClipboardData(text: text));
-                      Get.snackbar(
-                        'Copied',
-                        'Printer debug log copied to clipboard.',
-                        snackPosition: SnackPosition.BOTTOM,
-                      );
-                    },
-                    icon: const Icon(Icons.copy_rounded),
-                    label: const Text('Copy log'),
-                    style: OutlinedButton.styleFrom(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _showDebugLogBottomSheet(context),
+                    icon: const Icon(Icons.subject_rounded),
+                    label: const Text('Open log sheet'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.shop,
                       foregroundColor: Colors.white,
-                      side: BorderSide(
-                        color: Colors.white.withValues(alpha: 0.4),
-                      ),
                       minimumSize: const Size.fromHeight(46),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
@@ -587,11 +825,9 @@ class PrinterSettingsView extends GetView<PrinterSettingsController> {
                     icon: const Icon(Icons.delete_outline_rounded),
                     label: const Text('Clear log'),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      side: BorderSide(
-                        color: Colors.white.withValues(alpha: 0.4),
-                      ),
-                      disabledForegroundColor: Colors.white38,
+                      foregroundColor: AppColors.shop.shade700,
+                      side: BorderSide(color: AppColors.shop.shade200),
+                      disabledForegroundColor: Colors.black38,
                       minimumSize: const Size.fromHeight(46),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
@@ -601,44 +837,223 @@ class PrinterSettingsView extends GetView<PrinterSettingsController> {
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 16),
-          Obx(
-            () => Container(
-              width: double.infinity,
-              constraints: const BoxConstraints(maxHeight: 260),
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: const Color(0xFF101010),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-              ),
-              child: controller.debugLogs.isEmpty
-                  ? const SelectableText(
-                      'No debug events yet. Try scanning or connecting a printer, then screenshot this box if something fails.',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 13,
-                        height: 1.45,
-                      ),
-                    )
-                  : Scrollbar(
-                      thumbVisibility: true,
-                      child: SingleChildScrollView(
-                        child: SelectableText(
-                          controller.debugLogs.join('\n'),
-                          style: const TextStyle(
-                            color: Colors.greenAccent,
-                            fontFamily: 'monospace',
-                            fontSize: 12,
-                            height: 1.45,
-                          ),
+            const SizedBox(height: 12),
+            Text(
+              controller.debugLogs.isEmpty
+                  ? 'No printer events yet. Scan or connect a printer, then open the sheet.'
+                  : 'The sheet includes scan, connection, permission, and print output entries.',
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showDebugLogBottomSheet(BuildContext context) {
+    Scaffold.of(context).showBottomSheet(
+      (sheetContext) {
+        return SafeArea(
+          top: false,
+          child: SizedBox(
+            height: MediaQuery.sizeOf(sheetContext).height * 0.72,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+              child: Obx(() {
+                final logs = controller.debugLogs.toList(growable: false);
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 42,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(999),
                         ),
                       ),
                     ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: AppColors.shop.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            Icons.print_rounded,
+                            color: AppColors.shop.shade700,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Printer log history',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                'Scroll vertically to read every printer event in order.',
+                                style: TextStyle(
+                                  color: Colors.black54,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.info.shade50,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            '${logs.length}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.info.shade700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: logs.isEmpty
+                                ? null
+                                : () async {
+                                    final text = logs.join('\n');
+                                    await Clipboard.setData(
+                                      ClipboardData(text: text),
+                                    );
+                                    Get.snackbar(
+                                      'Copied',
+                                      'Printer debug log copied to clipboard.',
+                                      snackPosition: SnackPosition.BOTTOM,
+                                    );
+                                  },
+                            icon: const Icon(Icons.copy_rounded),
+                            label: const Text('Copy all'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.shop.shade700,
+                              side: BorderSide(color: AppColors.shop.shade200),
+                              disabledForegroundColor: Colors.black38,
+                              minimumSize: const Size.fromHeight(44),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: logs.isEmpty
+                                ? null
+                                : controller.clearDebugLogs,
+                            icon: const Icon(Icons.delete_outline_rounded),
+                            label: const Text('Clear'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red.shade600,
+                              foregroundColor: Colors.white,
+                              disabledBackgroundColor: Colors.red.shade200,
+                              minimumSize: const Size.fromHeight(44),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Expanded(
+                      child: Container(
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF7F8FA),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.grey.shade200),
+                        ),
+                        child: logs.isEmpty
+                            ? Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(24),
+                                  child: Text(
+                                    'No printer events yet.\n\nScan, connect, or print something to populate this sheet.',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: Colors.grey.shade600,
+                                      height: 1.5,
+                                    ),
+                                  ),
+                                ),
+                              )
+                            : Scrollbar(
+                                controller: controller.debugLogScrollController,
+                                thumbVisibility: true,
+                                child: ListView.separated(
+                                  controller:
+                                      controller.debugLogScrollController,
+                                  padding: const EdgeInsets.all(16),
+                                  itemCount: logs.length,
+                                  separatorBuilder: (_, __) =>
+                                      const SizedBox(height: 10),
+                                  itemBuilder: (sheetContext, index) {
+                                    return Container(
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.all(14),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(14),
+                                        border: Border.all(
+                                          color: Colors.grey.shade200,
+                                        ),
+                                      ),
+                                      child: SelectableText(
+                                        logs[index],
+                                        style: const TextStyle(
+                                          fontFamily: 'monospace',
+                                          fontSize: 12,
+                                          height: 1.45,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                      ),
+                    ),
+                  ],
+                );
+              }),
             ),
           ),
-        ],
+        );
+      },
+      backgroundColor: Colors.white,
+      elevation: 18,
+      clipBehavior: Clip.antiAlias,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
     );
   }
@@ -719,7 +1134,9 @@ class PrinterSettingsView extends GetView<PrinterSettingsController> {
           TextButton(onPressed: Get.back, child: const Text('Close')),
           ElevatedButton(
             onPressed: () {
-              getLogger('app').info('[PRINTER SETTINGS] Sending mock print...');
+              controller.logPrinterEvent(
+                '[PRINTER SETTINGS] Sending mock print...',
+              );
               Get.back();
               DialogUtils.showInfo('Test print triggered.');
             },

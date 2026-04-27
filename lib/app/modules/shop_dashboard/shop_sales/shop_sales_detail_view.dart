@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:smart_retail/app/constants/currency.dart';
 import 'package:smart_retail/app/data/models/sale_model.dart';
+import 'package:smart_retail/app/data/models/promotion_model.dart';
+import 'package:smart_retail/app/data/services/promotion_api_service.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
 import 'package:smart_retail/app/widgets/app_colors.dart';
 
@@ -15,6 +17,7 @@ class ShopSalesDetailView extends StatelessWidget {
   Widget build(BuildContext context) {
     final currencyFormat = NumberFormat.currency(symbol: currencySymbol);
     final dateFormat = DateFormat.yMd().add_jm();
+    final promotionService = Get.find<PromotionApiService>();
 
     // Calculate totals
     double totalSellingPrice = sale.items.fold(
@@ -91,6 +94,54 @@ class ShopSalesDetailView extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 12),
+
+                  if ((sale.appliedPromotionId?.isNotEmpty ?? false) ||
+                      (sale.discountAmount ?? 0) > 0) ...[
+                    FutureBuilder<Promotion?>(
+                      future: sale.appliedPromotionId?.isNotEmpty == true
+                          ? promotionService.getPromotionById(
+                              sale.appliedPromotionId!,
+                            )
+                          : Future<Promotion?>.value(null),
+                      builder: (context, snapshot) {
+                        final promotionName = snapshot.data?.name ??
+                            (sale.appliedPromotionId?.isNotEmpty == true
+                                ? sale.appliedPromotionId!
+                                : 'Applied promotion');
+
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 16),
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: AppColors.merchant.shade50,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: AppColors.merchant.shade200),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Promotion Applied',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              _buildSummaryRow('Promotion Name', promotionName),
+                              const Divider(),
+                              _buildSummaryRow(
+                                'Reduced By',
+                                '- ${currencyFormat.format(sale.discountAmount ?? 0)}',
+                                valueColor: Colors.green,
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [

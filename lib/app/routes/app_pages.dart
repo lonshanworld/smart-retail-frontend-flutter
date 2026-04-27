@@ -1,11 +1,13 @@
 import 'package:get/get.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:smart_retail/app/core/config/app_config.dart';
 import 'package:smart_retail/app/data/services/auth_service.dart';
 import 'package:smart_retail/app/core/config/runtime_portal.dart';
 
 // Import all the pages
 import 'package:smart_retail/app/modules/intro/intro_view.dart';
 import 'package:smart_retail/app/modules/admin_intro/admin_intro_view.dart';
+import 'package:smart_retail/app/modules/offline_intro/offline_intro_view.dart';
 import 'package:smart_retail/app/modules/customer_landing/customer_landing_view.dart';
 import 'package:smart_retail/app/modules/public/about/public_about_view.dart';
 import 'package:smart_retail/app/modules/public/features/public_features_view.dart';
@@ -159,6 +161,11 @@ class AppPages {
   static String get INITIAL => initialRoute;
 
   static String get initialRoute {
+    final appConfig = Get.isRegistered<AppConfig>() ? Get.find<AppConfig>() : null;
+    if (appConfig?.localStorageOnly == true) {
+          return Routes.OFFLINE_INTRO;
+    }
+
     final authService = Get.isRegistered<AuthService>()
         ? Get.find<AuthService>()
         : null;
@@ -220,6 +227,7 @@ class AppPages {
   static List<GetPage> get routes => [
     GetPage(name: Routes.INTRO, page: () => const IntroView()),
     GetPage(name: Routes.ADMIN_INTRO, page: () => const AdminIntroView()),
+    GetPage(name: Routes.OFFLINE_INTRO, page: () => const OfflineIntroView()),
     GetPage(
       name: Routes.CUSTOMER_INTRO,
       page: () => const CustomerLandingView(),

@@ -295,74 +295,85 @@ class ShopPosView extends GetView<ShopPosController> {
 
   Widget _buildCartPanel() {
     final currencyFormatter = NumberFormat.currency(symbol: currencySymbol);
-    return Container(
-      color: Get.theme.scaffoldBackgroundColor,
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text('Cart', style: Get.textTheme.headlineSmall),
-          const Divider(),
-          Expanded(
-            child: Obx(() {
-              if (controller.cartItems.isEmpty) {
-                return const Center(child: Text('Cart is empty'));
-              }
-              return ListView.builder(
-                itemCount: controller.cartItems.length,
-                itemBuilder: (context, index) {
-                  final cartItem = controller.cartItems[index];
-                  return _buildCartItemTile(cartItem);
-                },
-              );
-            }),
-          ),
-          const Divider(),
-          _buildPromotionSelector(),
-          const Divider(),
-          _buildCustomerNameField(),
-          const SizedBox(height: 8),
-          _buildDeliveryChargeField(),
-          const Divider(),
-          _buildTotals(),
-          const SizedBox(height: 16),
-          Obx(
-            () => ElevatedButton.icon(
-              onPressed:
-                  controller.isCheckingOut.value || controller.cartItems.isEmpty
-                  ? null
-                  : controller.handleCheckout,
-              icon: controller.isCheckingOut.value
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 3),
-                    )
-                  : const Icon(Icons.payment),
-              label: Text(
-                controller.isCheckingOut.value
-                    ? 'Processing...'
-                    : 'Checkout (${currencyFormatter.format(controller.cartTotal)})',
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Container(
+              color: Get.theme.scaffoldBackgroundColor,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('Cart', style: Get.textTheme.headlineSmall),
+                  const Divider(),
+                  Obx(() {
+                    if (controller.cartItems.isEmpty) {
+                      return const Center(child: Text('Cart is empty'));
+                    }
+                    return ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: controller.cartItems.length,
+                      itemBuilder: (context, index) {
+                        final cartItem = controller.cartItems[index];
+                        return _buildCartItemTile(cartItem);
+                      },
+                    );
+                  }),
+                  const Divider(),
+                  _buildPromotionSelector(),
+                  const Divider(),
+                  _buildCustomerNameField(),
+                  const SizedBox(height: 8),
+                  _buildDeliveryChargeField(),
+                  const Divider(),
+                  _buildTotals(),
+                  const SizedBox(height: 16),
+                  Obx(
+                    () => ElevatedButton.icon(
+                      onPressed:
+                          controller.isCheckingOut.value ||
+                              controller.cartItems.isEmpty
+                          ? null
+                          : controller.handleCheckout,
+                      icon: controller.isCheckingOut.value
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 3),
+                            )
+                          : const Icon(Icons.payment),
+                      label: Text(
+                        controller.isCheckingOut.value
+                            ? 'Processing...'
+                            : 'Checkout (${currencyFormatter.format(controller.cartTotal)})',
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextButton.icon(
+                    onPressed: controller.clearCart,
+                    icon: const Icon(
+                      Icons.delete_sweep_outlined,
+                      color: AppColors.error,
+                    ),
+                    label: const Text(
+                      'Clear Cart',
+                      style: TextStyle(color: AppColors.error),
+                    ),
+                  ),
+                ],
               ),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
             ),
           ),
-          const SizedBox(height: 8),
-          TextButton.icon(
-            onPressed: controller.clearCart,
-            icon: const Icon(
-              Icons.delete_sweep_outlined,
-              color: AppColors.error,
-            ),
-            label: const Text(
-              'Clear Cart',
-              style: TextStyle(color: AppColors.error),
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 

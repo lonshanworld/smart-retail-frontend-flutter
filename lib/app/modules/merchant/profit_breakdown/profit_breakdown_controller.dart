@@ -1,12 +1,15 @@
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:smart_retail/app/core/config/app_config.dart';
 import 'package:smart_retail/app/constants/currency.dart';
 import 'package:smart_retail/app/data/models/inventory_item_model.dart';
+import 'package:smart_retail/app/data/models/report_model.dart';
 import 'package:smart_retail/app/data/models/sale_model.dart';
 import 'package:smart_retail/app/data/models/shop_model.dart';
 import 'package:smart_retail/app/data/services/merchant_shops_api_service.dart';
 import 'package:smart_retail/app/data/services/merchant_stocks_api_service.dart';
 import 'package:smart_retail/app/data/services/report_api_service.dart';
+import 'package:smart_retail/app/data/services/shop_api_service.dart';
 import 'package:smart_retail/app/utils/app_logger.dart';
 import 'package:smart_retail/app/utils/dialog_utils.dart';
 
@@ -14,13 +17,20 @@ enum ProfitPeriod { day, week, month, year }
 
 class ProfitBreakdownController extends GetxController {
   final ReportApiService _reportApiService = Get.find<ReportApiService>();
+  final ShopApiService _shopApiService = Get.find<ShopApiService>();
   final MerchantShopsApiService _shopsApiService =
       Get.find<MerchantShopsApiService>();
   final MerchantStocksApiService _stocksApiService =
       Get.find<MerchantStocksApiService>();
+  final AppConfig _appConfig = Get.find<AppConfig>();
 
   final RxBool isLoading = true.obs;
   final RxnString errorMessage = RxnString();
+  final RxInt currentPage = 1.obs;
+  final RxInt pageSize = 10.obs;
+  final RxInt totalItems = 0.obs;
+  final RxInt totalPages = 0.obs;
+  final RxList<Sale> allSales = <Sale>[].obs;
   final RxList<Sale> sales = <Sale>[].obs;
   final RxList<Shop> shops = <Shop>[].obs;
   final RxList<InventoryItem> inventoryItems = <InventoryItem>[].obs;
@@ -55,25 +65,44 @@ class ProfitBreakdownController extends GetxController {
       errorMessage.value = null;
 
       final range = _calculateDateRange();
+      final page = currentPage.value;
       getLogger(
         'app',
       ).info('[ProfitBreakdown] Fetching sales for ${selectedPeriod.value}');
 
-      final result = await _reportApiService.getSalesReport(
-        startDate: range.$1,
-        endDate: range.$2,
-        allowMockData: false,
-      );
+      final results = await Future.wait([
+        _reportApiService.getSalesReport(
+          startDate: range.$1,
+          endDate: range.$2,
+          allowMockData: false,
+        ),
+        _reportApiService.getSalesReportPage(
+          startDate: range.$1,
+          endDate: range.$2,
+          page: page,
+          pageSize: pageSize.value,
+          allowMockData: false,
+        ),
+        _stocksApiService.getCombinedStocks(page: 1, pageSize: 1000),
+      ]);
 
-      final stockResult = await _stocksApiService.getCombinedStocks(
-        page: 1,
-        pageSize: 1000,
-      );
+      final fullResult = results[0] as SalesReportResponse;
+      final pagedResult = results[1] as PaginatedSalesResponse;
+      final stockResult = results[2] as PaginatedStockResponse;
 
-      sales.assignAll(
-        result.sales
+      allSales.assignAll(
+        fullResult.sales
           ..sort((left, right) => right.saleDate.compareTo(left.saleDate)),
       );
+      sales.assignAll(
+        pagedResult.items
+          ..sort((left, right) => right.saleDate.compareTo(left.saleDate)),
+      );
+      if (!_appConfig.localStorageOnly) {
+        await _hydrateMissingSaleItems();
+      }
+      totalItems.value = pagedResult.totalItems;
+      totalPages.value = pagedResult.totalPages;
       inventoryItems.assignAll(stockResult.items);
     } catch (e, stackTrace) {
       getLogger('app').info('[ProfitBreakdown] Error: $e');
@@ -90,7 +119,19 @@ class ProfitBreakdownController extends GetxController {
       return;
     }
     selectedPeriod.value = period;
+    currentPage.value = 1;
     applyFilters();
+  }
+
+  Future<void> goToPage(int page) async {
+    if (page <= 0 || page == currentPage.value) {
+      return;
+    }
+    if (totalPages.value > 0 && page > totalPages.value) {
+      return;
+    }
+    currentPage.value = page;
+    await applyFilters();
   }
 
   (DateTime, DateTime) _calculateDateRange() {
@@ -130,22 +171,24 @@ class ProfitBreakdownController extends GetxController {
   }
 
   double get totalRevenue =>
-      sales.fold(0.0, (sum, sale) => sum + sale.totalAmount);
+      allSales.fold(0.0, (sum, sale) => sum + sale.totalAmount);
 
   double get totalDiscounts =>
-      sales.fold(0.0, (sum, sale) => sum + (sale.discountAmount ?? 0.0));
+      allSales.fold(0.0, (sum, sale) => sum + (sale.discountAmount ?? 0.0));
 
   double get totalDeliveryCharges =>
-      sales.fold(0.0, (sum, sale) => sum + sale.deliveryCharge);
+      allSales.fold(0.0, (sum, sale) => sum + sale.deliveryCharge);
 
   double get totalGrossProfit =>
-      sales.fold(0.0, (sum, sale) => sum + orderGrossProfit(sale));
+      allSales.fold(0.0, (sum, sale) => sum + orderGrossProfit(sale));
 
   double get averageOrderProfit =>
-      sales.isEmpty ? 0.0 : totalGrossProfit / sales.length;
+      allSales.isEmpty ? 0.0 : totalGrossProfit / allSales.length;
 
   double get averageOrderValue =>
-      sales.isEmpty ? 0.0 : totalRevenue / sales.length;
+      allSales.isEmpty ? 0.0 : totalRevenue / allSales.length;
+
+  int get totalSalesCount => allSales.length;
 
   Map<String, InventoryItem> get _inventoryById {
     return {
@@ -186,6 +229,43 @@ class ProfitBreakdownController extends GetxController {
       return 0.0;
     }
     return lineProfit(item) / revenue;
+  }
+
+  Future<void> _hydrateMissingSaleItems() async {
+    final missingSaleIds = <String>{
+      ...allSales.where((sale) => sale.items.isEmpty).map((sale) => sale.id),
+      ...sales.where((sale) => sale.items.isEmpty).map((sale) => sale.id),
+    };
+
+    if (missingSaleIds.isEmpty) {
+      return;
+    }
+
+    final details = await Future.wait(
+      missingSaleIds.map((saleId) async {
+        final sale = await _shopApiService.getSaleById(saleId);
+        return MapEntry(saleId, sale);
+      }),
+    );
+
+    final hydratedById = <String, Sale>{};
+    for (final entry in details) {
+      final sale = entry.value;
+      if (sale != null && sale.items.isNotEmpty) {
+        hydratedById[entry.key] = sale;
+      }
+    }
+
+    if (hydratedById.isEmpty) {
+      return;
+    }
+
+    allSales.assignAll(
+      allSales.map((sale) => hydratedById[sale.id] ?? sale).toList(),
+    );
+    sales.assignAll(
+      sales.map((sale) => hydratedById[sale.id] ?? sale).toList(),
+    );
   }
 
   String formatMoney(double value) {

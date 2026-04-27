@@ -13,6 +13,7 @@ void main() {
       merchantId: 'm1',
       name: 'Test Item',
       sellingPrice: 9.99,
+      originalPrice: 6.0,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );

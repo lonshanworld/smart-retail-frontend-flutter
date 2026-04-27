@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:path/path.dart' as p;
@@ -11,8 +12,8 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:smart_retail/app/utils/app_logger.dart';
 
 class InvoicePdfService {
-  /// Generates a PDF for the given invoice and returns the file path (or downloads on web)
-  static Future<String> generateInvoicePdf(Invoice invoice) async {
+  /// Builds the invoice PDF bytes without saving them.
+  static Future<Uint8List> buildInvoicePdfBytes(Invoice invoice) async {
     final pdf = pw.Document();
 
     // Add page to PDF. Layout mirrors the on-screen InvoiceDetailView:
@@ -50,10 +51,16 @@ class InvoicePdfService {
       ),
     );
 
+    return pdf.save();
+  }
+
+  /// Generates a PDF for the given invoice and returns the file path (or downloads on web)
+  static Future<String> generateInvoicePdf(Invoice invoice) async {
+    final bytes = await buildInvoicePdfBytes(invoice);
+
     // Save or download PDF
     if (kIsWeb) {
       // For web, trigger a direct download via an anchor element instead of the share sheet.
-      final bytes = await pdf.save();
       final filename = '${invoice.invoiceNumber}.pdf';
       await downloadFile(bytes, filename);
       // Print/log the web download filename for debugging
@@ -65,7 +72,7 @@ class InvoicePdfService {
       // For mobile/desktop, save to a user-visible local directory when possible.
       final output = await _getLocalPdfDirectory();
       final file = File(p.join(output.path, '${invoice.invoiceNumber}.pdf'));
-      await file.writeAsBytes(await pdf.save());
+      await file.writeAsBytes(bytes);
       // Print/log the saved file path so UI/debugging can see where it landed
       getLogger(
         'app',

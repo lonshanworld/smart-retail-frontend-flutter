@@ -1,4 +1,3 @@
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class ApiConstants {
   // Preferred source: compile-time value.
@@ -9,23 +8,23 @@ class ApiConstants {
   );
 
   static String get baseUrl {
-    String normalize(String value) {
-      if (value.endsWith('/')) {
-        return value.substring(0, value.length - 1);
-      }
-      return value;
-    }
+    // String normalize(String value) {
+    //   if (value.endsWith('/')) {
+    //     return value.substring(0, value.length - 1);
+    //   }
+    //   return value;
+    // }
 
-    if (_definedBaseUrl.trim().isNotEmpty) {
-      return normalize(_definedBaseUrl.trim());
-    }
+    // if (_definedBaseUrl.trim().isNotEmpty) {
+    //   return normalize(_definedBaseUrl.trim());
+    // }
 
-    final envBaseUrl = dotenv.env['API_BASE_URL']?.trim();
-    if (envBaseUrl != null && envBaseUrl.isNotEmpty) {
-      return normalize(envBaseUrl);
-    }
+    // final envBaseUrl = dotenv.env['API_BASE_URL']?.trim();
+    // if (envBaseUrl != null && envBaseUrl.isNotEmpty) {
+    //   return normalize(envBaseUrl);
+    // }
 
     // Last-resort local fallback for development.
-    return 'http://10.102.156.2:5000/api/v1';
+    return 'http://10.253.120.2:5000/api/v1';
   }
 }

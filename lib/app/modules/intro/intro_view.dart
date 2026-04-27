@@ -21,7 +21,7 @@ class IntroView extends StatelessWidget {
       backgroundColor: colorScheme.surface,
       appBar: AppBar(
         title: Text(
-          'Smart Retail',
+          'Nanonux Business Central',
           style: TextStyle(color: colorScheme.onPrimary),
         ),
         backgroundColor: colorScheme.primary,
@@ -55,7 +55,7 @@ class IntroView extends StatelessWidget {
                   const FlutterLogo(size: 120, style: FlutterLogoStyle.stacked),
                   const SizedBox(height: 48),
                   Text(
-                    'Welcome to Smart Retail',
+                    'Welcome to Nanonux Business Central',
                     textAlign: TextAlign.center,
                     style: textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
