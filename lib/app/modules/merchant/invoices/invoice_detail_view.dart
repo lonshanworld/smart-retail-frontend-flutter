@@ -358,6 +358,14 @@ class InvoiceDetailView extends GetView<InvoiceDetailController> {
                   ],
                 );
               }),
+              const SizedBox(height: 16),
+              Center(
+                child: Text(
+                  'Need custom software for your business? Visit nanonux.com.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                ),
+              ),
             ],
           ),
         );

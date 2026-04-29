@@ -1,5 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:smart_retail/app/core/config/app_config.dart';
 import 'package:smart_retail/app/utils/dialog_utils.dart';
 import 'package:smart_retail/app/data/models/report_model.dart';
 import 'package:smart_retail/app/data/models/sale_model.dart';
@@ -21,6 +22,7 @@ class SalesAnalysisController extends GetxController {
       Get.find<MerchantShopsApiService>();
   final MerchantStocksApiService _stocksApiService =
       Get.find<MerchantStocksApiService>();
+  final AppConfig _appConfig = Get.find<AppConfig>();
 
   // --- State ---
   final RxList<Sale> sales = <Sale>[].obs;
@@ -112,6 +114,17 @@ class SalesAnalysisController extends GetxController {
       final stocks = results[2] as PaginatedStockResponse;
       final pagedStocks = results[3] as PaginatedStockResponse;
 
+      final pagedSalesForAnalysis =
+          _appConfig.localStorageOnly &&
+              currentPage.value == 1 &&
+              pagedResponse.items.isEmpty &&
+              response.sales.isNotEmpty
+          ? response.sales
+          : pagedResponse.items;
+      final pagedStocksForAnalysis = _appConfig.localStorageOnly
+          ? stocks.items
+          : pagedStocks.items;
+
       getLogger(
         'app',
       ).info('âœ… [SALES REPORT] Received ${response.sales.length} sales');
@@ -128,8 +141,8 @@ class SalesAnalysisController extends GetxController {
       totalItems.value = pagedResponse.totalItems;
       totalPages.value = pagedResponse.totalPages;
       pagedAnalysisSnapshot.value = buildBusinessAnalysisSnapshot(
-        sales: pagedResponse.items,
-        inventoryItems: pagedStocks.items,
+        sales: pagedSalesForAnalysis,
+        inventoryItems: pagedStocksForAnalysis,
         startDate: start,
         endDate: end,
         shopId: selectedShop.value?.id,

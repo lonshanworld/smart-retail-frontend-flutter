@@ -127,6 +127,8 @@ class BusinessAnalysisView extends GetView<BusinessAnalysisController> {
               _buildFilterBar(context, isWide),
               const SizedBox(height: 16),
               _buildKpiGrid(snapshot),
+              const SizedBox(height: 16),
+              _buildDemandVsStockChart(snapshot),
             ],
           ),
         ),
@@ -968,6 +970,14 @@ class BusinessAnalysisView extends GetView<BusinessAnalysisController> {
   }
 
   Widget _buildActionBoard(BusinessAnalysisSnapshot snapshot) {
+    final restockItems = snapshot.lowStockProducts.take(5).toList();
+    final promotionCandidates = snapshot.unsoldProducts.take(5).toList();
+    final agingInventory = snapshot.unsoldProducts
+        .where((item) => item.ageDays >= 30)
+        .take(5)
+        .toList();
+    final topSellingItems = snapshot.topProducts.take(5).toList();
+
     return Card(
       elevation: 0,
       color: Colors.white,
@@ -997,12 +1007,24 @@ class BusinessAnalysisView extends GetView<BusinessAnalysisController> {
                       '${snapshot.lowStockProductsCount} items need replenishment',
                       Icons.inventory_outlined,
                       tileWidth,
+                      lines: restockItems
+                          .map(
+                            (item) =>
+                                '${item.name} (stock ${item.currentStock}, sold ${item.unitsSold})',
+                          )
+                          .toList(),
                     ),
                     _actionTile(
                       'Promotion candidates',
                       '${snapshot.unsoldProductsCount} unsold items can be bundled or discounted',
                       Icons.campaign_outlined,
                       tileWidth,
+                      lines: promotionCandidates
+                          .map(
+                            (item) =>
+                                '${item.name} (age ${item.ageDays}d, stock ${item.currentStock})',
+                          )
+                          .toList(),
                     ),
                     _actionTile(
                       'Margin focus',
@@ -1015,6 +1037,24 @@ class BusinessAnalysisView extends GetView<BusinessAnalysisController> {
                       'Focus on items older than 30 days with low movement',
                       Icons.history_outlined,
                       tileWidth,
+                      lines: agingInventory
+                          .map(
+                            (item) =>
+                                '${item.name} (age ${item.ageDays}d, sold ${item.unitsSold})',
+                          )
+                          .toList(),
+                    ),
+                    _actionTile(
+                      'Most sell item',
+                      'Top performers by units sold in the selected range',
+                      Icons.emoji_events_outlined,
+                      tileWidth,
+                      lines: topSellingItems
+                          .map(
+                            (item) =>
+                                '${item.name} (${item.unitsSold} units, ${_money(item.revenue)})',
+                          )
+                          .toList(),
                     ),
                   ],
                 );
@@ -1030,8 +1070,9 @@ class BusinessAnalysisView extends GetView<BusinessAnalysisController> {
     String title,
     String description,
     IconData icon,
-    double width,
-  ) {
+    double width, {
+    List<String> lines = const <String>[],
+  }) {
     return Container(
       width: width,
       padding: const EdgeInsets.all(16),
@@ -1057,11 +1098,141 @@ class BusinessAnalysisView extends GetView<BusinessAnalysisController> {
                   description,
                   style: const TextStyle(color: Colors.black54),
                 ),
+                if (lines.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  ...lines.map(
+                    (line) => Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Text(
+                        '• $line',
+                        style: const TextStyle(
+                          color: Colors.black87,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildDemandVsStockChart(BusinessAnalysisSnapshot snapshot) {
+    final points = snapshot.topProducts.take(6).toList();
+
+    return Card(
+      elevation: 0,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Demand vs on-hand stock',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'New chart: compares sold units (demand) against current stock by top items for replenishment planning.',
+              style: TextStyle(color: Colors.black54),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 280,
+              child: points.isEmpty
+                  ? const Center(
+                      child: Text('No product demand data available.'),
+                    )
+                  : BarChart(_buildDemandVsStockBarChart(points)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  BarChartData _buildDemandVsStockBarChart(List<ProductPerformance> points) {
+    final maxY = points.fold<double>(
+      0,
+      (value, item) => max(
+        value,
+        max(item.unitsSold.toDouble(), item.currentStock.toDouble()),
+      ),
+    );
+
+    return BarChartData(
+      alignment: BarChartAlignment.spaceAround,
+      maxY: maxY <= 0 ? 10 : maxY * 1.25,
+      minY: 0,
+      gridData: FlGridData(
+        show: true,
+        drawVerticalLine: false,
+        horizontalInterval: max(1, (maxY / 4).ceilToDouble()),
+      ),
+      borderData: FlBorderData(show: false),
+      titlesData: FlTitlesData(
+        topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        rightTitles: const AxisTitles(
+          sideTitles: SideTitles(showTitles: false),
+        ),
+        leftTitles: AxisTitles(
+          sideTitles: SideTitles(
+            showTitles: true,
+            reservedSize: 38,
+            getTitlesWidget: (value, meta) => Text(
+              value.toStringAsFixed(0),
+              style: const TextStyle(fontSize: 10),
+            ),
+          ),
+        ),
+        bottomTitles: AxisTitles(
+          sideTitles: SideTitles(
+            showTitles: true,
+            reservedSize: 44,
+            getTitlesWidget: (value, meta) {
+              final index = value.toInt();
+              if (index < 0 || index >= points.length) {
+                return const SizedBox.shrink();
+              }
+              final name = points[index].name;
+              final shortName = name.length > 10
+                  ? '${name.substring(0, 10)}…'
+                  : name;
+              return Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text(shortName, style: const TextStyle(fontSize: 10)),
+              );
+            },
+          ),
+        ),
+      ),
+      barGroups: points.asMap().entries.map((entry) {
+        final item = entry.value;
+        return BarChartGroupData(
+          x: entry.key,
+          barsSpace: 4,
+          barRods: [
+            BarChartRodData(
+              toY: item.unitsSold.toDouble(),
+              width: 10,
+              color: Colors.teal,
+              borderRadius: BorderRadius.circular(4),
+            ),
+            BarChartRodData(
+              toY: item.currentStock.toDouble(),
+              width: 10,
+              color: Colors.orange,
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ],
+        );
+      }).toList(),
     );
   }
 

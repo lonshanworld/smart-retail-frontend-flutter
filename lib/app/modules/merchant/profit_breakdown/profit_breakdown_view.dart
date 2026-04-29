@@ -28,15 +28,6 @@ class ProfitBreakdownView extends GetView<ProfitBreakdownController> {
           );
         }
 
-        if (controller.allSales.isEmpty) {
-          return const Center(
-            child: Padding(
-              padding: EdgeInsets.all(24),
-              child: Text('No sales found for the selected period.'),
-            ),
-          );
-        }
-
         return DefaultTabController(
           length: 2,
           child: LayoutBuilder(
@@ -115,6 +106,10 @@ class ProfitBreakdownView extends GetView<ProfitBreakdownController> {
               _buildFilterPanel(context, isWide),
               const SizedBox(height: 16),
               _buildSummaryCards(),
+              if (controller.allSales.isEmpty) ...[
+                const SizedBox(height: 16),
+                _buildNoSalesCard(),
+              ],
             ],
           ),
         ),
@@ -127,6 +122,11 @@ class ProfitBreakdownView extends GetView<ProfitBreakdownController> {
     bool isWide,
     double contentWidth,
   ) {
+    final displayedSales = controller.sales.isNotEmpty
+        ? controller.sales
+        : controller.allSales;
+    final hasSales = displayedSales.isNotEmpty;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       child: Center(
@@ -135,6 +135,8 @@ class ProfitBreakdownView extends GetView<ProfitBreakdownController> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              _buildFilterPanel(context, isWide),
+              const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -151,13 +153,11 @@ class ProfitBreakdownView extends GetView<ProfitBreakdownController> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Obx(
-                      () => Text(
-                        'Total: ${controller.totalItems.value} sales',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                        ),
+                    Text(
+                      'Total: ${controller.totalItems.value > 0 ? controller.totalItems.value : displayedSales.length} sales',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                     Obx(
@@ -167,8 +167,8 @@ class ProfitBreakdownView extends GetView<ProfitBreakdownController> {
                             icon: const Icon(Icons.chevron_left),
                             onPressed: controller.currentPage.value > 1
                                 ? () => controller.goToPage(
-                                      controller.currentPage.value - 1,
-                                    )
+                                    controller.currentPage.value - 1,
+                                  )
                                 : null,
                           ),
                           Text(
@@ -181,8 +181,8 @@ class ProfitBreakdownView extends GetView<ProfitBreakdownController> {
                                 controller.currentPage.value <
                                     controller.totalPages.value
                                 ? () => controller.goToPage(
-                                      controller.currentPage.value + 1,
-                                    )
+                                    controller.currentPage.value + 1,
+                                  )
                                 : null,
                           ),
                         ],
@@ -211,17 +211,21 @@ class ProfitBreakdownView extends GetView<ProfitBreakdownController> {
                 ),
               ),
               const SizedBox(height: 16),
-              ...controller.sales.asMap().entries.map((entry) {
-                final sale = entry.value;
-                return Padding(
-                  padding: EdgeInsets.only(
-                    bottom: entry.key == controller.sales.length - 1 ? 0 : 12,
-                  ),
-                  child: _buildOrderCard(context, sale, isWide),
-                );
-              }),
-              const SizedBox(height: 16),
-              _buildPaginationControls(),
+              if (!hasSales)
+                _buildNoSalesCard()
+              else ...[
+                ...displayedSales.asMap().entries.map((entry) {
+                  final sale = entry.value;
+                  return Padding(
+                    padding: EdgeInsets.only(
+                      bottom: entry.key == displayedSales.length - 1 ? 0 : 12,
+                    ),
+                    child: _buildOrderCard(context, sale, isWide),
+                  );
+                }),
+                const SizedBox(height: 16),
+                if (controller.sales.isNotEmpty) _buildPaginationControls(),
+              ],
             ],
           ),
         ),
@@ -772,7 +776,8 @@ class ProfitBreakdownView extends GetView<ProfitBreakdownController> {
             ),
             const SizedBox(width: 12),
             OutlinedButton.icon(
-              onPressed: controller.currentPage.value < controller.totalPages.value
+              onPressed:
+                  controller.currentPage.value < controller.totalPages.value
                   ? () => controller.goToPage(controller.currentPage.value + 1)
                   : null,
               icon: const Icon(Icons.chevron_right_rounded),
@@ -782,5 +787,29 @@ class ProfitBreakdownView extends GetView<ProfitBreakdownController> {
         ),
       );
     });
+  }
+
+  Widget _buildNoSalesCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.info_outline, color: Colors.grey.shade700),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Text(
+              'No sales found for the selected period. Change the period filter above to view 7 days, 30 days, or 1 year.',
+              style: TextStyle(height: 1.4),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

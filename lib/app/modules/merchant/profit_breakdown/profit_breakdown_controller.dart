@@ -232,6 +232,23 @@ class ProfitBreakdownController extends GetxController {
   }
 
   Future<void> _hydrateMissingSaleItems() async {
+    final allSalesWithItemsById = <String, Sale>{
+      for (final sale in allSales)
+        if (sale.items.isNotEmpty) sale.id: sale,
+    };
+
+    // Prefer already-loaded details from the full snapshot (overview data)
+    // before making additional backend requests.
+    sales.assignAll(
+      sales
+          .map(
+            (sale) => sale.items.isNotEmpty
+                ? sale
+                : (allSalesWithItemsById[sale.id] ?? sale),
+          )
+          .toList(),
+    );
+
     final missingSaleIds = <String>{
       ...allSales.where((sale) => sale.items.isEmpty).map((sale) => sale.id),
       ...sales.where((sale) => sale.items.isEmpty).map((sale) => sale.id),

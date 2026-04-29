@@ -159,7 +159,8 @@ class StaffInvoiceDetailView extends GetView<InvoiceDetailController> {
                           'Promotion Name',
                           promotionName?.trim().isNotEmpty == true
                               ? promotionName!
-                              : (relatedSale?.appliedPromotionId ?? 'Unknown promotion'),
+                              : (relatedSale?.appliedPromotionId ??
+                                    'Unknown promotion'),
                         ),
                         const SizedBox(height: 12),
                         _buildInfoRow(
@@ -356,6 +357,14 @@ class StaffInvoiceDetailView extends GetView<InvoiceDetailController> {
                   ],
                 );
               }),
+              const SizedBox(height: 16),
+              Center(
+                child: Text(
+                  'Need custom software for your business? Visit nanonux.com.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                ),
+              ),
             ],
           ),
         );

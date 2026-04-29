@@ -1,5 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'dart:ui' as ui;
+import 'package:flutter/material.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:path/path.dart' as p;
@@ -14,10 +16,36 @@ import 'package:smart_retail/app/utils/app_logger.dart';
 class InvoicePdfService {
   /// Builds the invoice PDF bytes without saving them.
   static Future<Uint8List> buildInvoicePdfBytes(Invoice invoice) async {
+    try {
+      final invoiceImage = await _renderInvoiceDetailAsImage(invoice);
+      final pdf = pw.Document();
+      final imageProvider = pw.MemoryImage(invoiceImage);
+
+      // Render as an embedded image so text is rasterized and consistent across devices.
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          margin: const pw.EdgeInsets.all(18),
+          build: (pw.Context context) {
+            return pw.Center(
+              child: pw.Image(imageProvider, fit: pw.BoxFit.contain),
+            );
+          },
+        ),
+      );
+
+      return pdf.save();
+    } catch (e) {
+      getLogger('app').info(
+        '[InvoicePdfService] Image render failed, falling back to vector PDF: $e',
+      );
+      return _buildVectorInvoicePdfBytes(invoice);
+    }
+  }
+
+  static Future<Uint8List> _buildVectorInvoicePdfBytes(Invoice invoice) async {
     final pdf = pw.Document();
 
-    // Add page to PDF. Layout mirrors the on-screen InvoiceDetailView:
-    // Header -> Amount Breakdown -> Additional Info -> Items -> Footer
     pdf.addPage(
       pw.Page(
         pageFormat: PdfPageFormat.a4,
@@ -26,23 +54,14 @@ class InvoicePdfService {
           return pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
-              // Header
               _buildHeader(invoice),
               pw.SizedBox(height: 16),
-
-              // Amount breakdown (matches UI ordering)
               _buildAmountBreakdown(invoice),
               pw.SizedBox(height: 12),
-
-              // Additional info
               _buildInvoiceInfo(invoice),
               pw.SizedBox(height: 12),
-
-              // Items list (styled like the UI card)
               if (invoice.items.isNotEmpty) _buildItemsList(invoice),
               pw.SizedBox(height: 16),
-
-              // Footer
               pw.Spacer(),
               _buildFooter(invoice),
             ],
@@ -148,6 +167,284 @@ class InvoicePdfService {
     } catch (_) {}
 
     return await getTemporaryDirectory();
+  }
+
+  static Future<Uint8List> _renderInvoiceDetailAsImage(Invoice invoice) async {
+    const width = 1240;
+    const horizontalPadding = 64.0;
+    const topPadding = 56.0;
+    const baseHeight = 1280;
+    final extraItemsHeight = (invoice.items.length * 58);
+    final notesHeight =
+        (invoice.notes != null && invoice.notes!.trim().isNotEmpty) ? 120 : 0;
+    final imageHeight = baseHeight + extraItemsHeight + notesHeight;
+
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder);
+
+    final whitePaint = Paint()..color = const Color(0xFFFFFFFF);
+    canvas.drawRect(
+      Rect.fromLTWH(0, 0, width.toDouble(), imageHeight.toDouble()),
+      whitePaint,
+    );
+
+    double y = topPadding;
+    final contentWidth = width - (horizontalPadding * 2);
+
+    TextPainter makePainter(
+      String text,
+      TextStyle style, {
+      TextAlign align = TextAlign.left,
+    }) {
+      return TextPainter(
+        text: TextSpan(text: text, style: style),
+        textAlign: align,
+        textDirection: ui.TextDirection.ltr,
+      )..layout(maxWidth: contentWidth);
+    }
+
+    void drawTextLine(
+      String text, {
+      required TextStyle style,
+      TextAlign align = TextAlign.left,
+      double spacingAfter = 8,
+    }) {
+      final painter = makePainter(text, style, align: align);
+      final dx = switch (align) {
+        TextAlign.center => (width - painter.width) / 2,
+        TextAlign.right => width - horizontalPadding - painter.width,
+        _ => horizontalPadding,
+      };
+      painter.paint(canvas, Offset(dx, y));
+      y += painter.height + spacingAfter;
+    }
+
+    void drawDivider() {
+      final paint = Paint()
+        ..color = const Color(0xFFDDDDDD)
+        ..strokeWidth = 2;
+      canvas.drawLine(
+        Offset(horizontalPadding, y),
+        Offset(width - horizontalPadding, y),
+        paint,
+      );
+      y += 14;
+    }
+
+    void drawAmountRow(String label, String amount, {bool bold = false}) {
+      final leftPainter = makePainter(
+        label,
+        TextStyle(
+          fontSize: bold ? 30 : 24,
+          fontWeight: bold ? FontWeight.w700 : FontWeight.w500,
+          color: const Color(0xFF111111),
+        ),
+      );
+      final rightPainter = makePainter(
+        amount,
+        TextStyle(
+          fontSize: bold ? 30 : 24,
+          fontWeight: FontWeight.w700,
+          color: bold ? const Color(0xFF0D47A1) : const Color(0xFF111111),
+        ),
+      );
+
+      leftPainter.paint(canvas, Offset(horizontalPadding, y));
+      rightPainter.paint(
+        canvas,
+        Offset(width - horizontalPadding - rightPainter.width, y),
+      );
+      y +=
+          (leftPainter.height > rightPainter.height
+              ? leftPainter.height
+              : rightPainter.height) +
+          10;
+    }
+
+    String status = invoice.paymentStatus.toUpperCase();
+    final statusPainter = makePainter(
+      status,
+      const TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.w700,
+        color: Color(0xFFFFFFFF),
+      ),
+    );
+
+    drawTextLine(
+      'INVOICE',
+      style: const TextStyle(
+        fontSize: 56,
+        fontWeight: FontWeight.w700,
+        color: Color(0xFF0D47A1),
+      ),
+      spacingAfter: 6,
+    );
+    drawTextLine(
+      invoice.invoiceNumber,
+      style: const TextStyle(
+        fontSize: 32,
+        fontWeight: FontWeight.w700,
+        color: Color(0xFF111111),
+      ),
+      spacingAfter: 14,
+    );
+
+    final pillPaddingH = 18.0;
+    final pillPaddingV = 10.0;
+    final pillRect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(
+        horizontalPadding,
+        y,
+        statusPainter.width + (pillPaddingH * 2),
+        statusPainter.height + (pillPaddingV * 2),
+      ),
+      const Radius.circular(12),
+    );
+    final statusBg = Paint()..color = const Color(0xFF1E88E5);
+    canvas.drawRRect(pillRect, statusBg);
+    statusPainter.paint(
+      canvas,
+      Offset(horizontalPadding + pillPaddingH, y + pillPaddingV),
+    );
+    y += statusPainter.height + (pillPaddingV * 2) + 18;
+
+    drawDivider();
+
+    drawTextLine(
+      'Amount Breakdown',
+      style: const TextStyle(
+        fontSize: 30,
+        fontWeight: FontWeight.w700,
+        color: Color(0xFF111111),
+      ),
+      spacingAfter: 10,
+    );
+    drawAmountRow('Subtotal', formatCurrency(invoice.subtotal));
+    if (invoice.discountAmount > 0) {
+      drawAmountRow('Discount', formatCurrency(-invoice.discountAmount));
+    }
+    if (invoice.taxAmount > 0) {
+      drawAmountRow('Tax', formatCurrency(invoice.taxAmount));
+    }
+    if (invoice.deliveryCharge > 0) {
+      drawAmountRow('Delivery Charge', formatCurrency(invoice.deliveryCharge));
+    }
+    drawDivider();
+    drawAmountRow('TOTAL', formatCurrency(invoice.totalAmount), bold: true);
+    y += 8;
+
+    drawDivider();
+
+    drawTextLine(
+      'Additional Information',
+      style: const TextStyle(
+        fontSize: 30,
+        fontWeight: FontWeight.w700,
+        color: Color(0xFF111111),
+      ),
+      spacingAfter: 10,
+    );
+
+    final checkoutDate = DateFormat(
+      'MMM dd, yyyy HH:mm',
+    ).format(invoice.checkoutTime.toLocal());
+    drawTextLine(
+      'Shop Name: ${invoice.shopName?.trim().isNotEmpty == true ? invoice.shopName! : 'Unknown shop'}',
+      style: const TextStyle(fontSize: 22, color: Color(0xFF222222)),
+      spacingAfter: 6,
+    );
+    drawTextLine(
+      'Checkout Time: $checkoutDate',
+      style: const TextStyle(fontSize: 22, color: Color(0xFF222222)),
+      spacingAfter: 6,
+    );
+    if (invoice.dueDate != null) {
+      drawTextLine(
+        'Due Date: ${DateFormat('MMM dd, yyyy').format(invoice.dueDate!.toLocal())}',
+        style: const TextStyle(fontSize: 22, color: Color(0xFF222222)),
+        spacingAfter: 6,
+      );
+    }
+    if (invoice.notes != null && invoice.notes!.trim().isNotEmpty) {
+      drawTextLine(
+        'Notes: ${invoice.notes!.trim()}',
+        style: const TextStyle(fontSize: 21, color: Color(0xFF333333)),
+        spacingAfter: 10,
+      );
+    }
+
+    drawDivider();
+    drawTextLine(
+      'Items',
+      style: const TextStyle(
+        fontSize: 30,
+        fontWeight: FontWeight.w700,
+        color: Color(0xFF111111),
+      ),
+      spacingAfter: 8,
+    );
+
+    if (invoice.items.isEmpty) {
+      drawTextLine(
+        'No item list found for this invoice yet.',
+        style: const TextStyle(fontSize: 22, color: Color(0xFF666666)),
+        spacingAfter: 6,
+      );
+    } else {
+      for (final it in invoice.items) {
+        final itemName = (it.itemName != null && it.itemName!.trim().isNotEmpty)
+            ? it.itemName!
+            : it.inventoryItemId;
+        drawTextLine(
+          '$itemName x${it.quantitySold}  ${formatCurrency(it.sellingPriceAtSale)}  ${formatCurrency(it.subtotal)}',
+          style: const TextStyle(
+            fontSize: 21,
+            color: Color(0xFF111111),
+            fontWeight: FontWeight.w600,
+          ),
+          spacingAfter: 6,
+        );
+        if (it.itemSku != null && it.itemSku!.trim().isNotEmpty) {
+          drawTextLine(
+            'SKU: ${it.itemSku}',
+            style: const TextStyle(fontSize: 18, color: Color(0xFF666666)),
+            spacingAfter: 8,
+          );
+        }
+      }
+    }
+
+    y += 10;
+    drawDivider();
+    drawTextLine(
+      'Thank you for your business!',
+      style: const TextStyle(
+        fontSize: 21,
+        color: Color(0xFF555555),
+        fontStyle: FontStyle.italic,
+      ),
+      spacingAfter: 4,
+    );
+    drawTextLine(
+      'Generated on ${DateFormat('MMM dd, yyyy HH:mm').format(DateTime.now())}',
+      style: const TextStyle(fontSize: 18, color: Color(0xFF666666)),
+      spacingAfter: 6,
+    );
+    drawTextLine(
+      'Need custom software for your business? Visit nanonux.com.',
+      style: const TextStyle(fontSize: 18, color: Color(0xFF666666)),
+      align: TextAlign.center,
+      spacingAfter: 0,
+    );
+
+    final picture = recorder.endRecording();
+    final image = await picture.toImage(width, imageHeight);
+    final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+    if (byteData == null) {
+      throw StateError('Failed to convert invoice image to PNG bytes');
+    }
+    return byteData.buffer.asUint8List();
   }
 
   static pw.Widget _buildHeader(Invoice invoice) {
@@ -347,6 +644,14 @@ class InvoicePdfService {
         pw.Text(
           'Generated on ${DateFormat('MMM dd, yyyy HH:mm').format(DateTime.now())}',
           style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey600),
+        ),
+        pw.SizedBox(height: 10),
+        pw.Center(
+          child: pw.Text(
+            'Need custom software for your business? Visit nanonux.com.',
+            textAlign: pw.TextAlign.center,
+            style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey600),
+          ),
         ),
       ],
     );
