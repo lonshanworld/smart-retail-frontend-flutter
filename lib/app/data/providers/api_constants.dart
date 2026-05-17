@@ -25,6 +25,6 @@ class ApiConstants {
     // }
 
     // Last-resort local fallback for development.
-    return 'http://192.168.147.2:5000/api/v1';
+    return 'https://smart-retail-backend-6ogv.onrender.com/api/v1';
   }
 }
