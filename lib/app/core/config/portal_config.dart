@@ -30,13 +30,13 @@ class PortalConfig {
       case PortalType.admin:
         return const PortalConfig(
           portalType: PortalType.admin,
-          portalName: 'Nanonux Business Central Admin',
+          portalName: 'NanoNux Business Central Admin',
           introRoute: '/admin-intro',
         );
       case PortalType.customer:
         return const PortalConfig(
           portalType: PortalType.customer,
-          portalName: 'Nanonux Business Central',
+          portalName: 'NanoNux Business Central',
           introRoute: '/customer-intro',
         );
     }
@@ -45,14 +45,14 @@ class PortalConfig {
   /// Admin portal configuration
   static const PortalConfig admin = PortalConfig(
     portalType: PortalType.admin,
-    portalName: 'Nanonux Business Central Admin',
+    portalName: 'NanoNux Business Central Admin',
     introRoute: '/admin-intro',
   );
 
   /// Customer portal configuration
   static const PortalConfig customer = PortalConfig(
     portalType: PortalType.customer,
-    portalName: 'Nanonux Business Central',
+    portalName: 'NanoNux Business Central',
     introRoute: '/customer-intro',
   );
 }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:smart_retail/app/modules/public/widgets/public_premium_shell.dart';
+import 'package:smart_retail/app/modules/public/widgets/public_website_header.dart';
 import 'package:smart_retail/app/routes/app_pages.dart';
 
 class PublicAboutView extends StatelessWidget {
@@ -15,14 +17,23 @@ class PublicAboutView extends StatelessWidget {
     final isWide = MediaQuery.of(context).size.width >= 980;
 
     return Scaffold(
-      backgroundColor: _paper,
-      body: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(child: _hero(isWide)),
-          SliverToBoxAdapter(child: _story(isWide)),
-          SliverToBoxAdapter(child: _values(isWide)),
-          SliverToBoxAdapter(child: _actions(isWide)),
-        ],
+      backgroundColor: Colors.transparent,
+      body: PublicPremiumShell(
+        baseColor: _paper,
+        child: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(child: _hero(isWide)),
+            SliverToBoxAdapter(
+              child: _RevealOnLoad(delay: 60, child: _story(isWide)),
+            ),
+            SliverToBoxAdapter(
+              child: _RevealOnLoad(delay: 120, child: _values(isWide)),
+            ),
+            SliverToBoxAdapter(
+              child: _RevealOnLoad(delay: 180, child: _actions(isWide)),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -40,42 +51,10 @@ class PublicAboutView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              OutlinedButton.icon(
-                onPressed: () => Get.back(),
-                icon: const Icon(Icons.arrow_back),
-                label: Text('Back', style: GoogleFonts.manrope(fontWeight: FontWeight.w700)),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  side: const BorderSide(color: Colors.white38),
-                ),
-              ),
-              OutlinedButton.icon(
-                onPressed: () => Get.offAllNamed(Routes.CUSTOMER_INTRO),
-                icon: const Icon(Icons.home_outlined),
-                label: Text('Home', style: GoogleFonts.manrope(fontWeight: FontWeight.w700)),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  side: const BorderSide(color: Colors.white38),
-                ),
-              ),
-              OutlinedButton.icon(
-                onPressed: () => Get.toNamed(Routes.PUBLIC_FEATURES),
-                icon: const Icon(Icons.auto_awesome_motion_outlined),
-                label: Text('Features', style: GoogleFonts.manrope(fontWeight: FontWeight.w700)),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  side: const BorderSide(color: Colors.white38),
-                ),
-              ),
-            ],
-          ),
+          const PublicWebsiteHeader(currentRoute: Routes.PUBLIC_ABOUT),
           const SizedBox(height: 18),
           Text(
-            'About Nanonux Business Central',
+            'About NanoNux Business Central',
             style: GoogleFonts.playfairDisplay(
               color: Colors.white,
               fontSize: isWide ? 50 : 38,
@@ -120,7 +99,7 @@ class PublicAboutView extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               Text(
-                'Nanonux Business Central started from a simple observation: most retail teams juggle too many disconnected systems. We built one platform where merchant leadership, staff execution, and shop operations work in harmony.',
+                'NanoNux Business Central started from a simple observation: most retail teams juggle too many disconnected systems. We built one platform where merchant leadership, staff execution, and shop operations work in harmony.',
                 style: GoogleFonts.manrope(
                   color: const Color(0xFF334E68),
                   height: 1.7,
@@ -144,12 +123,14 @@ class PublicAboutView extends StatelessWidget {
           _ValueCard(
             icon: Icons.rocket_launch_outlined,
             title: 'Operational Speed',
-            text: 'Interactions are crafted to reduce friction at peak store hours.',
+            text:
+                'Interactions are crafted to reduce friction at peak store hours.',
           ),
           _ValueCard(
             icon: Icons.balance_outlined,
             title: 'Design + Utility',
-            text: 'Premium visual language with practical, measurable outcomes.',
+            text:
+                'Premium visual language with practical, measurable outcomes.',
           ),
           _ValueCard(
             icon: Icons.account_tree_outlined,
@@ -266,6 +247,32 @@ class _ValueCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _RevealOnLoad extends StatelessWidget {
+  const _RevealOnLoad({required this.child, required this.delay});
+
+  final Widget child;
+  final int delay;
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: Duration(milliseconds: 620 + delay),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(0, (1 - value) * 18),
+            child: child,
+          ),
+        );
+      },
+      child: child,
     );
   }
 }

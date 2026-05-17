@@ -73,6 +73,12 @@ class MerchantStocksView extends GetView<MerchantStocksController> {
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
+              DataColumn(
+                label: Text(
+                  'Actions',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
             ],
             buildCells: (item) => [
               DataCell(
@@ -181,6 +187,32 @@ class MerchantStocksView extends GetView<MerchantStocksController> {
                   }
                 },
               ),
+              DataCell(
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: Icon(
+                        Icons.edit_outlined,
+                        color: AppColors.merchant,
+                        size: 20,
+                      ),
+                      tooltip: 'Edit',
+                      onPressed: () => controller.goToEditItemPage(item),
+                    ),
+                    IconButton(
+                      icon: const Icon(
+                        Icons.delete_outline,
+                        color: Colors.redAccent,
+                        size: 20,
+                      ),
+                      tooltip: 'Delete',
+                      onPressed: () =>
+                          controller.checkAndDeleteItemFromList(item),
+                    ),
+                  ],
+                ),
+              ),
             ],
             buildMobileCard: (item) => DataRowCard(
               leading: CircleAvatar(
@@ -205,7 +237,7 @@ class MerchantStocksView extends GetView<MerchantStocksController> {
                   value: item.subcategoryObj?.name ?? 'Uncategorized',
                 ),
                 DetailRow(
-                  icon: Icons.branding_watermark, 
+                  icon: Icons.branding_watermark,
                   label: 'Brand',
                   value: item.brandObj?.name ?? 'No Brand',
                 ),
@@ -220,14 +252,32 @@ class MerchantStocksView extends GetView<MerchantStocksController> {
                   value: '\$${item.originalPrice.toStringAsFixed(2)}',
                 ),
               ],
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: Icon(
+                      Icons.edit_outlined,
+                      color: AppColors.merchant,
+                      size: 24,
+                    ),
+                    tooltip: 'Edit',
+                    onPressed: () => controller.goToEditItemPage(item),
+                  ),
+                  IconButton(
+                    icon: const Icon(
+                      Icons.delete_outline,
+                      color: Colors.redAccent,
+                      size: 24,
+                    ),
+                    tooltip: 'Delete',
+                    onPressed: () =>
+                        controller.checkAndDeleteItemFromList(item),
+                  ),
+                ],
+              ),
               onTap: () async {
-                final result = await Get.toNamed(
-                  Routes.MERCHANT_INVENTORY_EDIT,
-                  arguments: item,
-                );
-                if (result == true) {
-                  controller.fetchInventoryItems();
-                }
+                await controller.goToEditItemPage(item);
               },
             ),
             headingRowColor: AppColors.merchant.shade50,

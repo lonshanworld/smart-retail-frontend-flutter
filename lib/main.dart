@@ -101,8 +101,8 @@ Future<void> startSmartRetailApp({
       } catch (_) {
         // ignore normalization failures; fall through to return original response
       }
-      final authService = Get.put(AuthService());
-      await authService.initialize();
+      // Always return a Response; some endpoints (e.g. 204 deletes) have null bodies.
+      return response;
     });
   } catch (_) {}
   Get.lazyPut<DatabaseService>(() => DatabaseService());
@@ -170,9 +170,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      title: 'Nanonux Business Central',
+      title: 'NanoNux Business Central',
       theme: AppTheme.light,
-      themeMode: ThemeMode.light,
       debugShowCheckedModeBanner: false,
       scaffoldMessengerKey: scaffoldMessengerKey,
       initialRoute: AppPages.INITIAL,

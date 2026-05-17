@@ -17,17 +17,16 @@ import 'package:smart_retail/app/widgets/app_colors.dart';
 import 'package:smart_retail/app/utils/app_logger.dart';
 
 class StaffPosController extends GetxController {
- 
   final StaffPosApiService? _apiService = Get.isRegistered<StaffPosApiService>()
       ? Get.find<StaffPosApiService>()
       : null;
   final AuthService? _authService = Get.isRegistered<AuthService>()
       ? Get.find<AuthService>()
       : null;
-    final ShopApiService? _shopApiService = Get.isRegistered<ShopApiService>()
+  final ShopApiService? _shopApiService = Get.isRegistered<ShopApiService>()
       ? Get.find<ShopApiService>()
       : null;
-    final AppConfig? _appConfig = Get.isRegistered<AppConfig>()
+  final AppConfig? _appConfig = Get.isRegistered<AppConfig>()
       ? Get.find<AppConfig>()
       : null;
   final InventoryApiService? _inventoryApi =
@@ -160,12 +159,12 @@ class StaffPosController extends GetxController {
   }
 
   CartItem? getCartItemByProductId(String productId) {
-  try {
-    return cartItems.firstWhere((item) => item.product.id == productId);
-  } catch (_) {
-    return null;
+    try {
+      return cartItems.firstWhere((item) => item.product.id == productId);
+    } catch (_) {
+      return null;
+    }
   }
-}
 
   void setCategoryFilter(String? categoryId) {
     selectedCategoryId.value = categoryId;
@@ -291,8 +290,9 @@ class StaffPosController extends GetxController {
     final existingIndex = cartItems.indexWhere(
       (item) => item.product.id == product.id,
     );
-    final requestedQuantity =
-        existingIndex != -1 ? cartItems[existingIndex].quantity.value + 1 : 1;
+    final requestedQuantity = existingIndex != -1
+        ? cartItems[existingIndex].quantity.value + 1
+        : 1;
     if (!_canIncreaseQuantity(product, requestedQuantity)) {
       _showStockLimitWarning(product, _availableStockForProduct(product) ?? 0);
       return;
@@ -550,9 +550,8 @@ class StaffPosController extends GetxController {
   }
 
   void _printVoucher(Sale sale) {
-    final voucherText = _buildVoucherText(sale);
     if (_printerService != null) {
-      _printerService.printVoucher(voucherText);
+      _printerService.printSaleVoucher(sale);
     } else {
       DialogUtils.showInfo('Printing not available');
     }
@@ -566,4 +565,3 @@ class StaffPosController extends GetxController {
     super.onClose();
   }
 }
-

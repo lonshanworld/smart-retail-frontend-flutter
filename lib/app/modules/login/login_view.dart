@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:smart_retail/app/modules/login/login_controller.dart';
 import 'package:smart_retail/app/routes/app_pages.dart';
-import 'package:smart_retail/app/services/app_navigation.dart';
 
 class LoginView extends GetView<LoginController> {
   final String? loginType; // 'admin', 'staff', or null (default to merchant)
@@ -72,7 +71,7 @@ class LoginView extends GetView<LoginController> {
                         alignment: Alignment.centerLeft,
                         child: IconButton(
                           icon: const Icon(Icons.arrow_back),
-                          onPressed: () => AppNavigation.backOr(Routes.OFFLINE_INTRO),
+                          onPressed: Get.back,
                         ),
                       ),
                       const SizedBox(height: 20),
@@ -94,11 +93,7 @@ class LoginView extends GetView<LoginController> {
                             ),
                           ],
                         ),
-                        child: Icon(
-                          _getIcon(),
-                          size: 50,
-                          color: Colors.white,
-                        ),
+                        child: Icon(_getIcon(), size: 50, color: Colors.white),
                       ),
                       const SizedBox(height: 30),
 
@@ -188,7 +183,7 @@ class LoginView extends GetView<LoginController> {
 
                             // Password Field
                             Obx(
-                                  () => TextFormField(
+                              () => TextFormField(
                                 controller: controller.passwordController,
                                 style: const TextStyle(color: Colors.black),
                                 decoration: InputDecoration(
@@ -225,13 +220,12 @@ class LoginView extends GetView<LoginController> {
                                       color: Colors.grey.shade600,
                                     ),
                                     onPressed:
-                                    controller.togglePasswordVisibility,
+                                        controller.togglePasswordVisibility,
                                   ),
                                   filled: true,
                                   fillColor: Colors.grey.shade50,
                                 ),
-                                obscureText:
-                                controller.isPasswordHidden.value,
+                                obscureText: controller.isPasswordHidden.value,
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
                                     return 'Please enter your password';
@@ -244,7 +238,7 @@ class LoginView extends GetView<LoginController> {
 
                             // Login Button
                             Obx(
-                                  () => ElevatedButton(
+                              () => ElevatedButton(
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: color,
                                   foregroundColor: Colors.white,
@@ -263,32 +257,31 @@ class LoginView extends GetView<LoginController> {
                                 onPressed: controller.isLoading.value
                                     ? null
                                     : () {
-                                  if (_formKey.currentState
-                                      ?.validate() ??
-                                      false) {
-                                    controller.login(
-                                      loginType: loginType,
-                                    );
-                                  }
-                                },
+                                        if (_formKey.currentState?.validate() ??
+                                            false) {
+                                          controller.login(
+                                            loginType: loginType,
+                                          );
+                                        }
+                                      },
                                 child: controller.isLoading.value
                                     ? const SizedBox(
-                                  width: 24,
-                                  height: 24,
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                    strokeWidth: 3.0,
-                                  ),
-                                )
+                                        width: 24,
+                                        height: 24,
+                                        child: CircularProgressIndicator(
+                                          color: Colors.white,
+                                          strokeWidth: 3.0,
+                                        ),
+                                      )
                                     : Row(
-                                  mainAxisAlignment:
-                                  MainAxisAlignment.center,
-                                  children: const [
-                                    Text('Login'),
-                                    SizedBox(width: 8),
-                                    Icon(Icons.arrow_forward, size: 20),
-                                  ],
-                                ),
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: const [
+                                          Text('Login'),
+                                          SizedBox(width: 8),
+                                          Icon(Icons.arrow_forward, size: 20),
+                                        ],
+                                      ),
                               ),
                             ),
                           ],

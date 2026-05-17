@@ -24,12 +24,12 @@ class PublicContactConfig {
 
   static String get supportEmailSubject => _env(
     'PUBLIC_SUPPORT_EMAIL_SUBJECT',
-    fallback: 'Nanonux Business Central Support Request',
+    fallback: 'NanoNux Business Central Support Request',
   );
 
   static String get contactEmailSubject => _env(
     'PUBLIC_CONTACT_EMAIL_SUBJECT',
-    fallback: 'Nanonux Business Central Contact Request',
+    fallback: 'NanoNux Business Central Contact Request',
   );
 
   static String _env(String key, {required String fallback}) {

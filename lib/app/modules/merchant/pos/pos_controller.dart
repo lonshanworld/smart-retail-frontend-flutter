@@ -134,12 +134,12 @@ class PosController extends GetxController {
   }
 
   CartItem? getCartItemByProductId(String productId) {
-  try {
-    return cartItems.firstWhere((item) => item.product.id == productId);
-  } catch (_) {
-    return null;
+    try {
+      return cartItems.firstWhere((item) => item.product.id == productId);
+    } catch (_) {
+      return null;
+    }
   }
-}
 
   void fetchShops() async {
     try {
@@ -151,7 +151,7 @@ class PosController extends GetxController {
         final refreshedSelection = previousShopId == null
             ? shops.first
             : shops.firstWhereOrNull((shop) => shop.id == previousShopId) ??
-                shops.first;
+                  shops.first;
         selectedShop.value = refreshedSelection;
         _setDeliveryCharge(refreshedSelection.deliveryCharge);
       }
@@ -166,13 +166,15 @@ class PosController extends GetxController {
     getLogger('app').info('check shop $shop');
     if (shop == null) return;
 
-    getLogger('app').info('ðŸª [POS CONTROLLER] Shop changed to: ${shop.name} (${shop.id})');
+    getLogger(
+      'app',
+    ).info('ðŸª [POS CONTROLLER] Shop changed to: ${shop.name} (${shop.id})');
     if (shop.id != selectedShop.value?.id) {
       cartItems.clear();
     }
     final freshShop = shop.id == null
-      ? shop
-      : await _shopsApiService.getShopById(shop.id!) ?? shop;
+        ? shop
+        : await _shopsApiService.getShopById(shop.id!) ?? shop;
     selectedShop.value = freshShop;
     _setDeliveryCharge(freshShop.deliveryCharge);
 
@@ -192,7 +194,9 @@ class PosController extends GetxController {
 
   Future<void> fetchActivePromotions() async {
     if (selectedShop.value == null || selectedShop.value!.id == null) {
-      getLogger('app').info('âš ï¸  [POS CONTROLLER] Cannot fetch promotions - no shop selected');
+      getLogger('app').info(
+        'âš ï¸  [POS CONTROLLER] Cannot fetch promotions - no shop selected',
+      );
       return;
     }
 
@@ -230,17 +234,27 @@ class PosController extends GetxController {
       } catch (_) {}
 
       // Debug logging
-      getLogger('app').info('ðŸ“Š [POS CONTROLLER] Received ${promotions.length} promotion(s)');
+      getLogger('app').info(
+        'ðŸ“Š [POS CONTROLLER] Received ${promotions.length} promotion(s)',
+      );
       if (promotions.isEmpty) {
-        getLogger('app').info('âš ï¸  [POS CONTROLLER] No active promotions available');
+        getLogger(
+          'app',
+        ).info('âš ï¸  [POS CONTROLLER] No active promotions available');
         getLogger('app').info('   Possible reasons:');
         getLogger('app').info('   1. Promotions are inactive (toggle is OFF)');
-        getLogger('app').info('   2. Promotions have not started yet (future start_date)');
+        getLogger(
+          'app',
+        ).info('   2. Promotions have not started yet (future start_date)');
         getLogger('app').info('   3. Promotions have expired (past end_date)');
-        getLogger('app').info('   4. Promotions are assigned to a different shop');
+        getLogger(
+          'app',
+        ).info('   4. Promotions are assigned to a different shop');
         getLogger('app').info('   5. No promotions created yet');
       } else {
-        getLogger('app').info('âœ… [POS CONTROLLER] Promotions loaded successfully:');
+        getLogger(
+          'app',
+        ).info('âœ… [POS CONTROLLER] Promotions loaded successfully:');
         for (var promo in promotions) {
           final typeSymbol = promo.type == 'percentage' ? '%' : '\$';
           final minSpend = promo.minSpend > 0
@@ -252,7 +266,9 @@ class PosController extends GetxController {
         }
       }
     } catch (e) {
-      getLogger('app').info('âŒ [POS CONTROLLER] Error loading promotions: $e');
+      getLogger(
+        'app',
+      ).info('âŒ [POS CONTROLLER] Error loading promotions: $e');
       DialogUtils.showInfo('Could not load promotions: $e');
       try {
         promotionsTimeoutTimer.cancel();
@@ -365,8 +381,9 @@ class PosController extends GetxController {
     final existingIndex = cartItems.indexWhere(
       (item) => item.product.id == product.id,
     );
-    final requestedQuantity =
-        existingIndex != -1 ? cartItems[existingIndex].quantity.value + 1 : 1;
+    final requestedQuantity = existingIndex != -1
+        ? cartItems[existingIndex].quantity.value + 1
+        : 1;
     if (!_canIncreaseQuantity(product, requestedQuantity)) {
       _showStockLimitWarning(product, _availableStockForProduct(product) ?? 0);
       return;
@@ -441,7 +458,7 @@ class PosController extends GetxController {
           .toList(),
       'totalAmount': cartTotal,
       'discountAmount': discountAmount,
-          'taxAmount': taxAmount,
+      'taxAmount': taxAmount,
       'deliveryCharge': deliveryCharge,
       'appliedPromotionId': selectedPromotion.value?.id,
       'paymentType': 'cash',
@@ -451,10 +468,16 @@ class PosController extends GetxController {
 
     // Debug: log checkout payload and computed promotion details
     try {
-        getLogger('app').info('DEBUG: Merchant POS promotion selected: ${selectedPromotion.value?.name} (id: ${selectedPromotion.value?.id})');
-        getLogger('app').info('DEBUG: Merchant POS discountAmount: $discountAmount, cartSubtotal: $cartSubtotal, taxAmount: $taxAmount');
+      getLogger('app').info(
+        'DEBUG: Merchant POS promotion selected: ${selectedPromotion.value?.name} (id: ${selectedPromotion.value?.id})',
+      );
+      getLogger('app').info(
+        'DEBUG: Merchant POS discountAmount: $discountAmount, cartSubtotal: $cartSubtotal, taxAmount: $taxAmount',
+      );
       final payloadJson = jsonEncode(saleData);
-      getLogger('app').info('DEBUG: Merchant POS checkout payload: $payloadJson');
+      getLogger(
+        'app',
+      ).info('DEBUG: Merchant POS checkout payload: $payloadJson');
     } catch (e) {
       getLogger('app').info('DEBUG: Failed to encode checkout payload: $e');
     }
@@ -517,10 +540,7 @@ class PosController extends GetxController {
         actions: [
           TextButton(onPressed: () => Get.back(), child: const Text('Close')),
           TextButton(
-            onPressed: () => _printerService.downloadVoucherPdf(
-              _buildVoucherText(sale),
-              filename: 'voucher-${sale.id}.pdf',
-            ),
+            onPressed: () => _printerService.downloadSaleVoucherPdf(sale),
             child: const Text('Download PDF'),
           ),
           TextButton(
@@ -549,8 +569,7 @@ class PosController extends GetxController {
   }
 
   void _printVoucher(Sale sale) {
-    final voucherText = _buildVoucherText(sale);
-    _printerService.printVoucher(voucherText);
+    _printerService.printSaleVoucher(sale);
   }
 
   @override
@@ -561,4 +580,3 @@ class PosController extends GetxController {
     super.onClose();
   }
 }
-

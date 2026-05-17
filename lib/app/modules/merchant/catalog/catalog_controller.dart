@@ -70,12 +70,17 @@ class CatalogController extends GetxController {
   }
 
   Future<void> deleteCategory(String categoryId) async {
-    final ok = await _inventoryApi.deleteCategory(categoryId);
-    if (ok) {
+    try {
+      final ok = await _inventoryApi.deleteCategory(categoryId);
+      if (ok) {
+        DialogUtils.showSuccess('Category deleted');
+      } else {
+        DialogUtils.showError('Failed to delete category');
+      }
+    } catch (e) {
+      DialogUtils.showError(e.toString());
+    } finally {
       await loadCatalog();
-      DialogUtils.showSuccess('Category deleted');
-    } else {
-      DialogUtils.showError('Failed to delete category');
     }
   }
 
@@ -122,12 +127,17 @@ class CatalogController extends GetxController {
   }
 
   Future<void> deleteSubcategory(String subcategoryId) async {
-    final ok = await _inventoryApi.deleteSubcategory(subcategoryId);
-    if (ok) {
+    try {
+      final ok = await _inventoryApi.deleteSubcategory(subcategoryId);
+      if (ok) {
+        DialogUtils.showSuccess('Subcategory deleted');
+      } else {
+        DialogUtils.showError('Failed to delete subcategory');
+      }
+    } catch (e) {
+      DialogUtils.showError(e.toString());
+    } finally {
       await loadCatalog();
-      DialogUtils.showSuccess('Subcategory deleted');
-    } else {
-      DialogUtils.showError('Failed to delete subcategory');
     }
   }
 
@@ -197,12 +207,17 @@ class CatalogController extends GetxController {
   }
 
   Future<void> deleteBrand(String brandId) async {
-    final ok = await _inventoryApi.deleteBrand(brandId);
-    if (ok) {
+    try {
+      final ok = await _inventoryApi.deleteBrand(brandId);
+      if (ok) {
+        DialogUtils.showSuccess('Brand deleted');
+      } else {
+        DialogUtils.showError('Failed to delete brand');
+      }
+    } catch (e) {
+      DialogUtils.showError(e.toString());
+    } finally {
       await loadCatalog();
-      DialogUtils.showSuccess('Brand deleted');
-    } else {
-      DialogUtils.showError('Failed to delete brand');
     }
   }
 }

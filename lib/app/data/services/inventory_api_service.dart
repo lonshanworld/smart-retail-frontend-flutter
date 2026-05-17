@@ -29,9 +29,11 @@ class InventoryApiService extends GetxService {
   }
 
   bool _matchesMerchant(Map<String, dynamic> row, String merchantId) {
-    final rowMerchantId = row['merchant_id']?.toString() ?? row['merchantId']?.toString();
+    final rowMerchantId =
+        row['merchant_id']?.toString() ?? row['merchantId']?.toString();
     return rowMerchantId == merchantId;
   }
+
   final LocalDatabaseService _localDatabaseService =
       Get.find<LocalDatabaseService>();
   final Logger _logger = Logger('InventoryApiService');
@@ -98,7 +100,8 @@ class InventoryApiService extends GetxService {
               try {
                 final parsed = json.decode(data) as Map<String, dynamic>;
                 if (!parsed.containsKey('id')) parsed['id'] = r['id'];
-                if (merchantId == null || _matchesMerchant(parsed, merchantId)) {
+                if (merchantId == null ||
+                    _matchesMerchant(parsed, merchantId)) {
                   catRows.add(parsed);
                 }
               } catch (_) {
@@ -116,8 +119,12 @@ class InventoryApiService extends GetxService {
         }
 
         // Subcategories (support JSON-backed or structured)
-        final pragmaSub = await db.rawQuery("PRAGMA table_info('subcategories')");
-        final hasSubData = pragmaSub.any((c) => (c['name'] as String?) == 'data');
+        final pragmaSub = await db.rawQuery(
+          "PRAGMA table_info('subcategories')",
+        );
+        final hasSubData = pragmaSub.any(
+          (c) => (c['name'] as String?) == 'data',
+        );
         List<Map<String, dynamic>> subRows = [];
         if (hasSubData) {
           final raw = await db.query('subcategories');
@@ -127,11 +134,15 @@ class InventoryApiService extends GetxService {
               try {
                 final parsed = json.decode(data) as Map<String, dynamic>;
                 if (!parsed.containsKey('id')) parsed['id'] = r['id'];
-                final parsedCategory = parsed['categoryId']?.toString() ?? parsed['category_id']?.toString();
+                final parsedCategory =
+                    parsed['categoryId']?.toString() ??
+                    parsed['category_id']?.toString();
                 final categoryBelongsToMerchant = catRows.any(
                   (category) => category['id']?.toString() == parsedCategory,
                 );
-                if (merchantId == null || _matchesMerchant(parsed, merchantId) || categoryBelongsToMerchant) {
+                if (merchantId == null ||
+                    _matchesMerchant(parsed, merchantId) ||
+                    categoryBelongsToMerchant) {
                   subRows.add(parsed);
                 }
               } catch (_) {}
@@ -148,31 +159,48 @@ class InventoryApiService extends GetxService {
 
         final Map<String, List<Map<String, dynamic>>> subsByCat = {};
         for (final s in subRows) {
-          final cid = s['categoryId'] as String? ?? s['category_id'] as String? ?? '';
+          final cid =
+              s['categoryId'] as String? ?? s['category_id'] as String? ?? '';
           subsByCat.putIfAbsent(cid ?? '', () => []).add(s);
         }
 
         final categories = catRows.map((r) {
           final cid = r['id'] as String;
-          final rawSubs = (subsByCat[cid] ?? []).map((s) => {
-                'id': s['id'],
-                'categoryId': s['categoryId'] ?? s['category_id'],
-                'name': s['name'],
-                'description': s['description'],
-                'createdAt': s['createdAt'] ?? s['created_at'],
-                'updatedAt': s['updatedAt'] ?? s['updated_at'],
-              }).toList();
+          final rawSubs = (subsByCat[cid] ?? [])
+              .map(
+                (s) => {
+                  'id': s['id'],
+                  'categoryId': s['categoryId'] ?? s['category_id'],
+                  'name': s['name'],
+                  'description': s['description'],
+                  'createdAt': s['createdAt'] ?? s['created_at'],
+                  'updatedAt': s['updatedAt'] ?? s['updated_at'],
+                },
+              )
+              .toList();
           return {
             'id': r['id'],
-            'name': r['name'] ?? (r['data'] != null ? (json.decode(r['data'] as String) as Map<String, dynamic>)['name'] : null),
-            'description': r['description'] ?? (r['data'] != null ? (json.decode(r['data'] as String) as Map<String, dynamic>)['description'] : null),
+            'name':
+                r['name'] ??
+                (r['data'] != null
+                    ? (json.decode(r['data'] as String)
+                          as Map<String, dynamic>)['name']
+                    : null),
+            'description':
+                r['description'] ??
+                (r['data'] != null
+                    ? (json.decode(r['data'] as String)
+                          as Map<String, dynamic>)['description']
+                    : null),
             'subcategories': rawSubs,
           };
         }).toList();
 
         // Brands (support JSON-backed or structured)
         final pragmaBrand = await db.rawQuery("PRAGMA table_info('brands')");
-        final hasBrandData = pragmaBrand.any((c) => (c['name'] as String?) == 'data');
+        final hasBrandData = pragmaBrand.any(
+          (c) => (c['name'] as String?) == 'data',
+        );
         List<Map<String, dynamic>> brandRows = [];
         if (hasBrandData) {
           final raw = await db.query('brands');
@@ -182,7 +210,8 @@ class InventoryApiService extends GetxService {
               try {
                 final parsed = json.decode(data) as Map<String, dynamic>;
                 if (!parsed.containsKey('id')) parsed['id'] = r['id'];
-                if (merchantId == null || _matchesMerchant(parsed, merchantId)) {
+                if (merchantId == null ||
+                    _matchesMerchant(parsed, merchantId)) {
                   brandRows.add(parsed);
                 }
               } catch (_) {}
@@ -198,21 +227,44 @@ class InventoryApiService extends GetxService {
         }
 
         final brands = brandRows
-          .map((b) => {
-              'id': b['id'],
-              'name': b['name'] ?? (b['data'] != null ? (json.decode(b['data'] as String) as Map<String, dynamic>)['name'] : null),
-              'description': b['description'] ?? (b['data'] != null ? (json.decode(b['data'] as String) as Map<String, dynamic>)['description'] : null),
-              'imageUrl': b['image_url'] ?? b['imageUrl'] ?? (b['data'] != null ? (json.decode(b['data'] as String) as Map<String, dynamic>)['imageUrl'] : null),
-            })
-          .toList();
+            .map(
+              (b) => {
+                'id': b['id'],
+                'name':
+                    b['name'] ??
+                    (b['data'] != null
+                        ? (json.decode(b['data'] as String)
+                              as Map<String, dynamic>)['name']
+                        : null),
+                'description':
+                    b['description'] ??
+                    (b['data'] != null
+                        ? (json.decode(b['data'] as String)
+                              as Map<String, dynamic>)['description']
+                        : null),
+                'imageUrl':
+                    b['image_url'] ??
+                    b['imageUrl'] ??
+                    (b['data'] != null
+                        ? (json.decode(b['data'] as String)
+                              as Map<String, dynamic>)['imageUrl']
+                        : null),
+              },
+            )
+            .toList();
 
         return CatalogOptionsResponse(
-            categories: categories
-                .map((c) => CategoryWithSubcategories.fromJson(Map<String, dynamic>.from(c)))
-                .toList(),
-            brands: brands
-                .map((b) => BrandRef.fromJson(Map<String, dynamic>.from(b)))
-                .toList());
+          categories: categories
+              .map(
+                (c) => CategoryWithSubcategories.fromJson(
+                  Map<String, dynamic>.from(c),
+                ),
+              )
+              .toList(),
+          brands: brands
+              .map((b) => BrandRef.fromJson(Map<String, dynamic>.from(b)))
+              .toList(),
+        );
       } catch (e) {
         _logger.warning('local getCatalogOptions failed: $e');
         return CatalogOptionsResponse(categories: [], brands: []);
@@ -231,7 +283,9 @@ class InventoryApiService extends GetxService {
       return CatalogOptionsResponse.fromJson(asMap(response.body['data']));
     }
 
-    _logger.warning('Error loading catalog options: ${response.statusCode} - ${response.bodyString}');
+    _logger.warning(
+      'Error loading catalog options: ${response.statusCode} - ${response.bodyString}',
+    );
     return null;
   }
 
@@ -350,7 +404,10 @@ class InventoryApiService extends GetxService {
 
     try {
       if (_appConfig.localStorageOnly) {
-        await _localDatabaseService.database.then((db) => db.delete('categories', where: 'id = ?', whereArgs: [categoryId]));
+        await _localDatabaseService.database.then(
+          (db) =>
+              db.delete('categories', where: 'id = ?', whereArgs: [categoryId]),
+        );
         return true;
       }
 
@@ -361,7 +418,8 @@ class InventoryApiService extends GetxService {
           'X-Client-Operation-Id': clientOperationId,
         },
       );
-      return response.statusCode == 204 || response.statusCode == 200;
+      final code = response.statusCode ?? 0;
+      return code >= 200 && code < 300;
     } catch (e) {
       if (_shouldQueue(e)) {
         await _queueMutation(
@@ -414,7 +472,10 @@ class InventoryApiService extends GetxService {
             'createdAt': now,
             'updatedAt': now,
           };
-          await db.insert('subcategories', {'id': clientOperationId, 'data': json.encode(payload)});
+          await db.insert('subcategories', {
+            'id': clientOperationId,
+            'data': json.encode(payload),
+          });
         } else {
           await db.insert('subcategories', {
             'id': clientOperationId,
@@ -479,7 +540,11 @@ class InventoryApiService extends GetxService {
         final pragma = await db.rawQuery("PRAGMA table_info('subcategories')");
         final hasData = pragma.any((c) => (c['name'] as String?) == 'data');
         if (hasData) {
-          final rows = await db.query('subcategories', where: 'id = ?', whereArgs: [subcategoryId]);
+          final rows = await db.query(
+            'subcategories',
+            where: 'id = ?',
+            whereArgs: [subcategoryId],
+          );
           if (rows.isNotEmpty) {
             final existingData = rows.first['data'] as String?;
             Map<String, dynamic> parsed = {};
@@ -496,7 +561,12 @@ class InventoryApiService extends GetxService {
               parsed['merchant_id'] = merchantId;
             }
             parsed['updatedAt'] = now;
-            await db.update('subcategories', {'data': json.encode(parsed)}, where: 'id = ?', whereArgs: [subcategoryId]);
+            await db.update(
+              'subcategories',
+              {'data': json.encode(parsed)},
+              where: 'id = ?',
+              whereArgs: [subcategoryId],
+            );
           } else {
             final payload = {
               'id': subcategoryId,
@@ -507,16 +577,24 @@ class InventoryApiService extends GetxService {
               if (merchantId != null) 'merchant_id': merchantId,
               'updatedAt': now,
             };
-            await db.insert('subcategories', {'id': subcategoryId, 'data': json.encode(payload)});
+            await db.insert('subcategories', {
+              'id': subcategoryId,
+              'data': json.encode(payload),
+            });
           }
         } else {
-          await db.update('subcategories', {
-            'category_id': categoryId,
-            'name': name,
-            'description': description,
-            if (merchantId != null) 'merchant_id': merchantId,
-            'updated_at': now,
-          }, where: 'id = ?', whereArgs: [subcategoryId]);
+          await db.update(
+            'subcategories',
+            {
+              'category_id': categoryId,
+              'name': name,
+              'description': description,
+              if (merchantId != null) 'merchant_id': merchantId,
+              'updated_at': now,
+            },
+            where: 'id = ?',
+            whereArgs: [subcategoryId],
+          );
         }
         return true;
       }
@@ -553,7 +631,13 @@ class InventoryApiService extends GetxService {
 
     try {
       if (_appConfig.localStorageOnly) {
-        await _localDatabaseService.database.then((db) => db.delete('subcategories', where: 'id = ?', whereArgs: [subcategoryId]));
+        await _localDatabaseService.database.then(
+          (db) => db.delete(
+            'subcategories',
+            where: 'id = ?',
+            whereArgs: [subcategoryId],
+          ),
+        );
         return true;
       }
 
@@ -564,7 +648,8 @@ class InventoryApiService extends GetxService {
           'X-Client-Operation-Id': clientOperationId,
         },
       );
-      return response.statusCode == 204 || response.statusCode == 200;
+      final code = response.statusCode ?? 0;
+      return code >= 200 && code < 300;
     } catch (e) {
       if (_shouldQueue(e)) {
         await _queueMutation(
@@ -622,7 +707,9 @@ class InventoryApiService extends GetxService {
         },
       );
 
-      if (response != null && response.statusCode == 201 && response.body['status'] == 'success') {
+      if (response != null &&
+          response.statusCode == 201 &&
+          response.body['status'] == 'success') {
         return {'ok': true, 'message': 'Brand created'};
       }
     } catch (e) {
@@ -639,9 +726,14 @@ class InventoryApiService extends GetxService {
       rethrow;
     }
 
-    final msg = (response != null && response.body is Map && response.body['message'] != null)
+    final msg =
+        (response != null &&
+            response.body is Map &&
+            response.body['message'] != null)
         ? response.body['message'].toString()
-        : ((response != null && response.bodyString != null) ? response.bodyString : 'Failed to create brand');
+        : ((response != null && response.bodyString != null)
+              ? response.bodyString
+              : 'Failed to create brand');
     return {'ok': false, 'message': msg};
   }
 
@@ -715,7 +807,8 @@ class InventoryApiService extends GetxService {
           'X-Client-Operation-Id': clientOperationId,
         },
       );
-      return response.statusCode == 204 || response.statusCode == 200;
+      final code = response.statusCode ?? 0;
+      return code >= 200 && code < 300;
     } catch (e) {
       if (_shouldQueue(e)) {
         await _queueMutation(
@@ -807,24 +900,39 @@ class InventoryApiService extends GetxService {
           whereClauses.add('LOWER(name) LIKE ?');
           whereArgs.add('%${nameQuery.toLowerCase()}%');
         }
-        final where = whereClauses.isNotEmpty ? whereClauses.join(' AND ') : null;
-        final allRows = await db.query('suppliers', where: where, whereArgs: whereArgs, orderBy: 'created_at DESC, updated_at DESC, id DESC');
+        final where = whereClauses.isNotEmpty
+            ? whereClauses.join(' AND ')
+            : null;
+        final allRows = await db.query(
+          'suppliers',
+          where: where,
+          whereArgs: whereArgs,
+          orderBy: 'created_at DESC, updated_at DESC, id DESC',
+        );
         final totalItems = allRows.length;
         final start = (page - 1) * pageSize;
-        final end = (start + pageSize) > totalItems ? totalItems : (start + pageSize);
-        final pageRows = start < totalItems ? allRows.sublist(start, end) : <Map<String,dynamic>>[];
-        final suppliers = pageRows.map((r) => Supplier.fromJson({
-          'id': r['id'],
-          'merchantId': r['merchant_id'],
-          'name': r['name'],
-          'contactName': r['contact_name'],
-          'contactEmail': r['contact_email'],
-          'contactPhone': r['contact_phone'],
-          'address': r['address'],
-          'notes': r['notes'],
-          'createdAt': r['created_at'],
-          'updatedAt': r['updated_at'],
-        })).toList();
+        final end = (start + pageSize) > totalItems
+            ? totalItems
+            : (start + pageSize);
+        final pageRows = start < totalItems
+            ? allRows.sublist(start, end)
+            : <Map<String, dynamic>>[];
+        final suppliers = pageRows
+            .map(
+              (r) => Supplier.fromJson({
+                'id': r['id'],
+                'merchantId': r['merchant_id'],
+                'name': r['name'],
+                'contactName': r['contact_name'],
+                'contactEmail': r['contact_email'],
+                'contactPhone': r['contact_phone'],
+                'address': r['address'],
+                'notes': r['notes'],
+                'createdAt': r['created_at'],
+                'updatedAt': r['updated_at'],
+              }),
+            )
+            .toList();
 
         final totalPages = (totalItems / pageSize).ceil();
         return PaginatedSuppliersResponse(
@@ -836,7 +944,13 @@ class InventoryApiService extends GetxService {
         );
       } catch (e) {
         _logger.warning('local listMerchantSuppliers failed: $e');
-        return PaginatedSuppliersResponse(suppliers: [], totalItems: 0, currentPage: page, pageSize: pageSize, totalPages: 0);
+        return PaginatedSuppliersResponse(
+          suppliers: [],
+          totalItems: 0,
+          currentPage: page,
+          pageSize: pageSize,
+          totalPages: 0,
+        );
       }
     }
     final token = await _getAuthToken();
@@ -865,7 +979,9 @@ class InventoryApiService extends GetxService {
         );
       }
     }
-    _logger.warning('Error listing suppliers: ${response.statusCode} - ${response.bodyString}');
+    _logger.warning(
+      'Error listing suppliers: ${response.statusCode} - ${response.bodyString}',
+    );
     return null;
   }
 
@@ -928,7 +1044,9 @@ class InventoryApiService extends GetxService {
         return Supplier.fromJson(asMap(response.body['data']));
       }
     }
-    _logger.warning('Error getting supplier details for $supplierId: ${response.statusCode} - ${response.bodyString}');
+    _logger.warning(
+      'Error getting supplier details for $supplierId: ${response.statusCode} - ${response.bodyString}',
+    );
     return null;
   }
 
@@ -980,8 +1098,11 @@ class InventoryApiService extends GetxService {
     final token = await _getAuthToken();
     if (_appConfig.localStorageOnly) {
       try {
-        if (!supplierData.containsKey('name') || (supplierData['name'] as String).isEmpty) {
-          _logger.warning('Supplier name is required to create a new supplier.');
+        if (!supplierData.containsKey('name') ||
+            (supplierData['name'] as String).isEmpty) {
+          _logger.warning(
+            'Supplier name is required to create a new supplier.',
+          );
           return null;
         }
         final id = supplierData['id'] ?? const Uuid().v4();
@@ -990,9 +1111,12 @@ class InventoryApiService extends GetxService {
           'id': id,
           'merchant_id': merchantId,
           'name': supplierData['name'],
-          'contact_name': supplierData['contactName'] ?? supplierData['contact_name'],
-          'contact_email': supplierData['contactEmail'] ?? supplierData['contact_email'],
-          'contact_phone': supplierData['contactPhone'] ?? supplierData['contact_phone'],
+          'contact_name':
+              supplierData['contactName'] ?? supplierData['contact_name'],
+          'contact_email':
+              supplierData['contactEmail'] ?? supplierData['contact_email'],
+          'contact_phone':
+              supplierData['contactPhone'] ?? supplierData['contact_phone'],
           'address': supplierData['address'],
           'notes': supplierData['notes'],
         };
@@ -1031,7 +1155,9 @@ class InventoryApiService extends GetxService {
         return Supplier.fromJson(asMap(response.body['data']));
       }
     }
-    _logger.warning('Error creating new supplier: ${response.statusCode} - ${response.bodyString}');
+    _logger.warning(
+      'Error creating new supplier: ${response.statusCode} - ${response.bodyString}',
+    );
     return null;
   }
 
@@ -1068,17 +1194,23 @@ class InventoryApiService extends GetxService {
     }
     if (_appConfig.localStorageOnly) {
       try {
-        if (supplierData.containsKey('name') && (supplierData['name'] as String).isEmpty) {
-          _logger.warning('Supplier name cannot be empty if provided for update.');
+        if (supplierData.containsKey('name') &&
+            (supplierData['name'] as String).isEmpty) {
+          _logger.warning(
+            'Supplier name cannot be empty if provided for update.',
+          );
           return null;
         }
         final payload = {
           'id': supplierId,
           'merchant_id': supplierData['merchantId'] ?? _currentMerchantId(),
           'name': supplierData['name'] ?? supplierData['name'],
-          'contact_name': supplierData['contactName'] ?? supplierData['contact_name'],
-          'contact_email': supplierData['contactEmail'] ?? supplierData['contact_email'],
-          'contact_phone': supplierData['contactPhone'] ?? supplierData['contact_phone'],
+          'contact_name':
+              supplierData['contactName'] ?? supplierData['contact_name'],
+          'contact_email':
+              supplierData['contactEmail'] ?? supplierData['contact_email'],
+          'contact_phone':
+              supplierData['contactPhone'] ?? supplierData['contact_phone'],
           'address': supplierData['address'] ?? supplierData['address'],
           'notes': supplierData['notes'] ?? supplierData['notes'],
         };
@@ -1118,7 +1250,9 @@ class InventoryApiService extends GetxService {
         return Supplier.fromJson(asMap(response.body['data']));
       }
     }
-    _logger.warning('Error updating supplier $supplierId: ${response.statusCode} - ${response.bodyString}');
+    _logger.warning(
+      'Error updating supplier $supplierId: ${response.statusCode} - ${response.bodyString}',
+    );
     return null;
   }
 
@@ -1160,7 +1294,9 @@ class InventoryApiService extends GetxService {
     if (response.statusCode == 200 && response.body['status'] == 'success') {
       return true;
     }
-    _logger.warning('Error deleting supplier $supplierId: ${response.statusCode} - ${response.bodyString}');
+    _logger.warning(
+      'Error deleting supplier $supplierId: ${response.statusCode} - ${response.bodyString}',
+    );
     return false;
   }
 
@@ -1185,12 +1321,16 @@ class InventoryApiService extends GetxService {
       if (matchedSupplier != null) {
         return matchedSupplier.id;
       } else {
-        _logger.info("Supplier '$supplierName' not found, creating new one for product association.");
+        _logger.info(
+          "Supplier '$supplierName' not found, creating new one for product association.",
+        );
         Supplier? newSupplier = await createNewSupplier({'name': supplierName});
         return newSupplier?.id;
       }
     } catch (e) {
-      _logger.warning("Error resolving supplier name to ID for '$supplierName': $e");
+      _logger.warning(
+        "Error resolving supplier name to ID for '$supplierName': $e",
+      );
       return null;
     }
   }
@@ -1298,9 +1438,10 @@ class InventoryApiService extends GetxService {
           whereClauses.add('LOWER(i.name) LIKE ?');
           whereArgs.add('%${nameFilter.toLowerCase()}%');
         }
-        final whereSql = whereClauses.isNotEmpty ? 'WHERE ${whereClauses.join(' AND ')}' : '';
-        final allRowsRaw = await db.rawQuery(
-          '''
+        final whereSql = whereClauses.isNotEmpty
+            ? 'WHERE ${whereClauses.join(' AND ')}'
+            : '';
+        final allRowsRaw = await db.rawQuery('''
           SELECT
             i.id,
             i.merchant_id,
@@ -1334,33 +1475,43 @@ class InventoryApiService extends GetxService {
           LEFT JOIN brands b ON i.brand_id = b.id
           $whereSql
           ORDER BY COALESCE(i.created_at, i.updated_at, i.id) DESC
-          ''',
-          whereArgs,
-        );
+          ''', whereArgs);
 
         // Skip records that are placeholder-only (no metadata), which can occur
         // when stock adjustments created temporary entries without a valid item.
         final allRows = allRowsRaw.where((r) {
-          final rowMerchantId = r['merchant_id']?.toString() ?? r['merchantId']?.toString();
-          if (merchantId != null && merchantId.isNotEmpty && rowMerchantId != merchantId) {
+          final rowMerchantId =
+              r['merchant_id']?.toString() ?? r['merchantId']?.toString();
+          if (merchantId != null &&
+              merchantId.isNotEmpty &&
+              rowMerchantId != merchantId) {
             return false;
           }
-          final hasMetadata = (r['name'] != null && (r['name'] as String).trim().isNotEmpty) ||
+          final hasMetadata =
+              (r['name'] != null && (r['name'] as String).trim().isNotEmpty) ||
               (r['sku'] != null && (r['sku'] as String).trim().isNotEmpty) ||
-              (r['merchant_id'] != null && (r['merchant_id'] as String).trim().isNotEmpty) ||
-              (r['category'] != null && (r['category'] as String).trim().isNotEmpty);
+              (r['merchant_id'] != null &&
+                  (r['merchant_id'] as String).trim().isNotEmpty) ||
+              (r['category'] != null &&
+                  (r['category'] as String).trim().isNotEmpty);
           return hasMetadata;
         }).toList();
 
         final total = allRows.length;
         final start = (page - 1) * pageSize;
         final end = (start + pageSize) > total ? total : (start + pageSize);
-        final pageRows = start < total ? allRows.sublist(start, end) : <Map<String,dynamic>>[];
+        final pageRows = start < total
+            ? allRows.sublist(start, end)
+            : <Map<String, dynamic>>[];
 
         final items = <InventoryItem>[];
         for (final r in pageRows) {
           final id = r['id'] as String?;
-          final stockRows = await db.query('shop_stock', where: 'inventory_item_id = ?', whereArgs: [id]);
+          final stockRows = await db.query(
+            'shop_stock',
+            where: 'inventory_item_id = ?',
+            whereArgs: [id],
+          );
           _logger.fine('Local inventory - item row: $r');
           _logger.finer('Local inventory - raw shop_stock rows: $stockRows');
           final stockInfo = <StockInfo>[];
@@ -1369,10 +1520,15 @@ class InventoryApiService extends GetxService {
               final qtyRaw = s['quantity'];
               final int qty = qtyRaw is int
                   ? qtyRaw
-                  : (qtyRaw is num ? qtyRaw.toInt() : int.tryParse(qtyRaw.toString()) ?? 0);
+                  : (qtyRaw is num
+                        ? qtyRaw.toInt()
+                        : int.tryParse(qtyRaw.toString()) ?? 0);
               final shopId = (s['shop_id'] ?? s['shopId'])?.toString() ?? '';
-              final shopName = s['shop_name'] as String? ?? s['shopName'] as String?;
-              stockInfo.add(StockInfo(quantity: qty, shopId: shopId, shopName: shopName));
+              final shopName =
+                  s['shop_name'] as String? ?? s['shopName'] as String?;
+              stockInfo.add(
+                StockInfo(quantity: qty, shopId: shopId, shopName: shopName),
+              );
             } catch (e, st) {
               _logger.warning('Failed to parse shop_stock row: $s - $e\n$st');
             }
@@ -1380,25 +1536,40 @@ class InventoryApiService extends GetxService {
 
           InventoryItem? item;
           try {
-            final merchantId = r['merchant_id'] as String? ?? r['merchantId'] as String? ?? '';
+            final merchantId =
+                r['merchant_id'] as String? ?? r['merchantId'] as String? ?? '';
             final name = r['name'] as String? ?? r['name']?.toString() ?? '';
-            final description = r['description'] as String? ?? r['description']?.toString();
+            final description =
+                r['description'] as String? ?? r['description']?.toString();
             final sku = r['sku'] as String? ?? r['sku']?.toString();
-            final sellingPrice = (r['selling_price'] as num?)?.toDouble() ?? (r['sellingPrice'] as num?)?.toDouble() ?? 0.0;
-            final originalPrice = (r['original_price'] as num?)?.toDouble() ?? (r['originalPrice'] as num?)?.toDouble();
-            final lowStockThreshold = (r['low_stock_threshold'] as int?) ?? (r['lowStockThreshold'] as int?);
+            final sellingPrice =
+                (r['selling_price'] as num?)?.toDouble() ??
+                (r['sellingPrice'] as num?)?.toDouble() ??
+                0.0;
+            final originalPrice =
+                (r['original_price'] as num?)?.toDouble() ??
+                (r['originalPrice'] as num?)?.toDouble();
+            final lowStockThreshold =
+                (r['low_stock_threshold'] as int?) ??
+                (r['lowStockThreshold'] as int?);
 
             DateTime createdAt;
             DateTime updatedAt;
             try {
-              final createdAtRaw = (r['created_at'] as String?) ?? (r['createdAt'] as String?);
-              createdAt = createdAtRaw != null ? DateTime.parse(createdAtRaw) : DateTime.now();
+              final createdAtRaw =
+                  (r['created_at'] as String?) ?? (r['createdAt'] as String?);
+              createdAt = createdAtRaw != null
+                  ? DateTime.parse(createdAtRaw)
+                  : DateTime.now();
             } catch (_) {
               createdAt = DateTime.now();
             }
             try {
-              final updatedAtRaw = (r['updated_at'] as String?) ?? (r['updatedAt'] as String?);
-              updatedAt = updatedAtRaw != null ? DateTime.parse(updatedAtRaw) : DateTime.now();
+              final updatedAtRaw =
+                  (r['updated_at'] as String?) ?? (r['updatedAt'] as String?);
+              updatedAt = updatedAtRaw != null
+                  ? DateTime.parse(updatedAtRaw)
+                  : DateTime.now();
             } catch (_) {
               updatedAt = DateTime.now();
             }
@@ -1413,8 +1584,11 @@ class InventoryApiService extends GetxService {
               originalPrice: originalPrice ?? 0.0,
               lowStockThreshold: lowStockThreshold,
               category: r['category'] as String? ?? r['category']?.toString(),
-              categoryId: r['category_id'] as String? ?? r['categoryId'] as String?,
-              subcategoryId: r['subcategory_id'] as String? ?? r['subcategoryId'] as String?,
+              categoryId:
+                  r['category_id'] as String? ?? r['categoryId'] as String?,
+              subcategoryId:
+                  r['subcategory_id'] as String? ??
+                  r['subcategoryId'] as String?,
               brandId: r['brand_id'] as String? ?? r['brandId'] as String?,
               supplier: r['supplier_id'] as String? ?? r['supplier'] as String?,
               createdAt: createdAt,
@@ -1429,7 +1603,8 @@ class InventoryApiService extends GetxService {
               subcategoryObj: (r['subcategory_obj_id'] != null)
                   ? SubcategoryRef(
                       id: r['subcategory_obj_id']?.toString() ?? '',
-                      categoryId: r['subcategory_obj_category_id']?.toString() ?? '',
+                      categoryId:
+                          r['subcategory_obj_category_id']?.toString() ?? '',
                       name: r['subcategory_obj_name']?.toString() ?? '',
                       description: r['subcategory_obj_description']?.toString(),
                     )
@@ -1445,7 +1620,9 @@ class InventoryApiService extends GetxService {
               stockInfo: stockInfo,
             );
           } catch (e, st) {
-            _logger.warning('Failed to construct InventoryItem from row: $r - $e\n$st');
+            _logger.warning(
+              'Failed to construct InventoryItem from row: $r - $e\n$st',
+            );
             continue;
           }
           items.add(item);
@@ -1460,7 +1637,13 @@ class InventoryApiService extends GetxService {
         );
       } catch (e) {
         _logger.warning('Local inventory fetch failed: $e');
-        return PaginatedInventoryResponse(items: [], totalItems: 0, currentPage: page, pageSize: pageSize, totalPages: 0);
+        return PaginatedInventoryResponse(
+          items: [],
+          totalItems: 0,
+          currentPage: page,
+          pageSize: pageSize,
+          totalPages: 0,
+        );
       }
     }
 
@@ -1502,7 +1685,9 @@ class InventoryApiService extends GetxService {
       }
     }
 
-    _logger.warning('Error fetching inventory: ${response.statusCode} - ${response.bodyString}');
+    _logger.warning(
+      'Error fetching inventory: ${response.statusCode} - ${response.bodyString}',
+    );
     return null;
   }
 
@@ -1535,7 +1720,9 @@ class InventoryApiService extends GetxService {
       if (_appConfig.localStorageOnly) {
         final now = DateTime.now();
         final localId = item.id ?? clientOperationId;
-        final merchantId = item.merchantId.isNotEmpty ? item.merchantId : (_currentScopeMerchantId() ?? item.merchantId);
+        final merchantId = item.merchantId.isNotEmpty
+            ? item.merchantId
+            : (_currentScopeMerchantId() ?? item.merchantId);
         final toSave = item.copyWith(
           id: localId,
           merchantId: merchantId,
@@ -1551,43 +1738,47 @@ class InventoryApiService extends GetxService {
       final token = await _getAuthToken();
       if (token == null) return null;
 
-    if (item.categoryId != null && item.categoryId!.isNotEmpty) {
-      payload['categoryId'] = item.categoryId;
-    }
-    if (item.subcategoryId != null && item.subcategoryId!.isNotEmpty) {
-      payload['subcategoryId'] = item.subcategoryId;
-    }
-    if (item.brandId != null && item.brandId!.isNotEmpty) {
-      payload['brandId'] = item.brandId;
-    }
-
-    if (item.supplier != null && item.supplier!.isNotEmpty) {
-      String? supplierId = await _resolveSupplierNameToId(item.supplier!);
-      if (supplierId != null) {
-        payload['supplierId'] = supplierId;
+      if (item.categoryId != null && item.categoryId!.isNotEmpty) {
+        payload['categoryId'] = item.categoryId;
       }
-      payload.remove('supplier');
-    } else {
-      payload.remove('supplier');
-    }
+      if (item.subcategoryId != null && item.subcategoryId!.isNotEmpty) {
+        payload['subcategoryId'] = item.subcategoryId;
+      }
+      if (item.brandId != null && item.brandId!.isNotEmpty) {
+        payload['brandId'] = item.brandId;
+      }
 
-    _logger.fine('Creating inventory item with payload: ${jsonEncode(payload)}');
+      if (item.supplier != null && item.supplier!.isNotEmpty) {
+        String? supplierId = await _resolveSupplierNameToId(item.supplier!);
+        if (supplierId != null) {
+          payload['supplierId'] = supplierId;
+        }
+        payload.remove('supplier');
+      } else {
+        payload.remove('supplier');
+      }
 
-    final response = await _connect.post(
-      _inventoryBaseUrl,
-      payload,
-      headers: {
-        'Authorization': 'Bearer $token',
-        'X-Client-Operation-Id': clientOperationId,
-      },
-    );
+      _logger.fine(
+        'Creating inventory item with payload: ${jsonEncode(payload)}',
+      );
 
-    if (response.statusCode! < 300) {
-      return InventoryItem.fromJson(asMap(response.body['data']));
-    } else {
-      _logger.warning('Error creating inventory item: ${response.statusCode} - ${response.bodyString}');
-      return null;
-    }
+      final response = await _connect.post(
+        _inventoryBaseUrl,
+        payload,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'X-Client-Operation-Id': clientOperationId,
+        },
+      );
+
+      if (response.statusCode! < 300) {
+        return InventoryItem.fromJson(asMap(response.body['data']));
+      } else {
+        _logger.warning(
+          'Error creating inventory item: ${response.statusCode} - ${response.bodyString}',
+        );
+        return null;
+      }
     } catch (e) {
       if (_shouldQueue(e)) {
         await _queueMutation(
@@ -1597,7 +1788,10 @@ class InventoryApiService extends GetxService {
           endpoint: _inventoryBaseUrl,
           payload: payload,
         );
-        return item.copyWith(id: clientOperationId, merchantId: item.merchantId);
+        return item.copyWith(
+          id: clientOperationId,
+          merchantId: item.merchantId,
+        );
       }
       rethrow;
     }
@@ -1636,7 +1830,9 @@ class InventoryApiService extends GetxService {
     if (response.statusCode == 200 && response.body['status'] == 'success') {
       return InventoryItem.fromJson(asMap(response.body['data']));
     } else {
-      _logger.warning('Error fetching item $itemId: ${response.statusCode} - ${response.bodyString}');
+      _logger.warning(
+        'Error fetching item $itemId: ${response.statusCode} - ${response.bodyString}',
+      );
       return null;
     }
   }
@@ -1683,13 +1879,19 @@ class InventoryApiService extends GetxService {
         );
 
         if (existingRows.isEmpty) {
-          _logger.warning('Local inventory update failed: item $itemId not found');
+          _logger.warning(
+            'Local inventory update failed: item $itemId not found',
+          );
           return null;
         }
 
         final existing = Map<String, dynamic>.from(existingRows.first);
         final updatedAt = DateTime.now().toIso8601String();
-        final merged = <String, dynamic>{...existing, 'id': itemId, 'updated_at': updatedAt};
+        final merged = <String, dynamic>{
+          ...existing,
+          'id': itemId,
+          'updated_at': updatedAt,
+        };
 
         void applyStringField(String key, String column) {
           if (!updates.containsKey(key)) return;
@@ -1708,7 +1910,9 @@ class InventoryApiService extends GetxService {
             merged.remove(column);
             return;
           }
-          final parsed = value is num ? value.toDouble() : double.tryParse(value.toString());
+          final parsed = value is num
+              ? value.toDouble()
+              : double.tryParse(value.toString());
           if (parsed != null) {
             merged[column] = parsed;
           }
@@ -1730,7 +1934,8 @@ class InventoryApiService extends GetxService {
         }
 
         if (updates.containsKey('subcategoryId')) {
-          final subcategoryId = updates['subcategoryId']?.toString().trim() ?? '';
+          final subcategoryId =
+              updates['subcategoryId']?.toString().trim() ?? '';
           if (subcategoryId.isEmpty) {
             merged.remove('subcategory_id');
           } else {
@@ -1775,7 +1980,9 @@ class InventoryApiService extends GetxService {
           limit: 1,
         );
         if (reloaded.isEmpty) return null;
-        return InventoryItem.fromJson(Map<String, dynamic>.from(reloaded.first));
+        return InventoryItem.fromJson(
+          Map<String, dynamic>.from(reloaded.first),
+        );
       } catch (e) {
         _logger.warning('Local inventory update failed for $itemId: $e');
         return null;
@@ -1804,7 +2011,9 @@ class InventoryApiService extends GetxService {
       payload.remove('supplier');
     }
 
-    _logger.fine('Updating inventory item $itemId with payload: ${jsonEncode(payload)}');
+    _logger.fine(
+      'Updating inventory item $itemId with payload: ${jsonEncode(payload)}',
+    );
 
     final response = await _connect.put(
       '$_inventoryBaseUrl/$itemId',
@@ -1815,7 +2024,9 @@ class InventoryApiService extends GetxService {
     if (response.statusCode == 200 && response.body['status'] == 'success') {
       return InventoryItem.fromJson(asMap(response.body['data']));
     } else {
-      _logger.warning('Error updating item $itemId: ${response.statusCode} - ${response.bodyString}');
+      _logger.warning(
+        'Error updating item $itemId: ${response.statusCode} - ${response.bodyString}',
+      );
       return null;
     }
   }
@@ -1855,7 +2066,9 @@ class InventoryApiService extends GetxService {
     if (response.statusCode == 200 && response.body['status'] == 'success') {
       return InventoryItem.fromJson(asMap(response.body['data']));
     } else {
-      _logger.warning('Error archiving item $itemId: ${response.statusCode} - ${response.bodyString}');
+      _logger.warning(
+        'Error archiving item $itemId: ${response.statusCode} - ${response.bodyString}',
+      );
       return null;
     }
   }
@@ -1895,7 +2108,9 @@ class InventoryApiService extends GetxService {
     if (response.statusCode == 200 && response.body['status'] == 'success') {
       return InventoryItem.fromJson(asMap(response.body['data']));
     } else {
-      _logger.warning('Error unarchiving item $itemId: ${response.statusCode} - ${response.bodyString}');
+      _logger.warning(
+        'Error unarchiving item $itemId: ${response.statusCode} - ${response.bodyString}',
+      );
       return null;
     }
   }
@@ -1915,17 +2130,23 @@ class InventoryApiService extends GetxService {
       await Future.delayed(const Duration(seconds: 1));
       return true;
     }
+    final clientOperationId = const Uuid().v4();
     final token = await _getAuthToken();
     if (token == null) return false;
     final response = await _connect.delete(
       '$_inventoryBaseUrl/$itemId',
-      headers: {'Authorization': 'Bearer $token'},
+      headers: {
+        'Authorization': 'Bearer $token',
+        'X-Client-Operation-Id': clientOperationId,
+      },
     );
-    if (response.statusCode == 200 && response.body['status'] == 'success') {
-      // Backend uses 200 for successful delete
+    final code = response.statusCode ?? 0;
+    if (code >= 200 && code < 300) {
       return true;
     } else {
-      _logger.warning('Error deleting item $itemId: ${response.statusCode} - ${response.bodyString}');
+      _logger.warning(
+        'Error deleting item $itemId: ${response.statusCode} - ${response.bodyString}',
+      );
       return false;
     }
   }
@@ -1948,7 +2169,9 @@ class InventoryApiService extends GetxService {
     if (response.statusCode == 200 && response.body['status'] == 'success') {
       return Map<String, dynamic>.from(asMap(response.body['data']));
     } else {
-      _logger.warning('Error checking item deletable: ${response.statusCode} - ${response.bodyString}');
+      _logger.warning(
+        'Error checking item deletable: ${response.statusCode} - ${response.bodyString}',
+      );
       return null;
     }
   }
@@ -1989,7 +2212,9 @@ class InventoryApiService extends GetxService {
   }) async {
     if (_appConfig.isDevelopment) {
       await Future.delayed(const Duration(seconds: 2));
-      _logger.fine('Mock: Moved $quantity of item $itemId from shop $fromShopId to $toShopId');
+      _logger.fine(
+        'Mock: Moved $quantity of item $itemId from shop $fromShopId to $toShopId',
+      );
       return true;
     }
 
@@ -2015,7 +2240,9 @@ class InventoryApiService extends GetxService {
     if (response.statusCode == 200 && response.body['status'] == 'success') {
       return true;
     } else {
-      _logger.warning('Error moving stock: ${response.statusCode} - ${response.bodyString}');
+      _logger.warning(
+        'Error moving stock: ${response.statusCode} - ${response.bodyString}',
+      );
       return false;
     }
   }

@@ -15,9 +15,16 @@ import 'package:smart_retail/app/utils/app_logger.dart';
 
 class InvoicePdfService {
   /// Builds the invoice PDF bytes without saving them.
-  static Future<Uint8List> buildInvoicePdfBytes(Invoice invoice) async {
+  static Future<Uint8List> buildInvoicePdfBytes(
+    Invoice invoice, {
+    double fontScale = 1.0,
+  }) async {
     try {
-      final invoiceImage = await _renderInvoiceDetailAsImage(invoice);
+      final normalizedScale = _normalizeRenderScale(fontScale);
+      final invoiceImage = await _renderInvoiceDetailAsImage(
+        invoice,
+        fontScale: normalizedScale,
+      );
       final pdf = pw.Document();
       final imageProvider = pw.MemoryImage(invoiceImage);
 
@@ -41,6 +48,12 @@ class InvoicePdfService {
       );
       return _buildVectorInvoicePdfBytes(invoice);
     }
+  }
+
+  static double _normalizeRenderScale(double value) {
+    if (value < 0.8) return 0.8;
+    if (value > 3.0) return 3.0;
+    return value;
   }
 
   static Future<Uint8List> _buildVectorInvoicePdfBytes(Invoice invoice) async {
@@ -74,8 +87,11 @@ class InvoicePdfService {
   }
 
   /// Generates a PDF for the given invoice and returns the file path (or downloads on web)
-  static Future<String> generateInvoicePdf(Invoice invoice) async {
-    final bytes = await buildInvoicePdfBytes(invoice);
+  static Future<String> generateInvoicePdf(
+    Invoice invoice, {
+    double fontScale = 1.0,
+  }) async {
+    final bytes = await buildInvoicePdfBytes(invoice, fontScale: fontScale);
 
     // Save or download PDF
     if (kIsWeb) {
@@ -169,15 +185,30 @@ class InvoicePdfService {
     return await getTemporaryDirectory();
   }
 
-  static Future<Uint8List> _renderInvoiceDetailAsImage(Invoice invoice) async {
+  static Future<Uint8List> _renderInvoiceDetailAsImage(
+    Invoice invoice, {
+    double fontScale = 1.0,
+  }) async {
+    final scale = _normalizeRenderScale(fontScale);
+    double fs(double value) => value * scale;
+
     const width = 1240;
     const horizontalPadding = 64.0;
     const topPadding = 56.0;
     const baseHeight = 1280;
-    final extraItemsHeight = (invoice.items.length * 58);
+    final footerReserveHeight = (220 * scale).round();
+    final scaleBufferHeight = (((scale - 1.0).clamp(0.0, 2.0)) * 720).round();
+    final extraItemsHeight = (invoice.items.length * (58 * scale)).round();
     final notesHeight =
-        (invoice.notes != null && invoice.notes!.trim().isNotEmpty) ? 120 : 0;
-    final imageHeight = baseHeight + extraItemsHeight + notesHeight;
+        (invoice.notes != null && invoice.notes!.trim().isNotEmpty)
+        ? (120 * scale).round()
+        : 0;
+    final imageHeight =
+        baseHeight +
+        extraItemsHeight +
+        notesHeight +
+        footerReserveHeight +
+        scaleBufferHeight;
 
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder);
@@ -235,16 +266,16 @@ class InvoicePdfService {
       final leftPainter = makePainter(
         label,
         TextStyle(
-          fontSize: bold ? 30 : 24,
-          fontWeight: bold ? FontWeight.w700 : FontWeight.w500,
+          fontSize: fs(bold ? 30 : 24),
+          fontWeight: FontWeight.w400,
           color: const Color(0xFF111111),
         ),
       );
       final rightPainter = makePainter(
         amount,
         TextStyle(
-          fontSize: bold ? 30 : 24,
-          fontWeight: FontWeight.w700,
+          fontSize: fs(bold ? 30 : 24),
+          fontWeight: FontWeight.w400,
           color: bold ? const Color(0xFF0D47A1) : const Color(0xFF111111),
         ),
       );
@@ -264,28 +295,28 @@ class InvoicePdfService {
     String status = invoice.paymentStatus.toUpperCase();
     final statusPainter = makePainter(
       status,
-      const TextStyle(
-        fontSize: 20,
-        fontWeight: FontWeight.w700,
-        color: Color(0xFFFFFFFF),
+      TextStyle(
+        fontSize: fs(20),
+        fontWeight: FontWeight.w400,
+        color: const Color(0xFFFFFFFF),
       ),
     );
 
     drawTextLine(
       'INVOICE',
-      style: const TextStyle(
-        fontSize: 56,
-        fontWeight: FontWeight.w700,
-        color: Color(0xFF0D47A1),
+      style: TextStyle(
+        fontSize: fs(56),
+        fontWeight: FontWeight.w400,
+        color: const Color(0xFF0D47A1),
       ),
       spacingAfter: 6,
     );
     drawTextLine(
       invoice.invoiceNumber,
-      style: const TextStyle(
-        fontSize: 32,
-        fontWeight: FontWeight.w700,
-        color: Color(0xFF111111),
+      style: TextStyle(
+        fontSize: fs(32),
+        fontWeight: FontWeight.w400,
+        color: const Color(0xFF111111),
       ),
       spacingAfter: 14,
     );
@@ -313,10 +344,10 @@ class InvoicePdfService {
 
     drawTextLine(
       'Amount Breakdown',
-      style: const TextStyle(
-        fontSize: 30,
-        fontWeight: FontWeight.w700,
-        color: Color(0xFF111111),
+      style: TextStyle(
+        fontSize: fs(30),
+        fontWeight: FontWeight.w400,
+        color: const Color(0xFF111111),
       ),
       spacingAfter: 10,
     );
@@ -338,10 +369,10 @@ class InvoicePdfService {
 
     drawTextLine(
       'Additional Information',
-      style: const TextStyle(
-        fontSize: 30,
-        fontWeight: FontWeight.w700,
-        color: Color(0xFF111111),
+      style: TextStyle(
+        fontSize: fs(30),
+        fontWeight: FontWeight.w400,
+        color: const Color(0xFF111111),
       ),
       spacingAfter: 10,
     );
@@ -351,25 +382,25 @@ class InvoicePdfService {
     ).format(invoice.checkoutTime.toLocal());
     drawTextLine(
       'Shop Name: ${invoice.shopName?.trim().isNotEmpty == true ? invoice.shopName! : 'Unknown shop'}',
-      style: const TextStyle(fontSize: 22, color: Color(0xFF222222)),
+      style: TextStyle(fontSize: fs(22), color: const Color(0xFF222222)),
       spacingAfter: 6,
     );
     drawTextLine(
       'Checkout Time: $checkoutDate',
-      style: const TextStyle(fontSize: 22, color: Color(0xFF222222)),
+      style: TextStyle(fontSize: fs(22), color: const Color(0xFF222222)),
       spacingAfter: 6,
     );
     if (invoice.dueDate != null) {
       drawTextLine(
         'Due Date: ${DateFormat('MMM dd, yyyy').format(invoice.dueDate!.toLocal())}',
-        style: const TextStyle(fontSize: 22, color: Color(0xFF222222)),
+        style: TextStyle(fontSize: fs(22), color: const Color(0xFF222222)),
         spacingAfter: 6,
       );
     }
     if (invoice.notes != null && invoice.notes!.trim().isNotEmpty) {
       drawTextLine(
         'Notes: ${invoice.notes!.trim()}',
-        style: const TextStyle(fontSize: 21, color: Color(0xFF333333)),
+        style: TextStyle(fontSize: fs(21), color: const Color(0xFF333333)),
         spacingAfter: 10,
       );
     }
@@ -377,10 +408,10 @@ class InvoicePdfService {
     drawDivider();
     drawTextLine(
       'Items',
-      style: const TextStyle(
-        fontSize: 30,
-        fontWeight: FontWeight.w700,
-        color: Color(0xFF111111),
+      style: TextStyle(
+        fontSize: fs(30),
+        fontWeight: FontWeight.w400,
+        color: const Color(0xFF111111),
       ),
       spacingAfter: 8,
     );
@@ -388,7 +419,7 @@ class InvoicePdfService {
     if (invoice.items.isEmpty) {
       drawTextLine(
         'No item list found for this invoice yet.',
-        style: const TextStyle(fontSize: 22, color: Color(0xFF666666)),
+        style: TextStyle(fontSize: fs(22), color: const Color(0xFF666666)),
         spacingAfter: 6,
       );
     } else {
@@ -398,17 +429,17 @@ class InvoicePdfService {
             : it.inventoryItemId;
         drawTextLine(
           '$itemName x${it.quantitySold}  ${formatCurrency(it.sellingPriceAtSale)}  ${formatCurrency(it.subtotal)}',
-          style: const TextStyle(
-            fontSize: 21,
-            color: Color(0xFF111111),
-            fontWeight: FontWeight.w600,
+          style: TextStyle(
+            fontSize: fs(21),
+            color: const Color(0xFF111111),
+            fontWeight: FontWeight.w400,
           ),
           spacingAfter: 6,
         );
         if (it.itemSku != null && it.itemSku!.trim().isNotEmpty) {
           drawTextLine(
             'SKU: ${it.itemSku}',
-            style: const TextStyle(fontSize: 18, color: Color(0xFF666666)),
+            style: TextStyle(fontSize: fs(18), color: const Color(0xFF666666)),
             spacingAfter: 8,
           );
         }
@@ -418,22 +449,23 @@ class InvoicePdfService {
     y += 10;
     drawDivider();
     drawTextLine(
-      'Thank you for your business!',
-      style: const TextStyle(
-        fontSize: 21,
-        color: Color(0xFF555555),
+      'Thank you for your purchase',
+      style: TextStyle(
+        fontSize: fs(21),
+        color: const Color(0xFF555555),
         fontStyle: FontStyle.italic,
       ),
+      align: TextAlign.center,
       spacingAfter: 4,
     );
     drawTextLine(
       'Generated on ${DateFormat('MMM dd, yyyy HH:mm').format(DateTime.now())}',
-      style: const TextStyle(fontSize: 18, color: Color(0xFF666666)),
+      style: TextStyle(fontSize: fs(18), color: const Color(0xFF666666)),
       spacingAfter: 6,
     );
     drawTextLine(
       'Need custom software for your business? Visit nanonux.com.',
-      style: const TextStyle(fontSize: 18, color: Color(0xFF666666)),
+      style: TextStyle(fontSize: fs(18), color: const Color(0xFF666666)),
       align: TextAlign.center,
       spacingAfter: 0,
     );
@@ -457,17 +489,10 @@ class InvoicePdfService {
           children: [
             pw.Text(
               'INVOICE',
-              style: pw.TextStyle(
-                fontSize: 32,
-                fontWeight: pw.FontWeight.bold,
-                color: PdfColors.blue900,
-              ),
+              style: pw.TextStyle(fontSize: 32, color: PdfColors.blue900),
             ),
             pw.SizedBox(height: 8),
-            pw.Text(
-              invoice.invoiceNumber,
-              style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
-            ),
+            pw.Text(invoice.invoiceNumber, style: pw.TextStyle(fontSize: 18)),
           ],
         ),
         pw.Container(
@@ -478,11 +503,7 @@ class InvoicePdfService {
           ),
           child: pw.Text(
             invoice.paymentStatus.toUpperCase(),
-            style: pw.TextStyle(
-              color: PdfColors.white,
-              fontWeight: pw.FontWeight.bold,
-              fontSize: 12,
-            ),
+            style: pw.TextStyle(color: PdfColors.white, fontSize: 12),
           ),
         ),
       ],
@@ -495,10 +516,7 @@ class InvoicePdfService {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        pw.Text(
-          'Invoice Information',
-          style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
-        ),
+        pw.Text('Invoice Information', style: pw.TextStyle(fontSize: 16)),
         pw.SizedBox(height: 12),
         _buildInfoRow(
           'Checkout Time:',
@@ -528,10 +546,7 @@ class InvoicePdfService {
             width: 120,
             child: pw.Text(
               label,
-              style: pw.TextStyle(
-                fontWeight: pw.FontWeight.bold,
-                color: PdfColors.grey700,
-              ),
+              style: pw.TextStyle(color: PdfColors.grey700),
             ),
           ),
           pw.Expanded(child: pw.Text(value)),
@@ -544,10 +559,7 @@ class InvoicePdfService {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        pw.Text(
-          'Amount Breakdown',
-          style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
-        ),
+        pw.Text('Amount Breakdown', style: pw.TextStyle(fontSize: 16)),
         pw.SizedBox(height: 16),
 
         // Subtotal
@@ -583,10 +595,7 @@ class InvoicePdfService {
         // Notes
         if (invoice.notes != null && invoice.notes!.isNotEmpty) ...[
           pw.SizedBox(height: 20),
-          pw.Text(
-            'Notes:',
-            style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 12),
-          ),
+          pw.Text('Notes:', style: pw.TextStyle(fontSize: 12)),
           pw.SizedBox(height: 6),
           pw.Text(invoice.notes!, style: const pw.TextStyle(fontSize: 11)),
         ],
@@ -603,18 +612,11 @@ class InvoicePdfService {
     return pw.Row(
       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
       children: [
-        pw.Text(
-          label,
-          style: pw.TextStyle(
-            fontSize: isTotal ? 18 : 14,
-            fontWeight: isTotal ? pw.FontWeight.bold : pw.FontWeight.normal,
-          ),
-        ),
+        pw.Text(label, style: pw.TextStyle(fontSize: isTotal ? 18 : 14)),
         pw.Text(
           formatCurrency(amount),
           style: pw.TextStyle(
             fontSize: isTotal ? 20 : 14,
-            fontWeight: isTotal ? pw.FontWeight.bold : pw.FontWeight.bold,
             color: isNegative
                 ? PdfColors.green700
                 : (isTotal ? PdfColors.blue900 : PdfColors.black),
@@ -633,7 +635,8 @@ class InvoicePdfService {
         pw.Center(child: _buildSaleQr(invoice)),
         pw.SizedBox(height: 10),
         pw.Text(
-          'Thank you for your business!',
+          'Thank you for your purchase',
+          textAlign: pw.TextAlign.center,
           style: pw.TextStyle(
             fontSize: 12,
             color: PdfColors.grey700,
@@ -643,6 +646,7 @@ class InvoicePdfService {
         pw.SizedBox(height: 6),
         pw.Text(
           'Generated on ${DateFormat('MMM dd, yyyy HH:mm').format(DateTime.now())}',
+          textAlign: pw.TextAlign.center,
           style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey600),
         ),
         pw.SizedBox(height: 10),
@@ -666,11 +670,7 @@ class InvoicePdfService {
       children: [
         pw.Text(
           'Sale ID QR',
-          style: pw.TextStyle(
-            fontSize: 11,
-            fontWeight: pw.FontWeight.bold,
-            color: PdfColors.grey700,
-          ),
+          style: pw.TextStyle(fontSize: 11, color: PdfColors.grey700),
         ),
         pw.SizedBox(height: 6),
         pw.BarcodeWidget(
@@ -693,10 +693,7 @@ class InvoicePdfService {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        pw.Text(
-          'Items',
-          style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
-        ),
+        pw.Text('Items', style: pw.TextStyle(fontSize: 16)),
         pw.SizedBox(height: 8),
         pw.Column(
           children: invoice.items.map((it) {
@@ -711,10 +708,7 @@ class InvoicePdfService {
                     child: pw.Column(
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
                       children: [
-                        pw.Text(
-                          displayName,
-                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-                        ),
+                        pw.Text(displayName, style: pw.TextStyle()),
                         if (it.itemSku != null)
                           pw.Text(
                             'SKU: ${it.itemSku}',
@@ -748,7 +742,7 @@ class InvoicePdfService {
                     child: pw.Text(
                       formatCurrency(it.subtotal),
                       textAlign: pw.TextAlign.right,
-                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                      style: pw.TextStyle(),
                     ),
                   ),
                 ],

@@ -48,7 +48,7 @@ class AdminIntroView extends StatelessWidget {
 
                   // Title
                   const Text(
-                    'Nanonux Business Central',
+                    'NanoNux Business Central',
                     style: TextStyle(
                       fontSize: 36,
                       fontWeight: FontWeight.bold,

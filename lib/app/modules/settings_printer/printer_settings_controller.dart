@@ -17,10 +17,20 @@ class PrinterSettingsController extends GetxController {
 
   final RxDouble fontScale = 1.0.obs;
   final RxInt paperWidthMm = 80.obs;
+  final RxInt printContentWidthPercent = 92.obs;
   final RxString transportMode = 'classic'.obs;
+  final RxString voucherHeaderShopName = ''.obs;
+  final RxString voucherHeaderAddress = ''.obs;
+  final RxString voucherHeaderContact = ''.obs;
   final TextEditingController bleServiceUuidController =
       TextEditingController();
   final TextEditingController bleCharacteristicUuidController =
+      TextEditingController();
+  final TextEditingController voucherHeaderShopNameController =
+      TextEditingController();
+  final TextEditingController voucherHeaderAddressController =
+      TextEditingController();
+  final TextEditingController voucherHeaderContactController =
       TextEditingController();
 
   late bool _isDev;
@@ -61,6 +71,13 @@ class PrinterSettingsController extends GetxController {
     final preferences = await PrinterPreferencesStorage.load();
     fontScale.value = preferences.fontScale;
     paperWidthMm.value = preferences.paperWidthMm;
+    printContentWidthPercent.value = preferences.printContentWidthPercent;
+    voucherHeaderShopName.value = preferences.voucherHeaderShopName;
+    voucherHeaderAddress.value = preferences.voucherHeaderAddress;
+    voucherHeaderContact.value = preferences.voucherHeaderContact;
+    voucherHeaderShopNameController.text = preferences.voucherHeaderShopName;
+    voucherHeaderAddressController.text = preferences.voucherHeaderAddress;
+    voucherHeaderContactController.text = preferences.voucherHeaderContact;
   }
 
   Future<void> _savePreferences() async {
@@ -68,6 +85,10 @@ class PrinterSettingsController extends GetxController {
       PrinterPreferences(
         paperWidthMm: paperWidthMm.value,
         fontScale: fontScale.value,
+        printContentWidthPercent: printContentWidthPercent.value,
+        voucherHeaderShopName: voucherHeaderShopName.value,
+        voucherHeaderAddress: voucherHeaderAddress.value,
+        voucherHeaderContact: voucherHeaderContact.value,
       ),
     );
   }
@@ -80,6 +101,32 @@ class PrinterSettingsController extends GetxController {
   Future<void> setPaperWidth(int value) async {
     paperWidthMm.value = value;
     await _savePreferences();
+  }
+
+  Future<void> setPrintContentWidthPercent(double value) async {
+    printContentWidthPercent.value = value.round();
+    await _savePreferences();
+  }
+
+  Future<void> setVoucherHeaderShopName(String value) async {
+    voucherHeaderShopName.value = value.trim();
+    await _savePreferences();
+  }
+
+  Future<void> setVoucherHeaderAddress(String value) async {
+    voucherHeaderAddress.value = value.trim();
+    await _savePreferences();
+  }
+
+  Future<void> setVoucherHeaderContact(String value) async {
+    voucherHeaderContact.value = value.trim();
+    await _savePreferences();
+  }
+
+  Future<void> saveVoucherHeaderFields() async {
+    await setVoucherHeaderShopName(voucherHeaderShopNameController.text);
+    await setVoucherHeaderAddress(voucherHeaderAddressController.text);
+    await setVoucherHeaderContact(voucherHeaderContactController.text);
   }
 
   Future<void> _loadPrinterSelection() async {
@@ -163,6 +210,9 @@ class PrinterSettingsController extends GetxController {
     debugLogScrollController.dispose();
     bleServiceUuidController.dispose();
     bleCharacteristicUuidController.dispose();
+    voucherHeaderShopNameController.dispose();
+    voucherHeaderAddressController.dispose();
+    voucherHeaderContactController.dispose();
     super.onClose();
   }
 }

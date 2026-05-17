@@ -59,7 +59,7 @@ class OfflineIntroView extends StatelessWidget {
                     ),
                     const SizedBox(height: 28),
                     const Text(
-                      'Nanonux Business Central',
+                      'NanoNux Business Central',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Colors.white,

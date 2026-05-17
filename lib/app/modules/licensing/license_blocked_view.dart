@@ -160,7 +160,7 @@ class LicenseBlockedView extends StatelessWidget {
 
   String _buildReport() {
     final buffer = StringBuffer()
-      ..writeln('Nanonux Business Central license blocked')
+      ..writeln('NanoNux Business Central license blocked')
       ..writeln('Reason: ${result.message}')
       ..writeln('Tamper suspected: ${result.isTamperSuspected}')
       ..writeln('Device fingerprint: ${result.currentDeviceFingerprint ?? 'Unavailable'}');

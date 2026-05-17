@@ -177,12 +177,12 @@ class ShopPosController extends GetxController {
   }
 
   CartItem? getCartItemByProductId(String productId) {
-  try {
-    return cartItems.firstWhere((item) => item.product.id == productId);
-  } catch (_) {
-    return null;
+    try {
+      return cartItems.firstWhere((item) => item.product.id == productId);
+    } catch (_) {
+      return null;
+    }
   }
-}
 
   void searchProducts({bool initialLoad = false}) async {
     final searchTerm = searchController.text;
@@ -257,8 +257,9 @@ class ShopPosController extends GetxController {
     final existingIndex = cartItems.indexWhere(
       (item) => item.product.id == product.id,
     );
-    final requestedQuantity =
-        existingIndex != -1 ? cartItems[existingIndex].quantity.value + 1 : 1;
+    final requestedQuantity = existingIndex != -1
+        ? cartItems[existingIndex].quantity.value + 1
+        : 1;
     if (!_canIncreaseQuantity(product, requestedQuantity)) {
       _showStockLimitWarning(product, _availableStockForProduct(product) ?? 0);
       return;
@@ -400,10 +401,7 @@ class ShopPosController extends GetxController {
         actions: [
           TextButton(onPressed: () => Get.back(), child: const Text('Close')),
           TextButton(
-            onPressed: () => _printerService.downloadVoucherPdf(
-              _buildVoucherText(sale),
-              filename: 'voucher-${sale.id}.pdf',
-            ),
+            onPressed: () => _printerService.downloadSaleVoucherPdf(sale),
             child: const Text('Download PDF'),
           ),
           TextButton(
@@ -432,8 +430,7 @@ class ShopPosController extends GetxController {
   }
 
   void _printVoucher(Sale sale) {
-    final voucherText = _buildVoucherText(sale);
-    _printerService.printVoucher(voucherText);
+    _printerService.printSaleVoucher(sale);
   }
 
   @override
@@ -444,4 +441,3 @@ class ShopPosController extends GetxController {
     super.onClose();
   }
 }
-

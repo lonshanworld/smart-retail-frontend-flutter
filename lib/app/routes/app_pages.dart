@@ -161,9 +161,11 @@ class AppPages {
   static String get INITIAL => initialRoute;
 
   static String get initialRoute {
-    final appConfig = Get.isRegistered<AppConfig>() ? Get.find<AppConfig>() : null;
+    final appConfig = Get.isRegistered<AppConfig>()
+        ? Get.find<AppConfig>()
+        : null;
     if (appConfig?.localStorageOnly == true) {
-          return Routes.OFFLINE_INTRO;
+      return Routes.OFFLINE_INTRO;
     }
 
     final authService = Get.isRegistered<AuthService>()

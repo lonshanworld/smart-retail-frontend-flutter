@@ -37,6 +37,8 @@ class PrinterSettingsView extends GetView<PrinterSettingsController> {
                 const SizedBox(height: 20),
                 _buildConnectionCard(),
                 const SizedBox(height: 20),
+                _buildVoucherHeaderCard(),
+                const SizedBox(height: 20),
                 _buildDevicesSection(),
                 const SizedBox(height: 20),
                 _buildDebugLogCard(scaffoldContext),
@@ -147,8 +149,8 @@ class PrinterSettingsView extends GetView<PrinterSettingsController> {
             ),
             Slider(
               min: 0.8,
-              max: 1.8,
-              divisions: 10,
+              max: 3.0,
+              divisions: 22,
               value: controller.fontScale.value,
               label: '${(controller.fontScale.value * 100).round()}%',
               activeColor: AppColors.shop,
@@ -174,11 +176,45 @@ class PrinterSettingsView extends GetView<PrinterSettingsController> {
                 ),
               ],
             ),
+            const SizedBox(height: 14),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Print width',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                ),
+                Text(
+                  '${controller.printContentWidthPercent.value}%',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.shop.shade700,
+                  ),
+                ),
+              ],
+            ),
+            Slider(
+              min: 50,
+              max: 150,
+              divisions: 100,
+              value: controller.printContentWidthPercent.value.toDouble(),
+              label: '${controller.printContentWidthPercent.value}%',
+              activeColor: AppColors.shop,
+              onChanged: (value) {
+                controller.setPrintContentWidthPercent(value);
+              },
+            ),
             const SizedBox(height: 10),
             Wrap(
               spacing: 10,
               runSpacing: 10,
               children: [
+                _PaperWidthChip(
+                  label: '40 mm',
+                  selected: controller.paperWidthMm.value == 40,
+                  onTap: () => controller.setPaperWidth(40),
+                ),
                 _PaperWidthChip(
                   label: '58 mm',
                   selected: controller.paperWidthMm.value == 58,
@@ -447,6 +483,83 @@ class PrinterSettingsView extends GetView<PrinterSettingsController> {
         ),
       );
     });
+  }
+
+  Widget _buildVoucherHeaderCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Voucher Header',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'These values are printed on vouchers and are independent from shop profile data.',
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+          ),
+          const SizedBox(height: 14),
+          TextField(
+            controller: controller.voucherHeaderShopNameController,
+            decoration: const InputDecoration(
+              labelText: 'Printed Header Line 1',
+              hintText: 'Example: Smart Retail Downtown',
+            ),
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: controller.voucherHeaderAddressController,
+            decoration: const InputDecoration(
+              labelText: 'Printed Header Line 2',
+              hintText: 'Example: No. 12 Main Street, Phnom Penh',
+            ),
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: controller.voucherHeaderContactController,
+            decoration: const InputDecoration(
+              labelText: 'Printed Header Line 3',
+              hintText: 'Example: +855 12 345 678',
+            ),
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () async {
+                await controller.saveVoucherHeaderFields();
+                DialogUtils.showSuccess('Voucher header saved');
+              },
+              icon: const Icon(Icons.save_outlined),
+              label: const Text('Save Voucher Header'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.shop,
+                foregroundColor: Colors.white,
+                minimumSize: const Size.fromHeight(46),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _StatusChip({required IconData icon, required String label}) {

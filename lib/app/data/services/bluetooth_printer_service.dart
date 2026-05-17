@@ -9,17 +9,17 @@ import 'package:flutter/foundation.dart'
 import 'package:flutter/material.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:get/get.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
 
 import 'package:smart_retail/app/data/models/invoice_model.dart';
+import 'package:smart_retail/app/data/models/sale_model.dart';
 import 'package:smart_retail/app/data/services/printer_preferences_storage.dart';
-import 'package:smart_retail/app/services/invoice_pdf_service.dart';
 import 'package:smart_retail/app/utils/app_logger.dart';
 import 'package:smart_retail/app/utils/dialog_utils.dart';
 import 'package:smart_retail/app/utils/web_file_utils.dart';
@@ -66,26 +66,142 @@ class BluetoothPrinterService extends GetxService {
     return _activeConnection!;
   }
 
+  Future<int> _androidSdkInt() async {
+    if (defaultTargetPlatform != TargetPlatform.android) {
+      return 0;
+    }
+    try {
+      final androidInfo = await DeviceInfoPlugin().androidInfo;
+      return androidInfo.version.sdkInt;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  Future<void> _requestPermissionsWithRetry(
+    List<Permission> perms, {
+    int maxAttempts = 2,
+  }) async {
+    if (perms.isEmpty) return;
+
+    Map<Permission, PermissionStatus> statuses =
+        <Permission, PermissionStatus>{};
+    for (var attempt = 1; attempt <= maxAttempts; attempt++) {
+      statuses = await perms.request();
+
+      final hasDenied = statuses.values.any(
+        (status) =>
+            status.isDenied ||
+            status.isPermanentlyDenied ||
+            status.isRestricted,
+      );
+      if (!hasDenied) {
+        return;
+      }
+
+      final canRetry = statuses.values.any((status) => status.isDenied);
+      if (attempt < maxAttempts && canRetry) {
+        logDebug(
+          'Bluetooth permission denied. Retrying request ($attempt/$maxAttempts).',
+        );
+        continue;
+      }
+
+      break;
+    }
+
+    throw StateError('Bluetooth permissions denied');
+  }
+
   Future<void> _ensureBlePermissions() async {
     final perms = <Permission>[];
     if (defaultTargetPlatform == TargetPlatform.android) {
-      perms.addAll([
-        Permission.bluetoothScan,
-        Permission.bluetoothConnect,
-        Permission.locationWhenInUse,
-      ]);
+      final sdk = await _androidSdkInt();
+      if (sdk >= 31) {
+        perms.addAll([Permission.bluetoothScan, Permission.bluetoothConnect]);
+      } else {
+        perms.addAll([Permission.bluetooth, Permission.locationWhenInUse]);
+      }
     } else if (defaultTargetPlatform == TargetPlatform.iOS) {
       perms.addAll([Permission.bluetooth, Permission.locationWhenInUse]);
     }
 
-    if (perms.isNotEmpty) {
-      final statuses = await perms.request();
-      final denied = statuses.values.any(
-        (status) => status.isDenied || status.isPermanentlyDenied,
-      );
-      if (denied) {
-        throw StateError('Bluetooth permissions denied');
+    await _requestPermissionsWithRetry(perms);
+  }
+
+  Future<void> _ensureClassicScanPermissions() async {
+    final perms = <Permission>[];
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      final sdk = await _androidSdkInt();
+      if (sdk >= 31) {
+        perms.addAll([Permission.bluetoothScan, Permission.bluetoothConnect]);
+      } else {
+        perms.addAll([Permission.bluetooth, Permission.locationWhenInUse]);
       }
+    } else if (defaultTargetPlatform == TargetPlatform.iOS) {
+      perms.addAll([Permission.bluetooth, Permission.locationWhenInUse]);
+    }
+
+    await _requestPermissionsWithRetry(perms);
+  }
+
+  Future<void> _ensureClassicPermissions() async {
+    final perms = <Permission>[];
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      final sdk = await _androidSdkInt();
+      if (sdk >= 31) {
+        perms.add(Permission.bluetoothConnect);
+      } else {
+        perms.addAll([Permission.bluetooth, Permission.locationWhenInUse]);
+      }
+    } else if (defaultTargetPlatform == TargetPlatform.iOS) {
+      perms.addAll([Permission.bluetooth, Permission.locationWhenInUse]);
+    }
+
+    await _requestPermissionsWithRetry(perms);
+  }
+
+  Future<void> _logClassicConnectPermissionSnapshot() async {
+    if (defaultTargetPlatform != TargetPlatform.android) return;
+
+    final sdk = await _androidSdkInt();
+    try {
+      final bt = await Permission.bluetooth.status;
+      final btConnect = await Permission.bluetoothConnect.status;
+      final btScan = await Permission.bluetoothScan.status;
+      logDebug(
+        'Classic connect permission snapshot: sdk=$sdk, bluetooth=$bt, bluetoothConnect=$btConnect, bluetoothScan=$btScan',
+      );
+    } catch (e) {
+      logDebug('Failed to read classic connect permission snapshot: $e');
+    }
+  }
+
+  Future<void> _retryLegacyBluetoothPermissionIfNeeded() async {
+    if (defaultTargetPlatform != TargetPlatform.android) return;
+    final sdk = await _androidSdkInt();
+    if (sdk < 31) return;
+
+    try {
+      final bt = await Permission.bluetooth.status;
+      if (bt.isDenied) {
+        logDebug(
+          'Legacy BLUETOOTH permission is denied on Android 12+. Retrying request once for diagnostics.',
+        );
+        final retried = await Permission.bluetooth.request();
+        logDebug('Legacy BLUETOOTH retry result: $retried');
+      }
+
+      final btAfter = await Permission.bluetooth.status;
+      final btConnect = await Permission.bluetoothConnect.status;
+      final btScan = await Permission.bluetoothScan.status;
+      if (btAfter.isDenied && btConnect.isGranted && btScan.isGranted) {
+        logDebug(
+          'Compatibility warning: BLUETOOTH remains denied while BLUETOOTH_CONNECT/SCAN are granted. This indicates a classic plugin compatibility issue on Android 12+ and may require plugin upgrade or a full reinstall.',
+        );
+      }
+    } catch (e) {
+      logDebug('Legacy BLUETOOTH retry check failed: $e');
     }
   }
 
@@ -156,32 +272,13 @@ class BluetoothPrinterService extends GetxService {
     }
 
     try {
-      final perms = <Permission>[];
-      if (defaultTargetPlatform == TargetPlatform.android) {
-        perms.addAll([
-          Permission.bluetoothScan,
-          Permission.bluetoothConnect,
-          Permission.locationWhenInUse,
-        ]);
-      } else if (defaultTargetPlatform == TargetPlatform.iOS) {
-        perms.addAll([Permission.bluetooth, Permission.locationWhenInUse]);
-      }
-
-      if (perms.isNotEmpty) {
-        final statuses = await perms.request();
-        final denied = statuses.values.any(
-          (status) => status.isDenied || status.isPermanentlyDenied,
-        );
-        if (denied) {
-          logDebug('Bluetooth permission denied while scanning for printers.');
-          DialogUtils.showError(
-            'Bluetooth permission denied. Please enable permissions in settings.',
-          );
-          return;
-        }
-      }
+      await _ensureClassicScanPermissions();
     } catch (e) {
       logDebug('Permission request failed while scanning: $e');
+      DialogUtils.showError(
+        'Bluetooth permission denied. Please enable permissions in settings.',
+      );
+      return;
     }
 
     try {
@@ -271,30 +368,20 @@ class BluetoothPrinterService extends GetxService {
     }
 
     try {
-      if (defaultTargetPlatform == TargetPlatform.android) {
-        final status = await Permission.bluetoothConnect.request();
-        if (status.isDenied || status.isPermanentlyDenied) {
-          logDebug(
-            'Bluetooth connect permission denied for ${device.name ?? device.address}.',
-          );
-          DialogUtils.showError('Bluetooth connect permission required');
-          return;
-        }
-      } else if (defaultTargetPlatform == TargetPlatform.iOS) {
-        final status = await Permission.bluetooth.request();
-        if (status.isDenied || status.isPermanentlyDenied) {
-          logDebug(
-            'Bluetooth permission denied for ${device.name ?? device.address}.',
-          );
-          DialogUtils.showError('Bluetooth permission required');
-          return;
-        }
-      }
+      await _ensureClassicPermissions();
     } catch (e) {
-      logDebug('Connect permission check failed: $e');
+      logDebug(
+        'Bluetooth permission denied for ${device.name ?? device.address}: $e',
+      );
+      DialogUtils.showError(
+        'Bluetooth permission required. Please allow Bluetooth permissions in app settings.',
+      );
+      return;
     }
 
     try {
+      await _retryLegacyBluetoothPermissionIfNeeded();
+      await _logClassicConnectPermissionSnapshot();
       final connection = await _ensureConnection(device);
       selectedDevice.value = device;
       logDebug(
@@ -411,6 +498,9 @@ class BluetoothPrinterService extends GetxService {
   }
 
   int _paperWidthToPixels(int paperWidthMm) {
+    if (paperWidthMm <= 40) {
+      return 256;
+    }
     if (paperWidthMm <= 58) {
       return 384;
     }
@@ -418,42 +508,361 @@ class BluetoothPrinterService extends GetxService {
   }
 
   double _receiptFontSize(double fontScale) {
-    return (13.5 * fontScale).clamp(11.0, 22.0);
+    return (13.5 * fontScale).clamp(11.0, 36.0);
+  }
+
+  int _receiptCharsPerLine(int paperWidthMm) {
+    if (paperWidthMm <= 40) return 24;
+    if (paperWidthMm <= 58) return 32;
+    return 42;
+  }
+
+  String _lineFill(int count, String char) {
+    if (count <= 0) return '';
+    return List.filled(count, char).join();
+  }
+
+  String _centerText(String text, int width) {
+    final clean = text.trim();
+    if (clean.isEmpty) return '';
+    if (clean.length >= width) return clean;
+    final left = (width - clean.length) ~/ 2;
+    return '${' ' * left}$clean';
+  }
+
+  String _amountLine(String label, String value, int width) {
+    final left = label.trim();
+    final right = value.trim();
+    if ((left.length + right.length + 1) >= width) {
+      return '$left $right';
+    }
+    return '$left${' ' * (width - left.length - right.length)}$right';
+  }
+
+  List<String> _wrapText(String text, int width) {
+    final clean = text.trim();
+    if (clean.isEmpty) return const [''];
+    final words = clean.split(RegExp(r'\s+'));
+    final lines = <String>[];
+    var current = '';
+    for (final word in words) {
+      if (current.isEmpty) {
+        current = word;
+        continue;
+      }
+      final candidate = '$current $word';
+      if (candidate.length <= width) {
+        current = candidate;
+      } else {
+        lines.add(current);
+        current = word;
+      }
+    }
+    if (current.isNotEmpty) lines.add(current);
+    return lines;
+  }
+
+  String _formatMoney(double value) {
+    return '\$${value.toStringAsFixed(2)}';
+  }
+
+  String _buildSaleVoucherText(Sale sale, PrinterPreferences preferences) {
+    return _buildVoucherTemplateText(
+      preferences: preferences,
+      invoiceNumber: sale.id,
+      dateTime: sale.saleDate,
+      payment: sale.paymentType.toUpperCase(),
+      status: sale.paymentStatus.toUpperCase(),
+      items: sale.items
+          .map(
+            (item) => _VoucherTemplateItem(
+              name: (item.itemName?.trim().isNotEmpty == true)
+                  ? item.itemName!.trim()
+                  : 'Unnamed item',
+              quantity: item.quantitySold,
+              unitPrice: item.sellingPriceAtSale,
+              amount: item.subtotal,
+            ),
+          )
+          .toList(),
+      subtotal: sale.items.fold<double>(
+        0.0,
+        (sum, item) => sum + item.subtotal,
+      ),
+      discountAmount: sale.discountAmount ?? 0,
+      taxAmount: 0,
+      deliveryCharge: sale.deliveryCharge,
+      totalAmount: sale.totalAmount,
+      notes: sale.notes,
+    );
+  }
+
+  String _buildInvoiceVoucherText(
+    Invoice invoice,
+    PrinterPreferences preferences,
+  ) {
+    return _buildVoucherTemplateText(
+      preferences: preferences,
+      invoiceNumber: invoice.invoiceNumber,
+      dateTime: invoice.checkoutTime,
+      payment: 'INVOICE',
+      status: invoice.paymentStatus.toUpperCase(),
+      items: invoice.items
+          .map(
+            (item) => _VoucherTemplateItem(
+              name: (item.itemName?.trim().isNotEmpty == true)
+                  ? item.itemName!.trim()
+                  : item.inventoryItemId,
+              quantity: item.quantitySold,
+              unitPrice: item.sellingPriceAtSale,
+              amount: item.subtotal,
+            ),
+          )
+          .toList(),
+      subtotal: invoice.subtotal,
+      discountAmount: invoice.discountAmount,
+      taxAmount: invoice.taxAmount,
+      deliveryCharge: invoice.deliveryCharge,
+      totalAmount: invoice.totalAmount,
+      notes: invoice.notes,
+    );
+  }
+
+  String _buildVoucherTemplateText({
+    required PrinterPreferences preferences,
+    required String invoiceNumber,
+    required DateTime dateTime,
+    required String payment,
+    required String status,
+    required List<_VoucherTemplateItem> items,
+    required double subtotal,
+    required double discountAmount,
+    required double taxAmount,
+    required double deliveryCharge,
+    required double totalAmount,
+    String? notes,
+  }) {
+    final widthScale = (preferences.printContentWidthPercent / 100).clamp(
+      0.5,
+      1.5,
+    );
+    final width = (_receiptCharsPerLine(preferences.paperWidthMm) * widthScale)
+        .round()
+        .clamp(16, 96);
+    final divider = _lineFill(width, '-');
+    final strongDivider = _lineFill(width, '=');
+    final qtyWidth = width <= 32 ? 3 : 4;
+    final unitWidth = width <= 32 ? 6 : 7;
+    final amountWidth = width <= 32 ? 6 : 7;
+    const columnGap = ' ';
+    final fixedWidth =
+        qtyWidth + unitWidth + amountWidth + (columnGap.length * 3);
+    final itemNameWidth = (width - fixedWidth).clamp(8, width).toInt();
+
+    final lines = <String>[];
+
+    if (preferences.voucherHeaderShopName.trim().isNotEmpty) {
+      lines.add(_centerText(preferences.voucherHeaderShopName, width));
+    }
+    if (preferences.voucherHeaderAddress.trim().isNotEmpty) {
+      lines.addAll(
+        _wrapText(
+          preferences.voucherHeaderAddress,
+          width,
+        ).map((line) => _centerText(line, width)),
+      );
+    }
+    if (preferences.voucherHeaderContact.trim().isNotEmpty) {
+      lines.add(_centerText(preferences.voucherHeaderContact, width));
+    }
+
+    if (lines.isNotEmpty) {
+      lines.add(divider);
+    }
+
+    lines.add(_centerText('INVOICE', width));
+    lines.add(_amountLine('Invoice #', invoiceNumber, width));
+    lines.add(
+      _amountLine(
+        'Date',
+        dateTime.toLocal().toString().substring(0, 16),
+        width,
+      ),
+    );
+    lines.add(_amountLine('Payment', payment, width));
+    lines.add(_amountLine('Status', status, width));
+    lines.add(divider);
+
+    final tableHeader =
+        'Item'.padRight(itemNameWidth) +
+        columnGap +
+        'Qty'.padLeft(qtyWidth) +
+        columnGap +
+        'Price'.padLeft(unitWidth) +
+        columnGap +
+        'Amt'.padLeft(amountWidth);
+    lines.add(tableHeader);
+    lines.add(divider);
+
+    for (final item in items) {
+      final itemName = item.name;
+      final wrappedName = _wrapText(itemName, itemNameWidth);
+      final qty = item.quantity.toString();
+      final unit = item.unitPrice.toStringAsFixed(2);
+      final amount = item.amount.toStringAsFixed(2);
+
+      lines.add(
+        wrappedName.first.padRight(itemNameWidth) +
+            columnGap +
+            qty.padLeft(qtyWidth) +
+            columnGap +
+            unit.padLeft(unitWidth) +
+            columnGap +
+            amount.padLeft(amountWidth),
+      );
+
+      if (wrappedName.length > 1) {
+        for (final extra in wrappedName.skip(1)) {
+          lines.add(extra.padRight(itemNameWidth));
+        }
+      }
+    }
+
+    lines.add(strongDivider);
+
+    lines.add(_amountLine('Subtotal', _formatMoney(subtotal), width));
+    if (discountAmount > 0) {
+      lines.add(_amountLine('Discount', _formatMoney(-discountAmount), width));
+    }
+    if (taxAmount > 0) {
+      lines.add(_amountLine('Tax', _formatMoney(taxAmount), width));
+    }
+    if (deliveryCharge > 0) {
+      lines.add(_amountLine('Delivery', _formatMoney(deliveryCharge), width));
+    }
+    lines.add(_amountLine('TOTAL', _formatMoney(totalAmount), width));
+    lines.add(strongDivider);
+
+    if (notes != null && notes.trim().isNotEmpty) {
+      lines.add('Notes:');
+      lines.addAll(_wrapText(notes.trim(), width));
+      lines.add(divider);
+    }
+
+    lines.add(_centerText('Thank you for your purchase', width));
+    lines.add('');
+    lines.addAll(
+      _wrapText(
+        'Need custom software for your business? Visit nanonux.com.',
+        width,
+      ).map((line) => _centerText(line, width)),
+    );
+    // Extra trailing feed area helps protect footer text during manual tear.
+    lines.add('');
+    lines.add('');
+    lines.add('');
+    lines.add('');
+    lines.add('');
+    lines.add('');
+    lines.add('');
+
+    return lines.join('\n');
   }
 
   Future<Uint8List> _renderReceiptRasterBytes(
     String receiptText,
-    PrinterPreferences preferences,
-  ) async {
+    PrinterPreferences preferences, {
+    String? emphasizedHeaderLine,
+  }) async {
     final widthPx = _paperWidthToPixels(preferences.paperWidthMm);
-    final paddingPx = (widthPx * 0.06).round().clamp(20, 36);
-    final contentWidth = (widthPx - (paddingPx * 2)).toDouble();
+    final widthRatio = (preferences.printContentWidthPercent / 100).clamp(
+      0.70,
+      1.5,
+    );
     final baseFontSize = _receiptFontSize(preferences.fontScale);
+    final contentWidth = widthRatio <= 1.0
+        ? (widthPx * widthRatio).toDouble()
+        : widthPx.toDouble();
+    final horizontalPadding = widthRatio <= 1.0
+        ? ((widthPx - contentWidth) / 2).round().clamp(8, widthPx ~/ 4)
+        : 8;
+    final adjustedFontSize = widthRatio > 1.0
+        ? (baseFontSize / widthRatio).clamp(8.5, baseFontSize)
+        : baseFontSize;
+    final verticalPadding = (baseFontSize * 1.2).round().clamp(12, 32);
+
+    final normalizedText = receiptText.replaceAll('\r\n', '\n');
+    final emphasizedTarget = emphasizedHeaderLine?.trim() ?? '';
+    const thankYouLine = 'Thank you for your purchase';
+    var emphasizedApplied = false;
+    final textSpans = <InlineSpan>[];
+    final lines = normalizedText.split('\n');
+
+    for (var i = 0; i < lines.length; i++) {
+      final line = lines[i];
+      final trimmedLine = line.trim();
+      final shouldEmphasize =
+          !emphasizedApplied &&
+          emphasizedTarget.isNotEmpty &&
+          trimmedLine == emphasizedTarget;
+      if (shouldEmphasize) {
+        emphasizedApplied = true;
+      }
+
+      var lineFontSize = shouldEmphasize
+          ? (adjustedFontSize * 1.35).clamp(10.0, 64.0).toDouble()
+          : adjustedFontSize;
+      if (trimmedLine == thankYouLine) {
+        lineFontSize = (lineFontSize * 1.1).clamp(8.5, 64.0).toDouble();
+      }
+
+      // Compensate left padding for emphasized centered line so it stays visually centered.
+      var textToDraw = line;
+      if (shouldEmphasize) {
+        final leadingSpaces = line.length - line.trimLeft().length;
+        final compensatedLeadingSpaces = (leadingSpaces / 1.35).round().clamp(
+          0,
+          leadingSpaces,
+        );
+        textToDraw =
+            '${' ' * compensatedLeadingSpaces}${trimmedLine.isEmpty ? '' : line.trimLeft()}';
+      }
+
+      textSpans.add(
+        TextSpan(
+          text: textToDraw,
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: lineFontSize,
+            height: 1.25,
+            fontFamily: 'monospace',
+          ),
+        ),
+      );
+      if (i < lines.length - 1) {
+        textSpans.add(const TextSpan(text: '\n'));
+      }
+    }
 
     final painter = TextPainter(
       textDirection: TextDirection.ltr,
       textAlign: TextAlign.left,
       maxLines: null,
-      text: TextSpan(
-        text: receiptText.replaceAll('\r\n', '\n'),
-        style: TextStyle(
-          color: Colors.black,
-          fontSize: baseFontSize,
-          height: 1.25,
-          fontFamily: 'monospace',
-        ),
-      ),
+      text: TextSpan(children: textSpans),
     );
     painter.layout(maxWidth: contentWidth);
 
-    final heightPx = (painter.height + (paddingPx * 2)).ceil();
+    final heightPx = (painter.height + (verticalPadding * 2)).ceil();
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder);
     canvas.drawRect(
       Rect.fromLTWH(0, 0, widthPx.toDouble(), heightPx.toDouble()),
       Paint()..color = Colors.white,
     );
-    painter.paint(canvas, Offset(paddingPx.toDouble(), paddingPx.toDouble()));
+    painter.paint(
+      canvas,
+      Offset(horizontalPadding.toDouble(), verticalPadding.toDouble()),
+    );
 
     final picture = recorder.endRecording();
     final image = await picture.toImage(widthPx, heightPx);
@@ -500,89 +909,24 @@ class BluetoothPrinterService extends GetxService {
     return Uint8List.fromList([...header, ...rasterBytes]);
   }
 
-  Future<Uint8List> _encodePdfRasterToEscPos(
-    PdfRaster raster,
-    int targetWidthPx,
-  ) async {
-    final uiImage = await raster.toImage();
-    final targetHeightPx = (uiImage.height * targetWidthPx / uiImage.width)
-        .round();
-    final recorder = ui.PictureRecorder();
-    final canvas = Canvas(recorder);
-    canvas.drawRect(
-      Rect.fromLTWH(0, 0, targetWidthPx.toDouble(), targetHeightPx.toDouble()),
-      Paint()..color = Colors.white,
-    );
-    final paint = Paint()..filterQuality = FilterQuality.high;
-    canvas.drawImageRect(
-      uiImage,
-      Rect.fromLTWH(0, 0, uiImage.width.toDouble(), uiImage.height.toDouble()),
-      Rect.fromLTWH(0, 0, targetWidthPx.toDouble(), targetHeightPx.toDouble()),
-      paint,
-    );
-
-    final image = recorder.endRecording().toImageSync(
-      targetWidthPx,
-      targetHeightPx,
-    );
-    final byteData = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
-    if (byteData == null) {
-      throw StateError('Failed to rasterize PDF page for bluetooth printing');
-    }
-    return _encodeEscPosRaster(byteData, targetWidthPx, targetHeightPx);
-  }
-
-  Future<bool> _printPdfBytesViaBluetooth(
-    Uint8List pdfBytes, {
-    String? documentName,
-  }) async {
-    if (kIsWeb) {
-      logDebug('Bluetooth PDF printing is not available on web.');
-      return false;
-    }
-
-    final device = selectedDevice.value;
-    if (device == null) {
-      logDebug('No bluetooth printer selected.');
-      DialogUtils.showInfo('Please select a bluetooth printer first.');
-      return false;
-    }
-
-    try {
-      final preferences = await PrinterPreferencesStorage.load();
-      final targetWidthPx = _paperWidthToPixels(preferences.paperWidthMm);
-      logDebug(
-        'Using ${selectedTransport.value.toUpperCase()} printer ${device.address} for PDF print.',
-      );
-
-      await for (final page in Printing.raster(pdfBytes, dpi: 203)) {
-        final pageBytes = await _encodePdfRasterToEscPos(page, targetWidthPx);
-        await _writePrintBytes(pageBytes);
-        await _writePrintBytes(Uint8List.fromList(const [0x0A, 0x0A, 0x0A]));
-      }
-
-      logDebug(
-        'PDF print complete${documentName == null ? '' : ' for $documentName'}.',
-      );
-      return true;
-    } catch (e) {
-      logDebug('PDF bluetooth print failed: $e');
-      DialogUtils.showError('Failed to print PDF on bluetooth printer: $e');
-      return false;
-    }
-  }
-
   Future<bool> printInvoice(Invoice invoice) async {
-    final pdfBytes = await InvoicePdfService.buildInvoicePdfBytes(invoice);
-    return _printPdfBytesViaBluetooth(
-      pdfBytes,
-      documentName: invoice.invoiceNumber,
+    final preferences = await PrinterPreferencesStorage.load();
+    final voucherText = _buildInvoiceVoucherText(invoice, preferences);
+    final ok = await _sendRasterReceipt(
+      voucherText,
+      allowFallbackPdf: true,
+      emphasizedHeaderLine: preferences.voucherHeaderShopName,
     );
+    if (!ok) {
+      logDebug('Falling back after invoice raster print failure.');
+    }
+    return ok;
   }
 
   Future<bool> _sendRasterReceipt(
     String receiptText, {
     required bool allowFallbackPdf,
+    String? emphasizedHeaderLine,
   }) async {
     final device = selectedDevice.value;
     if (device == null) {
@@ -598,7 +942,11 @@ class BluetoothPrinterService extends GetxService {
 
     try {
       final preferences = await PrinterPreferencesStorage.load();
-      final bytes = await _renderReceiptRasterBytes(receiptText, preferences);
+      final bytes = await _renderReceiptRasterBytes(
+        receiptText,
+        preferences,
+        emphasizedHeaderLine: emphasizedHeaderLine,
+      );
       logDebug(
         'Using ${selectedTransport.value.toUpperCase()} printer ${device.address} for raster print.',
       );
@@ -737,11 +1085,8 @@ class BluetoothPrinterService extends GetxService {
               crossAxisAlignment: pw.CrossAxisAlignment.stretch,
               children: [
                 pw.Text(
-                  'Sale Voucher',
-                  style: pw.TextStyle(
-                    fontSize: 16,
-                    fontWeight: pw.FontWeight.bold,
-                  ),
+                  'INVOICE',
+                  style: pw.TextStyle(fontSize: 16),
                   textAlign: pw.TextAlign.center,
                 ),
                 pw.SizedBox(height: 6),
@@ -759,15 +1104,16 @@ class BluetoothPrinterService extends GetxService {
                 pw.Spacer(),
                 pw.Divider(),
                 pw.SizedBox(height: 6),
-                pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  children: [
-                    pw.Text('Thank you', style: pw.TextStyle(fontSize: 10)),
-                    pw.Text(
-                      '${DateTime.now().toLocal()}',
-                      style: pw.TextStyle(fontSize: 8),
-                    ),
-                  ],
+                pw.Text(
+                  'Thank you for your purchase',
+                  textAlign: pw.TextAlign.center,
+                  style: const pw.TextStyle(fontSize: 10),
+                ),
+                pw.SizedBox(height: 4),
+                pw.Text(
+                  '${DateTime.now().toLocal()}',
+                  textAlign: pw.TextAlign.center,
+                  style: const pw.TextStyle(fontSize: 8),
                 ),
               ],
             ),
@@ -777,6 +1123,198 @@ class BluetoothPrinterService extends GetxService {
     );
 
     return doc.save();
+  }
+
+  Future<Uint8List> generateSaleVoucherPdf(
+    Sale sale,
+    PrinterPreferences preferences,
+  ) async {
+    final doc = pw.Document();
+    final subtotal = sale.items.fold<double>(
+      0.0,
+      (sum, item) => sum + item.subtotal,
+    );
+
+    doc.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a6,
+        margin: const pw.EdgeInsets.all(14),
+        build: (_) {
+          final rows = sale.items
+              .map(
+                (item) => [
+                  (item.itemName?.trim().isNotEmpty == true)
+                      ? item.itemName!.trim()
+                      : 'Unnamed item',
+                  item.quantitySold.toString(),
+                  _formatMoney(item.sellingPriceAtSale),
+                  _formatMoney(item.subtotal),
+                ],
+              )
+              .toList();
+
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+            children: [
+              if (preferences.voucherHeaderShopName.trim().isNotEmpty)
+                pw.Text(
+                  preferences.voucherHeaderShopName.trim(),
+                  textAlign: pw.TextAlign.center,
+                  style: pw.TextStyle(fontSize: 14),
+                ),
+              if (preferences.voucherHeaderAddress.trim().isNotEmpty)
+                pw.Padding(
+                  padding: const pw.EdgeInsets.only(top: 2),
+                  child: pw.Text(
+                    preferences.voucherHeaderAddress.trim(),
+                    textAlign: pw.TextAlign.center,
+                    style: const pw.TextStyle(fontSize: 9),
+                  ),
+                ),
+              if (preferences.voucherHeaderContact.trim().isNotEmpty)
+                pw.Padding(
+                  padding: const pw.EdgeInsets.only(top: 2),
+                  child: pw.Text(
+                    preferences.voucherHeaderContact.trim(),
+                    textAlign: pw.TextAlign.center,
+                    style: const pw.TextStyle(fontSize: 9),
+                  ),
+                ),
+              pw.SizedBox(height: 8),
+              pw.Divider(),
+              pw.SizedBox(height: 6),
+              pw.Text(
+                'INVOICE',
+                textAlign: pw.TextAlign.center,
+                style: pw.TextStyle(fontSize: 15),
+              ),
+              pw.SizedBox(height: 6),
+              pw.Text(
+                'Invoice #: ${sale.id}',
+                style: const pw.TextStyle(fontSize: 9),
+              ),
+              pw.Text(
+                'Date: ${sale.saleDate.toLocal().toString().substring(0, 16)}',
+                style: const pw.TextStyle(fontSize: 9),
+              ),
+              pw.Text(
+                'Payment: ${sale.paymentType.toUpperCase()}',
+                style: const pw.TextStyle(fontSize: 9),
+              ),
+              pw.Text(
+                'Status: ${sale.paymentStatus.toUpperCase()}',
+                style: const pw.TextStyle(fontSize: 9),
+              ),
+              pw.SizedBox(height: 8),
+              pw.Table.fromTextArray(
+                headerStyle: const pw.TextStyle(fontSize: 9),
+                cellStyle: const pw.TextStyle(fontSize: 8.5),
+                border: pw.TableBorder.all(
+                  color: PdfColors.grey300,
+                  width: 0.5,
+                ),
+                headerDecoration: const pw.BoxDecoration(
+                  color: PdfColors.grey200,
+                ),
+                columnWidths: {
+                  0: const pw.FlexColumnWidth(2.2),
+                  1: const pw.FlexColumnWidth(0.7),
+                  2: const pw.FlexColumnWidth(1.0),
+                  3: const pw.FlexColumnWidth(1.1),
+                },
+                headers: const ['Item', 'Qty', 'Price', 'Amount'],
+                data: rows,
+              ),
+              pw.SizedBox(height: 8),
+              pw.Align(
+                alignment: pw.Alignment.centerRight,
+                child: pw.SizedBox(
+                  width: 150,
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+                    children: [
+                      _buildPdfAmountRow('Subtotal', _formatMoney(subtotal)),
+                      if ((sale.discountAmount ?? 0) > 0)
+                        _buildPdfAmountRow(
+                          'Discount',
+                          _formatMoney(-(sale.discountAmount ?? 0)),
+                        ),
+                      if (sale.deliveryCharge > 0)
+                        _buildPdfAmountRow(
+                          'Delivery',
+                          _formatMoney(sale.deliveryCharge),
+                        ),
+                      pw.Divider(),
+                      _buildPdfAmountRow(
+                        'TOTAL',
+                        _formatMoney(sale.totalAmount),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              if (sale.notes != null && sale.notes!.trim().isNotEmpty) ...[
+                pw.SizedBox(height: 8),
+                pw.Text('Notes', style: const pw.TextStyle(fontSize: 10)),
+                pw.Text(
+                  sale.notes!.trim(),
+                  style: const pw.TextStyle(fontSize: 8.5),
+                ),
+              ],
+              pw.Spacer(),
+              pw.SizedBox(height: 8),
+              pw.Divider(),
+              pw.Text(
+                'Thank you for your purchase',
+                textAlign: pw.TextAlign.center,
+                style: const pw.TextStyle(fontSize: 9),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    return doc.save();
+  }
+
+  pw.Widget _buildPdfAmountRow(
+    String label,
+    String amount, {
+    bool bold = false,
+  }) {
+    final style = pw.TextStyle(
+      fontSize: bold ? 10 : 9,
+      fontWeight: pw.FontWeight.normal,
+    );
+    return pw.Row(
+      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+      children: [
+        pw.Text(label, style: style),
+        pw.Text(amount, style: style),
+      ],
+    );
+  }
+
+  Future<void> downloadSaleVoucherPdf(Sale sale, {String? filename}) async {
+    try {
+      final preferences = await PrinterPreferencesStorage.load();
+      final bytes = await generateSaleVoucherPdf(sale, preferences);
+      final outputName = filename ?? 'voucher-${sale.id}.pdf';
+      if (kIsWeb) {
+        await downloadFile(bytes, outputName);
+        logDebug('Web download triggered: $outputName');
+        return;
+      }
+
+      final directory = await _getLocalPdfDirectory();
+      final file = File(p.join(directory.path, outputName));
+      await file.writeAsBytes(bytes);
+      logDebug('Voucher PDF saved to ${file.path}');
+    } catch (e) {
+      logDebug('PDF generation error: $e');
+      DialogUtils.showError('Could not generate voucher PDF: $e');
+    }
   }
 
   Future<void> downloadVoucherPdf(
@@ -874,4 +1412,31 @@ class BluetoothPrinterService extends GetxService {
       logDebug('Falling back after raster print failure.');
     }
   }
+
+  Future<void> printSaleVoucher(Sale sale) async {
+    final preferences = await PrinterPreferencesStorage.load();
+    final voucherText = _buildSaleVoucherText(sale, preferences);
+    final ok = await _sendRasterReceipt(
+      voucherText,
+      allowFallbackPdf: true,
+      emphasizedHeaderLine: preferences.voucherHeaderShopName,
+    );
+    if (!ok) {
+      logDebug('Falling back after raster print failure.');
+    }
+  }
+}
+
+class _VoucherTemplateItem {
+  final String name;
+  final int quantity;
+  final double unitPrice;
+  final double amount;
+
+  const _VoucherTemplateItem({
+    required this.name,
+    required this.quantity,
+    required this.unitPrice,
+    required this.amount,
+  });
 }

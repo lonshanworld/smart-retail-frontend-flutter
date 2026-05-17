@@ -1,14 +1,24 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Bluetooth & location permissions required for scanning and RFCOMM printing -->
-    <uses-permission android:name="android.permission.BLUETOOTH" />
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <!-- Android 12+ runtime permissions -->
-    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:required="false" />
-    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" android:required="false" />
-    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" android:required="false" />
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <!-- Legacy Bluetooth permissions kept for plugin compatibility. -->
+    <uses-permission
+        android:name="android.permission.BLUETOOTH"
+        android:maxSdkVersion="36"
+        tools:replace="android:maxSdkVersion" />
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_ADMIN"
+        android:maxSdkVersion="36"
+        tools:replace="android:maxSdkVersion" />
+    <uses-permission
+        android:name="android.permission.ACCESS_FINE_LOCATION"
+        android:maxSdkVersion="30" />
+
+    <!-- Android 12+ Bluetooth runtime permissions. -->
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
     <application
-        android:label="Nanonux Business Central"
+        android:label="NanoNux Business Central"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

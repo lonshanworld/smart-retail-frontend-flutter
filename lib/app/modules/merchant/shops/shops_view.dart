@@ -86,20 +86,13 @@ class ShopsView extends GetView<MerchantShopsController> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          shop.name,
-                          style: Get.textTheme.titleLarge,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
                         Row(
                           children: [
+                            
                             Expanded(
                               child: Text(
-                                'ID: ${shop.id}',
-                                style: Get.textTheme.bodySmall?.copyWith(
-                                  color: Colors.grey[600],
-                                ),
+                                shop.name,
+                                style: Get.textTheme.titleLarge,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -111,6 +104,7 @@ class ShopsView extends GetView<MerchantShopsController> {
                               tooltip: 'Edit Shop',
                               onPressed: () => controller.goToEditShop(shop),
                             ),
+                            SizedBox(width: 8),
                             IconButton(
                               icon: const Icon(Icons.copy, size: 16),
                               padding: EdgeInsets.zero,
@@ -125,6 +119,7 @@ class ShopsView extends GetView<MerchantShopsController> {
                               },
                               tooltip: 'Copy Shop ID',
                             ),
+                            SizedBox(width: 8),
                             IconButton(
                               icon: const Icon(Icons.delete_outline, size: 16),
                               padding: EdgeInsets.zero,
@@ -146,6 +141,21 @@ class ShopsView extends GetView<MerchantShopsController> {
                                 }
                               },
                             ),
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                'ID: ${shop.id}',
+                                style: Get.textTheme.bodySmall?.copyWith(
+                                  color: Colors.grey[600],
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            
                           ],
                         ),
                         Text(

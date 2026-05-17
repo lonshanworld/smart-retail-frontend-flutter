@@ -269,7 +269,7 @@ class _StaffMainScaffoldState extends State<StaffMainScaffold> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Nanonux Business Central',
+                  'NanoNux Business Central',
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.7),
                     fontSize: 12,

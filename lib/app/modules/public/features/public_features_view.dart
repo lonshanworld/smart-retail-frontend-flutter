@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:smart_retail/app/modules/public/widgets/public_premium_shell.dart';
+import 'package:smart_retail/app/modules/public/widgets/public_website_header.dart';
 import 'package:smart_retail/app/routes/app_pages.dart';
 
 class PublicFeaturesView extends StatelessWidget {
@@ -16,52 +18,75 @@ class PublicFeaturesView extends StatelessWidget {
     final isWide = MediaQuery.of(context).size.width >= 980;
 
     return Scaffold(
-      backgroundColor: _paper,
-      body: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(child: _header(isWide)),
-          SliverToBoxAdapter(child: _overview(isWide)),
-          SliverToBoxAdapter(child: _roleSection(
-            isWide: isWide,
-            title: 'Merchant Features',
-            subtitle: 'Command center for growth and operations.',
-            icon: Icons.storefront_rounded,
-            points: const [
-              'Live dashboard across sales, stock, and cashflow',
-              'Inventory and supplier management in one workflow',
-              'Promotion engine with campaign-level controls',
-              'Cross-shop stock transfers and low-stock alerts',
-              'Invoices, reporting, and AI-assisted analysis',
-            ],
-          )),
-          SliverToBoxAdapter(child: _roleSection(
-            isWide: isWide,
-            title: 'Staff Features',
-            subtitle: 'Execution-first experience for front-line teams.',
-            icon: Icons.groups_2_outlined,
-            points: const [
-              'Fast POS with clear basket and payment interactions',
-              'Stock-in, stock adjustments, and product lookup tools',
-              'Daily task flow optimized for minimal training time',
-              'Invoice access and shift-friendly productivity tools',
-              'Consistent UX built for speed and fewer mistakes',
-            ],
-          )),
-          SliverToBoxAdapter(child: _roleSection(
-            isWide: isWide,
-            title: 'Shop Features',
-            subtitle: 'Focused control for branch-level retail operations.',
-            icon: Icons.point_of_sale_rounded,
-            points: const [
-              'Branch dashboard with sales, customer, and item signals',
-              'Shop inventory, item catalog, and checkout operations',
-              'Customer and invoice views designed for shop context',
-              'Clear role-based access aligned with headquarters policy',
-              'Connected data sync with merchant-level reporting',
-            ],
-          )),
-          SliverToBoxAdapter(child: _cta(isWide)),
-        ],
+      backgroundColor: Colors.transparent,
+      body: PublicPremiumShell(
+        baseColor: _paper,
+        child: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(child: _header(isWide)),
+            SliverToBoxAdapter(
+              child: _RevealOnLoad(delay: 40, child: _overview(isWide)),
+            ),
+            SliverToBoxAdapter(
+              child: _RevealOnLoad(
+                delay: 90,
+                child: _roleSection(
+                  isWide: isWide,
+                  title: 'Merchant Features',
+                  subtitle: 'Command center for growth and operations.',
+                  icon: Icons.storefront_rounded,
+                  points: const [
+                    'Live dashboard across sales, stock, and cashflow',
+                    'Inventory and supplier management in one workflow',
+                    'Promotion engine with campaign-level controls',
+                    'Cross-shop stock transfers and low-stock alerts',
+                    'Invoices, reporting, and AI-assisted analysis',
+                  ],
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: _RevealOnLoad(
+                delay: 140,
+                child: _roleSection(
+                  isWide: isWide,
+                  title: 'Staff Features',
+                  subtitle: 'Execution-first experience for front-line teams.',
+                  icon: Icons.groups_2_outlined,
+                  points: const [
+                    'Fast POS with clear basket and payment interactions',
+                    'Stock-in, stock adjustments, and product lookup tools',
+                    'Daily task flow optimized for minimal training time',
+                    'Invoice access and shift-friendly productivity tools',
+                    'Consistent UX built for speed and fewer mistakes',
+                  ],
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: _RevealOnLoad(
+                delay: 190,
+                child: _roleSection(
+                  isWide: isWide,
+                  title: 'Shop Features',
+                  subtitle:
+                      'Focused control for branch-level retail operations.',
+                  icon: Icons.point_of_sale_rounded,
+                  points: const [
+                    'Branch dashboard with sales, customer, and item signals',
+                    'Shop inventory, item catalog, and checkout operations',
+                    'Customer and invoice views designed for shop context',
+                    'Clear role-based access aligned with headquarters policy',
+                    'Connected data sync with merchant-level reporting',
+                  ],
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: _RevealOnLoad(delay: 240, child: _cta(isWide)),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -79,27 +104,7 @@ class PublicFeaturesView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _HeaderAction(
-                icon: Icons.arrow_back,
-                label: 'Back',
-                onTap: () => Get.back(),
-              ),
-              _HeaderAction(
-                icon: Icons.home_outlined,
-                label: 'Home',
-                onTap: () => Get.offAllNamed(Routes.CUSTOMER_INTRO),
-              ),
-              _HeaderAction(
-                icon: Icons.apartment_outlined,
-                label: 'About Us',
-                onTap: () => Get.toNamed(Routes.PUBLIC_ABOUT),
-              ),
-            ],
-          ),
+          const PublicWebsiteHeader(currentRoute: Routes.PUBLIC_FEATURES),
           const SizedBox(height: 18),
           Text(
             'Feature Deep Dive',
@@ -111,7 +116,7 @@ class PublicFeaturesView extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            'A premium look at what each operational team can do inside Nanonux Business Central.',
+            'A premium look at what each operational team can do inside NanoNux Business Central.',
             style: GoogleFonts.manrope(
               color: Colors.white.withValues(alpha: 0.9),
               fontSize: 16,
@@ -142,7 +147,7 @@ class PublicFeaturesView extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(18),
           child: Text(
-            'Nanonux Business Central is intentionally role-specific. Merchant, Staff, and Shop modules are designed around different decisions, while sharing one connected operational dataset.',
+            'NanoNux Business Central is intentionally role-specific. Merchant, Staff, and Shop modules are designed around different decisions, while sharing one connected operational dataset.',
             style: GoogleFonts.manrope(
               fontSize: 15,
               color: const Color(0xFF334E68),
@@ -233,7 +238,7 @@ class PublicFeaturesView extends StatelessWidget {
               const SizedBox(
                 width: 540,
                 child: Text(
-                  'Ready to experience Nanonux Business Central workflows live? Choose your portal and start with the role that matches your team.',
+                  'Ready to experience NanoNux Business Central workflows live? Choose your portal and start with the role that matches your team.',
                   style: TextStyle(
                     color: Color(0xFFDBE7F0),
                     fontSize: 16,
@@ -270,34 +275,6 @@ class PublicFeaturesView extends StatelessWidget {
   }
 }
 
-class _HeaderAction extends StatelessWidget {
-  const _HeaderAction({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return OutlinedButton.icon(
-      onPressed: onTap,
-      icon: Icon(icon, color: Colors.white, size: 18),
-      label: Text(
-        label,
-        style: GoogleFonts.manrope(color: Colors.white, fontWeight: FontWeight.w700),
-      ),
-      style: OutlinedButton.styleFrom(
-        side: const BorderSide(color: Colors.white38),
-        foregroundColor: Colors.white,
-      ),
-    );
-  }
-}
-
 class _FeatureBullet extends StatelessWidget {
   const _FeatureBullet({required this.text});
 
@@ -316,7 +293,11 @@ class _FeatureBullet extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.check_circle_rounded, color: Color(0xFF0B7285), size: 18),
+          const Icon(
+            Icons.check_circle_rounded,
+            color: Color(0xFF0B7285),
+            size: 18,
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -330,6 +311,32 @@ class _FeatureBullet extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _RevealOnLoad extends StatelessWidget {
+  const _RevealOnLoad({required this.child, required this.delay});
+
+  final Widget child;
+  final int delay;
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: Duration(milliseconds: 620 + delay),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(0, (1 - value) * 18),
+            child: child,
+          ),
+        );
+      },
+      child: child,
     );
   }
 }
